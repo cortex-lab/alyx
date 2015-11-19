@@ -34,12 +34,22 @@ class Subject(models.Model):
     source = models.CharField(max_length=255)
     birth_date_time = models.DateTimeField(null=True, blank=True)
     death_date_time = models.DateTimeField(null=True, blank=True)
+    responsible_user = models.ForeignKey(User, related_name = 'subjects_responsible')
 
-    created_date_time = models.DateTimeField(auto_now_add=True)
-    created_user = models.ForeignKey(User, related_name='subjects_created')
-    modified_date_time = models.DateTimeField(auto_now=True)
-    modified_user = models.ForeignKey(User, related_name = 'subjects_last_modified')
+    notes = models.TextField(null=True, blank=True)
 
     def dead(self):
         return self.death_date_time is not None
     dead.boolean = True
+
+    def __str__(self):
+        return self.nickname
+
+class Experiment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    start_date_time = models.DateTimeField()
+    location = models.CharField(max_length=255)
+
+
+    def __str__(self):
+        return self.id[:5]
