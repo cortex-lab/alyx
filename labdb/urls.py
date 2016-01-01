@@ -15,7 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
+from subjects import views
+
+admin.site.site_header = 'LabDB'
 
 urlpatterns = [
+    url(r'^subject/(?P<slug>[-_\w]+)/$', views.SubjectView.as_view(), name='itemview'),
     url(r'^admin/', include(admin.site.urls)),
 ]
