@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Subject, Species
+from .models import Subject, Species, Action
 
 class SubjectAliveListFilter(admin.SimpleListFilter):
     title = 'alive'
@@ -32,5 +32,9 @@ class SpeciesAdmin(admin.ModelAdmin):
     list_display = ['binomial', 'display_name']
     readonly_fields = []
 
+class ActionAdmin(admin.ModelAdmin):
+    list_display = ['subject', 'location']
+
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Species, SpeciesAdmin)
+admin.site.register(Action, ActionAdmin)

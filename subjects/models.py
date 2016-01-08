@@ -40,8 +40,13 @@ class Subject(models.Model):
 
 class Action(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nickname = models.CharField(max_length=255)
+    users = models.ManyToManyField(User)
+    subject = models.ForeignKey(Subject)
+    location = models.CharField(max_length=255)
+    narrative = models.TextField(null=True, blank=True)
+    start_date_time = models.DateTimeField(null=True, blank=True)
+    end_date_time = models.DateTimeField(null=True, blank=True)
+
 
     def __str__(self):
         return id[:8]
-

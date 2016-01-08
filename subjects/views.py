@@ -11,6 +11,15 @@ class SubjectView(DetailView):
 	template_name='subject.html'
 	slug_field='nickname'
 
-class SubjectGantt(ListView):
+class SubjectsGantt(ListView):
 	model=Subject
 	template_name='subjects_gantt.html'
+	title='Subjects Gantt'
+
+class SubjectsList(ListView):
+	model=Subject
+	template_name='subjects_list.html'
+
+class SubjectsCards(ListView):
+	model=Subject
+	template_name='subjects_cards.html'

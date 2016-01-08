@@ -20,6 +20,9 @@ from subjects import views
 admin.site.site_header = 'LabDB'
 
 urlpatterns = [
+    url(r'^$', views.SubjectsCards.as_view(), name='subjectcardsview'),
+    url(r'^list$', views.SubjectsList.as_view(), name='subjectlistview'),
+    url(r'^gantt$', views.SubjectsGantt.as_view(), name='subjectganttview'),
     url(r'^subject/(?P<slug>[-_\w]+)/$', views.SubjectView.as_view(), name='itemview'),
     url(r'^admin/', include(admin.site.urls)),
 ]
