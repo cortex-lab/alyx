@@ -45,8 +45,8 @@ class Subject(models.Model):
 
 class Litter(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    mother = models.ForeignKey("self", null=True, blank=True, related_name="litter_mother")
-    father = models.ForeignKey("self", null=True, blank=True, related_name="litter_father")
+    mother = models.ForeignKey("Subject", null=True, blank=True, related_name="litter_mother")
+    father = models.ForeignKey("Subject", null=True, blank=True, related_name="litter_father")
 
 class Action(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -68,8 +68,8 @@ class Note(Action):
     pass
 
 class Surgery(Action):
-    procedure = models.CharField(max_length=255)
-    brain_location = models.CharField(max_length=255)
+    procedure = models.CharField(max_length=255, null=True, blank=True)
+    brain_location = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "surgeries"
