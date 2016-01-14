@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Subject, Species, Action, Weighing, Surgery
+from .models import *
 
 class ResponsibleUserListFilter(admin.SimpleListFilter):
     title = 'responsible user'
@@ -33,13 +33,22 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
 
 class WeighingsInline(admin.TabularInline):
     model = Weighing
-    extra = 1
+    extra = 0
+    ordering = ['start_date_time']
     fields = 'start_date_time', 'weight'
-    # readonly_fields = 'start_date_time', 'weight'
+    readonly_fields = 'start_date_time', 'weight'
+
+class NotesInline(admin.TabularInline):
+    model = Note
+    extra = 0
+    ordering = ['start_date_time']
+    fields = 'start_date_time', 'narrative'
+    readonly_fields = 'start_date_time', 'narrative'
 
 class SurgeriesInline(admin.TabularInline):
     model = Surgery
     extra = 0
+    ordering = ['start_date_time']
     fields = 'procedure', 'start_date_time', 'brain_location'
     readonly_fields = 'procedure', 'start_date_time', 'brain_location'
     show_change_link = True
@@ -52,6 +61,7 @@ class SubjectAdmin(admin.ModelAdmin):
                      'strain', 'genotype']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [
+        NotesInline,
         WeighingsInline,
         SurgeriesInline,
     ]
@@ -71,7 +81,17 @@ class SurgeryAdmin(admin.ModelAdmin):
 class WeighingAdmin(admin.ModelAdmin):
     list_display = ['subject', 'weight']
 
+class NoteAdmin(admin.ModelAdmin):
+    list_display = ['subject', 'narrative']
+
+class LitterAdmin(admin.ModelAdmin):
+    list_display = ['mother', 'father']
+
 admin.site.register(Subject, SubjectAdmin)
+admin.site.register(Litter, LitterAdmin)
+
 admin.site.register(Species, SpeciesAdmin)
+admin.site.register(Note, NoteAdmin)
+
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(Surgery, SurgeryAdmin)
