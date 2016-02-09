@@ -1,0 +1,34 @@
+{% extends "base.html"%}
+{% block main_container %}
+
+{% if object_list %}
+   <div class="dashhead">
+      <div class="dashhead-titles">
+        <h6 class="dashhead-subtitle">Alyx</h6>
+        <h3 class="dashhead-title">{% block title %}Home{% endblock %}</h3>
+      </div>
+    </div>
+    <p>Soon this will show a dashboard of all your stuff. But it's not yet implemented...</p>
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="/?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="/?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% else %}
+<hr/>
+<div class="hero">
+    <h1>Whoops!</h1>
+    <h2>No subjects yet!</h2>
+</div>
+{% endif %}
+{% endblock %}

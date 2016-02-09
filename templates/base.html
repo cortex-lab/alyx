@@ -1,0 +1,85 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+
+	<title>{% block title %}Alyx{% endblock %}:Alyx</title>
+
+  <link href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" rel="stylesheet">
+	<link href="{% static "subjects/assets/css/toolkit-inverse.css" %}" rel="stylesheet">
+	<link href="{% static "subjects/assets/css/application.css" %}" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="with-iconav">
+  <nav class="iconav">
+    <a class="iconav-brand" href="/">
+      <span class="icon icon-leaf iconav-brand-icon"></span>
+    </a>
+    <div class="iconav-slider">
+      <ul class="nav nav-pills iconav-nav">
+        <li class="active">
+          <a href="/list" title="List" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-text-document"></span>
+            <small class="iconav-nav-label visible-xs-block">List</small>
+          </a>
+        </li>
+        <li >
+          <a href="/list?view=gantt" title="Gantt" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-list"></span>
+            <small class="iconav-nav-label visible-xs-block">Gantt</small>
+          </a>
+        </li>
+        <li >
+          <a href="/" title="All" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-globe"></span>
+            <small class="iconav-nav-label visible-xs-block">All</small>
+          </a>
+        </li>
+        <li>
+          <a href="/" title="Stats" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-area-graph"></span>
+            <small class="iconav-nav-label visible-xs-block">Stats</small>
+          </a>
+        </li>
+        <li >
+          <a href="/admin" title="Admin" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-flash"></span>
+            <small class="iconav-nav-label visible-xs-block">Admin</small>
+          </a>
+        </li>
+<!--         <li>
+          <a href="#" title="Signed in as mdo" data-toggle="tooltip" data-placement="right" data-container="body">
+            <img src="../assets/img/avatar-mdo.png" alt="" class="img-circle img-responsive">
+            <small class="iconav-nav-label visible-xs-block">@mdo</small>
+          </a>
+        </li> -->
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+      {% block main_container %} {% endblock %}
+  </div>
+</div>
+  <script src="{% static "subjects/assets/js/jquery.min.js" %}"></script>
+  <script src="{% static "subjects/assets/js/chart.js" %}"></script>
+  <script src="{% static "subjects/assets/js/tablesorter.min.js" %}"></script>
+  <script src="{% static "subjects/assets/js/toolkit.js" %}"></script>
+  <script src="{% static "subjects/assets/js/application.js" %}"></script>
+  <script>
+    // execute/clear BS loaders for docs
+    $(function(){while(window.BS&&window.BS.loader&&window.BS.loader.length){(window.BS.loader.pop())()}})
+  </script>
+
+</body>
+</html>

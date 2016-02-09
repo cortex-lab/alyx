@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
-from datetime import datetime
+from datetime import datetime, timezone
 
 ###############################################################################
 ### Subjects
@@ -26,9 +26,9 @@ class Subject(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nickname = models.CharField(max_length=255, null=True, blank=True)
+    nickname = models.CharField(max_length=255, null=True, blank=True, unique=True)
     species = models.ForeignKey(Species)
-    litter = models.ForeignKey('Litter', null=True)
+    litter = models.ForeignKey('Litter', null=True, blank=True)
     sex = models.CharField(max_length=1,
                            choices=SEXES, default='U')
     strain = models.CharField(max_length=255, null=True, blank=True)
@@ -43,6 +43,13 @@ class Subject(models.Model):
     def alive(self):
         return self.death_date_time is None
     alive.boolean = True
+
+    def age_days(self):
+        if self.alive():
+            age = datetime.now(timezone.utc) - self.birth_date_time
+        else:
+            age = self.death_date_time - self.birth_date_time
+        return age.days
 
     def __str__(self):
         return self.nickname
@@ -85,7 +92,7 @@ class Virus_Injection(Action):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch_id = models.ForeignKey('Virus_Batch') # links to virus_batch document, defined below
+    virus_batch = models.ForeignKey('Virus_Batch') # links to virus_batch document, defined below
     injection_volume = models.FloatField(null=True, blank=True)
     rate_of_injection = models.FloatField(null=True, blank=True)
     injection_type = models.CharField(max_length=1,

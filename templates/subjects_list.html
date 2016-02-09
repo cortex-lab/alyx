@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block main_container %}
+{% if object_list %}
+
+   <div class="dashhead">
+      <div class="dashhead-titles">
+        <h6 class="dashhead-subtitle">Alyx</h6>
+        <h3 class="dashhead-title">{% block title %}Subjects{% endblock %}</h3>
+      </div>
+    </div>
+
+<div class="flextable table-actions">
+  <div class="flextable-item flextable-primary">
+    <div class="btn-toolbar-item input-with-icon">
+      <input type="text" class="form-control input-block" placeholder="Search subjects">
+      <span class="icon icon-magnifying-glass"></span>
+    </div>
+  </div>
+</div>
+
+<div class="table-full">
+  <div class="table-responsive">
+    <table class="table" data-sort="table">
+      <thead>
+        <tr>
+          <th>Nickname</th>
+          <th>Responsible User</th>
+          <th>Strain</th>
+          <th>Genotype</th>
+          <th>Age</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for object in object_list %}
+        <tr>
+          <td><a href="subject/{{ object.nickname }}">{{ object.nickname }}</td>
+          <td>{{ object.responsible_user }}</td>
+          <td>{{ object.strain }}</td>
+          <td>{{ object.genotype }}</td>
+          <td>{{ object.age_days }} days</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="/?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="/?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% else %}
+<hr/>
+<div class="hero">
+    <h1>Whoops!</h1>
+    <h2>No subjects yet!</h2>
+</div>
+{% endif %}
+{% endblock %}

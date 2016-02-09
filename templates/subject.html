@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block main_container %}
+
+{% load bootstrap3 %}
+
+   <div class="dashhead">
+      <div class="dashhead-titles">
+        <h6 class="dashhead-subtitle">Alyx</h6>
+        <h3 class="dashhead-title">{% block title %}{{ object.nickname }}{% endblock %}</h3>
+      </div>
+
+     <div class="dashhead-toolbar">
+        <div class="input-with-icon dashhead-toolbar-item">
+          <input type="text" value="01/01/15 - 01/08/15" class="form-control" data-provide="datepicker">
+          <span class="icon icon-calendar"></span>
+        </div>
+        <span class="dashhead-toolbar-divider hidden-xs"></span>
+        <div class="btn-group dashhead-toolbar-item btn-group-thirds">
+          <button type="button" class="btn btn-primary-outline">Day</button>
+          <button type="button" class="btn btn-primary-outline active">Week</button>
+          <button type="button" class="btn btn-primary-outline">Month</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="nav nav-bordered m-t m-b-0" role="tablist">
+      <li class="active" role="presentation">
+        <a href="#weight" role="tab" data-toggle="tab" aria-controls="weight">Weight</a>
+      </li>
+      <li role="presentation">
+        <a href="#water" role="tab" data-toggle="tab" aria-controls="water">Water</a>
+      </li>
+      <li role="presentation">
+        <a href="#performance" role="tab" data-toggle="tab" aria-controls="performance">Performance</a>
+      </li>
+    </ul>
+
+    <hr class="m-t-0 m-b-lg">
+
+    <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="weight">
+        <div class="ex-line-graphs m-b-md">
+          <canvas
+            class="ex-line-graph"
+            width="600" height="400"
+            data-chart="line"
+            data-scale-line-color="transparent"
+            data-scale-grid-line-color="rgba(255,255,255,.05)"
+            data-scale-font-color="#a2a2a2"
+            data-labels="['','Aug 29','','','Sept 5','','','Sept 12','','','Sept 19','']"
+            data-value="[{data: [3000, 3300, 2512, 2775, 2498, 3512, 2925, 4275, 3507, 3825, 3445, 3985]}]">
+          </canvas>
+        </div>
+        </div>
+
+      <div role="tabpanel" class="tab-pane" id="water">
+        <div class="ex-line-graphs m-b-md">
+          <canvas
+            class="ex-line-graph"
+            width="600" height="400"
+            data-chart="line"
+            data-scale-line-color="transparent"
+            data-scale-grid-line-color="rgba(255,255,255,.05)"
+            data-scale-font-color="#a2a2a2"
+            data-labels="['','Aug 29','','','Sept 5','','','Sept 12','','','Sept 19','']"
+            data-value="[{data: [2500, 3300, 2512, 2775, 2498, 3512, 2925, 4275, 3507, 3825, 3445, 3985]}]">
+          </canvas>
+        </div>
+      </div>
+
+      <div role="tabpanel" class="tab-pane" id="performance">
+        <h1>No performance data.</h1>
+      </div>
+    </div>
+
+<!--     <h3 class="dashhead-title">{% block view.title %}New Post{% endblock %}</h3>
+    <form method="POST" class="post-form">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="save btn btn-default">Save</button>
+    </form> -->
+<p><a href='../../'>Back to list</a></p>
+{% endblock %}
