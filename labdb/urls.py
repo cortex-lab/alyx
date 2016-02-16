@@ -23,6 +23,6 @@ urlpatterns = [
     url(r'^$', views.Overview.as_view(), name='overview'),
     url(r'^list$', views.SubjectsList.as_view(), name='subjectlistview'),
     url(r'^subject/(?P<slug>[-_\w].+)/$', views.SubjectView.as_view(), name='subjectview'),
-    url(r'^post/new/$', views.post_new, name='post_new'),
+    # url(r'^post/new/$', views.post_new, name='post_new'),
     url(r'^admin/', include(admin.site.urls)),
 ]

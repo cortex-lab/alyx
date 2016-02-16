@@ -68,7 +68,7 @@ class Litter(models.Model):
 class Action(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     users = models.ManyToManyField(User, blank=True)
-    subject = models.ForeignKey(Subject)
+    subject = models.ForeignKey(Subject, related_name='actions')
     location = models.CharField(max_length=255, null=True, blank=True)
     narrative = models.TextField(null=True, blank=True)
     start_date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)

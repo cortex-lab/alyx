@@ -51,7 +51,12 @@
             data-value="[{data: [3000, 3300, 2512, 2775, 2498, 3512, 2925, 4275, 3507, 3825, 3445, 3985]}]">
           </canvas>
         </div>
-        </div>
+        <h1>
+          {% for ac in object.actions.all %}
+            {{ ac.start_date_time }}
+          {% endfor %}
+        </h1>
+      </div>
 
       <div role="tabpanel" class="tab-pane" id="water">
         <div class="ex-line-graphs m-b-md">
