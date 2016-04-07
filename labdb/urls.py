@@ -17,12 +17,17 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from subjects import views
 
-admin.site.site_header = 'LabDB'
+admin.site.site_header = 'Alyx'
 
 urlpatterns = [
     url(r'^$', views.Overview.as_view(), name='overview'),
     url(r'^list$', views.SubjectsList.as_view(), name='subjectlistview'),
     url(r'^subject/(?P<slug>[-_\w].+)/$', views.SubjectView.as_view(), name='subjectview'),
-    # url(r'^post/new/$', views.post_new, name='post_new'),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
+    url(r'^api/subjects/$', views.SubjectAPIList.as_view()),
+    url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', views.SubjectAPIDetail.as_view()),
+    url(r'^api/actions/$', views.ActionAPIList.as_view()),
+    url(r'^api/actions/(?P<pk>[-_\w].+)/$', views.ActionAPIDetail.as_view()),
+
 ]

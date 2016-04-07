@@ -6,6 +6,9 @@ from subjects.models import Subject, Action, Weighing
 
 from .forms import SubjectForm
 
+from subjects.serializers import SubjectSerializer, ActionSerializer, WeighingSerializer
+from rest_framework import generics
+
 # Create your views here.
 
 # def post_new(request):
@@ -37,3 +40,28 @@ class SubjectView(DetailView):
 class Overview(ListView):
 	model=Subject
 	template_name='index.html'
+
+class SubjectAPIList(generics.ListCreateAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+
+class SubjectAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    lookup_field='nickname'
+
+class ActionAPIList(generics.ListCreateAPIView):
+    queryset = Action.objects.all()
+    serializer_class = ActionSerializer
+
+class ActionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Action.objects.all()
+    serializer_class = ActionSerializer
+
+class WeighingAPIList(generics.ListCreateAPIView):
+    serializer_class = WeighingSerializer
+
+    def get_queryset(self):
+    	queryset = Weighing.objects.all()
+    	queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
+    	return queryset
