@@ -7,7 +7,7 @@ from .models import Subject, Action, Weighing
 from .forms import SubjectForm
 
 from .serializers import SubjectSerializer, ActionSerializer, WeighingSerializer
-from rest_framework import generics
+from rest_framework import generics, permissions
 
 # Create your views here.
 
@@ -42,23 +42,28 @@ class Overview(ListView):
 	template_name='index.html'
 
 class SubjectAPIList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
 class SubjectAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     lookup_field='nickname'
 
 class ActionAPIList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = Action.objects.all()
     serializer_class = ActionSerializer
 
 class ActionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = Action.objects.all()
     serializer_class = ActionSerializer
 
 class WeighingAPIList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingSerializer
 
     def get_queryset(self):
