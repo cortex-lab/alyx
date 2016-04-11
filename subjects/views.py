@@ -2,11 +2,11 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView, DetailView
 from django.views.generic.list import MultipleObjectMixin
 from django.views.generic.detail import SingleObjectMixin
-from subjects.models import Subject, Action, Weighing
+from .models import Subject, Action, Weighing
 
 from .forms import SubjectForm
 
-from subjects.serializers import SubjectSerializer, ActionSerializer, WeighingSerializer
+from .serializers import SubjectSerializer, ActionSerializer, WeighingSerializer
 from rest_framework import generics
 
 # Create your views here.

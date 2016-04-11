@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from subjects.models import Subject, Action, Weighing
+from .models import Subject, Action, Weighing
 
 class SubjectSerializer(serializers.ModelSerializer):
 
