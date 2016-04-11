@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from subjects import views
+from rest_framework.authtoken import views as av
 
 admin.site.site_header = 'Alyx'
 
@@ -24,6 +25,11 @@ urlpatterns = [
     url(r'^list$', views.SubjectsList.as_view(), name='subjectlistview'),
     url(r'^subject/(?P<slug>[-_\w].+)/$', views.SubjectView.as_view(), name='subjectview'),
     url(r'^admin/', include(admin.site.urls)),
+
+    url(r'^api/auth/', include('rest_framework.urls',
+        namespace='rest_framework')),
+    url(r'^api/auth-token/', av.obtain_auth_token),
+
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
     url(r'^api/subjects/$', views.SubjectAPIList.as_view()),
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', views.SubjectAPIDetail.as_view()),
