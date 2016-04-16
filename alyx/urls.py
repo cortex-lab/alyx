@@ -30,9 +30,29 @@ subject_detail = views.SubjectViewSet.as_view({
     'patch': 'partial_update',
     'delete': 'destroy'
 })
-subject_highlight = views.SubjectViewSet.as_view({
-    'get': 'highlight'
-}, renderer_classes=[renderers.StaticHTMLRenderer])
+
+subject_list = views.SubjectViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+subject_detail = views.SubjectViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+action_list = views.ActionViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+action_detail = views.ActionViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
 user_list = views.UserViewSet.as_view({
     'get': 'list'
 })
@@ -60,9 +80,9 @@ urlpatterns = [
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
 
     url(r'^api/users/$', user_list, name='user-list'),
-    url(r'^api/users/(?P<pk>[0-9]+)/$', user_detail, name='user-detail'),
+    url(r'^api/users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),
 
-    url(r'^api/actions/$', views.ActionAPIList.as_view()),
-    url(r'^api/actions/(?P<pk>[-_\w].+)/$', views.ActionAPIDetail.as_view()),
+    url(r'^api/actions/$', action_list, name='action-list'),
+    url(r'^api/actions/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
 
 ]

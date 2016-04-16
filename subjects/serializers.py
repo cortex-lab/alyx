@@ -32,9 +32,12 @@ class WeighingSerializer(serializers.ModelSerializer):
         slug_field='nickname',
         read_only=True)
 
+    def create(self, validated_data):
+        return Weighing.objects.create(**validated_data)
+
     class Meta:
         model = Weighing
-        fields = ('__all__')
+        fields = ('id', 'users', 'subject', 'start_date_time', 'weight')
 
 
 class UserSerializer(serializers.ModelSerializer):
