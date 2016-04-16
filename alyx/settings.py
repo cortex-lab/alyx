@@ -38,7 +38,7 @@ INSTALLED_APPS = (
     'bootstrap3',
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_framework_swagger'
+    'rest_framework_docs'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -79,6 +79,9 @@ REST_FRAMEWORK = {
     )
 }
 
+REST_FRAMEWORK_DOCS = {
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
@@ -91,8 +94,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

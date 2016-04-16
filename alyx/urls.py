@@ -51,8 +51,8 @@ urlpatterns = [
     url(r'^api/$', views.api_root),
     url(r'^api/auth/', include('rest_framework.urls',
         namespace='rest_framework')),
-    url(r'^api/auth-token$', av.obtain_auth_token),
-    url(r'^api/docs/', include('rest_framework_swagger.urls')),
+    url(r'^api/auth-token/', av.obtain_auth_token),
+    url(r'^api/docs/', include('rest_framework_docs.urls')),
 
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
 
