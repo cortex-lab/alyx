@@ -8,8 +8,16 @@
         <h6 class="dashhead-subtitle">Alyx</h6>
         <h3 class="dashhead-title">{% block title %}{{ object.nickname }}{% endblock %}</h3>
       </div>
+    </div>
 
- <!--    <div class="dashhead-toolbar">
+  <p>
+    <strong>Responsible user</strong>: {{ object.responsible_user }}<br />
+    <strong>Species</strong>: {{ object.species }}<br />
+    <strong>Strain</strong>: {{ object.strain }}<br />
+    <strong>Genotype</strong>: {{ object.genotype }}<br />
+    <strong>Notes</strong>: {{ object.notes }}<br />
+  </p>
+ <!-- <div class="dashhead-toolbar">
         <div class="input-with-icon dashhead-toolbar-item">
           <input type="text" value="01/01/15 - 01/08/15" class="form-control" data-provide="datepicker">
           <span class="icon icon-calendar"></span>
@@ -83,5 +91,5 @@
         {{ form.as_p }}
         <button type="submit" class="save btn btn-default">Save</button>
     </form> -->
-<p><a href='../../'>Back to list</a></p>
+<p><a href='/list'>Back to list</a></p>
 {% endblock %}
