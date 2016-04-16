@@ -6,8 +6,16 @@ from .models import Subject, Action, Weighing
 
 from .forms import SubjectForm
 
-from .serializers import SubjectSerializer, ActionSerializer, WeighingSerializer
-from rest_framework import generics, permissions
+from .serializers import SubjectSerializer, ActionSerializer, WeighingSerializer, UserSerializer
+from rest_framework import generics, permissions, renderers
+from rest_framework.response import Response
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+
+from django.contrib.auth.models import User
+
 
 # Create your views here.
 
@@ -26,6 +34,29 @@ from rest_framework import generics, permissions
 #         form = SubjectForm()
 
 #     return render(request, "subject_edit.html", {'form': form})
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        # 'users': reverse('user-list', request=request, format=format),
+        'subjects': reverse('subject-list', request=request, format=format)
+    })
+
+class SubjectHighlight(generics.GenericAPIView):
+    queryset = Subject.objects.all()
+    renderer_classes = (renderers.StaticHTMLRenderer,)
+
+    def get(self, request, *args, **kwargs):
+        subject = self.get_object()
+        return Response(subject.highlighted)
 
 class SubjectsList(ListView):
 	model=Subject

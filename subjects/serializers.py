@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Subject, Action, Weighing
+from django.contrib.auth.models import User
 
 class SubjectSerializer(serializers.ModelSerializer):
 
@@ -34,3 +35,11 @@ class WeighingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Weighing
         fields = ('__all__')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    subjects = serializers.PrimaryKeyRelatedField(many=True, queryset=Subject.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'snippets')

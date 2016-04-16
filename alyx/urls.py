@@ -28,12 +28,13 @@ urlpatterns = [
 
     url(r'^api/auth/', include('rest_framework.urls',
         namespace='rest_framework')),
-    url(r'^api/auth-token/', av.obtain_auth_token),
+    url(r'^api/auth-token$', av.obtain_auth_token),
 
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
-    url(r'^api/subjects/$', views.SubjectAPIList.as_view()),
+    url(r'^api/subjects/$', views.SubjectAPIList.as_view(), name="subject-list"),
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', views.SubjectAPIDetail.as_view()),
     url(r'^api/actions/$', views.ActionAPIList.as_view()),
     url(r'^api/actions/(?P<pk>[-_\w].+)/$', views.ActionAPIDetail.as_view()),
+    url(r'^api/$', views.api_root),
 
 ]
