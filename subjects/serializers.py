@@ -38,8 +38,8 @@ class WeighingSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    subjects = serializers.PrimaryKeyRelatedField(many=True, queryset=Subject.objects.all())
+    subjects_responsible = serializers.SlugRelatedField(many=True, queryset=Subject.objects.all(), slug_field='nickname')
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'snippets')
+        fields = ('id', 'username', 'subjects_responsible')

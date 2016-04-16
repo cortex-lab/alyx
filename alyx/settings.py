@@ -37,7 +37,8 @@ INSTALLED_APPS = (
     'subjects',
     'bootstrap3',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'rest_framework_swagger'
 )
 
 MIDDLEWARE_CLASSES = (
