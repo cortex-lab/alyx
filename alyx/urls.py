@@ -17,6 +17,28 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from subjects import views
 from rest_framework.authtoken import views as av
+from rest_framework import renderers
+from subjects.views import SubjectViewSet, UserViewSet, api_root
+
+subject_list = views.SubjectViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+subject_detail = views.SubjectViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+subject_highlight = views.SubjectViewSet.as_view({
+    'get': 'highlight'
+}, renderer_classes=[renderers.StaticHTMLRenderer])
+user_list = views.UserViewSet.as_view({
+    'get': 'list'
+})
+user_detail = views.UserViewSet.as_view({
+    'get': 'retrieve'
+})
 
 admin.site.site_header = 'Alyx'
 
@@ -26,15 +48,21 @@ urlpatterns = [
     url(r'^subject/(?P<slug>[-_\w].+)/$', views.SubjectView.as_view(), name='subjectview'),
     url(r'^admin/', include(admin.site.urls)),
 
+    url(r'^api/$', views.api_root),
     url(r'^api/auth/', include('rest_framework.urls',
         namespace='rest_framework')),
     url(r'^api/auth-token$', av.obtain_auth_token),
 
     url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
-    url(r'^api/subjects/$', views.SubjectAPIList.as_view(), name="subject-list"),
-    url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', views.SubjectAPIDetail.as_view()),
+
+    url(r'^api/subjects/$', subject_list, name="subject-list"),
+    url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
+    url(r'^api/subjects/(?P<nickname>[-_\w].+)/highlight/$', subject_highlight, name="subject-detail"),
+
+    url(r'^users/$', user_list, name='user-list'),
+    url(r'^users/(?P<pk>[0-9]+)/$', user_detail, name='user-detail'),
+
     url(r'^api/actions/$', views.ActionAPIList.as_view()),
     url(r'^api/actions/(?P<pk>[-_\w].+)/$', views.ActionAPIDetail.as_view()),
-    url(r'^api/$', views.api_root),
 
 ]
