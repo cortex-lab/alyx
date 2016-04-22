@@ -31,7 +31,7 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.exclude(death_date_time=None)
 
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ['nickname', 'birth_date_time', 'responsible_user',
+    list_display = ['nickname', 'birth_date', 'responsible_user',
                     'strain', 'genotype', 'sex', 'alive']
     search_fields = ['nickname', 'responsible_user__first_name',
                      'responsible_user__last_name', 'responsible_user__username',
@@ -46,6 +46,7 @@ class SpeciesAdmin(admin.ModelAdmin):
 
     list_display = ['binomial', 'display_name']
     readonly_fields = []
+
 
 class LitterAdmin(admin.ModelAdmin):
     list_display = ['mother', 'father']
