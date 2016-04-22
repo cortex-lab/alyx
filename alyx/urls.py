@@ -19,10 +19,13 @@ from rest_framework.authtoken import views as av
 from rest_framework import renderers
 
 from subjects import views as subjects_views
-from subjects.views import SubjectViewSet, UserViewSet, api_root
+from subjects.views import SubjectViewSet
 
 from actions import views as actions_views
 from actions.views import ActionViewSet
+
+from misc import views as misc_views
+from misc.views import UserViewSet, api_root
 
 subject_list = subjects_views.SubjectViewSet.as_view({
     'get': 'list',
@@ -46,17 +49,17 @@ action_detail = actions_views.ActionViewSet.as_view({
     'delete': 'destroy'
 })
 
-user_list = subjects_views.UserViewSet.as_view({
+user_list = misc_views.UserViewSet.as_view({
     'get': 'list'
 })
-user_detail = subjects_views.UserViewSet.as_view({
+user_detail = misc_views.UserViewSet.as_view({
     'get': 'retrieve'
 })
 
 admin.site.site_header = 'Alyx'
 
 urlpatterns = [
-    url(r'^$', subjects_views.api_root),
+    url(r'^$', misc_views.api_root),
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token/', av.obtain_auth_token),
 
