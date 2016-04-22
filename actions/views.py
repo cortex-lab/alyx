@@ -15,16 +15,6 @@ class ActionViewSet(viewsets.ModelViewSet):
     serializer_class = ActionSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-class ActionAPIList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-
-class ActionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-
 class WeighingAPIList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingSerializer
