@@ -4,19 +4,20 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from datetime import datetime, timezone
 from subjects.models import Subject
+from equipment.models import Location, WeighingScale
 
 class Action(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     users = models.ManyToManyField(User, blank=True)
     subject = models.ForeignKey(Subject, related_name='actions')
-    location = models.CharField(max_length=255, null=True, blank=True)
+    location = models.ForeignKey(Location, null=True, blank=True)
     narrative = models.TextField(null=True, blank=True)
     start_date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
     end_date_time = models.DateTimeField(null=True, blank=True)
     tags = ArrayField(models.CharField(max_length=255), size=30,
                       null=True,
                       blank=True)
-    JSON = JSONField(null=True, blank=True)
+    json = JSONField(null=True, blank=True)
 
 
 class Virus_Batch(models.Model):
@@ -32,7 +33,7 @@ class Virus_Injection(Action):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey('Virus_Batch') # links to virus_batch document, defined below
+    virus_batch = models.ForeignKey('Virus_Batch')
     injection_volume = models.FloatField(null=True, blank=True)
     rate_of_injection = models.FloatField(null=True, blank=True)
     injection_type = models.CharField(max_length=1,
@@ -41,6 +42,7 @@ class Virus_Injection(Action):
 
 class Weighing(Action):
     weight = models.FloatField()
+    weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True)
 
 class Note(Action):
     pass

@@ -41,7 +41,7 @@ class Genotype(models.Model):
 
 class Source(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    descriptive_name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
