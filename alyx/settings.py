@@ -34,11 +34,12 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'subjects',
     'bootstrap3',
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_framework_docs'
+    'rest_framework_docs',
+    'subjects',
+    'actions'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -77,9 +78,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     )
-}
-
-REST_FRAMEWORK_DOCS = {
 }
 
 # Internationalization

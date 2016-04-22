@@ -15,74 +15,62 @@ Including another URLconf
 """
 from django.conf.urls import include, url
 from django.contrib import admin
-from subjects import views
 from rest_framework.authtoken import views as av
 from rest_framework import renderers
+
+from subjects import views as subjects_views
 from subjects.views import SubjectViewSet, UserViewSet, api_root
 
-subject_list = views.SubjectViewSet.as_view({
+from actions import views as actions_views
+from actions.views import ActionViewSet
+
+subject_list = subjects_views.SubjectViewSet.as_view({
     'get': 'list',
     'post': 'create'
 })
-subject_detail = views.SubjectViewSet.as_view({
+subject_detail = subjects_views.SubjectViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
     'delete': 'destroy'
 })
 
-subject_list = views.SubjectViewSet.as_view({
+action_list = actions_views.ActionViewSet.as_view({
     'get': 'list',
     'post': 'create'
 })
-subject_detail = views.SubjectViewSet.as_view({
+action_detail = actions_views.ActionViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
     'delete': 'destroy'
 })
 
-action_list = views.ActionViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
-action_detail = views.ActionViewSet.as_view({
-    'get': 'retrieve',
-    'put': 'update',
-    'patch': 'partial_update',
-    'delete': 'destroy'
-})
-
-user_list = views.UserViewSet.as_view({
+user_list = subjects_views.UserViewSet.as_view({
     'get': 'list'
 })
-user_detail = views.UserViewSet.as_view({
+user_detail = subjects_views.UserViewSet.as_view({
     'get': 'retrieve'
 })
 
 admin.site.site_header = 'Alyx'
 
 urlpatterns = [
-    url(r'^$', views.Overview.as_view(), name='overview'),
-    url(r'^list$', views.SubjectsList.as_view(), name='subjectlistview'),
-    url(r'^subject/(?P<slug>[-_\w].+)/$', views.SubjectView.as_view(), name='subjectview'),
+    url(r'^$', subjects_views.api_root),
+    url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^auth-token/', av.obtain_auth_token),
+
+    url(r'^subjects/(?P<nickname>[-_\w].+)/weighings/$', actions_views.WeighingAPIList.as_view()),
+
+    url(r'^subjects/$', subject_list, name="subject-list"),
+    url(r'^subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
+
+    url(r'^users/$', user_list, name='user-list'),
+    url(r'^users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),
+
+    url(r'^actions/$', action_list, name='action-list'),
+    url(r'^actions/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
+
     url(r'^admin/', include(admin.site.urls)),
-
-    url(r'^api/$', views.api_root),
-    url(r'^api/auth/', include('rest_framework.urls',
-        namespace='rest_framework')),
-    url(r'^api/auth-token/', av.obtain_auth_token),
-    url(r'^api/docs/', include('rest_framework_docs.urls')),
-
-    url(r'^api/subjects/(?P<nickname>[-_\w].+)/weighings/$', views.WeighingAPIList.as_view()),
-
-    url(r'^api/subjects/$', subject_list, name="subject-list"),
-    url(r'^api/subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
-
-    url(r'^api/users/$', user_list, name='user-list'),
-    url(r'^api/users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),
-
-    url(r'^api/actions/$', action_list, name='action-list'),
-    url(r'^api/actions/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
-
+    url(r'^docs/', include('rest_framework_docs.urls')),
 ]

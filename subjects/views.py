@@ -2,10 +2,10 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView, DetailView
 from django.views.generic.list import MultipleObjectMixin
 from django.views.generic.detail import SingleObjectMixin
-from .models import Subject, Action, Weighing
+from .models import *
 from django.contrib.auth.models import User
 
-from .serializers import SubjectSerializer, ActionSerializer, WeighingSerializer, UserSerializer
+from .serializers import SubjectSerializer, UserSerializer
 
 from rest_framework import generics, permissions, renderers, viewsets
 from rest_framework.response import Response
@@ -43,58 +43,3 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field='nickname'
-
-class ActionViewSet(viewsets.ModelViewSet):
-    """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` actions.
-    This API will probably change.
-    """
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-class ActionAPIList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-
-class ActionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
-
-class WeighingAPIList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = WeighingSerializer
-
-    def get_queryset(self):
-    	queryset = Weighing.objects.all()
-    	queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
-    	return queryset
-
-    def perform_create(self, serializer):
-        # Lookup UUID of subject's nickname
-        subject = Subject.objects.get(nickname=self.kwargs['nickname'])
-        serializer.save(subject_id=subject.id)
-
-#
-#  Main site views
-#
-
-class Overview(ListView):
-    model=Subject
-    template_name='index.html'
-
-class SubjectsList(ListView):
-    model=Subject
-    template_name='subjects_list.html'
-    title='Subjects'
-
-class SubjectView(DetailView):
-    model=Subject
-    template_name='subject.html'
-    slug_field='nickname'
-
-class Overview(ListView):
-    model=Subject
-    template_name='index.html'
