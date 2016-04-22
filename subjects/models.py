@@ -17,8 +17,8 @@ class Species(models.Model):
 class Litter(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255)
-    mother = models.ForeignKey("Subject", null=True, blank=True, related_name="litter_mother")
-    father = models.ForeignKey("Subject", null=True, blank=True, related_name="litter_father")
+    mother = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_mother")
+    father = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_father")
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 

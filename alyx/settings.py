@@ -38,8 +38,11 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_docs',
+    'equipment',
     'subjects',
-    'actions'
+    'actions',
+    'recordings',
+    'misc',
 )
 
 MIDDLEWARE_CLASSES = (
