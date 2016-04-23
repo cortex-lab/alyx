@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 
-class Location(models.Model):
+class ExperimentLocation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
 
@@ -18,7 +18,7 @@ class Cage(models.Model):
 
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	type = models.CharField(max_length=1, choices=CAGE_TYPES, default='R')
-	location = models.ForeignKey('Location')
+	location = models.ForeignKey('ExperimentLocation')
 
 class EquipmentManufacturer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -42,7 +42,7 @@ class EquipmentModel(models.Model):
 
 class Appliance(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	location = models.ForeignKey('Location', null=True, blank=True)
+	location = models.ForeignKey('ExperimentLocation', null=True, blank=True)
 	equipment_model = models.ForeignKey('EquipmentModel')
 	serial = models.CharField(max_length=255, null=True, blank=True)
 	notes = models.TextField(null=True, blank=True)

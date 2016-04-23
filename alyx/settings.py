@@ -41,7 +41,7 @@ INSTALLED_APPS = (
     'equipment',
     'subjects',
     'actions',
-    'recordings',
+    'data',
     'misc',
 )
 
