@@ -44,12 +44,17 @@ class Weighing(Action):
     weight = models.FloatField()
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True)
 
-class Note(Action):
-    pass
-
 class Surgery(Action):
     procedure = models.CharField(max_length=255, null=True, blank=True)
     brain_location = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "surgeries"
+
+class Note(Action):
+    pass
+
+class Experiment(Action):
+	is_training = models.BooleanField()
+	pass
+
