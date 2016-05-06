@@ -74,6 +74,7 @@ urlpatterns = [
     url(r'^actions/$', action_list, name='action-list'),
     url(r'^actions/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
 
+    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^docs/', include('rest_framework_docs.urls')),
 ]

@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
+from polymorphic.models import PolymorphicModel
+
 from django.contrib.postgres.fields import JSONField
 
 class ExperimentLocation(models.Model):
@@ -40,7 +42,7 @@ class EquipmentModel(models.Model):
 ### Appliances
 ###############################################################################
 
-class Appliance(models.Model):
+class Appliance(PolymorphicModel):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	location = models.ForeignKey('ExperimentLocation', null=True, blank=True)
 	equipment_model = models.ForeignKey('EquipmentModel')

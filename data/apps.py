@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class RecordingsConfig(AppConfig):
+class DataConfig(AppConfig):
     name = 'data'

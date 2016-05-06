@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
+from polymorphic.models import PolymorphicModel
 from django.contrib.postgres.fields import JSONField
+
 from actions.models import Experiment
 from misc.models import CoordinateTransformation, BrainLocation
 
@@ -16,15 +18,22 @@ class PhysicalArchive(models.Model):
 ### Data locations (local, server, archive)
 ###############################################################################
 
-class DataRepository(models.Model):
+class DataRepository(PolymorphicModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
     # TODO: type introspection for location type
 
     def get_valid_name(experiment_id=None):
         """TODO: Returns a default filepath for a new experiment. experiment_id
         must exist and be linked to a valid Subject."""
         pass
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "data repositories"
 
 class LocalDataRepository(DataRepository):
     LOCATION_TYPES = (
@@ -34,6 +43,9 @@ class LocalDataRepository(DataRepository):
 
     hostname = models.CharField(max_length=1000, null=True, blank=True) # e.g. "NSLaptop"
     path = models.CharField(max_length=1000, null=True, blank=True) # e.g. 'D:/Data/acquisition/'
+
+    class Meta:
+        verbose_name_plural = "local data repositories"
 
 class NetworkDataRepository(DataRepository):
     LOCATION_TYPES = (
@@ -57,6 +69,9 @@ class NetworkDataRepository(DataRepository):
         """
         pass
 
+    class Meta:
+        verbose_name_plural = "network data repositories"
+
 class ArchiveDataRepository(DataRepository):
     LOCATION_TYPES = (
         ('AF', 'Archive Fast (HDD)'),
@@ -68,6 +83,9 @@ class ArchiveDataRepository(DataRepository):
     # The tape may contain items other than tracked FileRecords. So we keep
     # track of the entire contents here to save iterating over the tape.
     tape_contents = JSONField(null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "archive data repositories"
 
 ###############################################################################
 ### Files and filetypes
@@ -97,15 +115,3 @@ class BaseFileCollection(models.Model):
         in order of speed. Return local records only where hostname matches input."""
         pass
 
-class Movie(BaseFileCollection):
-    pass
-
-class BrainImage(BaseFileCollection):
-    pass
-
-class TimeSeries(BaseFileCollection):
-    pass
-
-class File(BaseFileCollection):
-    """A FileCollection not covered by those above"""
-    pass

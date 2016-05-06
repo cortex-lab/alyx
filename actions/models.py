@@ -20,7 +20,7 @@ class Action(models.Model):
     json = JSONField(null=True, blank=True)
 
 
-class Virus_Batch(models.Model):
+class VirusBatch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     virus_type =  models.CharField(max_length=255, null=True, blank=True) # upenn ID or equivalent
     description = models.CharField(max_length=255, null=True, blank=True)
@@ -28,12 +28,15 @@ class Virus_Batch(models.Model):
     date_time_made = models.DateTimeField(null=True, blank=True, default=datetime.now)
     nominal_titer = models.FloatField(null=True, blank=True)
 
-class Virus_Injection(Action):
+    class Meta:
+        verbose_name_plural = "virus batches"
+
+class VirusInjection(Action):
     INJECTION_TYPES = (
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey('Virus_Batch')
+    virus_batch = models.ForeignKey('VirusBatch')
     injection_volume = models.FloatField(null=True, blank=True)
     rate_of_injection = models.FloatField(null=True, blank=True)
     injection_type = models.CharField(max_length=1,

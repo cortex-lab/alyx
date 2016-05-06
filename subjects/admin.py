@@ -54,3 +54,7 @@ class LitterAdmin(admin.ModelAdmin):
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
+
+admin.site.register(Genotype)
+admin.site.register(Strain)
+admin.site.register(Source)
