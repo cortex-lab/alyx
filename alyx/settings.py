@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'actions',
     'data',
     'misc',
+    'behavior'
 )
 
 MIDDLEWARE_CLASSES = (

@@ -95,13 +95,13 @@ class FileRecord(models.Model):
     """A single file on disk or tape."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     data_repository = models.ForeignKey('DataRepository')
-    collection = models.ForeignKey('BaseFileCollection')
+    collection = models.ForeignKey('FileCollection')
 
     # sequential ID in tape archive, if applicable. Can contain multiple records.
     tape_sequential_number = models.IntegerField(null=True, blank=True)
 
 
-class BaseFileCollection(models.Model):
+class FileCollection(models.Model):
     """Collection of FileRecords corresponding to a single unique file."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     md5 = models.CharField(max_length=255, null=True, blank=True) # MD5 hash of file
