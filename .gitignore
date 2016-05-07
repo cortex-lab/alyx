@@ -2,3 +2,7 @@
 .DS_Store
 *~
 alyx/settings_secret.py
+
+docs/_build
+docs/_templates
+docs/_static

@@ -28,4 +28,5 @@ class DataRepositoryParentAdmin(PolymorphicParentModelAdmin):
 admin.site.register(DataRepository, DataRepositoryParentAdmin)
 admin.site.register(PhysicalArchive)
 admin.site.register(FileRecord)
-admin.site.register(FileCollection)
+admin.site.register(LogicalFile)
+admin.site.register(Fileset)

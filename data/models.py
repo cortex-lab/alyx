@@ -19,7 +19,10 @@ class PhysicalArchive(models.Model):
 ###############################################################################
 
 class DataRepository(PolymorphicModel):
-
+    """
+    Base class for a file storage device; this could be a local hard-drive on a laptop,
+    a network file location, or an offline archive tape / Blu-Ray disc / hard-drive.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     # TODO: type introspection for location type
@@ -36,36 +39,36 @@ class DataRepository(PolymorphicModel):
         verbose_name_plural = "data repositories"
 
 class LocalDataRepository(DataRepository):
-    LOCATION_TYPES = (
-        ('LF', 'Local Fast (SSD)'),
-        ('LS', 'Local Slow (HDD)'),
-    )
-
-    hostname = models.CharField(max_length=1000, null=True, blank=True) # e.g. "NSLaptop"
-    path = models.CharField(max_length=1000, null=True, blank=True) # e.g. 'D:/Data/acquisition/'
+    """
+    A local data repository on a single computer.
+    """
+    hostname = models.CharField(max_length=1000, null=True, blank=True,
+                                help_text="Hostname must be unique. e.g. 'NSLaptop'")
+    path = models.CharField(max_length=1000, null=True, blank=True,
+                            help_text="e.g. 'D:/Data/acquisition/'")
 
     class Meta:
         verbose_name_plural = "local data repositories"
 
 class NetworkDataRepository(DataRepository):
-    LOCATION_TYPES = (
-        ('NF', 'Network Fast (SSD)'),
-        ('NS', 'Network Slow (HDD)'),
-    )
-
-    # These will automatically be turned into browsable paths depending on the client and protocol.
-    fqdn = models.CharField(max_length=1000, null=True, blank=True) # e.g. 1.2.3.4 or foxtrot.neuro.ucl.ac.uk
-    share = models.CharField(max_length=1000, null=True, blank=True) # e.g. 'Data'
-    path = models.CharField(max_length=1000, null=True, blank=True) # e.g. '/subjects/'
-    nfs_supported = models.BooleanField() # NFS (Linux)
-    smb_supported = models.BooleanField() # SMB (Windows)
-    afp_supported = models.BooleanField() # AFP (Linux)
+    """
+    A network data repository, accessible over several different protocols.
+    This will be be turned into a browsable path depending on the client and protocol.
+    """
+    fqdn = models.CharField(max_length=1000, null=True, blank=True,
+                            help_text="Fully Qualified Domain Name or IP, e.g. 1.2.3.4 or foxtrot.neuro.ucl.ac.uk")
+    share = models.CharField(max_length=1000, null=True, blank=True, help_text="Share name, e.g. 'Data'")
+    path = models.CharField(max_length=1000, null=True, blank=True, help_text="Path name after share, e.g. '/subjects/'")
+    nfs_supported = models.BooleanField(help_text="NFS supported (Linux)")
+    smb_supported = models.BooleanField(help_text="SMB supported (Windows)")
+    afp_supported = models.BooleanField(help_text="AFP supported (Linux)")
 
     def get_URIs(supported_protocols=None):
         """
-        TODO: locator return function for all declared protocols e.g.
-        (['\\foxtrot.neuro.ucl.ac.uk\Data\subjects\', 'smb'],
-         ['afp://foxtrot.neuro.ucl.ac.uk/Data/subjects', 'afp'])
+        TODO: locator return function for all declared protocols e.g.::
+
+            (['\\foxtrot.neuro.ucl.ac.uk\Data\subjects\', 'smb'],
+             ['afp://foxtrot.neuro.ucl.ac.uk/Data/subjects', 'afp'])
         """
         pass
 
@@ -73,19 +76,22 @@ class NetworkDataRepository(DataRepository):
         verbose_name_plural = "network data repositories"
 
 class ArchiveDataRepository(DataRepository):
-    LOCATION_TYPES = (
-        ('AF', 'Archive Fast (HDD)'),
-        ('AS', 'Archive Slow (tape)'),
-    )
+    """
+    An archive, offline or near-line, data repository. This could be a hard-drive
+    in a cupboard, or tape or DVD/CD/Blu-Ray.
+    If a tape, the tape may contain items other than tracked FileRecords. So we keep
+    track of the entire contents here to save iterating over the tape.
+    """
+
     physical_archive = models.ForeignKey('PhysicalArchive')
     identifier = models.CharField(max_length=255, null=True, blank=True)
-
-    # The tape may contain items other than tracked FileRecords. So we keep
-    # track of the entire contents here to save iterating over the tape.
-    tape_contents = JSONField(null=True, blank=True)
+    tape_contents = JSONField(null=True, blank=True, help_text="Tape contents, including untracked files.")
 
     class Meta:
         verbose_name_plural = "archive data repositories"
+
+    def __str__(self):
+        return identifier
 
 ###############################################################################
 ### Files and filetypes
@@ -95,17 +101,21 @@ class FileRecord(models.Model):
     """A single file on disk or tape."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     data_repository = models.ForeignKey('DataRepository')
-    collection = models.ForeignKey('FileCollection')
-
-    # sequential ID in tape archive, if applicable. Can contain multiple records.
-    tape_sequential_number = models.IntegerField(null=True, blank=True)
+    file = models.ForeignKey('LogicalFile')
 
 
-class FileCollection(models.Model):
-    """Collection of FileRecords corresponding to a single unique file."""
+    tape_sequential_number = models.IntegerField(null=True, blank=True,
+                                                 help_text="sequential ID in tape archive, if applicable. Can contain multiple records.")
+
+
+class LogicalFile(models.Model):
+    """A single file or folder. Can be stored in several places (several FileRecords)
+    which all share the same filename and hash."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    md5 = models.CharField(max_length=255, null=True, blank=True) # MD5 hash of file
+    md5 = models.CharField(max_length=255, null=True, blank=True, help_text="MD5 hash, if a file")
     filename = models.CharField(max_length=1000)
+    is_folder = models.BooleanField(help_text="True if the LogicalFile is a folder, not a single file.")
+    fileset = models.ForeignKey('Fileset', help_text="The Fileset that this file belongs to.")
 
     def __str__(self):
         return filename
@@ -115,3 +125,10 @@ class FileCollection(models.Model):
         in order of speed. Return local records only where hostname matches input."""
         pass
 
+class Fileset(models.Model):
+    """Collection of LogicalFiles (files or folders) grouped together."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return name
