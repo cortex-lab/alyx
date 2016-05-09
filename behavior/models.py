@@ -18,7 +18,7 @@ class PupilTracking(BaseExperimentalData):
                                  help_text="Link to raw data")
     eye = models.CharField(max_length=1,
                            choices=EYES,
-                           default='L', blank=True, null=True,
+                           blank=True, null=True, # I suggest we don't have a default for this
                            help_text="Which eye was tracked; left or right")
     description = models.TextField(blank=True, null=True,
                                    help_text="misc. narrative e.g. (“unit: mm” or “unknown scale factor”)")
@@ -79,7 +79,9 @@ class OptogeneticStimulus(BaseExperimentalData):
     """
     This is a special type of interval series, to deal with optogenetic stimuli.
     """
-    apparatus = models.ForeignKey(Appliance, null=True, blank=True, help_text="e.g. Laser that was used for stimulation. TODO: should this be a ManyToManyField? Also what is this class? It should subclass Appliance rather than call it directly")
+    apparatus = models.ForeignKey(Appliance, null=True, blank=True, help_text="e.g. Laser that was used for stimulation.")
+	#TODO: should this be a ManyToManyField? Also what is this class? It should subclass Appliance rather than call it directly")
+	# This is a good example of how there will be new types of appliance all the time. I have added a new one LightSource - but probably people will want to reference Appliance directly sometimes
     light_delivery = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. “fiber pointed at craniotomy”")
     description = models.CharField(max_length=255, blank=True, null=True, help_text="e.g. “square pulses”, “ramps”")
     wavelength = models.FloatField(null=True, blank=True, help_text="in nm")
@@ -93,10 +95,10 @@ class OptogeneticStimulus(BaseExperimentalData):
     power_calculation_method = models.CharField(max_length=255, blank=True, null=True,
                                                 help_text="TODO: normalize? measured, nominal")
     waveform = models.ForeignKey(Dataset, blank=True, null=True, related_name="optogenetic_stimulus_waveform",
-                                       help_text="link to a file giving the power of each stimulus. TODO: power? waveform?")
-
+                                       help_text="link to a file giving the waveform of each stimulus.?")
 
 class Pharmacology(BaseExperimentalData):
+# Let's not worry about this now! we aren't going to use it in our lab
     """
     Describes a drug application during the experiment.
     """

@@ -5,39 +5,34 @@ from polymorphic.models import PolymorphicModel
 
 from django.contrib.postgres.fields import JSONField
 
-class ExperimentLocation(models.Model):
-    """
-    The physical location at which an experiment is performed or appliances are located.
-    This could be a room, a bench, a rig, etc.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
 
-    def __str__(self):
-        return self.name
 
-class Cage(models.Model):
-    CAGE_TYPES = (
-        ('R', 'Regular'),
-        ('I', 'IVC'),
-    )
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    type = models.CharField(max_length=1, choices=CAGE_TYPES, default='R', help_text=
-                            "Is this an IVC or regular cage?")
-    location = models.ForeignKey('ExperimentLocation')
-
-class EquipmentManufacturer(models.Model):
-    """
-    An equipment manufacturer, i.e. "NeuroNexus"
+class Supplier(PolymorphicModel)	
+	"""
+    A company or individual that provides lab equipment or supplies. 
+	This is a base class, to be accessed by subclasses
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, help_text="i.e. 'NeuroNexus'")
     notes = models.TextField(null=True, blank=True)
-
-    def __str__(self):
+    
+	def __str__(self):
         return self.name
-
+		
+class EquipmentManufacturer(Supplier):
+# maybe this could be a subclass of a more general supplier field? 
+    """
+    An equipment manufacturer, i.e. "NeuroNexus"
+    """
+	pass
+	
+class VirusSource(Supplier):
+# maybe this could be a subclass of a more general supplier field? 
+    """
+    An equipment manufacturer, i.e. "NeuroNexus"
+    """
+	pass
+	
 class EquipmentModel(models.Model):
     """
     An equipment model. i.e. "BrainScanner 4X"
@@ -48,17 +43,40 @@ class EquipmentModel(models.Model):
 
     def __str__(self):
         return self.name
+		
+class VirusBatch(models.Model):
+# i took out "provided by a supplier" because we make these ourselves (they are diluated from what the supplier supplies)    
+# might also need a location field (e.g. which fridge it is in) - let's ask Charu
+	"""
+    A virus batch
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    virus_type =  models.CharField(max_length=255, null=True, blank=True,
+                                   help_text="UPenn ID or equivalent")
+    description = models.CharField(max_length=255, null=True, blank=True)
+    virus_source = models.ForeignKey('VirusSource', null=True, blank=True
+                                    help_text="Who supplied the virus")
+    date_time_made = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    nominal_titer = models.FloatField(null=True, blank=True, help_text="TODO: What unit?") 
+	# let's ask Charu about what unit.
+
+    class Meta:
+        verbose_name_plural = "virus batches"
 
 ###############################################################################
 ### Appliances
 ###############################################################################
 
 class Appliance(PolymorphicModel):
+	# If someone buys a new piece of equipment that doesn't belong in any of the subclasses, can they just add it 
+	# as an Appliance, with no subclass?
+	#
+	# also, when you have two of one appliance, do they both get entries here?
     """
     An appliance, provided by a specific manufacturer. This class is only accessed through its subclasses.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    location = models.ForeignKey('ExperimentLocation', null=True, blank=True,
+    location = models.ForeignKey('LabLocation', null=True, blank=True,
                                  help_text="The physical location of the appliance.")
     equipment_model = models.ForeignKey('EquipmentModel')
     serial = models.CharField(max_length=255, null=True, blank=True,
@@ -80,6 +98,15 @@ class WeighingScale(Appliance):
     """
     A weighing scale.
     """
+    pass
+	
+class LightSource(Appliance):
+    """
+    A light source (e.g. for use in optogenetics.
+    """
+	# TYPE = 'Laser' or 'LED'
+	# wavelength : numeric
+	# max_power : numeric
     pass
 
 class Amplifier(Appliance):
@@ -104,5 +131,6 @@ class ExtracellularProbe(Appliance):
     """
     An extracellular probe used in extracellular electrophysiology.
     """
-    prb = JSONField(null=True, blank=True, help_text="The PRB file describing the probe connectivity and geometry, in JSON")
-
+    prb = JSONField(null=True, blank=True, help_text=
+		"A JSON string describing the probe connectivity and geometry. For details, see https://github.com/klusta-team/kwiklib/wiki/Kwik-format#prb")
+	# does this mean a pointer to a .prb file on disk, or a copy of it in the database? (I guess the latter)

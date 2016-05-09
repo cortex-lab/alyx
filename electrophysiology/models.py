@@ -28,9 +28,11 @@ class ExtracellularRecording(BaseExperimentalData):
     filter_info = models.CharField(max_length=255, null=True, blank=True,
                                    help_text="Details of hardware corner frequencies, filter type, order. TODO: make this more structured?")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. TODO: not DateTimeField? / TimeDifference")
+                                   help_text="in seconds relative to experiment start.") 
+#								   TODO: not DateTimeField? / TimeDifference")
+# the idea is that the experiment has a single DateTime when it started, then all times are in seconds relative to this. TimeDifference could work also, but why not just float?
     end_time = models.FloatField(null=True, blank=True,
-                                 help_text="Equals start time if single application. TODO: should this be an offset? Or DateTimeField? Or TimeDifference?")
+                                 help_text="in seconds relative to experiment start")
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
                                       help_text="Whether the recording is chronic or acute")
     ground_electrode = models.CharField(max_length=255, null=True, blank=True,
@@ -40,15 +42,23 @@ class ExtracellularRecording(BaseExperimentalData):
     impedances = models.ForeignKey(Dataset, blank=True, null=True, related_name="extracellular_impedances",
                                    help_text="binary array for measured impedance of each channel (ohms).")
     amplifier = models.ForeignKey(Amplifier, blank=True, null=True,
-                                  help_text="The amplifier used in this recording. TODO: multiple amplifiers?")
+                                  help_text="The amplifier used in this recording.")
+								   # TODO: multiple amplifiers? 
+								   # they would have their own ExtracellularRecording objects in that case.
     daq_description = models.ForeignKey(DAQ, blank=True, null=True,
-                                        help_text="The DAQ used. TODO: should this be a separate class?")
+                                        help_text="The DAQ used.")
+										#  TODO: should this be a separate class?
+										# in the long run maybe, but let's keep things simpler
     electrode_depth = models.FloatField(null=True, blank=True,
-                                 help_text="estimated depth of electrode tip from brain surface. TODO: recording tip? or actual tip?")
+                                 help_text="estimated depth of electrode tip from brain surface. ")
+								 # TODO: recording tip? or actual tip?
+								 # actual tip: because you know how far you advanced that.
     probe_location = models.ForeignKey(CoordinateTransformation, null=True, blank=True,
                                        help_text="from probe tip")
     extracellular_probe = models.ForeignKey(ExtracellularProbe, null=True, blank=True,
-                                           help_text="Which probe model was used. TODO: What if more than one used simultaneously?")
+                                           help_text="Which probe model was used.")
+										    # TODO: What if more than one used simultaneously?
+											# ugh, this is a problem. not sure what to do if they use multiple probes, recorded together.
 
 
 class SpikeSorting(BaseExperimentalData):
@@ -70,7 +80,9 @@ class SpikeSorting(BaseExperimentalData):
 
     """
     spike_times = models.ForeignKey(Dataset, blank=True, null=True, related_name="spike_sorting_spike_times",
-                                    help_text="time of each spike relative to experiment start in seconds. TODO: experiment or recording start?")
+                                    help_text="time of each spike relative to experiment start in seconds.")
+									# TODO: experiment or recording start?
+									# Experiment start. Everything should be relative to that.
     cluster_assignments = models.ForeignKey(Dataset, blank=True, null=True, related_name="spike_sorting_cluster_assignments",
                                     help_text="cluster assignment of each spike")
     mean_unfiltered_waveform = models.ForeignKey(Dataset, blank=True, null=True, related_name="spike_sorting_unfiltered_waveforms",
@@ -106,21 +118,26 @@ class SpikeSortedUnit(BaseExperimentalData):
     channel_group = models.IntegerField(null=True, blank=True,
                                         help_text="which shank this unit came from (an integer not a link)")
     trough_to_peak_width = models.FloatField(null=True, blank=True,
-                                 help_text="ms, computed from unfiltered mean waveform. TODO: which waveform?")
+                                 help_text="ms, computed from unfiltered mean spike waveform.")
     half_width = models.FloatField(null=True, blank=True,
-                                 help_text="ms, half width of negative peak in unfiltered waveform. TODO: which waveform?")
+                                 help_text="ms, half width of negative peak in unfiltered spike waveform.")
     trough_to_peak_amplitude = models.FloatField(null=True, blank=True,
-                                 help_text="µV, from filtered waveform. TODO: which waveform?")
+                                 help_text="µV, from filtered spike waveform.")
+								 # when you say which waveform, do you mean which channel? I guess the peak, but we can leave it unspecified...
     refractory_violation_rate = models.FloatField(null=True, blank=True,
-                                 help_text="fraction of spikes occurring < 2ms. TODO: is 2ms going to be hard-coded?")
+                                 help_text="fraction of spikes occurring < 2ms. ")
+								 # TODO: is 2ms going to be hard-coded?
+								 # i guess... what's the alternative?
     isolation_distance = models.FloatField(null=True, blank=True,
-                                 help_text="TODO: define this? Not better to go in JSON?")
+                                 help_text="A measure of isolation quality")
+								 # Not better to go in JSON? difficult call. I think we should leave it here, because we want quality measures to be prominent
     l_ratio = models.FloatField(null=True, blank=True,
-                                 help_text="TODO: define this?")
+                                 help_text="A measure of isolation quality")
     mean_firing_rate = models.FloatField(null=True, blank=True,
                                  help_text="spikes/s")
     location_center_of_mass = models.FloatField(null=True, blank=True,
                                  help_text="3x1 in estimated stereotaxic coordinates.")
+								 # does this FloatField store 3 numbers of just one?
 
     # human decisions:
     cluster_group = models.CharField(max_length=1, choices=CLUSTER_GROUPS,
@@ -130,9 +147,13 @@ class SpikeSortedUnit(BaseExperimentalData):
     optogenetic_response = models.CharField(max_length=255, null=True, blank=True,
                                             help_text="e.g. “Short latency” (only if applicable)")
     putative_cell_type = models.CharField(max_length=255, null=True, blank=True,
-                                          help_text="e.g. “Sst interneuron”, “PT cell”. TODO: more structured? match with Allen Cell Type nomenclature?")
+                                          help_text="e.g. “Sst interneuron”, “PT cell”. ")
+										  # TODO: more structured? match with Allen Cell Type nomenclature?
+										  # i think that would be premature
     estimated_layer = models.CharField(max_length=255, null=True, blank=True,
-                                       help_text="e.g. “Layer 5b”. TODO: more structured?")
+                                       help_text="e.g. “Layer 5b”. ")
+									   # TODO: more structured?
+									   # again, probably premature
 
 
 class IntracellularRecording(BaseExperimentalData):
@@ -153,7 +174,9 @@ class IntracellularRecording(BaseExperimentalData):
     outer_diameter = models.FloatField(null=True, blank=True,
                                  help_text=" mm – before pulling")
     electrode_solution = models.TextField(null=True, blank=True,
-                                          help_text="Solution details. TODO: standardize")
+                                          help_text="Solution details.")
+										   # TODO: standardize
+										   # that's what the Solutions object would be. but let's not prioritize this now.
 
     # for voltage clamp
     cp_fast = models.FloatField(null=True, blank=True,
@@ -172,6 +195,8 @@ class IntracellularRecording(BaseExperimentalData):
                                  help_text="(%)")
     recorded_current = models.ForeignKey(Dataset, blank=True, null=True, related_name="intracellular_recording_recorded_current",
                                     help_text="nA. TODO: time series? flat file? sample rate?")
+									# it is a timeseries. But the plan was that would be taken care of by the file.timestamps etc.
+									# however we could have a timeseries class, that subclasses Dataset.
     voltage_command = models.ForeignKey(Dataset, blank=True, null=True, related_name="intracellular_recording_voltage_command",
                                     help_text="mV")
     gain = models.FloatField(null=True, blank=True,
