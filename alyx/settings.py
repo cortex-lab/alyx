@@ -44,7 +44,9 @@ INSTALLED_APPS = (
     'actions',
     'data',
     'misc',
-    'behavior'
+    'behavior',
+    'electrophysiology',
+    'imaging'
 )
 
 MIDDLEWARE_CLASSES = (

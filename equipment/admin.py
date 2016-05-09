@@ -11,6 +11,12 @@ class WeighingScaleAdmin(ApplianceChildAdmin):
 class AmplifierAdmin(ApplianceChildAdmin):
     base_model = Amplifier
 
+class PipettePullerAdmin(ApplianceChildAdmin):
+    base_model = PipettePuller
+
+class DAQAdmin(ApplianceChildAdmin):
+    base_model = DAQ
+
 class ExtracellularProbeAdmin(ApplianceChildAdmin):
     base_model = ExtracellularProbe
 
@@ -19,7 +25,9 @@ class ApplianceParentAdmin(PolymorphicParentModelAdmin):
     child_models = (
         (WeighingScale, WeighingScaleAdmin),
         (Amplifier, AmplifierAdmin),
-        (ExtracellularProbe, ExtracellularProbeAdmin)
+        (ExtracellularProbe, ExtracellularProbeAdmin),
+        (PipettePuller, PipettePullerAdmin),
+        (DAQ, DAQAdmin)
     )
     polymorphic_list = True
     list_display = ('descriptive_name', 'polymorphic_ctype', 'location', 'equipment_model')

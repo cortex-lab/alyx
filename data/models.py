@@ -115,7 +115,7 @@ class LogicalFile(models.Model):
     md5 = models.CharField(max_length=255, null=True, blank=True, help_text="MD5 hash, if a file")
     filename = models.CharField(max_length=1000)
     is_folder = models.BooleanField(help_text="True if the LogicalFile is a folder, not a single file.")
-    fileset = models.ForeignKey('Fileset', help_text="The Fileset that this file belongs to.")
+    fileset = models.ForeignKey('Dataset', help_text="The Fileset that this file belongs to.")
 
     def __str__(self):
         return filename
@@ -125,10 +125,21 @@ class LogicalFile(models.Model):
         in order of speed. Return local records only where hostname matches input."""
         pass
 
-class Fileset(models.Model):
+class Dataset(models.Model):
     """Collection of LogicalFiles (files or folders) grouped together."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return name
+
+class BaseExperimentalData(models.Model):
+    """
+    Abstract base class for all data acquisition models. Never used directly.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    experiment = models.ForeignKey(Experiment, related_name="%(app_label)s_%(class)s_related",
+                                   help_text="The Experiment to which this data belongs")
+
+    class Meta:
+        abstract = True

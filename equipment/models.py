@@ -88,6 +88,18 @@ class Amplifier(Appliance):
     """
     pass
 
+class PipettePuller(Appliance):
+    """
+    A pipette puller for intracellular electrophysiology.
+    """
+    pass
+
+class DAQ(Appliance):
+    """
+    A DAQ for extracellular electrophysiology.
+    """
+    pass
+
 class ExtracellularProbe(Appliance):
     """
     An extracellular probe used in extracellular electrophysiology.

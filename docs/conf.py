@@ -40,8 +40,9 @@ def process_docstring(app, what, name, obj, options, lines):
 
     # Only look at objects that inherit from Django's base model class
     if inspect.isclass(obj) and issubclass(obj, models.Model):
+
         # Grab the field list from the meta class
-        fields = obj._meta.get_fields()
+        fields = obj._meta.get_fields(include_parents=False)
 
         for field in fields:
             # Skip ManyToOneRel and ManyToManyRel fields which have no 'verbose_name' or 'help_text'
@@ -64,10 +65,12 @@ def process_docstring(app, what, name, obj, options, lines):
                 # using the verbose name as the description
                 lines.append(u':param %s: %s' % (field.attname, verbose_name))
 
-            # Add the field's type to the docstring
-            if isinstance(field, models.ForeignKey):
+            # Add the field's type and/or choices to the docstring
+            if isinstance(field, models.ForeignKey) or isinstance(field, models.ManyToManyField):
                 to = field.rel.to
                 lines.append(u':type %s: %s to :class:`~%s.%s`' % (field.attname, type(field).__name__, to.__module__, to.__name__))
+            elif field.choices:
+                lines.append(u':type %s: %s with choices: **%s**' % (field.attname, type(field).__name__, str(field.choices)))
             else:
                 lines.append(u':type %s: %s' % (field.attname, type(field).__name__))
 
