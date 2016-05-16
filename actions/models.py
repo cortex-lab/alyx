@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from datetime import datetime, timezone
 from subjects.models import Subject
-from equipment.models import ExperimentLocation, WeighingScale
+from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
 
 
@@ -39,7 +39,7 @@ class VirusInjection(Action):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey('VirusBatch')
+    virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True)
     injection_volume = models.FloatField(null=True, blank=True, help_text="Volume in nanoliters")
     rate_of_injection = models.FloatField(null=True, blank=True, help_text="TODO: Nanoliters per second / per minute?")
     injection_type = models.CharField(max_length=1,

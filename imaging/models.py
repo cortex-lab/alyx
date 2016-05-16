@@ -1,5 +1,6 @@
 from django.db import models
 from data.models import Dataset, BaseExperimentalData
+from equipment.models import LightSource
 from misc.models import BrainLocation, CoordinateTransformation
 
 class WidefieldImaging(BaseExperimentalData):
@@ -14,7 +15,7 @@ class WidefieldImaging(BaseExperimentalData):
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="Equals start time if single application. TODO: should this be an offset? Or DateTimeField? Or TimeDifference?")
     imaging_indicator = models.CharField(max_length=255, null=True, blank=True,
-                                         help_text="<GCaMP6f, GCaMP6m, GCaMP6s, VSFPb1.2, intrinsic, …>. TODO: normalize!") 
+                                         help_text="<GCaMP6f, GCaMP6m, GCaMP6s, VSFPb1.2, intrinsic, …>. TODO: normalize!")
     preprocessing = models.CharField(max_length=255, null=True, blank=True,
                                        help_text="e.g. “computed (F-F0) / F0, estimating F0 as running min”")
     description = models.CharField(max_length=255, null=True, blank=True,
@@ -26,7 +27,7 @@ class WidefieldImaging(BaseExperimentalData):
                                  help_text="in nm. Can be array for multispectral")
     #excitation_device = models.CharField(max_length=255, null=True, blank=True,
     #                                    help_text="e.g. LED part number. Can be array for multispectral. TODO: Appliance subclass - what name?")
-    excitation_device = models.ForeignKey(LightSource)
+    excitation_device = models.ForeignKey(LightSource, blank=True, null=True)
     recording_device = models.CharField(max_length=255, null=True, blank=True,
                                        help_text="e.g. camera manufacturer, plus filter description etc. TODO: Appliance subclass - what name?")
 

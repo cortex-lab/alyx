@@ -35,7 +35,7 @@ class ApplianceParentAdmin(PolymorphicParentModelAdmin):
 
 admin.site.register(Appliance, ApplianceParentAdmin)
 
-admin.site.register(ExperimentLocation)
-admin.site.register(Cage)
+admin.site.register(LabLocation)
 admin.site.register(EquipmentManufacturer)
 admin.site.register(EquipmentModel)
+admin.site.register(VirusBatch)

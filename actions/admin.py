@@ -17,5 +17,4 @@ admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(Surgery, SurgeryAdmin)
 admin.site.register(Experiment)
 
-admin.site.register(VirusBatch)
 admin.site.register(VirusInjection)

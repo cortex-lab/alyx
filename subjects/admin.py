@@ -32,10 +32,10 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
 
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ['nickname', 'birth_date', 'responsible_user',
-                    'strain', 'genotype', 'sex', 'alive']
+                    'strain', 'sex', 'alive']
     search_fields = ['nickname', 'responsible_user__first_name',
                      'responsible_user__last_name', 'responsible_user__username',
-                     'strain', 'genotype']
+                     'strain']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
 
 class SpeciesAdmin(admin.ModelAdmin):
@@ -55,6 +55,7 @@ admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
 
-admin.site.register(Genotype)
+admin.site.register(Allele)
 admin.site.register(Strain)
 admin.site.register(Source)
+admin.site.register(Cage)
