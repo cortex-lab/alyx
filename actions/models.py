@@ -14,6 +14,12 @@ class Action(models.Model):
     water control; weight measurement etc. This should normally be accessed through
     one of its subclasses.
     """
+    SEVERITY_LIMITS = (
+        (0, 'Mild'),
+        (1, 'Moderate'),
+        (2, 'Severe'),
+        (3, 'Non-recovery')
+    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     users = models.ManyToManyField(User, blank=True,
                                    help_text="The user(s) involved in this action")
@@ -21,6 +27,9 @@ class Action(models.Model):
                                 help_text="The subject on which this action was performed")
     location = models.ForeignKey(LabLocation, null=True, blank=True,
                                  help_text="The physical location at which the action was performed")
+    procedures = models.ManyToManyField('Procedure', help_text="The procedure(s) performed")
+    actual_severity = models.IntegerField(choices=SEVERITY_LIMITS,
+                                          default=1, blank=True, null=True)
     narrative = models.TextField(null=True, blank=True)
     start_date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
     end_date_time = models.DateTimeField(null=True, blank=True)
@@ -28,8 +37,31 @@ class Action(models.Model):
                       null=True,
                       blank=True, help_text="Short text strings to allow searching")
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
-	# add protocols, as discussed Monday.
 
+class Protocol(models.Model):
+    """
+    An experimental protocol with a given severity limit.
+    """
+    SEVERITY_LIMITS = (
+        (0, 'Mild'),
+        (1, 'Moderate'),
+        (2, 'Severe'),
+        (3, 'Non-recovery')
+    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, help_text="The protocol name")
+    number = models.IntegerField(null=True, blank=True, help_text="The protocol number")
+    severity_limit=models.IntegerField(choices=SEVERITY_LIMITS,
+                                       default=1, blank=True, null=True)
+
+class Procedure(models.Model):
+    """
+    A procedure to be performed on a subject.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, help_text="Short procedure name")
+    protocol = models.ForeignKey('Protocol', null=True, blank=True, help_text="The associated protocol")
+    description = models.TextField(null=True, blank=True, help_text="Detailed description of the procedure")
 
 class VirusInjection(Action):
     """
@@ -55,12 +87,16 @@ class Weighing(Action):
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
                                        help_text="The scale record that was used to weigh the subject")
 
+class WaterAdministration(Action):
+    """
+    For keeping track of water for subjects not on free water.
+    """
+    water_administered = models.FloatField(help_text="Water administered, in millilitres")
+
 class Surgery(Action):
     """
     Surgery performed on a subject.
     """
-    procedure = models.CharField(max_length=255, null=True, blank=True,
-                                 help_text="The type of procedure(s) performed")
     brain_location = models.ForeignKey(BrainLocation, null=True, blank=True)
 
     class Meta:

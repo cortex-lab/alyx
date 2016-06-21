@@ -4,7 +4,7 @@ from .models import *
 # Register your models here.
 
 class SurgeryAdmin(admin.ModelAdmin):
-    list_display = ['procedure', 'subject', 'location', 'start_date_time']
+    list_display = ['subject', 'location', 'start_date_time']
 
 class WeighingAdmin(admin.ModelAdmin):
     list_display = ['subject', 'weight']

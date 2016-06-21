@@ -30,6 +30,10 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
         if self.value() == 'n':
             return queryset.exclude(death_date_time=None)
 
+class ZygosityInline(admin.TabularInline):
+    model = Zygosity
+    extra = 2 # how many rows to show
+
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'strain', 'sex', 'alive']
@@ -37,6 +41,8 @@ class SubjectAdmin(admin.ModelAdmin):
                      'responsible_user__last_name', 'responsible_user__username',
                      'strain']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
+    inlines = [ZygosityInline,]
+
 
 class SpeciesAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):

@@ -20,7 +20,7 @@ class Subject(models.Model):
     litter = models.ForeignKey('Litter', null=True, blank=True)
     sex = models.CharField(max_length=1, choices=SEXES, default='U')
     strain = models.ForeignKey('Strain', null=True, blank=True)
-    genotype = models.ManyToManyField('Allele')
+    genotype = models.ManyToManyField('Allele', through='Zygosity')
     source = models.ForeignKey('Source', null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
@@ -98,7 +98,7 @@ class Allele(models.Model):
     informal_name = models.CharField(max_length=255, help_text="informal name in lab, e.g. Pvalb-Cre")
 
     def __str__(self):
-        return self.descriptive_name
+        return self.informal_name
 
 class Zygosity(models.Model):
     """
