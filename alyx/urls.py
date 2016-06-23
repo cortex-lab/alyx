@@ -24,6 +24,9 @@ from subjects.views import SubjectViewSet
 from actions import views as actions_views
 from actions.views import ActionViewSet
 
+from data import views as data_views
+from data.views import DatasetViewSet
+
 from misc import views as misc_views
 from misc.views import UserViewSet, api_root
 
@@ -49,6 +52,17 @@ action_detail = actions_views.ActionViewSet.as_view({
     'delete': 'destroy'
 })
 
+dataset_list = data_views.DatasetViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+dataset_detail = data_views.DatasetViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
 user_list = misc_views.UserViewSet.as_view({
     'get': 'list'
 })
@@ -67,6 +81,9 @@ urlpatterns = [
 
     url(r'^subjects/$', subject_list, name="subject-list"),
     url(r'^subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
+
+    url(r'^datasets/$', dataset_list, name="dataset-list"),
+    url(r'^datasets/(?P<pk>[-_\w].+)/$', dataset_detail, name="dataset-detail"),
 
     url(r'^users/$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),

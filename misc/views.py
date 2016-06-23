@@ -19,7 +19,8 @@ def api_root(request, format=None):
     return Response({
         'users': reverse('user-list', request=request, format=format),
         'subjects': reverse('subject-list', request=request, format=format),
-        'actions': reverse('action-list', request=request, format=format)
+        'actions': reverse('action-list', request=request, format=format),
+        'datasets': reverse('dataset-list', request=request, format=format)
     })
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

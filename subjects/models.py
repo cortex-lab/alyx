@@ -18,7 +18,7 @@ class Subject(models.Model):
                                 help_text="Easy-to-remember, unique name (e.g. “Hercules”).")
     species = models.ForeignKey('Species', null=True, blank=True)
     litter = models.ForeignKey('Litter', null=True, blank=True)
-    sex = models.CharField(max_length=1, choices=SEXES, default='U')
+    sex = models.CharField(max_length=1, choices=SEXES, null=True, blank=True, default='U')
     strain = models.ForeignKey('Strain', null=True, blank=True)
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     source = models.ForeignKey('Source', null=True, blank=True)
@@ -111,7 +111,10 @@ class Zygosity(models.Model):
     )
     subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
     allele = models.ForeignKey('Allele', on_delete=models.CASCADE)
-    zygosity = models.IntegerField()
+    zygosity = models.IntegerField(choices=CAGE_TYPES)
+
+    class Meta:
+        verbose_name_plural = "zygosities"
 
 class Source(models.Model):
     """A supplier / source of subjects."""
