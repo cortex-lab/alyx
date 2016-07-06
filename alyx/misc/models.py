@@ -3,7 +3,6 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 
 class LabLocation(models.Model):
-# minor but can we change this to Location or LabLocation? Because it could also be a room in the animal house
     """
     The physical location at which an experiment is performed or appliances are located.
     This could be a room, a bench, a rig, etc.

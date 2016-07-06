@@ -2,9 +2,9 @@ import uuid
 from django.shortcuts import render
 from subjects.models import Subject
 from rest_framework import generics, permissions, renderers, viewsets
-from .models import *
 
-from .serializers import ActionSerializer, WeighingSerializer
+from .models import *
+from .serializers import *
 
 class ActionViewSet(viewsets.ModelViewSet):
     """
@@ -16,11 +16,31 @@ class ActionViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
 class WeighingAPIList(generics.ListCreateAPIView):
+    """
+    Lists all the subject weights, sorted by time/date.
+    """
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingSerializer
 
     def get_queryset(self):
         queryset = Weighing.objects.all()
+        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
+        return queryset
+
+    def perform_create(self, serializer):
+        # Lookup UUID of subject's nickname
+        subject = Subject.objects.get(nickname=self.kwargs['nickname'])
+        serializer.save(subject_id=subject.id)
+
+class WaterAdministrationAPIList(generics.ListCreateAPIView):
+    """
+    Lists all water administrations to a given subject, sorted by time/date.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = WaterAdministrationSerializer
+
+    def get_queryset(self):
+        queryset = WaterAdministration.objects.all()
         queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
         return queryset
 
