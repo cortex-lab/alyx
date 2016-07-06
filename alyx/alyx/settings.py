@@ -15,23 +15,9 @@ import os
 try:
     from .settings_secret import *
 except ImportError:
-    # Let's make up some fake data just to keep Django happy
-    # (this is probably autobuilt documentation)
-    SECRET_KEY = 'foobar'
-
-    # Database
-    # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'foo',
-            'USER': 'bar',
-            'PASSWORD': 'baz',
-            'HOST': '127.0.0.1',
-            'PORT': '5432',
-        }
-    }
+    # We're probably autobuilding some documentation so let's just import something
+    # to keep Django happy...
+    from .settings_secret_template import *
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
