@@ -25,7 +25,7 @@ import os
 #settings.configure()
 
 import django
-sys.path.insert(0, os.path.abspath('../'))  # so sphinx can find modules, and also to allow django to set up
+sys.path.insert(0, os.path.abspath('../alyx/'))  # so sphinx can find modules, and also to allow django to set up
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "alyx.settings")
 django.setup()
 
