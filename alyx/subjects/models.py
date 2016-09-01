@@ -76,6 +76,7 @@ class Cage(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    cage_label = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I', help_text=
                             "Is this an IVC or regular cage?")
     location = models.ForeignKey(LabLocation)

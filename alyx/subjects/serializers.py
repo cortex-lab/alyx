@@ -8,6 +8,14 @@ class SubjectSerializer(serializers.ModelSerializer):
         slug_field='username'
      )
 
+    species = serializers.SlugRelatedField(
+    	read_only=True,
+    	slug_field='display_name')
+
+    cage = serializers.SlugRelatedField(
+    	read_only=True,
+    	slug_field='cage_label')
+
     class Meta:
         model = Subject
         fields = ('__all__')
