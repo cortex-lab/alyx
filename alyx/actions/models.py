@@ -38,6 +38,9 @@ class Action(models.Model):
                       blank=True, help_text="Short text strings to allow searching")
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
 
+    def __str__(self):
+        return self.subject._meta.get_field('nickname') + " at " + self.start_date_time
+
 class Protocol(models.Model):
     """
     An experimental protocol with a given severity limit.
@@ -54,6 +57,9 @@ class Protocol(models.Model):
     severity_limit=models.IntegerField(choices=SEVERITY_LIMITS,
                                        default=1, blank=True, null=True)
 
+    def __str__(self):
+        return self.name
+
 class Procedure(models.Model):
     """
     A procedure to be performed on a subject.
@@ -62,6 +68,9 @@ class Procedure(models.Model):
     name = models.CharField(max_length=255, help_text="Short procedure name")
     protocol = models.ForeignKey('Protocol', null=True, blank=True, help_text="The associated protocol")
     description = models.TextField(null=True, blank=True, help_text="Detailed description of the procedure")
+
+    def __str__(self):
+        return self.name
 
 class VirusInjection(Action):
     """
