@@ -21,8 +21,8 @@ def api_root(request, format=None):
         'subjects': reverse('subject-list', request=request, format=format),
         'actions': reverse('action-list', request=request, format=format),
         'datasets': reverse('dataset-list', request=request, format=format),
-        'weights': reverse('weights-list', request=request, format=format, kwargs={'nickname': 'SUBJECT'}),
-        'water': reverse('water-list', request=request, format=format, kwargs={'nickname': 'SUBJECT'})
+        'weights': reverse('weights-list', request=request, format=format, kwargs={'nickname': 'NICKNAME'}),
+        'water': reverse('water-list', request=request, format=format, kwargs={'nickname': 'NICKNAME'})
     })
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
