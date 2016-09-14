@@ -39,7 +39,7 @@ class Action(models.Model):
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
 
     def __str__(self):
-        return self.subject._meta.get_field('nickname') + " at " + self.start_date_time
+        return self.subject + " at " + self.start_date_time
 
 class Protocol(models.Model):
     """

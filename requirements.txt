@@ -1,4 +1,4 @@
-django==1.9
+django==1.10
 psycopg2
 django-polymorphic
 djangorestframework
