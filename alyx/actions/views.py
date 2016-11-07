@@ -6,13 +6,13 @@ from rest_framework import generics, permissions, renderers, viewsets
 from .models import *
 from .serializers import *
 
-class ActionViewSet(viewsets.ModelViewSet):
+class ExperimentViewSet(viewsets.ModelViewSet):
     """
     You can `list`, `create`, `retrieve`,`update` and `destroy` actions.
     This API will probably change.
     """
-    queryset = Action.objects.all()
-    serializer_class = ActionSerializer
+    queryset = Experiment.objects.all()
+    serializer_class = ExperimentSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 class WeighingAPIList(generics.ListCreateAPIView):

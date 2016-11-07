@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from .models import *
 
-class ActionSerializer(serializers.ModelSerializer):
+class ExperimentSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Action
+        model = Experiment
         fields = ('__all__')
 
 class WeighingSerializer(serializers.ModelSerializer):

@@ -22,7 +22,7 @@ from subjects import views as subjects_views
 from subjects.views import SubjectViewSet
 
 from actions import views as actions_views
-from actions.views import ActionViewSet
+from actions.views import ExperimentViewSet
 
 from data import views as data_views
 from data.views import DatasetViewSet
@@ -41,11 +41,11 @@ subject_detail = subjects_views.SubjectViewSet.as_view({
     'delete': 'destroy'
 })
 
-action_list = actions_views.ActionViewSet.as_view({
+action_list = actions_views.ExperimentViewSet.as_view({
     'get': 'list',
     'post': 'create'
 })
-action_detail = actions_views.ActionViewSet.as_view({
+action_detail = actions_views.ExperimentViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
@@ -89,8 +89,8 @@ urlpatterns = [
     url(r'^users/$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),
 
-    url(r'^actions/$', action_list, name='action-list'),
-    url(r'^actions/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
+    url(r'^experiments/$', action_list, name='action-list'),
+    url(r'^experiments/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
 
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
