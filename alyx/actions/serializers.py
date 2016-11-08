@@ -7,11 +7,23 @@ class ExperimentSerializer(serializers.ModelSerializer):
         model = Experiment
         fields = ('__all__')
 
-class WeighingSerializer(serializers.ModelSerializer):
+class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
 
     user = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
+     )
+
+    class Meta:
+        model = Weighing
+        fields = ('date_time', 'weight', 'user', 'url')
+
+class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
+
+    user = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='username',
+        queryset=Weighing.objects.all()
      )
 
     def create(self, validated_data):
@@ -19,7 +31,10 @@ class WeighingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Weighing
-        fields = ('date_time', 'weight', 'user')
+        fields = ('date_time', 'weight', 'user', 'weighing_scale', 'url')
+
+
+
 
 class WaterAdministrationSerializer(serializers.ModelSerializer):
 

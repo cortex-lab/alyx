@@ -76,8 +76,7 @@ urlpatterns = [
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token/', av.obtain_auth_token),
 
-    url(r'^subjects/(?P<nickname>[-_\w].+)/weights/$', actions_views.WeighingAPIList.as_view(), name="weights-list"),
-    url(r'^subjects/(?P<nickname>[-_\w].+)/water/$', actions_views.WaterAdministrationAPIList.as_view(), name="water-list"),
+    url(r'^weighings/(?P<pk>[-_\w].+)/$', actions_views.WeighingAPIDetail.as_view(), name="weighing-detail"),
 
     url(r'^subjects/$', subjects_views.SubjectList.as_view(), name="subject-list"),
     url(r'^subjects/(?P<nickname>[-_\w].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),

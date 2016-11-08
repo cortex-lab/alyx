@@ -15,22 +15,31 @@ class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-class WeighingAPIList(generics.ListCreateAPIView):
+class WeighingAPIList(generics.ListAPIView):
     """
     Lists all the subject weights, sorted by time/date.
     """
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = WeighingSerializer
+    serializer_class = WeighingListSerializer
 
     def get_queryset(self):
         queryset = Weighing.objects.all()
         queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
-    def perform_create(self, serializer):
-        # Lookup UUID of subject's nickname
-        subject = Subject.objects.get(nickname=self.kwargs['nickname'])
-        serializer.save(subject_id=subject.id)
+
+class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
+    """
+    Allows viewing of full detail and deleting a weighing.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = WeighingDetailSerializer
+    queryset = Weighing.objects.all()
+
+    # def perform_create(self, serializer):
+    #     # Lookup UUID of subject's nickname
+    #     subject = Subject.objects.get(nickname=self.kwargs['nickname'])
+    #     serializer.save(subject_id=subject.id)
 
 class WaterAdministrationAPIList(generics.ListCreateAPIView):
     """

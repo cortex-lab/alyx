@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Subject, Species, Cage
-from actions.serializers import WeighingSerializer
+from actions.serializers import *
 from actions.models import Weighing
 from django.contrib.auth.models import User
 
@@ -31,8 +31,8 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
 class SubjectDetailSerializer(SubjectListSerializer):
 
-    weighings = WeighingSerializer(many=True, read_only=True)
-    water_administrations = WeighingSerializer(many=True, read_only=True)
+    weighings = WeighingListSerializer(many=True, read_only=True)
+    water_administrations = WaterAdministrationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Subject
