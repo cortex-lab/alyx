@@ -24,7 +24,7 @@ class WeighingAPIList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Weighing.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
+        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
     def perform_create(self, serializer):

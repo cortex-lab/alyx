@@ -2,7 +2,7 @@
 .DS_Store
 *~
 alyx/alyx/settings_secret.py
-
+migrations/
 docs/_build
 docs/_templates
 docs/_static

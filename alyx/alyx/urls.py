@@ -19,7 +19,6 @@ from rest_framework.authtoken import views as av
 from rest_framework import renderers
 
 from subjects import views as subjects_views
-from subjects.views import SubjectViewSet
 
 from actions import views as actions_views
 from actions.views import ExperimentViewSet
@@ -30,16 +29,16 @@ from data.views import DatasetViewSet
 from misc import views as misc_views
 from misc.views import UserViewSet, api_root
 
-subject_list = subjects_views.SubjectViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
-subject_detail = subjects_views.SubjectViewSet.as_view({
-    'get': 'retrieve',
-    'put': 'update',
-    'patch': 'partial_update',
-    'delete': 'destroy'
-})
+# subject_list = subjects_views.Subjectist.as_view({
+#     'get': 'list',
+#     'post': 'create'
+# })
+# subject_detail = subjects_views.SubjectViewSet.as_view({
+#     'get': 'retrieve',
+#     'put': 'update',
+#     'patch': 'partial_update',
+#     'delete': 'destroy'
+# })
 
 action_list = actions_views.ExperimentViewSet.as_view({
     'get': 'list',
@@ -80,8 +79,8 @@ urlpatterns = [
     url(r'^subjects/(?P<nickname>[-_\w].+)/weights/$', actions_views.WeighingAPIList.as_view(), name="weights-list"),
     url(r'^subjects/(?P<nickname>[-_\w].+)/water/$', actions_views.WaterAdministrationAPIList.as_view(), name="water-list"),
 
-    url(r'^subjects/$', subject_list, name="subject-list"),
-    url(r'^subjects/(?P<nickname>[-_\w].+)/$', subject_detail, name="subject-detail"),
+    url(r'^subjects/$', subjects_views.SubjectList.as_view(), name="subject-list"),
+    url(r'^subjects/(?P<nickname>[-_\w].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),
 
     url(r'^datasets/$', dataset_list, name="dataset-list"),
     url(r'^datasets/(?P<pk>[-_\w].+)/$', dataset_detail, name="dataset-detail"),
