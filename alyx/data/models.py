@@ -133,11 +133,11 @@ class Dataset(models.Model):
     """Collection of LogicalFiles (files or folders) grouped together."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, null=True, blank=True)
-    experiment = models.ForeignKey(Experiment, related_name="%(app_label)s_%(class)s_related",
+    experiment = models.ForeignKey(Experiment, related_name="datasets_related",
                                    help_text="The Experiment to which this data belongs")
 
     def __str__(self):
-        return self.name
+        return self.name + " belonging to " + str(self.experiment)
 
 class BaseExperimentalData(models.Model):
     """
