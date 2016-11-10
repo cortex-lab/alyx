@@ -6,7 +6,7 @@ from .serializers import DatasetSerializer
 
 class DatasetViewSet(viewsets.ModelViewSet):
     """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` actions.
+    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
     This API will probably change.
     """
     queryset = Dataset.objects.all()

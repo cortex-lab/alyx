@@ -100,38 +100,44 @@ class ArchiveDataRepository(DataRepository):
 class FileRecord(models.Model):
     """A single file on disk or tape."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    data_repository = models.ForeignKey('DataRepository')
-    file = models.ForeignKey('LogicalFile')
+
+    dataset = models.ForeignKey('Dataset', related_name='file_records')
+    filename = models.CharField(max_length=1000, help_text="Full filename or UNC filepath")
+    # data_repository = models.ForeignKey('DataRepository')
+    # file = models.ForeignKey('LogicalFile')
 
 
-    tape_sequential_number = models.IntegerField(null=True, blank=True,
-                                                 help_text="sequential ID in tape archive, if applicable. Can contain multiple records.")
-
-
-class LogicalFile(models.Model):
-    """A single file or folder. Can be stored in several places (several FileRecords)
-    which all share the same filename and hash."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    md5 = models.CharField(max_length=255, null=True, blank=True, help_text="MD5 hash, if a file")
-    filename = models.CharField(max_length=1000)
-    is_folder = models.BooleanField(help_text="True if the LogicalFile is a folder, not a single file.")
-    fileset = models.ForeignKey('Dataset', help_text="The Fileset that this file belongs to.")
-
+    # tape_sequential_number = models.IntegerField(null=True, blank=True,
+                                                 # help_text="sequential ID in tape archive, if applicable. Can contain multiple records.")
     def __str__(self):
         return filename
 
-    def get_all_locations(local_hostname=None):
-        """TODO: return all valid network and archive file records for the Collection
-        in order of speed. Return local records only where hostname matches input."""
-        pass
+# class LogicalFile(models.Model):
+#     """A single file or folder. Can be stored in several places (several FileRecords)
+#     which all share the same filename and hash."""
+#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+#     md5 = models.CharField(max_length=255, null=True, blank=True, help_text="MD5 hash, if a file")
+#     filename = models.CharField(max_length=1000)
+#     is_folder = models.BooleanField(help_text="True if the LogicalFile is a folder, not a single file.")
+#     fileset = models.ForeignKey('Dataset', help_text="The Fileset that this file belongs to.")
+
+#     def __str__(self):
+#         return filename
+
+#     def get_all_locations(local_hostname=None):
+#         """TODO: return all valid network and archive file records for the Collection
+#         in order of speed. Return local records only where hostname matches input."""
+#         pass
 
 class Dataset(models.Model):
     """Collection of LogicalFiles (files or folders) grouped together."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, null=True, blank=True)
+    experiment = models.ForeignKey(Experiment, related_name="%(app_label)s_%(class)s_related",
+                                   help_text="The Experiment to which this data belongs")
 
     def __str__(self):
-        return name
+        return self.name
 
 class BaseExperimentalData(models.Model):
     """

@@ -22,14 +22,16 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
     location = serializers.SlugRelatedField(
         read_only=False,
         slug_field='name',
-        queryset=LabLocation.objects.all()
+        queryset=LabLocation.objects.all(),
+        allow_null=True
      )
 
     procedures = serializers.SlugRelatedField(
         read_only=False,
         many=True,
         slug_field='name',
-        queryset=Procedure.objects.all()
+        queryset=Procedure.objects.all(),
+        allow_null=True
      )
 
 class ExperimentListSerializer(BaseActionSerializer):
@@ -98,3 +100,4 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
     class Meta:
         model = WaterAdministration
         fields = ('subject', 'date_time', 'water_administered', 'user', 'url')
+        extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
