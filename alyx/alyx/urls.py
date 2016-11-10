@@ -29,28 +29,6 @@ from data.views import DatasetViewSet
 from misc import views as misc_views
 from misc.views import UserViewSet, api_root
 
-# subject_list = subjects_views.Subjectist.as_view({
-#     'get': 'list',
-#     'post': 'create'
-# })
-# subject_detail = subjects_views.SubjectViewSet.as_view({
-#     'get': 'retrieve',
-#     'put': 'update',
-#     'patch': 'partial_update',
-#     'delete': 'destroy'
-# })
-
-action_list = actions_views.ExperimentViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
-action_detail = actions_views.ExperimentViewSet.as_view({
-    'get': 'retrieve',
-    'put': 'update',
-    'patch': 'partial_update',
-    'delete': 'destroy'
-})
-
 dataset_list = data_views.DatasetViewSet.as_view({
     'get': 'list',
     'post': 'create'
@@ -76,7 +54,11 @@ urlpatterns = [
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token/', av.obtain_auth_token),
 
+    url(r'^weighings/$', actions_views.WeighingAPICreate.as_view(), name="weighing-create"),
     url(r'^weighings/(?P<pk>[-_\w].+)/$', actions_views.WeighingAPIDetail.as_view(), name="weighing-detail"),
+
+    url(r'^water-administrations/$', actions_views.WaterAdministrationAPICreate.as_view(), name="water-administration-create"),
+    url(r'^water-administrations/(?P<pk>[-_\w].+)/$', actions_views.WaterAdministrationAPIDetail.as_view(), name="water-administration-detail"),
 
     url(r'^subjects/$', subjects_views.SubjectList.as_view(), name="subject-list"),
     url(r'^subjects/(?P<nickname>[-_\w].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),
@@ -86,9 +68,6 @@ urlpatterns = [
 
     url(r'^users/$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),
-
-    url(r'^experiments/$', action_list, name='action-list'),
-    url(r'^experiments/(?P<pk>[-_\w].+)/$', action_detail, name='action-detail'),
 
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),

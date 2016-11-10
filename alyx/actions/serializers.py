@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import *
+from subjects.models import Subject
+from django.contrib.auth.models import User
 
 class ExperimentSerializer(serializers.ModelSerializer):
 
@@ -9,21 +11,22 @@ class ExperimentSerializer(serializers.ModelSerializer):
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
 
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-     )
-
     class Meta:
         model = Weighing
-        fields = ('date_time', 'weight', 'user', 'url')
+        fields = ('date_time', 'weight', 'url')
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
+
+    subject = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='nickname',
+        queryset=Subject.objects.all()
+     )
 
     user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=Weighing.objects.all()
+        queryset=User.objects.all()
      )
 
     def create(self, validated_data):
@@ -31,17 +34,27 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Weighing
-        fields = ('date_time', 'weight', 'user', 'weighing_scale', 'url')
+        fields = ('subject', 'date_time', 'weight', 'user', 'weighing_scale', 'url')
 
+class WaterAdministrationListSerializer(serializers.HyperlinkedModelSerializer):
 
+    class Meta:
+        model = WaterAdministration
+        fields = ('date_time', 'water_administered', 'url')
+        extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
 
+class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
 
-class WaterAdministrationSerializer(serializers.ModelSerializer):
+    subject = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='nickname',
+        queryset=Subject.objects.all()
+     )
 
     user = serializers.SlugRelatedField(
-        read_only=True,
+        read_only=False,
         slug_field='username',
-        many=True
+        queryset=User.objects.all()
      )
 
     def create(self, validated_data):
@@ -49,4 +62,4 @@ class WaterAdministrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WaterAdministration
-        fields = ('date_time', 'water_administered', 'user')
+        fields = ('subject', 'date_time', 'water_administered', 'user')

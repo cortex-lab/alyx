@@ -32,7 +32,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 class SubjectDetailSerializer(SubjectListSerializer):
 
     weighings = WeighingListSerializer(many=True, read_only=True)
-    water_administrations = WaterAdministrationSerializer(many=True, read_only=True)
+    water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Subject

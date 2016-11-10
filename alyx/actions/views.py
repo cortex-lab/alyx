@@ -27,6 +27,13 @@ class WeighingAPIList(generics.ListAPIView):
         queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
+class WeighingAPICreate(generics.CreateAPIView):
+    """
+    Creates a new weighing.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = WeighingDetailSerializer
+    queryset = Weighing.objects.all()
 
 class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     """
@@ -36,24 +43,31 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
 
-    # def perform_create(self, serializer):
-    #     # Lookup UUID of subject's nickname
-    #     subject = Subject.objects.get(nickname=self.kwargs['nickname'])
-    #     serializer.save(subject_id=subject.id)
 
-class WaterAdministrationAPIList(generics.ListCreateAPIView):
+class WaterAdministrationAPIList(generics.ListAPIView):
     """
-    Lists all water administrations to a given subject, sorted by time/date.
+    Lists all the subject water administrations, sorted by time/date.
     """
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = WaterAdministrationSerializer
+    serializer_class = WaterAdministrationListSerializer
 
     def get_queryset(self):
-        queryset = WaterAdministration.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('start_date_time')
+        queryset = Weighing.objects.all()
+        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
-    def perform_create(self, serializer):
-        # Lookup UUID of subject's nickname
-        subject = Subject.objects.get(nickname=self.kwargs['nickname'])
-        serializer.save(subject_id=subject.id)
+class WaterAdministrationAPICreate(generics.CreateAPIView):
+    """
+    Creates a new water administration.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = WaterAdministrationDetailSerializer
+    queryset = WaterAdministration.objects.all()
+
+class WaterAdministrationAPIDetail(generics.RetrieveDestroyAPIView):
+    """
+    Allows viewing of full detail and deleting a water administration.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = WaterAdministrationDetailSerializer
+    queryset = WaterAdministration.objects.all()
