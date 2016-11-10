@@ -110,7 +110,7 @@ class FileRecord(models.Model):
     # tape_sequential_number = models.IntegerField(null=True, blank=True,
                                                  # help_text="sequential ID in tape archive, if applicable. Can contain multiple records.")
     def __str__(self):
-        return filename
+        return self.filename
 
 # class LogicalFile(models.Model):
 #     """A single file or folder. Can be stored in several places (several FileRecords)

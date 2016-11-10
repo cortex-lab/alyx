@@ -23,6 +23,7 @@ def api_root(request, format=None):
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'weighings-url': reverse('weighing-create', request=request, format=format),
         'water-administrations-url': reverse('water-administration-create', request=request, format=format),
+        'files-url': reverse('filerecord-list', request=request, format=format)
     })
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

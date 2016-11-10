@@ -23,7 +23,7 @@ from subjects import views as subjects_views
 from actions import views as actions_views
 
 from data import views as data_views
-from data.views import DatasetViewSet
+from data.views import DatasetViewSet, FileRecordViewSet
 
 from misc import views as misc_views
 from misc.views import UserViewSet, api_root
@@ -33,6 +33,17 @@ dataset_list = data_views.DatasetViewSet.as_view({
     'post': 'create'
 })
 dataset_detail = data_views.DatasetViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+filerecord_list = data_views.FileRecordViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+filerecord_detail = data_views.FileRecordViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
@@ -67,6 +78,9 @@ urlpatterns = [
 
     url(r'^datasets/$', dataset_list, name="dataset-list"),
     url(r'^datasets/(?P<pk>[-_\w].+)/$', dataset_detail, name="dataset-detail"),
+
+    url(r'^files/$', filerecord_list, name="filerecord-list"),
+    url(r'^files/(?P<pk>[-_\w].+)/$', filerecord_detail, name="filerecord-detail"),
 
     url(r'^users/$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+)/$', user_detail, name='user-detail'),

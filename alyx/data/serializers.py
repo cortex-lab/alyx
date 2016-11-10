@@ -21,4 +21,15 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('__all__')
 
+class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
+    dataset = serializers.HyperlinkedRelatedField(
+        read_only=False, view_name="dataset-detail",
+        queryset=Dataset.objects.all())
+
+    def create(self, validated_data):
+        return FileRecord.objects.create(**validated_data)
+
+    class Meta:
+        model = FileRecord
+        fields = ('__all__')
