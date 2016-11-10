@@ -21,7 +21,6 @@ from rest_framework import renderers
 from subjects import views as subjects_views
 
 from actions import views as actions_views
-from actions.views import ExperimentViewSet
 
 from data import views as data_views
 from data.views import DatasetViewSet
@@ -62,6 +61,9 @@ urlpatterns = [
 
     url(r'^subjects/$', subjects_views.SubjectList.as_view(), name="subject-list"),
     url(r'^subjects/(?P<nickname>[-_\w].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),
+
+    url(r'^experiments/$', actions_views.ExperimentAPIList.as_view(), name="experiment-list"),
+    url(r'^experiments/(?P<pk>[-_\w].+)/$', actions_views.ExperimentAPIDetail.as_view(), name="experiment-detail"),
 
     url(r'^datasets/$', dataset_list, name="dataset-list"),
     url(r'^datasets/(?P<pk>[-_\w].+)/$', dataset_detail, name="dataset-detail"),

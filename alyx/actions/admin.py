@@ -4,7 +4,7 @@ from .models import *
 # Register your models here.
 
 class SurgeryAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'location', 'start_date_time']
+    list_display = ['subject', 'location', 'date_time']
 
 class WeighingAdmin(admin.ModelAdmin):
     list_display = ['subject', 'weight']
@@ -16,7 +16,6 @@ admin.site.register(Note, NoteAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(Surgery, SurgeryAdmin)
 admin.site.register(Experiment)
-admin.site.register(Protocol)
 admin.site.register(Procedure)
 admin.site.register(WaterAdministration)
 

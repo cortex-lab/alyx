@@ -33,10 +33,11 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     weighings = WeighingListSerializer(many=True, read_only=True)
     water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
+    actions_experiments = ExperimentListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user','birth_date', 'death_date', 'species', 'cage', 'sex',
-            'litter', 'strain', 'genotype', 'source', 'notes', 'weighings', 'water_administrations')
+            'litter', 'strain', 'genotype', 'source', 'notes', 'actions_experiments', 'weighings', 'water_administrations')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}

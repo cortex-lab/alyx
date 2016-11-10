@@ -19,11 +19,10 @@ def api_root(request, format=None):
     return Response({
         'users-url': reverse('user-list', request=request, format=format),
         'subjects-url': reverse('subject-list', request=request, format=format),
+        'experiments-url': reverse('experiment-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
-        'weighings-create-url': reverse('weighing-create', request=request, format=format),
-        'weighings-detail-url': reverse('weighing-detail', request=request, format=format, kwargs={'pk': 'ID'}),
-        'water-administrations-create-url': reverse('water-administration-create', request=request, format=format),
-        'water-administrations-detail-url': reverse('water-administration-detail', request=request, format=format, kwargs={'pk': 'ID'}),
+        'weighings-url': reverse('weighing-create', request=request, format=format),
+        'water-administrations-url': reverse('water-administration-create', request=request, format=format),
     })
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

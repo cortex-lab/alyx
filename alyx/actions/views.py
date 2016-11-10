@@ -6,13 +6,20 @@ from rest_framework import generics, permissions, renderers, viewsets
 from .models import *
 from .serializers import *
 
-class ExperimentViewSet(viewsets.ModelViewSet):
+class ExperimentAPIList(generics.ListCreateAPIView):
     """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` actions.
-    This API will probably change.
+    List and create experiments - view in summary form
     """
     queryset = Experiment.objects.all()
-    serializer_class = ExperimentSerializer
+    serializer_class = ExperimentListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+class ExperimentAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Detail of one experiment
+    """
+    queryset = Experiment.objects.all()
+    serializer_class = ExperimentDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 class WeighingAPIList(generics.ListAPIView):

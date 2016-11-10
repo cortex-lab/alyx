@@ -1,13 +1,48 @@
 from rest_framework import serializers
 from .models import *
 from subjects.models import Subject
+from equipment.models import LabLocation
 from django.contrib.auth.models import User
 
-class ExperimentSerializer(serializers.ModelSerializer):
+class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
+
+    subject = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='nickname',
+        queryset=Subject.objects.all()
+     )
+
+    users = serializers.SlugRelatedField(
+        read_only=False,
+        many=True,
+        slug_field='username',
+        queryset=User.objects.all()
+     )
+
+    location = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=LabLocation.objects.all()
+     )
+
+    procedures = serializers.SlugRelatedField(
+        read_only=False,
+        many=True,
+        slug_field='name',
+        queryset=Procedure.objects.all()
+     )
+
+class ExperimentListSerializer(BaseActionSerializer):
 
     class Meta:
         model = Experiment
-        fields = ('__all__')
+        fields = ('subject', 'users', 'location', 'procedures', 'narrative', 'date_time', 'url')
+
+class ExperimentDetailSerializer(BaseActionSerializer):
+
+    class Meta:
+        model = Experiment
+        fields = ('subject', 'users', 'location', 'procedures', 'narrative', 'date_time', 'url', 'json')
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
 
@@ -62,4 +97,4 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
     class Meta:
         model = WaterAdministration
-        fields = ('subject', 'date_time', 'water_administered', 'user')
+        fields = ('subject', 'date_time', 'water_administered', 'user', 'url')
