@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Subject, Species, Cage
+from .models import *
 from actions.serializers import *
 from actions.models import Weighing
 from django.contrib.auth.models import User
@@ -23,9 +23,21 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     	queryset=Cage.objects.all(),
     	allow_null = True)
 
+    strain = serializers.SlugRelatedField(
+    	read_only=False,
+    	slug_field='descriptive_name',
+    	queryset=Strain.objects.all(),
+    	allow_null = True)
+
+    source = serializers.SlugRelatedField(
+    	read_only=False,
+    	slug_field='name',
+    	queryset=Source.objects.all(),
+    	allow_null = True)
+
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date', 'species', 'cage', 'sex', 'litter', 'strain', 'genotype', 'source', 'notes')
+        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date', 'species', 'cage', 'sex', 'litter', 'strain', 'source', 'notes')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -38,6 +50,6 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user','birth_date', 'death_date', 'species', 'cage', 'sex',
-            'litter', 'strain', 'genotype', 'source', 'notes', 'actions_experiments', 'weighings', 'water_administrations')
+            'litter', 'strain', 'source', 'notes', 'actions_experiments', 'weighings', 'water_administrations')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}

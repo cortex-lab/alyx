@@ -81,6 +81,9 @@ class Cage(models.Model):
                             "Is this an IVC or regular cage?")
     location = models.ForeignKey(LabLocation)
 
+    def __str__(self):
+        return self.cage_label
+
 
 class Strain(models.Model):
     """A strain with a standardised name. """
@@ -124,5 +127,5 @@ class Source(models.Model):
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return self.descriptive_name
+        return self.name
 
