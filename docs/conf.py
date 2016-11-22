@@ -67,8 +67,9 @@ def process_docstring(app, what, name, obj, options, lines):
 
             # Add the field's type and/or choices to the docstring
             if isinstance(field, models.ForeignKey) or isinstance(field, models.ManyToManyField):
-                to = field.rel.to
-                lines.append(u':type %s: %s to :class:`~%s.%s`' % (field.attname, type(field).__name__, to.__module__, to.__name__))
+                module = getattr(field.rel.to, "__module__", str(field.rel.to))
+                name = getattr(field.rel.to, "__name__", str(field.rel.to))
+                lines.append(u':type %s: %s to :class:`~%s.%s`' % (field.attname, type(field).__name__, module, name))
             elif field.choices:
                 lines.append(u':type %s: %s with choices: **%s**' % (field.attname, type(field).__name__, str(field.choices)))
             else:
