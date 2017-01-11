@@ -17,14 +17,17 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False,
         many=True,
         slug_field='username',
-        queryset=User.objects.all()
+        queryset=User.objects.all(),
+        required=False,
      )
 
     location = serializers.SlugRelatedField(
         read_only=False,
         slug_field='name',
         queryset=LabLocation.objects.all(),
-        allow_null=True
+        allow_null=True,
+        required=False,
+
      )
 
     procedures = serializers.SlugRelatedField(
@@ -32,7 +35,8 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         slug_field='name',
         queryset=Procedure.objects.all(),
-        allow_null=True
+        allow_null=True,
+        required=False,
      )
 
 class ExperimentListSerializer(BaseActionSerializer):
@@ -66,7 +70,8 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
     user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all()
+        queryset=User.objects.all(),
+        required=False,
      )
 
     def create(self, validated_data):
@@ -94,7 +99,8 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
     user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all()
+        queryset=User.objects.all(),
+        required=False,
      )
 
     def create(self, validated_data):

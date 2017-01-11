@@ -38,7 +38,7 @@ class BaseAction(models.Model):
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
 
     def __str__(self):
-        return str(self.subject) + " at " + str(self.date_time)
+        return str(self.subject) + " at " + str(getattr(self, 'date_time', 'no time'))
 
     class Meta:
         abstract = True

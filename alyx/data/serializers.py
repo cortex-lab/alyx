@@ -8,7 +8,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False,
         queryset = FileRecord.objects.all(),
         slug_field='filename',
-        allow_null=True)
+        allow_null=True,
+        required=False)
 
     experiment = serializers.HyperlinkedRelatedField(
         read_only=False, view_name="experiment-detail",

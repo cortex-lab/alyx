@@ -9,31 +9,36 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     responsible_user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all())
+        queryset=User.objects.all(),
+        required=False)
 
     species = serializers.SlugRelatedField(
     	read_only=False,
     	slug_field='display_name',
     	queryset=Species.objects.all(),
-    	allow_null = True)
+    	allow_null = True,
+        required=False)
 
     cage = serializers.SlugRelatedField(
     	read_only=False,
     	slug_field='cage_label',
     	queryset=Cage.objects.all(),
-    	allow_null = True)
+    	allow_null = True,
+        required=False)
 
     strain = serializers.SlugRelatedField(
     	read_only=False,
     	slug_field='descriptive_name',
     	queryset=Strain.objects.all(),
-    	allow_null = True)
+    	allow_null = True,
+        required=False)
 
     source = serializers.SlugRelatedField(
     	read_only=False,
     	slug_field='name',
     	queryset=Source.objects.all(),
-    	allow_null = True)
+    	allow_null = True,
+        required=False)
 
     class Meta:
         model = Subject

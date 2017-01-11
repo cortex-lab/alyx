@@ -137,7 +137,7 @@ class Dataset(models.Model):
                                    help_text="The Experiment to which this data belongs")
 
     def __str__(self):
-        return self.name + " belonging to " + str(self.experiment)
+        return str(getattr(self, 'name', 'unnamed')) + " belonging to " + str(self.experiment)
 
 class BaseExperimentalData(models.Model):
     """
