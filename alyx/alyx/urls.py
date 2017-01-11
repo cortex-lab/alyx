@@ -71,7 +71,7 @@ urlpatterns = [
     url(r'^water-administrations/(?P<pk>[-_\w].+)/$', actions_views.WaterAdministrationAPIDetail.as_view(), name="water-administration-detail"),
 
     url(r'^subjects/$', subjects_views.SubjectList.as_view(), name="subject-list"),
-    url(r'^subjects/(?P<nickname>[-_\w].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),
+    url(r'^subjects/(?P<nickname>[^/].+)/$', subjects_views.SubjectDetail.as_view(), name="subject-detail"),
 
     url(r'^experiments/$', actions_views.ExperimentAPIList.as_view(), name="experiment-list"),
     url(r'^experiments/(?P<pk>[-_\w].+)/$', actions_views.ExperimentAPIDetail.as_view(), name="experiment-detail"),

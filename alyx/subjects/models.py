@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from equipment.models import LabLocation
 from datetime import datetime, timezone
+import urllib
 
 class Subject(models.Model):
     """Metadata about an experimental subject (animal or human)."""
@@ -14,7 +15,7 @@ class Subject(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nickname = models.CharField(max_length=255, unique=True,
+    nickname = models.SlugField(max_length=255, unique=True, allow_unicode=True,
                                 help_text="Easy-to-remember, unique name (e.g. “Hercules”).")
     species = models.ForeignKey('Species', null=True, blank=True)
     litter = models.ForeignKey('Litter', null=True, blank=True)
@@ -32,6 +33,9 @@ class Subject(models.Model):
     def alive(self):
         return self.death_date is None
     alive.boolean = True
+
+    def nicknamesafe(self):
+        return urllib.parse.quote(str(nickname), '')
 
     def age_days(self):
         if (self.death_date is None & self.birth_date is not None):
