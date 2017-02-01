@@ -26,9 +26,9 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'y':
-            return queryset.filter(death_date_time=None)
+            return queryset.filter(death_date=None)
         if self.value() == 'n':
-            return queryset.exclude(death_date_time=None)
+            return queryset.exclude(death_date=None)
 
 class ZygosityInline(admin.TabularInline):
     model = Zygosity
@@ -38,8 +38,7 @@ class SubjectAdmin(admin.ModelAdmin):
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'strain', 'sex', 'alive']
     search_fields = ['nickname', 'responsible_user__first_name',
-                     'responsible_user__last_name', 'responsible_user__username',
-                     'strain']
+                     'responsible_user__last_name', 'responsible_user__username']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline,]
 
