@@ -94,6 +94,7 @@ class Strain(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255,
         help_text="Standard descriptive name E.g. \"C57BL/6J\", http://www.informatics.jax.org/mgihome/nomen/")
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.descriptive_name
