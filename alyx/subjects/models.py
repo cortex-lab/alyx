@@ -29,6 +29,7 @@ class Subject(models.Model):
                                          help_text="Who has primary or legal responsibility for the subject.")
     cage = models.ForeignKey('Cage', null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+    ear_mark = models.CharField(max_length=32, null=True, blank=True)
 
     def alive(self):
         return self.death_date is None
