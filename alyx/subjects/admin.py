@@ -59,13 +59,16 @@ class LitterAdmin(admin.ModelAdmin):
 
 class LitterInline(admin.TabularInline):
     model = Litter
-    fields = ('descriptive_name',)
-    readonly_fields = fields
-    extra = 0
+    extra = 1
+
+
+class SubjectInline(admin.TabularInline):
+    model = Subject
+    extra = 1
 
 
 class CageAdmin(admin.ModelAdmin):
-    inlines = [LitterInline]
+    inlines = [SubjectInline, LitterInline]
 
 
 admin.site.register(Subject, SubjectAdmin)
