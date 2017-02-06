@@ -53,17 +53,19 @@ class SpeciesAdmin(admin.ModelAdmin):
     readonly_fields = []
 
 
+class SubjectInline(admin.TabularInline):
+    model = Subject
+    extra = 1
+
+
 class LitterAdmin(admin.ModelAdmin):
     list_display = ['mother', 'father']
+
+    inlines = [SubjectInline]
 
 
 class LitterInline(admin.TabularInline):
     model = Litter
-    extra = 1
-
-
-class SubjectInline(admin.TabularInline):
-    model = Subject
     extra = 1
 
 
