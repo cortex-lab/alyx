@@ -76,13 +76,8 @@ class LitterAdmin(admin.ModelAdmin):
     inlines = [SubjectInline]
 
 
-class LitterInline(admin.TabularInline):
-    model = Litter
-    extra = 1
-
-
 class CageAdmin(admin.ModelAdmin):
-    inlines = [SubjectInline, LitterInline]
+    inlines = [SubjectInline]
 
 
 admin.site.register(Subject, SubjectAdmin)
