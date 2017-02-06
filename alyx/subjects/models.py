@@ -68,11 +68,13 @@ class Litter(models.Model):
     descriptive_name = models.CharField(max_length=255)
     mother = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_mother")
     father = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_father")
+    cage = models.ForeignKey('Cage', null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.descriptive_name
+
 
 class Cage(models.Model):
     CAGE_TYPES = (

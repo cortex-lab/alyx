@@ -56,6 +56,18 @@ class SpeciesAdmin(admin.ModelAdmin):
 class LitterAdmin(admin.ModelAdmin):
     list_display = ['mother', 'father']
 
+
+class LitterInline(admin.TabularInline):
+    model = Litter
+    fields = ('descriptive_name',)
+    readonly_fields = fields
+    extra = 0
+
+
+class CageAdmin(admin.ModelAdmin):
+    inlines = [LitterInline]
+
+
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
@@ -63,4 +75,4 @@ admin.site.register(Species, SpeciesAdmin)
 admin.site.register(Allele)
 admin.site.register(Strain)
 admin.site.register(Source)
-admin.site.register(Cage)
+admin.site.register(Cage, CageAdmin)
