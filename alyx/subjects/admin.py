@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from actions.models import Surgery, Experiment
 
 class ResponsibleUserListFilter(admin.SimpleListFilter):
     title = 'responsible user'
@@ -34,13 +35,24 @@ class ZygosityInline(admin.TabularInline):
     model = Zygosity
     extra = 2 # how many rows to show
 
+
+class SurgeryInline(admin.TabularInline):
+    model = Surgery
+    extra = 1
+
+
+class ExperimentInline(admin.TabularInline):
+    model = Experiment
+    extra = 1
+
+
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'strain', 'sex', 'alive']
     search_fields = ['nickname', 'responsible_user__first_name',
                      'responsible_user__last_name', 'responsible_user__username']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
-    inlines = [ZygosityInline,]
+    inlines = [ZygosityInline, SurgeryInline, ExperimentInline]
 
 
 class SpeciesAdmin(admin.ModelAdmin):
