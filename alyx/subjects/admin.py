@@ -141,8 +141,13 @@ class CageAdminForm(forms.ModelForm):
     )
 
     def save(self, commit=True):
+        # Add the mice to the cage.
         mother = self.cleaned_data.get('mother', None)
         father = self.cleaned_data.get('father', None)
+        mother.cage = self.instance
+        father.cage = self.instance
+        mother.save()
+        father.save()
         return super(CageAdminForm, self).save(commit=commit)
 
     class Meta:
