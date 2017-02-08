@@ -34,7 +34,7 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False,
         many=True,
         slug_field='name',
-        queryset=Procedure.objects.all(),
+        queryset=ProcedureType.objects.all(),
         allow_null=True,
         required=False,
      )

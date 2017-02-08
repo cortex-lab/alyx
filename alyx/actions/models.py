@@ -8,7 +8,7 @@ from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
 
 
-class Procedure(models.Model):
+class ProcedureType(models.Model):
     """
     A procedure to be performed on a subject.
     """
@@ -32,7 +32,7 @@ class BaseAction(models.Model):
                                 help_text="The subject on which this action was performed")
     location = models.ForeignKey(LabLocation, null=True, blank=True,
                                  help_text="The physical location at which the action was performed")
-    procedures = models.ManyToManyField('Procedure', blank=True, help_text="The procedure(s) performed")
+    procedures = models.ManyToManyField('ProcedureType', blank=True, help_text="The procedure(s) performed")
     narrative = models.TextField(null=True, blank=True)
     date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
