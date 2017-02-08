@@ -37,6 +37,9 @@ class Subject(models.Model):
     source = models.ForeignKey('Source', null=True, blank=True,
                                on_delete=models.SET_NULL,
                                )
+    line = models.ForeignKey('Line', null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             )
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User,
@@ -100,6 +103,9 @@ class Litter(models.Model):
     father = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
                                related_name="litter_father")
+    line = models.ForeignKey('Line', null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             )
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
@@ -117,6 +123,9 @@ class Cage(models.Model):
     cage_label = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
                             help_text="Is this an IVC or regular cage?")
+    line = models.ForeignKey('Line', null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             )
     location = models.ForeignKey(LabLocation)
 
     def __str__(self):
@@ -129,6 +138,9 @@ class Line(models.Model):
     description = models.TextField(null=True, blank=True)
     gene_name = models.CharField(max_length=1023)
     auto_name = models.SlugField(max_length=255)
+
+    def __str__(self):
+        return self.name
 
 
 class Strain(models.Model):
