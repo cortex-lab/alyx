@@ -98,6 +98,13 @@ class Subject(models.Model):
             return
         return weighings[0]
 
+    def current_weighing(self):
+        weighings = Weighing.objects.filter(subject__id=self.id)
+        weighings = weighings.order_by('-date_time')
+        if not weighings:
+            return
+        return weighings[0]
+
     def __str__(self):
         return self.nickname
 
