@@ -107,8 +107,7 @@ class Subject(models.Model):
             return
         return weighings[0]
 
-    def expected_weighing_mean_std(self):
-        age_w = self.age_days() // 7
+    def expected_weighing_mean_std(self, age_w):
         sex = 'male' if self.sex == 'M' else 'female'
         path = op.join(op.dirname(__file__),
                        'static/ref_weighings_%s.csv' % sex)
@@ -123,6 +122,23 @@ class Subject(models.Model):
             return d[age_max]
         else:
             return d[age_w]
+
+    def water_control(self):
+        rw = self.reference_weighing()
+        cw = self.current_weighing()
+
+        start_weight = rw.weight
+        start_age = (rw.date_time.date() - self.birth_date).days // 7
+
+        today_weight = cw.weight
+        today_age = self.age_days() // 7  # in weeks
+
+        start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
+        today_mrw, today_srw = self.expected_weighing_mean_std(today_age)
+
+        # TODO: formula
+
+        return 0.
 
     def __str__(self):
         return self.nickname
