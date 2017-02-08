@@ -19,6 +19,7 @@ class ProcedureType(models.Model):
     def __str__(self):
         return self.name
 
+
 class BaseAction(models.Model):
     """
     Base class for an action performed on a subject, such as a recording; surgery; etc.
@@ -43,6 +44,7 @@ class BaseAction(models.Model):
     class Meta:
         abstract = True
 
+
 class VirusInjection(BaseAction):
     """
     A virus injection.
@@ -59,6 +61,7 @@ class VirusInjection(BaseAction):
                                      default='I', blank=True, null=True,
                                      help_text="Whether the injection was through iontophoresis or pressure")
 
+
 class Surgery(BaseAction):
     """
     Surgery performed on a subject.
@@ -68,17 +71,27 @@ class Surgery(BaseAction):
     class Meta:
         verbose_name_plural = "surgeries"
 
+
 class Note(BaseAction):
     """
     A note about a subject.
     """
     pass
 
+
 class Experiment(BaseAction):
     """
     An experiment or training session performed on a subject.
     """
     pass
+
+
+class OtherAction(BaseAction):
+    """
+    Another type of action.
+    """
+    pass
+
 
 class Weighing(models.Model):
     """
@@ -97,6 +110,7 @@ class Weighing(models.Model):
     def __str__(self):
         return str(self.subject) + " at " + str(self.date_time)
 
+
 class WaterAdministration(models.Model):
     """
     For keeping track of water for subjects not on free water.
@@ -111,4 +125,3 @@ class WaterAdministration(models.Model):
 
     def __str__(self):
         return str(self.subject) + " at " + str(self.date_time)
-

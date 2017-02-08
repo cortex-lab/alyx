@@ -16,6 +16,7 @@ admin.site.register(Note, NoteAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(Surgery, SurgeryAdmin)
 admin.site.register(Experiment)
+admin.site.register(OtherAction)
 admin.site.register(ProcedureType)
 admin.site.register(WaterAdministration)
 
