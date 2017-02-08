@@ -3,6 +3,7 @@ from django.contrib import admin
 from dal import autocomplete
 from dal.forward import Const
 from .models import *
+from .views import _autoname_number
 from actions.models import Surgery, Experiment
 
 
@@ -109,24 +110,17 @@ class LitterAdmin(admin.ModelAdmin):
         father.litter = litter
         mother.save()
         father.save()
-        to_copy = 'cage,species,strain,source,responsible_user'.split(',')
-        # line = litter.line
+        to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
         for instance in instances:
             subj = instance
             subj.birth_date = litter.birth_date
             # Copy some fields from the mother to the subject.
             for field in to_copy:
                 setattr(subj, field, getattr(mother, field))
-            # TODO: subj.line = line
-            # Find a unique nickname.
-            for i in range(1, 1000):
-                if subj.nickname in (None, '', '-'):
-                    subj.nickname = '%s_%02d' % (mother.nickname, i)
-                try:
-                    subj.save()
-                    break
-                except django.db.utils.IntegrityError:
-                    pass
+            prefix = getattr(subj.line, 'name', 'UNKNOWN') + '_'
+            i = _autoname_number(Subject, 'nickname', prefix)
+            subj.nickname = '%s%04d' % (prefix, i)
+            subj.save()
         formset.save_m2m()
 
 
