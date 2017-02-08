@@ -68,7 +68,7 @@ class SpeciesAdmin(admin.ModelAdmin):
 class SubjectInline(admin.TabularInline):
     model = Subject
     extra = 1
-    fields = ('sex', 'ear_mark',)
+    # fields = ('sex', 'ear_mark',)
     # TODO: genotype
 
 
@@ -79,6 +79,9 @@ class LitterAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
         litter = formset.instance
         mother = litter.mother
         father = litter.father
@@ -98,7 +101,7 @@ class LitterAdmin(admin.ModelAdmin):
             # TODO: subj.line = line
             # Find a unique nickname.
             for i in range(1, 1000):
-                if not subj.nickname:
+                if subj.nickname in (None, '', '-'):
                     subj.nickname = '%s_%02d' % (mother.nickname, i)
                 try:
                     subj.save()
