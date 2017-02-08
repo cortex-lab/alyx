@@ -77,6 +77,36 @@ class LitterAdmin(admin.ModelAdmin):
 
     inlines = [SubjectInline]
 
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        litter = formset.instance
+        mother = litter.mother
+        father = litter.father
+        # Set the litter to the father and mother.
+        mother.litter = litter
+        father.litter = litter
+        mother.save()
+        father.save()
+        to_copy = 'cage,species,strain,source,responsible_user'.split(',')
+        # line = litter.line
+        for instance in instances:
+            subj = instance
+            subj.birth_date = litter.birth_date
+            # Copy some fields from the mother to the subject.
+            for field in to_copy:
+                setattr(subj, field, getattr(mother, field))
+            # TODO: subj.line = line
+            # Find a unique nickname.
+            for i in range(1, 1000):
+                if not subj.nickname:
+                    subj.nickname = '%s_%02d' % (mother.nickname, i)
+                try:
+                    subj.save()
+                    break
+                except django.db.utils.IntegrityError:
+                    pass
+        formset.save_m2m()
+
 
 class CageAdmin(admin.ModelAdmin):
     inlines = [SubjectInline]
