@@ -123,6 +123,12 @@ class LitterAdmin(admin.ModelAdmin):
 
 class CageAdminForm(forms.ModelForm):
 
+    cage_label = forms.CharField(
+        widget=autocomplete.Select2(url='cage-label-autocomplete',
+                                    forward=['line'],
+                                    ),
+        required=True,
+    )
     mother = forms.ModelChoiceField(
         queryset=Subject.objects.filter(sex='F'),
         widget=autocomplete.ModelSelect2(url='subject-autocomplete',
@@ -144,10 +150,12 @@ class CageAdminForm(forms.ModelForm):
         # Add the mice to the cage.
         mother = self.cleaned_data.get('mother', None)
         father = self.cleaned_data.get('father', None)
-        mother.cage = self.instance
-        father.cage = self.instance
-        mother.save()
-        father.save()
+        if mother:
+            mother.cage = self.instance
+            mother.save()
+        if father:
+            father.cage = self.instance
+            father.save()
         return super(CageAdminForm, self).save(commit=commit)
 
     class Meta:

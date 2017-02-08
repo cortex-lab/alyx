@@ -22,7 +22,6 @@ class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class SubjectAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated():
             return Subject.objects.none()
 
@@ -47,3 +46,26 @@ class SubjectAutocomplete(autocomplete.Select2QuerySetView):
         if isinstance(out, uuid.UUID):
             out = str(out)
         return out
+
+
+class CageLabelAutocomplete(autocomplete.Select2ListView):
+    def get_list(self):
+        if not self.request.user.is_authenticated():
+            return
+
+        if self.q:
+            return [self.q]
+
+        line = self.forwarded.get('line', None)
+        if not line:
+            return []
+        line_name = Line.objects.get(pk=line).name
+        prefix = '%s_C_' % line_name
+        # Find the appropriate number.
+        cages = Cage.objects.filter(cage_label__istartswith=prefix)
+        names = sorted([cage.cage_label for cage in cages])
+        if not names:
+            i = 1
+        else:
+            i = int(names[-1][-4:]) + 1
+        return ['%s%04d' % (prefix, i)]
