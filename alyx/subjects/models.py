@@ -190,8 +190,7 @@ class Zygosity(models.Model):
 class Sequence(models.Model):
     """A genetic sequence that you run a genotyping test for."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    base_pairs = models.CharField(max_length=1023,
-                                  help_text="the actual sequence of "
+    base_pairs = models.TextField(help_text="the actual sequence of "
                                   "base pairs in the test")
     description = models.CharField(max_length=1023,
                                    help_text="any other relevant information "
