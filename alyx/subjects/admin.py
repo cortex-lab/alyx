@@ -71,10 +71,17 @@ class SpeciesAdmin(admin.ModelAdmin):
     readonly_fields = []
 
 
-class SubjectInline(admin.TabularInline):
+class SubjectLitterInline(admin.TabularInline):
     model = Subject
     extra = 1
-    # fields = ('sex', 'ear_mark',)
+    fields = ('sex', 'ear_mark', 'notes')
+    # TODO: genotype
+
+
+class SubjectCageInline(admin.TabularInline):
+    model = Subject
+    extra = 1
+    # fields = ('sex', 'ear_mark', 'notes')
     # TODO: genotype
 
 
@@ -85,7 +92,7 @@ class LineAdmin(admin.ModelAdmin):
 class LitterAdmin(admin.ModelAdmin):
     list_display = ['mother', 'father']
 
-    inlines = [SubjectInline]
+    inlines = [SubjectLitterInline]
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -167,7 +174,7 @@ class CageAdmin(admin.ModelAdmin):
     form = CageAdminForm
 
     fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
-    inlines = [SubjectInline]
+    inlines = [SubjectCageInline]
 
 
 admin.site.register(Subject, SubjectAdmin)
