@@ -6,6 +6,7 @@ from equipment.models import LabLocation
 from datetime import datetime, timezone
 import urllib
 
+
 class Subject(models.Model):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -15,8 +16,12 @@ class Subject(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nickname = models.SlugField(max_length=255, unique=True, allow_unicode=True,
-                                help_text="Easy-to-remember, unique name (e.g. “Hercules”).")
+    nickname = models.SlugField(max_length=255,
+                                unique=True,
+                                allow_unicode=True,
+                                default='-',
+                                help_text="Easy-to-remember, unique name "
+                                          "(e.g. “Hercules”).")
     species = models.ForeignKey('Species', null=True, blank=True)
     litter = models.ForeignKey('Litter', null=True, blank=True)
     sex = models.CharField(max_length=1, choices=SEXES, null=True, blank=True, default='U')
@@ -50,6 +55,7 @@ class Subject(models.Model):
     def __str__(self):
         return self.nickname
 
+
 class Species(models.Model):
     """A single species, identified uniquely by its binomial name."""
     binomial = models.CharField(max_length=255, primary_key=True,
@@ -61,6 +67,7 @@ class Species(models.Model):
 
     class Meta:
         verbose_name_plural = "species"
+
 
 class Litter(models.Model):
     """A litter, containing a mother, father, and children with a shared date of birth."""
@@ -91,6 +98,14 @@ class Cage(models.Model):
         return self.cage_label
 
 
+class Line(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    gene_name = models.CharField(max_length=1023)
+    auto_name = models.SlugField(max_length=255)
+
+
 class Strain(models.Model):
     """A strain with a standardised name. """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -101,6 +116,7 @@ class Strain(models.Model):
     def __str__(self):
         return self.descriptive_name
 
+
 class Allele(models.Model):
     """A single allele."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -110,6 +126,7 @@ class Allele(models.Model):
 
     def __str__(self):
         return self.informal_name
+
 
 class Zygosity(models.Model):
     """
@@ -126,6 +143,7 @@ class Zygosity(models.Model):
 
     class Meta:
         verbose_name_plural = "zygosities"
+
 
 class Source(models.Model):
     """A supplier / source of subjects."""
