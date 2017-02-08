@@ -7,14 +7,14 @@ from .serializers import *
 from rest_framework import generics, permissions, renderers, viewsets
 
 
-def autoname(model, field, prefix):
+def _autoname_number(model, field, prefix):
     objects = model.objects.filter(**{'%s__istartswith' % field: prefix})
     names = sorted([getattr(obj, field) for obj in objects])
     if not names:
         i = 1
     else:
         i = int(names[-1][-4:]) + 1
-    return '%s%04d' % (prefix, i)
+    return i
 
 
 class SubjectList(generics.ListCreateAPIView):
@@ -58,7 +58,11 @@ class SubjectAutocomplete(autocomplete.Select2QuerySetView):
         return out
 
 
-class CageLabelAutocomplete(autocomplete.Select2ListView):
+class AutoLinenameAutocomplete(autocomplete.Select2ListView):
+    _model = None
+    _field = ''
+    _prefix = ''
+
     def get_list(self):
         if not self.request.user.is_authenticated():
             return
@@ -70,5 +74,18 @@ class CageLabelAutocomplete(autocomplete.Select2ListView):
         if not line:
             return []
         line_name = Line.objects.get(pk=line).name
-        prefix = '%s_C_' % line_name
-        return [autoname(Cage, 'cage_label', prefix)]
+        prefix = self._prefix % line_name
+        i = _autoname_number(self._model, self._field, prefix)
+        return ['%s%04d' % (prefix, i)]
+
+
+class CageLabelAutocomplete(AutoLinenameAutocomplete):
+    _model = Cage
+    _field = 'cage_label'
+    _prefix = '%s_C_'
+
+
+class SubjectNicknameAutocomplete(AutoLinenameAutocomplete):
+    _model = Subject
+    _field = 'nickname'
+    _prefix = '%s_'

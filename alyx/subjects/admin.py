@@ -90,7 +90,9 @@ class LineAdmin(admin.ModelAdmin):
 
 
 class LitterAdmin(admin.ModelAdmin):
-    list_display = ['mother', 'father']
+    list_display = ['descriptive_name', 'mother', 'father']
+    fields = ['line', 'descriptive_name', 'birth_date', 'notes',
+              'mother', 'father']
 
     inlines = [SubjectLitterInline]
 
