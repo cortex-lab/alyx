@@ -7,6 +7,16 @@ from .serializers import *
 from rest_framework import generics, permissions, renderers, viewsets
 
 
+def autoname(model, field, prefix):
+    objects = model.objects.filter(**{'%s__istartswith' % field: prefix})
+    names = sorted([getattr(obj, field) for obj in objects])
+    if not names:
+        i = 1
+    else:
+        i = int(names[-1][-4:]) + 1
+    return '%s%04d' % (prefix, i)
+
+
 class SubjectList(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectListSerializer
@@ -61,11 +71,4 @@ class CageLabelAutocomplete(autocomplete.Select2ListView):
             return []
         line_name = Line.objects.get(pk=line).name
         prefix = '%s_C_' % line_name
-        # Find the appropriate number.
-        cages = Cage.objects.filter(cage_label__istartswith=prefix)
-        names = sorted([cage.cage_label for cage in cages])
-        if not names:
-            i = 1
-        else:
-            i = int(names[-1][-4:]) + 1
-        return ['%s%04d' % (prefix, i)]
+        return [autoname(Cage, 'cage_label', prefix)]
