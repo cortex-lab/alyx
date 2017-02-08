@@ -68,6 +68,8 @@ class SpeciesAdmin(admin.ModelAdmin):
 class SubjectInline(admin.TabularInline):
     model = Subject
     extra = 1
+    fields = ('sex', 'ear_mark',)
+    # TODO: genotype
 
 
 class LitterAdmin(admin.ModelAdmin):
