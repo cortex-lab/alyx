@@ -1,3 +1,5 @@
+import csv
+import os.path as op
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
@@ -66,10 +68,10 @@ class Subject(models.Model):
         return urllib.parse.quote(str(self.nickname), '')
 
     def age_days(self):
-        if (self.death_date is None & self.birth_date is not None):
+        if (self.death_date is None and self.birth_date is not None):
             # subject still alive
-            age = datetime.now(timezone.utc) - self.birth_date
-        elif (self.death_date is not None & self.birth_date is not None):
+            age = datetime.now(timezone.utc).date() - self.birth_date
+        elif (self.death_date is not None and self.birth_date is not None):
             # subject is dead
             age = self.death_date - self.birth_date
         else:
@@ -104,6 +106,23 @@ class Subject(models.Model):
         if not weighings:
             return
         return weighings[0]
+
+    def expected_weighing_mean_std(self):
+        age_w = self.age_days() // 7
+        sex = 'male' if self.sex == 'M' else 'female'
+        path = op.join(op.dirname(__file__),
+                       'static/ref_weighings_%s.csv' % sex)
+        with open(path, 'r') as f:
+            reader = csv.reader(f)
+            d = {int(age): (float(m), float(s))
+                 for age, m, s in list(reader)}
+        age_min, age_max = min(d), max(d)
+        if age_w < age_min:
+            return d[age_min]
+        elif age_w > age_max:
+            return d[age_max]
+        else:
+            return d[age_w]
 
     def __str__(self):
         return self.nickname
