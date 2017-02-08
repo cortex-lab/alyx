@@ -87,6 +87,7 @@ class Subject(models.Model):
         proc = proc[0]
         restriction = OtherAction.objects.filter(subject__id=self.id,
                                                  procedures__id=proc.id)
+        restriction = restriction.order_by('-date_time') # might be multiple restrictions if it was put on, taken off, put on again. Want most recent
         if not restriction:
             return
         return restriction[0].date_time
@@ -123,7 +124,9 @@ class Subject(models.Model):
         else:
             return d[age_w]
 
-    def water_control(self):
+    def water_requirement_total(self):
+        # returns the amount of water the subject needs today in total
+        
         rw = self.reference_weighing()
         cw = self.current_weighing()
 
@@ -136,9 +139,28 @@ class Subject(models.Model):
         start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
         today_mrw, today_srw = self.expected_weighing_mean_std(today_age)
 
-        # TODO: formula
+        subj_zscore = (start_weight-self.implant_weight - start_mrw)/start_srw
+        
+        expected_weight_today = (today_srw*subj_zscore)+today_mrw+self.implant_weight
+        thresh_weight = 0.8*expected_weight_today
 
-        return 0.
+        if today_weight < thresh_weight:
+            return 0.05 * today_weight
+        else:
+            return 0.04 * today_weight
+
+    def water_requirement_remaining(self):
+        # returns the amount of water the subject still needs, given how much it got already today
+        
+        req_total = self.water_requirement_total()
+        
+        water_today = WaterAdministration.objects.filter(subject__id=self.id,
+                                            date_time=today) # ??
+        if not water_today:
+            return req_total
+            
+        # extract the amounts of all water_today, sum them, subtract from req_total
+        return req_total - sum(water_today.water_administered) # ??
 
     def __str__(self):
         return self.nickname
