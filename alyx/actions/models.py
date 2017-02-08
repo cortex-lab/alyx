@@ -3,7 +3,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from datetime import datetime, timezone
-from subjects.models import Subject
 from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
 
@@ -14,7 +13,9 @@ class ProcedureType(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, help_text="Short procedure name")
-    description = models.TextField(null=True, blank=True, help_text="Detailed description of the procedure")
+    description = models.TextField(null=True, blank=True,
+                                   help_text="Detailed description "
+                                   "of the procedure")
 
     def __str__(self):
         return self.name
@@ -22,24 +23,32 @@ class ProcedureType(models.Model):
 
 class BaseAction(models.Model):
     """
-    Base class for an action performed on a subject, such as a recording; surgery; etc.
-    This should always be accessed through one of its subclasses.
+    Base class for an action performed on a subject, such as a recording;
+    surgery; etc. This should always be accessed through one of its subclasses.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     users = models.ManyToManyField(User, blank=True,
-                                   help_text="The user(s) involved in this action")
-    subject = models.ForeignKey(Subject, related_name="%(app_label)s_%(class)ss",
-                                help_text="The subject on which this action was performed")
+                                   help_text="The user(s) involved "
+                                   "in this action")
+    subject = models.ForeignKey('subjects.Subject',
+                                related_name="%(app_label)s_%(class)ss",
+                                help_text="The subject on which this action "
+                                "was performed")
     location = models.ForeignKey(LabLocation, null=True, blank=True,
-                                 help_text="The physical location at which the action was performed")
-    procedures = models.ManyToManyField('ProcedureType', blank=True, help_text="The procedure(s) performed")
+                                 help_text="The physical location at which "
+                                 "the action was performed")
+    procedures = models.ManyToManyField('ProcedureType', blank=True,
+                                        help_text="The procedure(s) performed")
     narrative = models.TextField(null=True, blank=True)
-    date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
-    json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
+    date_time = models.DateTimeField(null=True, blank=True,
+                                     default=datetime.now)
+    json = JSONField(null=True, blank=True, help_text="Structured data, "
+                     "formatted in a user-defined way")
 
     def __str__(self):
-        return str(self.subject) + " at " + str(getattr(self, 'date_time', 'no time'))
+        return (str(self.subject) + " at " +
+                str(getattr(self, 'date_time', 'no time')))
 
     class Meta:
         abstract = True
@@ -99,7 +108,7 @@ class Weighing(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, null=True, blank=True, help_text="The user who weighed the subject")
-    subject = models.ForeignKey(Subject, related_name='weighings',
+    subject = models.ForeignKey('subjects.Subject', related_name='weighings',
                                 help_text="The subject which was weighed")
     date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
     json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
@@ -116,12 +125,19 @@ class WaterAdministration(models.Model):
     For keeping track of water for subjects not on free water.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, null=True, blank=True, help_text="The user who administered water")
-    subject = models.ForeignKey(Subject, related_name='water_administrations',
-                                help_text="The subject to which water was administered")
-    date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
-    json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
-    water_administered = models.FloatField(help_text="Water administered, in millilitres")
+    user = models.ForeignKey(User, null=True, blank=True,
+                             help_text="The user who administered water")
+    subject = models.ForeignKey('subjects.Subject',
+                                related_name='water_administrations',
+                                help_text="The subject to which water "
+                                "was administered")
+    date_time = models.DateTimeField(null=True, blank=True,
+                                     default=datetime.now)
+    json = JSONField(null=True, blank=True,
+                     help_text="Structured data, formatted "
+                     "in a user-defined way")
+    water_administered = models.FloatField(help_text="Water administered, "
+                                           "in millilitres")
 
     def __str__(self):
         return str(self.subject) + " at " + str(self.date_time)

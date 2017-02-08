@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from equipment.models import LabLocation
+from actions.models import ProcedureType, OtherAction
 from datetime import datetime, timezone
 import urllib
 
@@ -73,6 +74,17 @@ class Subject(models.Model):
             # not dead or born!
             return None
         return age.days
+
+    def water_restriction_date(self):
+        actname = 'Put on water restriction'
+        proc = ProcedureType.objects.filter(name=actname)
+        if not proc:
+            return
+        proc = proc[0]
+        restriction = OtherAction.objects.filter(procedures__id=proc.id)
+        if not restriction:
+            return
+        return restriction[0].date_time
 
     def __str__(self):
         return self.nickname
