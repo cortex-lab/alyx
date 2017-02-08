@@ -1,6 +1,9 @@
+from django import forms
 from django.contrib import admin
+from dal import autocomplete
 from .models import *
 from actions.models import Surgery, Experiment
+
 
 class ResponsibleUserListFilter(admin.SimpleListFilter):
     title = 'responsible user'
@@ -14,6 +17,7 @@ class ResponsibleUserListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == 'm':
             return queryset.filter(responsible_user=request.user)
+
 
 class SubjectAliveListFilter(admin.SimpleListFilter):
     title = 'alive'
@@ -30,6 +34,7 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.filter(death_date=None)
         if self.value() == 'n':
             return queryset.exclude(death_date=None)
+
 
 class ZygosityInline(admin.TabularInline):
     model = Zygosity
@@ -72,6 +77,10 @@ class SubjectInline(admin.TabularInline):
     # TODO: genotype
 
 
+class LineAdmin(admin.ModelAdmin):
+    pass
+
+
 class LitterAdmin(admin.ModelAdmin):
     list_display = ['mother', 'father']
 
@@ -111,7 +120,30 @@ class LitterAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
+class CageAdminForm(forms.ModelForm):
+
+    father = forms.ModelChoiceField(
+        queryset=Subject.objects.all(),
+        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
+                                         forward=['line'],
+                                         ),
+        required=False,
+    )
+
+    def save(self, commit=True):
+        father = self.cleaned_data.get('father', None)
+        print(father)
+        return super(CageAdminForm, self).save(commit=commit)
+
+    class Meta:
+        fields = '__all__'
+        model = Cage
+
+
 class CageAdmin(admin.ModelAdmin):
+    form = CageAdminForm
+
+    fields = ('line', 'cage_label', 'father', 'type', 'location')
     inlines = [SubjectInline]
 
 
@@ -119,6 +151,7 @@ admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
 
+admin.site.register(Line, LineAdmin)
 admin.site.register(Allele)
 admin.site.register(Strain)
 admin.site.register(Source)
