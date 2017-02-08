@@ -40,7 +40,12 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
 
 class ZygosityInline(admin.TabularInline):
     model = Zygosity
-    extra = 2 # how many rows to show
+    extra = 2  # how many rows to show
+
+
+class GenotypeTestInline(admin.TabularInline):
+    model = GenotypeTest
+    extra = 2  # how many rows to show
 
 
 class SurgeryInline(admin.TabularInline):
@@ -62,7 +67,8 @@ class SubjectAdmin(admin.ModelAdmin):
                      'responsible_user__last_name',
                      'responsible_user__username']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
-    inlines = [ZygosityInline, SurgeryInline, ExperimentInline]
+    inlines = [ZygosityInline, GenotypeTestInline,
+               SurgeryInline, ExperimentInline]
 
     def mother(self, obj):
         return obj.litter.mother
@@ -193,6 +199,7 @@ admin.site.register(Species, SpeciesAdmin)
 
 admin.site.register(Line, LineAdmin)
 admin.site.register(Allele)
+admin.site.register(Sequence)
 admin.site.register(Strain)
 admin.site.register(Source)
 admin.site.register(Cage, CageAdmin)
