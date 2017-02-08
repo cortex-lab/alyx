@@ -55,11 +55,20 @@ class ExperimentInline(admin.TabularInline):
 
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ['nickname', 'birth_date', 'responsible_user',
-                    'strain', 'sex', 'alive']
-    search_fields = ['nickname', 'responsible_user__first_name',
-                     'responsible_user__last_name', 'responsible_user__username']
+                    'cage', 'mother', 'father',
+                    'sex', 'alive']
+    search_fields = ['nickname',
+                     'responsible_user__first_name',
+                     'responsible_user__last_name',
+                     'responsible_user__username']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, SurgeryInline, ExperimentInline]
+
+    def mother(self, obj):
+        return obj.litter.mother
+
+    def father(self, obj):
+        return obj.litter.father
 
 
 class SpeciesAdmin(admin.ModelAdmin):
