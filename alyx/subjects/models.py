@@ -34,6 +34,7 @@ class Subject(models.Model):
                                on_delete=models.SET_NULL,
                                )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
+    genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
     source = models.ForeignKey('Source', null=True, blank=True,
                                on_delete=models.SET_NULL,
                                )
@@ -184,6 +185,39 @@ class Zygosity(models.Model):
 
     class Meta:
         verbose_name_plural = "zygosities"
+
+
+class Sequence(models.Model):
+    """A genetic sequence that you run a genotyping test for."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    base_pairs = models.CharField(max_length=1023,
+                                  help_text="the actual sequence of "
+                                  "base pairs in the test")
+    description = models.CharField(max_length=1023,
+                                   help_text="any other relevant information "
+                                   "about this test")
+    informal_name = models.CharField(max_length=255,
+                                     help_text="informal name in lab, "
+                                     "e.g. ROSA-WT")
+
+    def __str__(self):
+        return self.informal_name
+
+
+class GenotypeTest(models.Model):
+    TEST_RESULTS = (
+        (0, 'Absent'),
+        (1, 'Present'),
+    )
+    """
+    A junction table between Subject and Sequence.
+    """
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
+    sequence = models.ForeignKey('Sequence', on_delete=models.CASCADE)
+    test_result = models.IntegerField(choices=TEST_RESULTS)
+
+    class Meta:
+        verbose_name_plural = "genotype tests"
 
 
 class Source(models.Model):
