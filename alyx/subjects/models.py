@@ -22,17 +22,32 @@ class Subject(models.Model):
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. “Hercules”).")
-    species = models.ForeignKey('Species', null=True, blank=True)
-    litter = models.ForeignKey('Litter', null=True, blank=True)
-    sex = models.CharField(max_length=1, choices=SEXES, null=True, blank=True, default='U')
-    strain = models.ForeignKey('Strain', null=True, blank=True)
+    species = models.ForeignKey('Species', null=True, blank=True,
+                                on_delete=models.SET_NULL,
+                                )
+    litter = models.ForeignKey('Litter', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               )
+    sex = models.CharField(max_length=1, choices=SEXES,
+                           null=True, blank=True, default='U')
+    strain = models.ForeignKey('Strain', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
-    source = models.ForeignKey('Source', null=True, blank=True)
+    source = models.ForeignKey('Source', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               )
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
-    responsible_user = models.ForeignKey(User, related_name='subjects_responsible', null=True, blank=True,
-                                         help_text="Who has primary or legal responsibility for the subject.")
-    cage = models.ForeignKey('Cage', null=True, blank=True)
+    responsible_user = models.ForeignKey(User,
+                                         related_name='subjects_responsible',
+                                         null=True, blank=True,
+                                         on_delete=models.SET_NULL,
+                                         help_text="Who has primary or legal "
+                                         "responsibility for the subject.")
+    cage = models.ForeignKey('Cage', null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             )
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
 
@@ -41,14 +56,17 @@ class Subject(models.Model):
     alive.boolean = True
 
     def nicknamesafe(self):
-        return urllib.parse.quote(str(nickname), '')
+        return urllib.parse.quote(str(self.nickname), '')
 
     def age_days(self):
         if (self.death_date is None & self.birth_date is not None):
-            age = datetime.now(timezone.utc) - self.birth_date # subject still alive
+            # subject still alive
+            age = datetime.now(timezone.utc) - self.birth_date
         elif (self.death_date is not None & self.birth_date is not None):
-            age = self.death_date - self.birth_date # subject is dead
-        else: # not dead or born!
+            # subject is dead
+            age = self.death_date - self.birth_date
+        else:
+            # not dead or born!
             return None
         return age.days
 
@@ -59,8 +77,10 @@ class Subject(models.Model):
 class Species(models.Model):
     """A single species, identified uniquely by its binomial name."""
     binomial = models.CharField(max_length=255, primary_key=True,
-                                help_text="Binomial name, e.g. \"mus musculus\"")
-    display_name = models.CharField(max_length=255, help_text="common name, e.g. \"mouse\"")
+                                help_text="Binomial name, "
+                                "e.g. \"mus musculus\"")
+    display_name = models.CharField(max_length=255,
+                                    help_text="common name, e.g. \"mouse\"")
 
     def __str__(self):
         return self.display_name
@@ -70,11 +90,16 @@ class Species(models.Model):
 
 
 class Litter(models.Model):
-    """A litter, containing a mother, father, and children with a shared date of birth."""
+    """A litter, containing a mother, father, and children with a
+    shared date of birth."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255)
-    mother = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_mother")
-    father = models.ForeignKey('Subject', null=True, blank=True, related_name="litter_father")
+    mother = models.ForeignKey('Subject', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               related_name="litter_mother")
+    father = models.ForeignKey('Subject', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               related_name="litter_father")
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
@@ -90,8 +115,8 @@ class Cage(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     cage_label = models.CharField(max_length=255, null=True, blank=True)
-    type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I', help_text=
-                            "Is this an IVC or regular cage?")
+    type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
+                            help_text="Is this an IVC or regular cage?")
     location = models.ForeignKey(LabLocation)
 
     def __str__(self):
@@ -153,4 +178,3 @@ class Source(models.Model):
 
     def __str__(self):
         return self.name
-
