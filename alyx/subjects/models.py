@@ -106,6 +106,9 @@ class Litter(models.Model):
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
+    cage = models.ForeignKey('Cage', null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             )
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 

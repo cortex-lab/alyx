@@ -124,6 +124,11 @@ class LitterAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
+class LitterInline(admin.TabularInline):
+    model = Litter
+    extra = 1
+
+
 class CageAdminForm(forms.ModelForm):
 
     cage_label = forms.CharField(
@@ -170,7 +175,7 @@ class CageAdmin(admin.ModelAdmin):
     form = CageAdminForm
 
     fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
-    inlines = [SubjectCageInline]
+    inlines = [SubjectCageInline, LitterInline]
 
 
 admin.site.register(Subject, SubjectAdmin)
