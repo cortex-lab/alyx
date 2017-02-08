@@ -117,7 +117,10 @@ class Weighing(models.Model):
                                        help_text="The scale record that was used to weigh the subject")
 
     def __str__(self):
-        return str(self.subject) + " at " + str(self.date_time)
+        return '%s at %s (%.1f g)' % (str(self.subject),
+                                      str(self.date_time),
+                                      self.weight,
+                                      )
 
 
 class WaterAdministration(models.Model):

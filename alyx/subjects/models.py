@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from equipment.models import LabLocation
-from actions.models import ProcedureType, OtherAction
+from actions.models import ProcedureType, OtherAction, Weighing
 from datetime import datetime, timezone
 import urllib
 
@@ -53,6 +53,8 @@ class Subject(models.Model):
     cage = models.ForeignKey('Cage', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
+    implant_weight = models.FloatField(help_text="Implant weight in grams",
+                                       null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
 
@@ -81,10 +83,20 @@ class Subject(models.Model):
         if not proc:
             return
         proc = proc[0]
-        restriction = OtherAction.objects.filter(procedures__id=proc.id)
+        restriction = OtherAction.objects.filter(subject__id=self.id,
+                                                 procedures__id=proc.id)
         if not restriction:
             return
         return restriction[0].date_time
+
+    def reference_weighing(self):
+        wr_date = self.water_restriction_date()
+        weighings = Weighing.objects.filter(subject__id=self.id,
+                                            date_time__lte=wr_date)
+        weighings = weighings.order_by('-date_time')
+        if not weighings:
+            return
+        return weighings[0]
 
     def __str__(self):
         return self.nickname
