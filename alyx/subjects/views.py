@@ -23,17 +23,17 @@ class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
 class SubjectAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         # Don't forget to filter out results depending on the visitor !
-        print("hey")
         if not self.request.user.is_authenticated():
             return Subject.objects.none()
 
         qs = Subject.objects.all()
 
         line = self.forwarded.get('line', None)
-
+        sex = self.forwarded.get('sex', None)
         if line:
             qs = qs.filter(line=line)
-
+        if sex:
+            qs = qs.filter(sex=sex)
         if self.q:
             qs = qs.filter(nickname__istartswith=self.q)
 

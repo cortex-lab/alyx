@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from dal import autocomplete
+from dal.forward import Const
 from .models import *
 from actions.models import Surgery, Experiment
 
@@ -122,17 +123,26 @@ class LitterAdmin(admin.ModelAdmin):
 
 class CageAdminForm(forms.ModelForm):
 
-    father = forms.ModelChoiceField(
-        queryset=Subject.objects.all(),
+    mother = forms.ModelChoiceField(
+        queryset=Subject.objects.filter(sex='F'),
         widget=autocomplete.ModelSelect2(url='subject-autocomplete',
-                                         forward=['line'],
+                                         forward=['line',
+                                                  Const('F', 'sex')],
+                                         ),
+        required=False,
+    )
+    father = forms.ModelChoiceField(
+        queryset=Subject.objects.filter(sex='M'),
+        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
+                                         forward=['line',
+                                                  Const('M', 'sex')],
                                          ),
         required=False,
     )
 
     def save(self, commit=True):
+        mother = self.cleaned_data.get('mother', None)
         father = self.cleaned_data.get('father', None)
-        print(father)
         return super(CageAdminForm, self).save(commit=commit)
 
     class Meta:
@@ -143,7 +153,7 @@ class CageAdminForm(forms.ModelForm):
 class CageAdmin(admin.ModelAdmin):
     form = CageAdminForm
 
-    fields = ('line', 'cage_label', 'father', 'type', 'location')
+    fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
     inlines = [SubjectInline]
 
 
