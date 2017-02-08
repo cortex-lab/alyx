@@ -176,6 +176,7 @@ class Zygosity(models.Model):
         (0, 'Absent'),
         (1, 'Heterozygous'),
         (2, 'Homozygous'),
+        (3, 'Present'),
     )
     subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
     allele = models.ForeignKey('Allele', on_delete=models.CASCADE)
