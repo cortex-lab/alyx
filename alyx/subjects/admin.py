@@ -124,11 +124,6 @@ class LitterAdmin(admin.ModelAdmin):
         litter = formset.instance
         mother = litter.mother
         father = litter.father
-        # Set the litter to the father and mother.
-        mother.litter = litter
-        father.litter = litter
-        mother.save()
-        father.save()
         to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
         for instance in instances:
             subj = instance
