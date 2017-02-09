@@ -1,4 +1,6 @@
 from django import forms
+from django.urls import reverse
+from django.utils.html import format_html
 from django.contrib import admin
 from dal import autocomplete
 from dal.forward import Const
@@ -70,6 +72,7 @@ class SubjectAdmin(admin.ModelAdmin):
                        'current_weighing',
                        'water_requirement_total',
                        'water_requirement_remaining',
+                       'weighing_plot',
                        )
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, GenotypeTestInline,
@@ -80,6 +83,10 @@ class SubjectAdmin(admin.ModelAdmin):
 
     def father(self, obj):
         return obj.litter.father
+
+    def weighing_plot(self, obj):
+        url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
+        return format_html('<img src="{url}" />', url=url)
 
 
 class SpeciesAdmin(admin.ModelAdmin):
