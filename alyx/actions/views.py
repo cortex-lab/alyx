@@ -6,6 +6,7 @@ from rest_framework import generics, permissions, renderers, viewsets
 from .models import *
 from .serializers import *
 
+
 class ExperimentAPIList(generics.ListCreateAPIView):
     """
     List and create experiments - view in summary form
@@ -14,6 +15,7 @@ class ExperimentAPIList(generics.ListCreateAPIView):
     serializer_class = ExperimentListSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
+
 class ExperimentAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Detail of one experiment
@@ -21,6 +23,7 @@ class ExperimentAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Experiment.objects.all()
     serializer_class = ExperimentDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
 
 class WeighingAPIList(generics.ListAPIView):
     """
@@ -34,6 +37,7 @@ class WeighingAPIList(generics.ListAPIView):
         queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
+
 class WeighingAPICreate(generics.CreateAPIView):
     """
     Creates a new weighing.
@@ -41,6 +45,7 @@ class WeighingAPICreate(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
+
 
 class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     """
@@ -63,6 +68,7 @@ class WaterAdministrationAPIList(generics.ListAPIView):
         queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
         return queryset
 
+
 class WaterAdministrationAPICreate(generics.CreateAPIView):
     """
     Creates a new water administration.
@@ -70,6 +76,7 @@ class WaterAdministrationAPICreate(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
+
 
 class WaterAdministrationAPIDetail(generics.RetrieveDestroyAPIView):
     """
