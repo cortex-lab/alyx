@@ -68,7 +68,8 @@ class SubjectAdmin(admin.ModelAdmin):
                      'responsible_user__username']
     readonly_fields = ('water_restriction_date',
                        'current_weighing',
-                       'water_control',
+                       'water_requirement_total',
+                       'water_requirement_remaining',
                        )
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, GenotypeTestInline,

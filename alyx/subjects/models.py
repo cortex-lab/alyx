@@ -1,13 +1,17 @@
 import csv
+from datetime import datetime, timezone
+import logging
 import os.path as op
 import uuid
+import urllib
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from equipment.models import LabLocation
-from actions.models import ProcedureType, OtherAction, Weighing
-from datetime import datetime, timezone
-import urllib
+from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
+
+logger = logging.getLogger(__name__)
 
 
 class Subject(models.Model):
@@ -46,12 +50,10 @@ class Subject(models.Model):
                              )
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
-    responsible_user = models.ForeignKey(User,
+    responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          related_name='subjects_responsible',
-                                         null=True, blank=True,
-                                         on_delete=models.SET_NULL,
-                                         help_text="Who has primary or legal "
-                                         "responsibility for the subject.")
+                                         help_text="Who has primary or legal responsibility "
+                                         "for the subject.")
     cage = models.ForeignKey('Cage', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
@@ -87,6 +89,7 @@ class Subject(models.Model):
         proc = proc[0]
         restriction = OtherAction.objects.filter(subject__id=self.id,
                                                  procedures__id=proc.id)
+        restriction = restriction.order_by('-date_time')
         if not restriction:
             return
         return restriction[0].date_time
@@ -123,11 +126,18 @@ class Subject(models.Model):
         else:
             return d[age_w]
 
-    def water_control(self):
+    def water_requirement_total(self):
+        # returns the amount of water the subject needs today in total
+
         rw = self.reference_weighing()
         cw = self.current_weighing()
 
         start_weight = rw.weight
+        implant_weight = self.implant_weight or 0
+
+        if not self.birth_date:
+            logger.warn("Subject %s has no birth date!", self)
+            return 0
         start_age = (rw.date_time.date() - self.birth_date).days // 7
 
         today_weight = cw.weight
@@ -136,9 +146,28 @@ class Subject(models.Model):
         start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
         today_mrw, today_srw = self.expected_weighing_mean_std(today_age)
 
-        # TODO: formula
+        subj_zscore = (start_weight - implant_weight - start_mrw) / start_srw
 
-        return 0.
+        expected_weight_today = (today_srw * subj_zscore) + today_mrw + implant_weight
+        thresh_weight = 0.8 * expected_weight_today
+
+        if today_weight < thresh_weight:
+            return 0.05 * today_weight
+        else:
+            return 0.04 * today_weight
+
+    def water_requirement_remaining(self):
+        # returns the amount of water the subject still needs, given how much it got already today
+
+        req_total = self.water_requirement_total()
+
+        today = datetime.now().date()
+        water_today = WaterAdministration.objects.filter(subject__id=self.id,
+                                                         date_time=today)
+
+        # extract the amounts of all water_today, sum them, subtract from req_total
+        water_today = water_today.aggregate(models.Sum('water_administered'))
+        return req_total - (water_today['water_administered__sum'] or 0)
 
     def __str__(self):
         return self.nickname
@@ -217,7 +246,8 @@ class Strain(models.Model):
     """A strain with a standardised name. """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255,
-        help_text="Standard descriptive name E.g. \"C57BL/6J\", http://www.informatics.jax.org/mgihome/nomen/")
+                                        help_text="Standard descriptive name E.g. \"C57BL/6J\", "
+                                        "http://www.informatics.jax.org/mgihome/nomen/")
     description = models.TextField(null=True, blank=True)
 
     def __str__(self):
@@ -227,9 +257,12 @@ class Strain(models.Model):
 class Allele(models.Model):
     """A single allele."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    standard_name = models.CharField(max_length=1023, # these could be really long, 255 characters might not be enough!
-        help_text="MGNC-standard genotype name e.g. Pvalb<tm1(cre)Arbr>, http://www.informatics.jax.org/mgihome/nomen/")
-    informal_name = models.CharField(max_length=255, help_text="informal name in lab, e.g. Pvalb-Cre")
+    standard_name = models.CharField(max_length=1023,
+                                     help_text="MGNC-standard genotype name e.g. "
+                                     "Pvalb<tm1(cre)Arbr>, "
+                                     "http://www.informatics.jax.org/mgihome/nomen/")
+    informal_name = models.CharField(max_length=255,
+                                     help_text="informal name in lab, e.g. Pvalb-Cre")
 
     def __str__(self):
         return self.informal_name
@@ -256,14 +289,11 @@ class Zygosity(models.Model):
 class Sequence(models.Model):
     """A genetic sequence that you run a genotyping test for."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    base_pairs = models.TextField(help_text="the actual sequence of "
-                                  "base pairs in the test")
+    base_pairs = models.TextField(help_text="the actual sequence of base pairs in the test")
     description = models.CharField(max_length=1023,
-                                   help_text="any other relevant information "
-                                   "about this test")
+                                   help_text="any other relevant information about this test")
     informal_name = models.CharField(max_length=255,
-                                     help_text="informal name in lab, "
-                                     "e.g. ROSA-WT")
+                                     help_text="informal name in lab, e.g. ROSA-WT")
 
     def __str__(self):
         return self.informal_name
