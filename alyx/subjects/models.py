@@ -8,6 +8,7 @@ import urllib
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
+from django.utils import timezone
 from equipment.models import LabLocation
 from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
 
@@ -161,7 +162,7 @@ class Subject(models.Model):
 
         req_total = self.water_requirement_total()
 
-        today = datetime.now().date()
+        today = timezone.now()
         water_today = WaterAdministration.objects.filter(subject__id=self.id,
                                                          date_time=today)
 

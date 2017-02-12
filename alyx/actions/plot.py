@@ -1,7 +1,9 @@
 import io
+import matplotlib
+matplotlib.use('Agg')  # noqa
 import matplotlib.pyplot as plt
 from matplotlib.dates import DayLocator, DateFormatter
-import seaborn
+import seaborn  # noqa
 
 from django.http import HttpResponse
 from subjects.models import Subject
