@@ -61,6 +61,21 @@ class ExperimentInline(admin.TabularInline):
 
 
 class SubjectAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
+                                'death_date', 'ear_mark', 'notes')}),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line')}),
+        ('LITTER', {'fields': ('cage', 'litter',)}),
+        ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
+                                        'reference_weighing',
+                                        'current_weighing',
+                                        'implant_weight',
+                                        'water_requirement_total',
+                                        'water_requirement_remaining',
+                                        'weighing_plot',
+                                        )}),
+    )
+
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'cage', 'mother', 'father',
                     'sex', 'alive']
@@ -68,7 +83,9 @@ class SubjectAdmin(admin.ModelAdmin):
                      'responsible_user__first_name',
                      'responsible_user__last_name',
                      'responsible_user__username']
-    readonly_fields = ('water_restriction_date',
+    readonly_fields = ('age_days',
+                       'water_restriction_date',
+                       'reference_weighing',
                        'current_weighing',
                        'water_requirement_total',
                        'water_requirement_remaining',
