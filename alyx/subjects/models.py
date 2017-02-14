@@ -2,20 +2,18 @@ import csv
 from datetime import datetime, timezone
 import logging
 import os.path as op
-import uuid
 import urllib
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
-from django.utils import timezone
+from alyx.base import BaseModel
 from equipment.models import LabLocation
 from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
 
 
-class Subject(models.Model):
+class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
         ('M', 'Male'),
@@ -23,13 +21,12 @@ class Subject(models.Model):
         ('U', 'Unknown')
     )
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nickname = models.SlugField(max_length=255,
                                 unique=True,
                                 allow_unicode=True,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
-                                          "(e.g. “Hercules”).")
+                                          "(e.g. 'Hercules').")
     species = models.ForeignKey('Species', null=True, blank=True,
                                 on_delete=models.SET_NULL,
                                 )
@@ -174,9 +171,9 @@ class Subject(models.Model):
         return self.nickname
 
 
-class Species(models.Model):
+class Species(BaseModel):
     """A single species, identified uniquely by its binomial name."""
-    binomial = models.CharField(max_length=255, primary_key=True,
+    binomial = models.CharField(max_length=255,
                                 help_text="Binomial name, "
                                 "e.g. \"mus musculus\"")
     display_name = models.CharField(max_length=255,
@@ -189,10 +186,9 @@ class Species(models.Model):
         verbose_name_plural = "species"
 
 
-class Litter(models.Model):
+class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255)
     mother = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
@@ -213,13 +209,12 @@ class Litter(models.Model):
         return self.descriptive_name
 
 
-class Cage(models.Model):
+class Cage(BaseModel):
     CAGE_TYPES = (
         ('I', 'IVC'),
         ('R', 'Regular'),
     )
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     cage_label = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
                             help_text="Is this an IVC or regular cage?")
@@ -232,8 +227,7 @@ class Cage(models.Model):
         return self.cage_label
 
 
-class Line(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Line(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     gene_name = models.CharField(max_length=1023)
@@ -243,9 +237,8 @@ class Line(models.Model):
         return self.name
 
 
-class Strain(models.Model):
+class Strain(BaseModel):
     """A strain with a standardised name. """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     descriptive_name = models.CharField(max_length=255,
                                         help_text="Standard descriptive name E.g. \"C57BL/6J\", "
                                         "http://www.informatics.jax.org/mgihome/nomen/")
@@ -255,9 +248,8 @@ class Strain(models.Model):
         return self.descriptive_name
 
 
-class Allele(models.Model):
+class Allele(BaseModel):
     """A single allele."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     standard_name = models.CharField(max_length=1023,
                                      help_text="MGNC-standard genotype name e.g. "
                                      "Pvalb<tm1(cre)Arbr>, "
@@ -269,7 +261,7 @@ class Allele(models.Model):
         return self.informal_name
 
 
-class Zygosity(models.Model):
+class Zygosity(BaseModel):
     """
     A junction table between Subject and Allele.
     """
@@ -287,9 +279,8 @@ class Zygosity(models.Model):
         verbose_name_plural = "zygosities"
 
 
-class Sequence(models.Model):
+class Sequence(BaseModel):
     """A genetic sequence that you run a genotyping test for."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     base_pairs = models.TextField(help_text="the actual sequence of base pairs in the test")
     description = models.CharField(max_length=1023,
                                    help_text="any other relevant information about this test")
@@ -300,7 +291,7 @@ class Sequence(models.Model):
         return self.informal_name
 
 
-class GenotypeTest(models.Model):
+class GenotypeTest(BaseModel):
     TEST_RESULTS = (
         (0, 'Absent'),
         (1, 'Present'),
@@ -316,9 +307,8 @@ class GenotypeTest(models.Model):
         verbose_name_plural = "genotype tests"
 
 
-class Source(models.Model):
+class Source(BaseModel):
     """A supplier / source of subjects."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)
 

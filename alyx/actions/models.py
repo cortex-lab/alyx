@@ -1,17 +1,16 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
-from datetime import datetime, timezone
+from datetime import datetime
 from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
+from alyx.base import BaseModel
 
 
-class ProcedureType(models.Model):
+class ProcedureType(BaseModel):
     """
     A procedure to be performed on a subject.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, help_text="Short procedure name")
     description = models.TextField(null=True, blank=True,
                                    help_text="Detailed description "
@@ -21,13 +20,12 @@ class ProcedureType(models.Model):
         return self.name
 
 
-class BaseAction(models.Model):
+class BaseAction(BaseModel):
     """
     Base class for an action performed on a subject, such as a recording;
     surgery; etc. This should always be accessed through one of its subclasses.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     users = models.ManyToManyField(User, blank=True,
                                    help_text="The user(s) involved "
                                    "in this action")
@@ -43,8 +41,6 @@ class BaseAction(models.Model):
     narrative = models.TextField(null=True, blank=True)
     date_time = models.DateTimeField(null=True, blank=True,
                                      default=datetime.now)
-    json = JSONField(null=True, blank=True, help_text="Structured data, "
-                     "formatted in a user-defined way")
 
     def __str__(self):
         return (str(self.subject) + " at " +
@@ -102,16 +98,14 @@ class OtherAction(BaseAction):
     pass
 
 
-class Weighing(models.Model):
+class Weighing(BaseModel):
     """
     A weighing of a subject.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, null=True, blank=True, help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
                                 help_text="The subject which was weighed")
     date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
-    json = JSONField(null=True, blank=True, help_text="Structured data, formatted in a user-defined way")
     weight = models.FloatField(help_text="Weight in grams")
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
                                        help_text="The scale record that was used to weigh the subject")
@@ -123,11 +117,10 @@ class Weighing(models.Model):
                                       )
 
 
-class WaterAdministration(models.Model):
+class WaterAdministration(BaseModel):
     """
     For keeping track of water for subjects not on free water.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, null=True, blank=True,
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
@@ -136,9 +129,6 @@ class WaterAdministration(models.Model):
                                 "was administered")
     date_time = models.DateTimeField(null=True, blank=True,
                                      default=datetime.now)
-    json = JSONField(null=True, blank=True,
-                     help_text="Structured data, formatted "
-                     "in a user-defined way")
     water_administered = models.FloatField(help_text="Water administered, "
                                            "in millilitres")
 

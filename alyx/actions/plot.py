@@ -11,6 +11,8 @@ from actions.models import Weighing
 
 
 def weighing_plot(request, subject_id=None):
+    if subject_id in (None, 'None'):
+        return HttpResponse('')
     subj = Subject.objects.get(pk=subject_id)
     weighins = Weighing.objects.filter(subject_id=subj.id).order_by('date_time')
     if not weighins:
