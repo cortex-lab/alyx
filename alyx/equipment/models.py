@@ -50,8 +50,10 @@ class EquipmentModel(BaseModel):
     """
     An equipment model. i.e. "BrainScanner 4X"
     """
-    manufacturer = models.ForeignKey('EquipmentManufacturer', null=True, blank=True)
-    model_name = models.CharField(max_length=255, help_text="e.g. 'BrainScanner 4X'")
+    manufacturer = models.ForeignKey(
+        'EquipmentManufacturer', null=True, blank=True)
+    model_name = models.CharField(
+        max_length=255, help_text="e.g. 'BrainScanner 4X'")
     description = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
@@ -61,7 +63,8 @@ class EquipmentModel(BaseModel):
 class VirusBatch(BaseModel):
     # i took out "provided by a supplier" because we make these ourselves
     # (they are diluated from what the supplier supplies)
-    # might also need a location field (e.g. which fridge it is in) - let's ask Charu
+    # might also need a location field (e.g. which fridge it is in) - let's
+    # ask Charu
     """
     A virus batch
     """
@@ -70,8 +73,10 @@ class VirusBatch(BaseModel):
     description = models.CharField(max_length=255, null=True, blank=True)
     virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
                                      help_text="Who supplied the virus")
-    date_time_made = models.DateTimeField(null=True, blank=True, default=datetime.now)
-    nominal_titer = models.FloatField(null=True, blank=True, help_text="TODO: What unit?")
+    date_time_made = models.DateTimeField(
+        null=True, blank=True, default=datetime.now)
+    nominal_titer = models.FloatField(
+        null=True, blank=True, help_text="TODO: What unit?")
     # let's ask Charu about what unit.
 
     class Meta:

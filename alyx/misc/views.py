@@ -1,11 +1,11 @@
-from django.shortcuts import render
 from django.contrib.auth.models import User
-from rest_framework import generics, permissions, renderers, viewsets
+from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, detail_route
+from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 
 from .serializers import UserSerializer
+
 
 @api_view(['GET'])
 def api_root(request, format=None):
@@ -22,9 +22,11 @@ def api_root(request, format=None):
         'experiments-url': reverse('experiment-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'weighings-url': reverse('weighing-create', request=request, format=format),
-        'water-administrations-url': reverse('water-administration-create', request=request, format=format),
+        'water-administrations-url': reverse('water-administration-create',
+                                             request=request, format=format),
         'files-url': reverse('filerecord-list', request=request, format=format)
     })
+
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -32,4 +34,4 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field='username'
+    lookup_field = 'username'

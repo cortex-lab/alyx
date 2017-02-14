@@ -1,4 +1,3 @@
-import uuid
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 
@@ -108,7 +107,8 @@ class FileRecord(BaseModel):
     """A single file on disk or tape."""
 
     dataset = models.ForeignKey('Dataset', related_name='file_records')
-    filename = models.CharField(max_length=1000, help_text="Full filename or UNC filepath")
+    filename = models.CharField(
+        max_length=1000, help_text="Full filename or UNC filepath")
     # data_repository = models.ForeignKey('DataRepository')
     # file = models.ForeignKey('LogicalFile')
 

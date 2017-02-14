@@ -4,7 +4,7 @@ from dal import autocomplete
 from .models import *
 
 from .serializers import *
-from rest_framework import generics, permissions, renderers, viewsets
+from rest_framework import generics, permissions
 
 
 def _autoname_number(model, field, prefix):
@@ -31,6 +31,7 @@ class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SubjectAutocomplete(autocomplete.Select2QuerySetView):
+
     def get_queryset(self):
         if not self.request.user.is_authenticated():
             return Subject.objects.none()

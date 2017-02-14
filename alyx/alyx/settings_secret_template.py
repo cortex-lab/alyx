@@ -1,4 +1,5 @@
-# You should edit this file to match your settings and copy it to "settings_secret.py".
+# You should edit this file to match your settings and copy it to
+# "settings_secret.py".
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'ab5d+*w*er&*ym32k33x6p6v$v+3_pmrf%e3eg-_9+0%2lu-1)'

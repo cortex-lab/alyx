@@ -1,4 +1,3 @@
-import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
@@ -59,12 +58,15 @@ class VirusInjection(BaseAction):
         ('P', 'Pressure'),
     )
     virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True)
-    injection_volume = models.FloatField(null=True, blank=True, help_text="Volume in nanoliters")
-    rate_of_injection = models.FloatField(null=True, blank=True, help_text="TODO: Nanoliters per second / per minute?")
+    injection_volume = models.FloatField(
+        null=True, blank=True, help_text="Volume in nanoliters")
+    rate_of_injection = models.FloatField(
+        null=True, blank=True, help_text="TODO: Nanoliters per second / per minute?")
     injection_type = models.CharField(max_length=1,
-                                     choices=INJECTION_TYPES,
-                                     default='I', blank=True, null=True,
-                                     help_text="Whether the injection was through iontophoresis or pressure")
+                                      choices=INJECTION_TYPES,
+                                      default='I', blank=True, null=True,
+                                      help_text="Whether the injection was through "
+                                      "iontophoresis or pressure")
 
 
 class Surgery(BaseAction):
@@ -102,13 +104,16 @@ class Weighing(BaseModel):
     """
     A weighing of a subject.
     """
-    user = models.ForeignKey(User, null=True, blank=True, help_text="The user who weighed the subject")
+    user = models.ForeignKey(User, null=True, blank=True,
+                             help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
                                 help_text="The subject which was weighed")
-    date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    date_time = models.DateTimeField(
+        null=True, blank=True, default=datetime.now)
     weight = models.FloatField(help_text="Weight in grams")
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
-                                       help_text="The scale record that was used to weigh the subject")
+                                       help_text="The scale record that was used "
+                                       "to weigh the subject")
 
     def __str__(self):
         return '%s at %s (%.1f g)' % (str(self.subject),

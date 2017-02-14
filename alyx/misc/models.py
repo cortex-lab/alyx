@@ -1,6 +1,5 @@
-import uuid
 from django.db import models
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import ArrayField
 from alyx.base import BaseModel
 
 
@@ -19,11 +18,13 @@ class BrainLocation(BaseModel):
     """Gives a brain location in stereotaxic coordinates, plus other information about location."""
     name = models.CharField(max_length=255)
     # [Anterior, Right, Down], relative to bregma in µm
-    stereotaxic_coordinates = ArrayField(models.FloatField(blank=True, null=True), size=3)
+    stereotaxic_coordinates = ArrayField(
+        models.FloatField(blank=True, null=True), size=3)
     # e.g. area, layer, comments on how estimated
     description = models.TextField()
     # using their vocabulary
-    allen_location_ontology = models.CharField(max_length=255, null=True, blank=True)
+    allen_location_ontology = models.CharField(
+        max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name

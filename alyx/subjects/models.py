@@ -146,7 +146,8 @@ class Subject(BaseModel):
 
         subj_zscore = (start_weight - implant_weight - start_mrw) / start_srw
 
-        expected_weight_today = (today_srw * subj_zscore) + today_mrw + implant_weight
+        expected_weight_today = (today_srw * subj_zscore) + \
+            today_mrw + implant_weight
         thresh_weight = 0.8 * expected_weight_today
 
         if today_weight < thresh_weight:
@@ -155,7 +156,8 @@ class Subject(BaseModel):
             return 0.04 * today_weight
 
     def water_requirement_remaining(self):
-        # returns the amount of water the subject still needs, given how much it got already today
+        # returns the amount of water the subject still needs, given how much
+        # it got already today
 
         req_total = self.water_requirement_total()
 
@@ -163,7 +165,8 @@ class Subject(BaseModel):
         water_today = WaterAdministration.objects.filter(subject__id=self.id,
                                                          date_time=today)
 
-        # extract the amounts of all water_today, sum them, subtract from req_total
+        # extract the amounts of all water_today, sum them, subtract from
+        # req_total
         water_today = water_today.aggregate(models.Sum('water_administered'))
         return req_total - (water_today['water_administered__sum'] or 0)
 
@@ -281,7 +284,8 @@ class Zygosity(BaseModel):
 
 class Sequence(BaseModel):
     """A genetic sequence that you run a genotyping test for."""
-    base_pairs = models.TextField(help_text="the actual sequence of base pairs in the test")
+    base_pairs = models.TextField(
+        help_text="the actual sequence of base pairs in the test")
     description = models.CharField(max_length=1023,
                                    help_text="any other relevant information about this test")
     informal_name = models.CharField(max_length=255,

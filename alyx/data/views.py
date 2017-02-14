@@ -1,8 +1,8 @@
-from django.shortcuts import render
-from rest_framework import generics, permissions, renderers, viewsets
+from rest_framework import permissions, viewsets
 from .models import *
 
 from .serializers import DatasetSerializer, FileRecordSerializer
+
 
 class DatasetViewSet(viewsets.ModelViewSet):
     """
@@ -12,6 +12,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
 
 class FileRecordViewSet(viewsets.ModelViewSet):
     """

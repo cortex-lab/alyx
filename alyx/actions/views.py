@@ -1,7 +1,4 @@
-import uuid
-from django.shortcuts import render
-from subjects.models import Subject
-from rest_framework import generics, permissions, renderers, viewsets
+from rest_framework import generics, permissions
 
 from .models import *
 from .serializers import *
@@ -34,7 +31,8 @@ class WeighingAPIList(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Weighing.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
+        queryset = queryset.filter(subject__nickname=self.kwargs[
+                                   'nickname']).order_by('date_time')
         return queryset
 
 
@@ -65,7 +63,8 @@ class WaterAdministrationAPIList(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Weighing.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs['nickname']).order_by('date_time')
+        queryset = queryset.filter(subject__nickname=self.kwargs[
+                                   'nickname']).order_by('date_time')
         return queryset
 
 

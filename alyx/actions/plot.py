@@ -14,7 +14,8 @@ def weighing_plot(request, subject_id=None):
     if subject_id in (None, 'None'):
         return HttpResponse('')
     subj = Subject.objects.get(pk=subject_id)
-    weighins = Weighing.objects.filter(subject_id=subj.id).order_by('date_time')
+    weighins = Weighing.objects.filter(
+        subject_id=subj.id).order_by('date_time')
     if not weighins:
         return HttpResponse('')
     x, y = zip(*((w.date_time, w.weight) for w in weighins))

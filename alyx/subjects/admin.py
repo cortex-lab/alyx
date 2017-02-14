@@ -107,6 +107,7 @@ class SubjectAdmin(admin.ModelAdmin):
 
 
 class SpeciesAdmin(admin.ModelAdmin):
+
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return self.readonly_fields + ['binomial']
@@ -148,7 +149,6 @@ class LitterAdmin(admin.ModelAdmin):
             obj.delete()
         litter = formset.instance
         mother = litter.mother
-        father = litter.father
         to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
         for instance in instances:
             subj = instance

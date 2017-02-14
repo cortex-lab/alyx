@@ -16,17 +16,14 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework.authtoken import views as av
-from rest_framework import renderers
 
 from subjects import views as subjects_views
 
 from actions import views as actions_views
 
 from data import views as data_views
-from data.views import DatasetViewSet, FileRecordViewSet
 
 from misc import views as misc_views
-from misc.views import UserViewSet, api_root
 
 dataset_list = data_views.DatasetViewSet.as_view({
     'get': 'list',

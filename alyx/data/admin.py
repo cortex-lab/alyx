@@ -2,17 +2,22 @@ from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
 from .models import *
 
+
 class DataRepositoryChildAdmin(PolymorphicChildModelAdmin):
     base_model = DataRepository
+
 
 class LocalDataRepositoryAdmin(DataRepositoryChildAdmin):
     base_model = LocalDataRepository
 
+
 class NetworkDataRepositoryAdmin(DataRepositoryChildAdmin):
     base_model = LocalDataRepository
 
+
 class ArchiveDataRepositoryAdmin(DataRepositoryChildAdmin):
     base_model = LocalDataRepository
+
 
 class DataRepositoryParentAdmin(PolymorphicParentModelAdmin):
     base_model = DataRepository

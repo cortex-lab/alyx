@@ -2,14 +2,15 @@ from rest_framework import serializers
 from .models import *
 from actions.models import Experiment
 
+
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
     file_records = serializers.SlugRelatedField(many=True,
-        read_only=False,
-        queryset = FileRecord.objects.all(),
-        slug_field='filename',
-        allow_null=True,
-        required=False)
+                                                read_only=False,
+                                                queryset=FileRecord.objects.all(),
+                                                slug_field='filename',
+                                                allow_null=True,
+                                                required=False)
 
     experiment = serializers.HyperlinkedRelatedField(
         read_only=False, view_name="experiment-detail",
@@ -21,6 +22,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('__all__')
+
 
 class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
