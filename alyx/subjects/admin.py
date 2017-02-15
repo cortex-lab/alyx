@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.contrib import admin
 from dal import autocomplete
 from dal.forward import Const
+from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
 from .views import _autoname_number
 from actions.models import Surgery, Experiment
@@ -40,27 +41,27 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.exclude(death_date=None)
 
 
-class ZygosityInline(admin.TabularInline):
+class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
     extra = 2  # how many rows to show
 
 
-class GenotypeTestInline(admin.TabularInline):
+class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
     extra = 2  # how many rows to show
 
 
-class SurgeryInline(admin.TabularInline):
+class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
 
 
-class ExperimentInline(admin.TabularInline):
+class ExperimentInline(BaseInlineAdmin):
     model = Experiment
     extra = 1
 
 
-class SubjectAdmin(admin.ModelAdmin):
+class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
                                 'death_date', 'ear_mark', 'notes')}),
@@ -95,22 +96,12 @@ class SubjectAdmin(admin.ModelAdmin):
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline]
 
-    def mother(self, obj):
-        if not obj.litter:
-            return
-        return obj.litter.mother
-
-    def father(self, obj):
-        if not obj.litter:
-            return
-        return obj.litter.father
-
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" />', url=url)
 
 
-class SpeciesAdmin(admin.ModelAdmin):
+class SpeciesAdmin(BaseAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -121,26 +112,30 @@ class SpeciesAdmin(admin.ModelAdmin):
     readonly_fields = []
 
 
-class SubjectLitterInline(admin.TabularInline):
+class SubjectLitterInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('sex', 'cage', 'ear_mark', 'notes')
+    fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+              'ear_mark', 'notes')
+    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
     show_change_link = True
     # TODO: genotype
 
 
-class SubjectCageInline(admin.TabularInline):
+class SubjectCageInline(BaseInlineAdmin):
     model = Subject
     extra = 1
     # fields = ('sex', 'ear_mark', 'notes')
     # TODO: genotype
 
 
-class LineAdmin(admin.ModelAdmin):
+class LineAdmin(BaseAdmin):
+    fields = ['name', 'auto_name', 'gene_name', 'description']
+
     inlines = [SubjectLitterInline]
 
 
-class LitterAdmin(admin.ModelAdmin):
+class LitterAdmin(BaseAdmin):
     list_display = ['descriptive_name', 'mother', 'father']
     fields = ['line', 'descriptive_name', 'birth_date', 'notes',
               'mother', 'father', 'cage']
@@ -168,7 +163,7 @@ class LitterAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
-class LitterInline(admin.TabularInline):
+class LitterInline(BaseInlineAdmin):
     model = Litter
     extra = 1
     show_change_link = True
@@ -216,7 +211,7 @@ class CageAdminForm(forms.ModelForm):
         model = Cage
 
 
-class CageAdmin(admin.ModelAdmin):
+class CageAdmin(BaseAdmin):
     form = CageAdminForm
 
     fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
