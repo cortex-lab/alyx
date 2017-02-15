@@ -108,6 +108,7 @@ class SpeciesAdmin(BaseAdmin):
             return self.readonly_fields + ['binomial']
         return self.readonly_fields
 
+    fields = ['binomial', 'display_name']
     list_display = ['binomial', 'display_name']
     readonly_fields = []
 
@@ -135,9 +136,27 @@ class SequencesInline(BaseInlineAdmin):
 
 
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'gene_name', 'description']
+    fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
 
     inlines = [SequencesInline, SubjectLitterInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        line = formset.instance
+        to_copy = 'species,strain'.split(',')
+        for instance in instances:
+            subj = instance
+            if isinstance(subj, Subject):
+                # Copy some fields from the line to the subject.
+                for field in to_copy:
+                    value = getattr(line, field, None)
+                    if value:
+                        setattr(subj, field, value)
+                subj.save()
+        formset.save_m2m()
 
 
 class LitterAdmin(BaseAdmin):
@@ -225,13 +244,29 @@ class CageAdmin(BaseAdmin):
         formset.save_m2m()
 
 
+class StrainAdmin(BaseAdmin):
+    fields = ['descriptive_name', 'description']
+
+
+class AlleleAdmin(BaseAdmin):
+    fields = ['standard_name', 'informal_name']
+
+
+class SourceAdmin(BaseAdmin):
+    fields = ['name', 'notes']
+
+
+class SequenceAdmin(BaseAdmin):
+    fields = ['base_pairs', 'informal_name', 'description']
+
+
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
 
 admin.site.register(Line, LineAdmin)
-admin.site.register(Allele)
-admin.site.register(Sequence)
-admin.site.register(Strain)
-admin.site.register(Source)
+admin.site.register(Allele, AlleleAdmin)
+admin.site.register(Sequence, SequenceAdmin)
+admin.site.register(Strain, StrainAdmin)
+admin.site.register(Source, SourceAdmin)
 admin.site.register(Cage, CageAdmin)

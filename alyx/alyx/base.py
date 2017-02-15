@@ -29,6 +29,9 @@ class BaseAdmin(admin.ModelAdmin):
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
                                   'cols': 60})},
+        JSONField: {'widget': forms.Textarea(
+                    attrs={'rows': 5,
+                           'cols': 50})},
     }
 
     def __init__(self, *args, **kwargs):

@@ -249,6 +249,8 @@ class Line(BaseModel):
     gene_name = models.CharField(max_length=1023)
     auto_name = models.SlugField(max_length=255)
     sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
+    strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
