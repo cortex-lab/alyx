@@ -231,7 +231,7 @@ class LitterAdmin(BaseAdmin):
 
 class SequencesInline(BaseInlineAdmin):
     model = Line.sequences.through
-
+    extra = 1
     fields = ['sequence']
 
 
