@@ -2,12 +2,14 @@ from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib import admin
-from dal import autocomplete
-from dal.forward import Const
+from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
-from .views import _autoname_number
-from actions.models import Surgery, Experiment
+from .views import _autoname
+from actions.models import Surgery, Experiment, OtherAction
 
+
+# Filters
+# ------------------------------------------------------------------------------------------------
 
 class ResponsibleUserListFilter(admin.SimpleListFilter):
     title = 'responsible user'
@@ -40,31 +42,47 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.exclude(death_date=None)
 
 
-class ZygosityInline(admin.TabularInline):
+# Subject
+# ------------------------------------------------------------------------------------------------
+
+class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
-    extra = 2  # how many rows to show
+    extra = 2
+    fields = ['allele', 'zygosity']
 
 
-class GenotypeTestInline(admin.TabularInline):
+class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
-    extra = 2  # how many rows to show
+    extra = 2
+    fields = ['sequence', 'test_result']
 
 
-class SurgeryInline(admin.TabularInline):
+class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
+    fields = ['brain_location', 'procedures', 'narrative', 'date_time',
+              'users', 'location']
 
 
-class ExperimentInline(admin.TabularInline):
+class ExperimentInline(BaseInlineAdmin):
     model = Experiment
     extra = 1
+    fields = ['procedures', 'narrative', 'date_time',
+              'users', 'location']
 
 
-class SubjectAdmin(admin.ModelAdmin):
+class OtherActionInline(BaseInlineAdmin):
+    model = OtherAction
+    extra = 1
+    fields = ['procedures', 'narrative', 'date_time',
+              'users', 'location']
+
+
+class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
-                                'death_date', 'ear_mark', 'notes')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line')}),
+                                'death_date', 'ear_mark', 'notes', 'json')}),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line',)}),
         ('LITTER', {'fields': ('cage', 'litter',)}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing',
@@ -93,57 +111,101 @@ class SubjectAdmin(admin.ModelAdmin):
                        )
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, ExperimentInline]
-
-    def mother(self, obj):
-        if not obj.litter:
-            return
-        return obj.litter.mother
-
-    def father(self, obj):
-        if not obj.litter:
-            return
-        return obj.litter.father
+               SurgeryInline, ExperimentInline, OtherActionInline]
 
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" />', url=url)
 
 
-class SpeciesAdmin(admin.ModelAdmin):
+# Cage
+# ------------------------------------------------------------------------------------------------
 
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ['binomial']
-        return self.readonly_fields
-
-    list_display = ['binomial', 'display_name']
-    readonly_fields = []
-
-
-class SubjectLitterInline(admin.TabularInline):
-    model = Subject
+class LitterInline(BaseInlineAdmin):
+    model = Litter
+    fields = ['descriptive_name', 'mother', 'father', 'birth_date', 'notes']
     extra = 1
-    fields = ('sex', 'cage', 'ear_mark', 'notes')
     show_change_link = True
-    # TODO: genotype
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(LitterInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        if db_field.name in ('mother', 'father'):
+            if request._obj_ is not None:
+                field.queryset = field.queryset.filter(line=request._obj_.line)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
 
 
-class SubjectCageInline(admin.TabularInline):
+class SubjectCageInline(BaseInlineAdmin):
     model = Subject
     extra = 1
     # fields = ('sex', 'ear_mark', 'notes')
     # TODO: genotype
 
 
-class LineAdmin(admin.ModelAdmin):
-    inlines = [SubjectLitterInline]
+class CageAdminForm(forms.ModelForm):
+    class Meta:
+        fields = '__all__'
+        model = Cage
 
 
-class LitterAdmin(admin.ModelAdmin):
-    list_display = ['descriptive_name', 'mother', 'father']
-    fields = ['line', 'descriptive_name', 'birth_date', 'notes',
-              'mother', 'father', 'cage']
+class CageAdmin(BaseAdmin):
+    form = CageAdminForm
+
+    fields = ('line', 'cage_label', 'type', 'location')
+    inlines = [SubjectCageInline, LitterInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(CageAdmin, self).get_form(request, obj, **kwargs)
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        if formset.instance.cage_label in (None, '-'):
+            autoname = _autoname(Cage,
+                                 formset.instance.line.auto_name,
+                                 'cage_label',
+                                 interfix='C_')
+            formset.instance.cage_label = autoname
+            formset.instance.save()
+        # Set the line of all inline litters.
+        for instance in instances:
+            if isinstance(instance, Litter):
+                instance.line = formset.instance.line
+                if instance.descriptive_name in (None, '-'):
+                    autoname = _autoname(Litter,
+                                         formset.instance.line.auto_name,
+                                         'descriptive_name',
+                                         interfix='L_')
+                    instance.descriptive_name = autoname
+                instance.save()
+        formset.save_m2m()
+
+
+# Litter
+# ------------------------------------------------------------------------------------------------
+
+class SubjectLitterInline(BaseInlineAdmin):
+    model = Subject
+    extra = 1
+    fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+              'ear_mark', 'notes')
+    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
+    show_change_link = True
+
+
+class LitterAdmin(BaseAdmin):
+    list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
+    fields = ['line', 'descriptive_name',
+              'mother', 'father', 'birth_date',
+              'notes', 'cage']
 
     inlines = [SubjectLitterInline]
 
@@ -168,68 +230,82 @@ class LitterAdmin(admin.ModelAdmin):
         formset.save_m2m()
 
 
-class LitterInline(admin.TabularInline):
-    model = Litter
+# Line
+# ------------------------------------------------------------------------------------------------
+
+class SequencesInline(BaseInlineAdmin):
+    model = Line.sequences.through
     extra = 1
-    show_change_link = True
+    fields = ['sequence']
 
 
-class CageAdminForm(forms.ModelForm):
+class LineAdmin(BaseAdmin):
+    fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
 
-    cage_label = forms.CharField(
-        widget=autocomplete.Select2(url='cage-label-autocomplete',
-                                    forward=['line'],
-                                    ),
-        required=True,
-    )
-    mother = forms.ModelChoiceField(
-        queryset=Subject.objects.filter(sex='F'),
-        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
-                                         forward=['line',
-                                                  Const('F', 'sex')],
-                                         ),
-        required=False,
-    )
-    father = forms.ModelChoiceField(
-        queryset=Subject.objects.filter(sex='M'),
-        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
-                                         forward=['line',
-                                                  Const('M', 'sex')],
-                                         ),
-        required=False,
-    )
+    inlines = [SequencesInline, SubjectLitterInline]
 
-    def save(self, commit=True):
-        # Add the mice to the cage.
-        mother = self.cleaned_data.get('mother', None)
-        father = self.cleaned_data.get('father', None)
-        if mother:
-            mother.cage = self.instance
-            mother.save()
-        if father:
-            father.cage = self.instance
-            father.save()
-        return super(CageAdminForm, self).save(commit=commit)
-
-    class Meta:
-        fields = '__all__'
-        model = Cage
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        line = formset.instance
+        to_copy = 'species,strain'.split(',')
+        for instance in instances:
+            subj = instance
+            if isinstance(subj, Subject):
+                # Copy some fields from the line to the subject.
+                for field in to_copy:
+                    value = getattr(line, field, None)
+                    if value:
+                        setattr(subj, field, value)
+                subj.save()
+        formset.save_m2m()
 
 
-class CageAdmin(admin.ModelAdmin):
-    form = CageAdminForm
+# Other
+# ------------------------------------------------------------------------------------------------
 
-    fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
-    inlines = [SubjectCageInline, LitterInline]
+class SubjectRequestAdmin(BaseAdmin):
+    fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
+
+
+class SpeciesAdmin(BaseAdmin):
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ['binomial']
+        return self.readonly_fields
+
+    fields = ['binomial', 'display_name']
+    list_display = ['binomial', 'display_name']
+    readonly_fields = []
+
+
+class StrainAdmin(BaseAdmin):
+    fields = ['descriptive_name', 'description']
+
+
+class AlleleAdmin(BaseAdmin):
+    fields = ['standard_name', 'informal_name']
+
+
+class SourceAdmin(BaseAdmin):
+    fields = ['name', 'notes']
+
+
+class SequenceAdmin(BaseAdmin):
+    fields = ['base_pairs', 'informal_name', 'description']
 
 
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
-admin.site.register(Species, SpeciesAdmin)
-
 admin.site.register(Line, LineAdmin)
-admin.site.register(Allele)
-admin.site.register(Sequence)
-admin.site.register(Strain)
-admin.site.register(Source)
 admin.site.register(Cage, CageAdmin)
+
+admin.site.register(SubjectRequest, SubjectRequestAdmin)
+admin.site.register(Species, SpeciesAdmin)
+admin.site.register(Strain, StrainAdmin)
+admin.site.register(Source, SourceAdmin)
+admin.site.register(Allele, AlleleAdmin)
+admin.site.register(Sequence, SequenceAdmin)

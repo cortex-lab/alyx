@@ -27,6 +27,26 @@ class BasePolymorphicModel(PolymorphicModel):
 class BaseAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
-                           attrs={'rows': 5,
-                                  'cols': 40})},
+                           attrs={'rows': 8,
+                                  'cols': 60})},
+        JSONField: {'widget': forms.Textarea(
+                    attrs={'rows': 5,
+                           'cols': 50})},
+    }
+
+    def __init__(self, *args, **kwargs):
+        if self.fields and 'json' not in self.fields:
+            self.fields += ('json',)
+        super(BaseAdmin, self).__init__(*args, **kwargs)
+
+
+class BaseInlineAdmin(admin.TabularInline):
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(
+                           attrs={'rows': 3,
+                                  'cols': 30})},
+        JSONField: {'widget': forms.Textarea(
+                    attrs={'rows': 3,
+                           'cols': 30})},
+        models.CharField: {'widget': forms.TextInput(attrs={'size': 16})},
     }

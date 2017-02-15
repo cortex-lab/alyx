@@ -7,14 +7,20 @@ from .serializers import *
 from rest_framework import generics, permissions
 
 
-def _autoname_number(model, field, prefix):
-    objects = model.objects.filter(**{'%s__istartswith' % field: prefix})
+def _autoname_number(model, auto_name, field, interfix=''):
+    objects = model.objects.filter(**{'%s__istartswith' % field:
+                                      (auto_name + '_' + interfix)})
     names = sorted([getattr(obj, field) for obj in objects])
     if not names:
         i = 1
     else:
         i = int(names[-1][-4:]) + 1
     return i
+
+
+def _autoname(model, auto_name, field, interfix=''):
+    i = _autoname_number(model, auto_name, field, interfix)
+    return '%s_%s%04d' % (auto_name, interfix, i)
 
 
 class SubjectList(generics.ListCreateAPIView):
@@ -74,7 +80,7 @@ class AutoLinenameAutocomplete(autocomplete.Select2ListView):
         line = self.forwarded.get('line', None)
         if not line:
             return []
-        line_name = Line.objects.get(pk=line).name
+        line_name = Line.objects.get(pk=line).auto_name
         prefix = self._prefix % line_name
         i = _autoname_number(self._model, self._field, prefix)
         return ['%s%04d' % (prefix, i)]

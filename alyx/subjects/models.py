@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from alyx.base import BaseModel
 from equipment.models import LabLocation
-from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
+from actions.models import WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,8 @@ class Subject(BaseModel):
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
-    species = models.ForeignKey('Species', null=True, blank=True,
-                                on_delete=models.SET_NULL,
-                                )
-    litter = models.ForeignKey('Litter', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               )
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
                            null=True, blank=True, default='U')
     strain = models.ForeignKey('Strain', null=True, blank=True,
@@ -41,23 +37,16 @@ class Subject(BaseModel):
                                )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
-    source = models.ForeignKey('Source', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               )
-    line = models.ForeignKey('Line', null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             )
+    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
+    line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    cage = models.ForeignKey('Cage', null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             )
-    implant_weight = models.FloatField(help_text="Implant weight in grams",
-                                       null=True, blank=True)
+    cage = models.ForeignKey('Cage', null=True, blank=True, on_delete=models.SET_NULL)
+    implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
 
@@ -80,14 +69,19 @@ class Subject(BaseModel):
             return None
         return age.days
 
+    def age_weeks(self):
+        return (self.age_days() or 0) // 7
+
+    def mother(self):
+        if self.litter:
+            return self.litter.mother
+
+    def father(self):
+        if self.litter:
+            return self.litter.father
+
     def water_restriction_date(self):
-        actname = 'Put on water restriction'
-        proc = ProcedureType.objects.filter(name=actname)
-        if not proc:
-            return
-        proc = proc[0]
-        restriction = OtherAction.objects.filter(subject__id=self.id,
-                                                 procedures__id=proc.id)
+        restriction = WaterRestriction.objects.filter(subject__id=self.id)
         restriction = restriction.order_by('-date_time')
         if not restriction:
             return
@@ -175,6 +169,22 @@ class Subject(BaseModel):
         return self.nickname
 
 
+class SubjectRequest(BaseModel):
+    STATUS_CHOICES = (
+        ('O', 'Open'),
+        ('C', 'Closed')
+    )
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                             related_name='subjects_requested',
+                             help_text="Who requested this subject.")
+    line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
+    count = models.IntegerField(null=True, blank=True)
+    date_time = models.DateField(default=datetime.now, null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, null=True, blank=True)
+
+
 class Species(BaseModel):
     """A single species, identified uniquely by its binomial name."""
     binomial = models.CharField(max_length=255,
@@ -193,12 +203,14 @@ class Species(BaseModel):
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
-    descriptive_name = models.CharField(max_length=255)
+    descriptive_name = models.CharField(max_length=255, default='-')
     mother = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
+                               limit_choices_to={'sex': 'F'},
                                related_name="litter_mother")
     father = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
+                               limit_choices_to={'sex': 'M'},
                                related_name="litter_father")
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
@@ -219,7 +231,8 @@ class Cage(BaseModel):
         ('R', 'Regular'),
     )
 
-    cage_label = models.CharField(max_length=255, null=True, blank=True)
+    cage_label = models.CharField(max_length=255, default='-',
+                                  help_text='Leave to "-" to autofill.')
     type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
                             help_text="Is this an IVC or regular cage?")
     line = models.ForeignKey('Line', null=True, blank=True,
@@ -236,6 +249,9 @@ class Line(BaseModel):
     description = models.TextField(null=True, blank=True)
     gene_name = models.CharField(max_length=1023)
     auto_name = models.SlugField(max_length=255)
+    sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
+    strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -326,6 +342,17 @@ class GenotypeTest(BaseModel):
 
     class Meta:
         verbose_name_plural = "genotype tests"
+
+
+class LineGenotypeTest(BaseModel):
+    """
+    A junction table between Line and Sequence.
+    """
+    subject = models.ForeignKey('Line', on_delete=models.CASCADE)
+    sequence = models.ForeignKey('Sequence', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = "sequences"
 
 
 class Source(BaseModel):

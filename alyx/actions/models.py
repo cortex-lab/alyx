@@ -19,6 +19,46 @@ class ProcedureType(BaseModel):
         return self.name
 
 
+class Weighing(BaseModel):
+    """
+    A weighing of a subject.
+    """
+    user = models.ForeignKey(User, null=True, blank=True,
+                             help_text="The user who weighed the subject")
+    subject = models.ForeignKey('subjects.Subject', related_name='weighings',
+                                help_text="The subject which was weighed")
+    date_time = models.DateTimeField(
+        null=True, blank=True, default=datetime.now)
+    weight = models.FloatField(help_text="Weight in grams")
+    weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
+                                       help_text="The scale record that was used "
+                                       "to weigh the subject")
+
+    def __str__(self):
+        return '%s at %s (%.1f g)' % (str(self.subject),
+                                      str(self.date_time),
+                                      self.weight,
+                                      )
+
+
+class WaterAdministration(BaseModel):
+    """
+    For keeping track of water for subjects not on free water.
+    """
+    user = models.ForeignKey(User, null=True, blank=True,
+                             help_text="The user who administered water")
+    subject = models.ForeignKey('subjects.Subject',
+                                related_name='water_administrations',
+                                help_text="The subject to which water was administered")
+    date_time = models.DateTimeField(null=True, blank=True,
+                                     default=datetime.now)
+    water_administered = models.FloatField(help_text="Water administered, in millilitres")
+    hydrogel = models.NullBooleanField()
+
+    def __str__(self):
+        return str(self.subject) + " at " + str(self.date_time)
+
+
 class BaseAction(BaseModel):
     """
     Base class for an action performed on a subject, such as a recording;
@@ -93,49 +133,15 @@ class Experiment(BaseAction):
     pass
 
 
-class OtherAction(BaseAction):
+class WaterRestriction(BaseAction):
     """
     Another type of action.
     """
     pass
 
 
-class Weighing(BaseModel):
+class OtherAction(BaseAction):
     """
-    A weighing of a subject.
+    Another type of action.
     """
-    user = models.ForeignKey(User, null=True, blank=True,
-                             help_text="The user who weighed the subject")
-    subject = models.ForeignKey('subjects.Subject', related_name='weighings',
-                                help_text="The subject which was weighed")
-    date_time = models.DateTimeField(
-        null=True, blank=True, default=datetime.now)
-    weight = models.FloatField(help_text="Weight in grams")
-    weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
-                                       help_text="The scale record that was used "
-                                       "to weigh the subject")
-
-    def __str__(self):
-        return '%s at %s (%.1f g)' % (str(self.subject),
-                                      str(self.date_time),
-                                      self.weight,
-                                      )
-
-
-class WaterAdministration(BaseModel):
-    """
-    For keeping track of water for subjects not on free water.
-    """
-    user = models.ForeignKey(User, null=True, blank=True,
-                             help_text="The user who administered water")
-    subject = models.ForeignKey('subjects.Subject',
-                                related_name='water_administrations',
-                                help_text="The subject to which water "
-                                "was administered")
-    date_time = models.DateTimeField(null=True, blank=True,
-                                     default=datetime.now)
-    water_administered = models.FloatField(help_text="Water administered, "
-                                           "in millilitres")
-
-    def __str__(self):
-        return str(self.subject) + " at " + str(self.date_time)
+    pass
