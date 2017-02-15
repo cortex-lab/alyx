@@ -136,9 +136,10 @@ class LineAdmin(BaseAdmin):
 
 
 class LitterAdmin(BaseAdmin):
-    list_display = ['descriptive_name', 'mother', 'father']
-    fields = ['line', 'descriptive_name', 'birth_date', 'notes',
-              'mother', 'father', 'cage']
+    list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
+    fields = ['line', 'descriptive_name',
+              'mother', 'father', 'birth_date',
+              'notes', 'cage']
 
     inlines = [SubjectLitterInline]
 
@@ -165,6 +166,7 @@ class LitterAdmin(BaseAdmin):
 
 class LitterInline(BaseInlineAdmin):
     model = Litter
+    fields = ['descriptive_name', 'mother', 'father', 'birth_date', 'notes']
     extra = 1
     show_change_link = True
 
@@ -188,6 +190,18 @@ class CageAdmin(BaseAdmin):
 
     fields = ('line', 'cage_label', 'type', 'location')
     inlines = [SubjectCageInline, LitterInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        # Set the line of all inline litters.
+        for instance in instances:
+            if isinstance(instance, Litter):
+                instance.line = formset.instance.line
+                instance.save()
+        formset.save_m2m()
 
 
 admin.site.register(Subject, SubjectAdmin)
