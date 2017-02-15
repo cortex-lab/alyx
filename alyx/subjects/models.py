@@ -206,9 +206,11 @@ class Litter(BaseModel):
     descriptive_name = models.CharField(max_length=255)
     mother = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
+                               limit_choices_to={'sex': 'F'},
                                related_name="litter_mother")
     father = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
+                               limit_choices_to={'sex': 'M'},
                                related_name="litter_father")
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
