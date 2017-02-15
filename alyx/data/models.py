@@ -141,8 +141,6 @@ class FileRecord(BaseModel):
 class Dataset(BaseModel):
     """Collection of LogicalFiles (files or folders) grouped together."""
     name = models.CharField(max_length=255, null=True, blank=True)
-    experiment = models.ForeignKey(Experiment, related_name="datasets_related",
-                                   help_text="The Experiment to which this data belongs")
 
     def __str__(self):
         return str(getattr(self, 'name', 'unnamed')) + " belonging to " + str(self.experiment)
