@@ -269,7 +269,7 @@ class Zygosity(BaseModel):
     """
     A junction table between Subject and Allele.
     """
-    CAGE_TYPES = (
+    ZYGOSITY_TYPES = (
         (0, 'Absent'),
         (1, 'Heterozygous'),
         (2, 'Homozygous'),
@@ -277,10 +277,26 @@ class Zygosity(BaseModel):
     )
     subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
     allele = models.ForeignKey('Allele', on_delete=models.CASCADE)
-    zygosity = models.IntegerField(choices=CAGE_TYPES)
+    zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
+
+    def __str__(self):
+        if (self.zygosity == 0):
+            symbol = '-/-'
+        elif (self.zygosity == 1):
+            symbol = '+/-'
+        elif (self.zygosity == 2):
+            symbol = '+/+'
+        elif (self.zygosity == 3):
+            symbol = '+'
+        else:
+            symbol = '?'
+
+        return "{0:s} {1:s}".format(str(self.allele), symbol)
+
 
     class Meta:
         verbose_name_plural = "zygosities"
+
 
 
 class Sequence(BaseModel):
