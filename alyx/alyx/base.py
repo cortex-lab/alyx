@@ -47,8 +47,3 @@ class BaseInlineAdmin(admin.TabularInline):
                            'cols': 30})},
         models.CharField: {'widget': forms.TextInput(attrs={'size': 10})},
     }
-
-    def __init__(self, *args, **kwargs):
-        if self.fields and 'json' not in self.fields:
-            self.fields += ('json',)
-        super(BaseInlineAdmin, self).__init__(*args, **kwargs)
