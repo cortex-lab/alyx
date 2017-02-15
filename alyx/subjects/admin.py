@@ -177,34 +177,6 @@ class CageAdminForm(forms.ModelForm):
                                     ),
         required=True,
     )
-    mother = forms.ModelChoiceField(
-        queryset=Subject.objects.filter(sex='F'),
-        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
-                                         forward=['line',
-                                                  Const('F', 'sex')],
-                                         ),
-        required=False,
-    )
-    father = forms.ModelChoiceField(
-        queryset=Subject.objects.filter(sex='M'),
-        widget=autocomplete.ModelSelect2(url='subject-autocomplete',
-                                         forward=['line',
-                                                  Const('M', 'sex')],
-                                         ),
-        required=False,
-    )
-
-    def save(self, commit=True):
-        # Add the mice to the cage.
-        mother = self.cleaned_data.get('mother', None)
-        father = self.cleaned_data.get('father', None)
-        if mother:
-            mother.cage = self.instance
-            mother.save()
-        if father:
-            father.cage = self.instance
-            father.save()
-        return super(CageAdminForm, self).save(commit=commit)
 
     class Meta:
         fields = '__all__'
@@ -214,7 +186,7 @@ class CageAdminForm(forms.ModelForm):
 class CageAdmin(BaseAdmin):
     form = CageAdminForm
 
-    fields = ('line', 'cage_label', 'mother', 'father', 'type', 'location')
+    fields = ('line', 'cage_label', 'type', 'location')
     inlines = [SubjectCageInline, LitterInline]
 
 

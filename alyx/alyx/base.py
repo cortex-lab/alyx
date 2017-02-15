@@ -34,7 +34,6 @@ class BaseAdmin(admin.ModelAdmin):
     def __init__(self, *args, **kwargs):
         if self.fields:
             self.fields += ('json',)
-        print(self.fields)
         super(BaseAdmin, self).__init__(*args, **kwargs)
 
 
