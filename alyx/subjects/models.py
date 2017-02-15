@@ -1,11 +1,12 @@
 import csv
-from datetime import datetime, timezone
+from datetime import datetime
 import logging
 import os.path as op
 import urllib
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from alyx.base import BaseModel
 from equipment.models import LabLocation
 from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
@@ -163,7 +164,7 @@ class Subject(BaseModel):
 
         today = timezone.now()
         water_today = WaterAdministration.objects.filter(subject__id=self.id,
-                                                         date_time=today)
+                                                         date_time__date=today)
 
         # extract the amounts of all water_today, sum them, subtract from
         # req_total
