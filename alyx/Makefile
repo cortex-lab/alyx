@@ -14,7 +14,7 @@ clean: clean-pyc
 rmmigrations: clean
 	rm */migrations/*.py
 
-reset:
+migrate:
 	./manage.py migrate
 	./manage.py makemigrations actions behavior data electrophysiology equipment imaging misc subjects
 	./manage.py migrate

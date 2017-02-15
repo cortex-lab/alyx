@@ -27,12 +27,8 @@ class Subject(BaseModel):
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
-    species = models.ForeignKey('Species', null=True, blank=True,
-                                on_delete=models.SET_NULL,
-                                )
-    litter = models.ForeignKey('Litter', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               )
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
                            null=True, blank=True, default='U')
     strain = models.ForeignKey('Strain', null=True, blank=True,
@@ -40,23 +36,16 @@ class Subject(BaseModel):
                                )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
-    source = models.ForeignKey('Source', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               )
-    line = models.ForeignKey('Line', null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             )
+    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
+    line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    cage = models.ForeignKey('Cage', null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             )
-    implant_weight = models.FloatField(help_text="Implant weight in grams",
-                                       null=True, blank=True)
+    cage = models.ForeignKey('Cage', null=True, blank=True, on_delete=models.SET_NULL)
+    implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
 
@@ -183,6 +172,22 @@ class Subject(BaseModel):
 
     def __str__(self):
         return self.nickname
+
+
+class SubjectRequest(BaseModel):
+    STATUS_CHOICES = (
+        ('O', 'Open'),
+        ('C', 'Closed')
+    )
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                             related_name='subjects_requested',
+                             help_text="Who requested this subject.")
+    line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
+    count = models.IntegerField(null=True, blank=True)
+    date_time = models.DateField(default=datetime.now, null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, null=True, blank=True)
 
 
 class Species(BaseModel):

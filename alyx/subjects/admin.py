@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib import admin
 from dal import autocomplete
-from dal.forward import Const
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
 from .views import _autoname_number
@@ -113,6 +112,10 @@ class SubjectAdmin(BaseAdmin):
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" />', url=url)
+
+
+class SubjectRequestAdmin(BaseAdmin):
+    fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
 
 
 class SpeciesAdmin(BaseAdmin):
@@ -275,6 +278,7 @@ class SequenceAdmin(BaseAdmin):
 
 
 admin.site.register(Subject, SubjectAdmin)
+admin.site.register(SubjectRequest, SubjectRequestAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Species, SpeciesAdmin)
 
