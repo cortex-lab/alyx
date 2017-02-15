@@ -38,5 +38,4 @@ admin.site.register(WaterRestriction, BaseActionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
-admin.site.register(Note, NoteAdmin)
 admin.site.register(Surgery, SurgeryAdmin)

@@ -119,13 +119,6 @@ class Surgery(BaseAction):
         verbose_name_plural = "surgeries"
 
 
-class Note(BaseAction):
-    """
-    A note about a subject.
-    """
-    pass
-
-
 class Experiment(BaseAction):
     """
     An experiment or training session performed on a subject.
