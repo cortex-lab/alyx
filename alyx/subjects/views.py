@@ -74,7 +74,7 @@ class AutoLinenameAutocomplete(autocomplete.Select2ListView):
         line = self.forwarded.get('line', None)
         if not line:
             return []
-        line_name = Line.objects.get(pk=line).name
+        line_name = Line.objects.get(pk=line).auto_name
         prefix = self._prefix % line_name
         i = _autoname_number(self._model, self._field, prefix)
         return ['%s%04d' % (prefix, i)]
