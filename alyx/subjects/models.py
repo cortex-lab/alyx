@@ -79,6 +79,17 @@ class Subject(BaseModel):
             return None
         return age.days
 
+    def age_weeks(self):
+        return (self.age_days() or 0) // 7
+
+    def mother(self):
+        if self.litter:
+            return self.litter.mother
+
+    def father(self):
+        if self.litter:
+            return self.litter.father
+
     def water_restriction_date(self):
         actname = 'Put on water restriction'
         proc = ProcedureType.objects.filter(name=actname)
