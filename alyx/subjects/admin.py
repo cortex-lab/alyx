@@ -45,20 +45,34 @@ class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
     extra = 2  # how many rows to show
 
+    fields = ['allele', 'zygosity']
+
 
 class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
     extra = 2  # how many rows to show
+    fields = ['sequence', 'test_result']
 
 
 class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
+    fields = ['brain_location', 'procedures', 'narrative', 'date_time',
+              'users', 'location']
 
 
 class ExperimentInline(BaseInlineAdmin):
     model = Experiment
     extra = 1
+    fields = ['procedures', 'narrative', 'date_time',
+              'users', 'location']
+
+
+class OtherActionInline(BaseInlineAdmin):
+    model = OtherAction
+    extra = 1
+    fields = ['procedures', 'narrative', 'date_time',
+              'users', 'location']
 
 
 class SubjectAdmin(BaseAdmin):
@@ -94,7 +108,7 @@ class SubjectAdmin(BaseAdmin):
                        )
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, ExperimentInline]
+               SurgeryInline, ExperimentInline, OtherActionInline]
 
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
