@@ -9,6 +9,9 @@ from .views import _autoname_number
 from actions.models import Surgery, Experiment
 
 
+# Filters
+# ------------------------------------------------------------------------------------------------
+
 class ResponsibleUserListFilter(admin.SimpleListFilter):
     title = 'responsible user'
     parameter_name = 'responsible_user'
@@ -40,16 +43,18 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.exclude(death_date=None)
 
 
+# Subject
+# ------------------------------------------------------------------------------------------------
+
 class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
-    extra = 2  # how many rows to show
-
+    extra = 2
     fields = ['allele', 'zygosity']
 
 
 class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
-    extra = 2  # how many rows to show
+    extra = 2
     fields = ['sequence', 'test_result']
 
 
@@ -114,96 +119,8 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<img src="{url}" />', url=url)
 
 
-class SubjectRequestAdmin(BaseAdmin):
-    fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
-
-
-class SpeciesAdmin(BaseAdmin):
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ['binomial']
-        return self.readonly_fields
-
-    fields = ['binomial', 'display_name']
-    list_display = ['binomial', 'display_name']
-    readonly_fields = []
-
-
-class SubjectLitterInline(BaseInlineAdmin):
-    model = Subject
-    extra = 1
-    fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
-              'ear_mark', 'notes')
-    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
-    show_change_link = True
-
-
-class SubjectCageInline(BaseInlineAdmin):
-    model = Subject
-    extra = 1
-    # fields = ('sex', 'ear_mark', 'notes')
-    # TODO: genotype
-
-
-class SequencesInline(BaseInlineAdmin):
-    model = Line.sequences.through
-
-    fields = ['sequence']
-
-
-class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
-
-    inlines = [SequencesInline, SubjectLitterInline]
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        # Delete objects marked to delete.
-        for obj in formset.deleted_objects:
-            obj.delete()
-        line = formset.instance
-        to_copy = 'species,strain'.split(',')
-        for instance in instances:
-            subj = instance
-            if isinstance(subj, Subject):
-                # Copy some fields from the line to the subject.
-                for field in to_copy:
-                    value = getattr(line, field, None)
-                    if value:
-                        setattr(subj, field, value)
-                subj.save()
-        formset.save_m2m()
-
-
-class LitterAdmin(BaseAdmin):
-    list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
-    fields = ['line', 'descriptive_name',
-              'mother', 'father', 'birth_date',
-              'notes', 'cage']
-
-    inlines = [SubjectLitterInline]
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        # Delete objects marked to delete.
-        for obj in formset.deleted_objects:
-            obj.delete()
-        litter = formset.instance
-        mother = litter.mother
-        to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
-        for instance in instances:
-            subj = instance
-            subj.birth_date = litter.birth_date
-            # Copy some fields from the mother to the subject.
-            for field in to_copy:
-                setattr(subj, field, getattr(mother, field))
-            prefix = getattr(subj.line, 'name', 'UNKNOWN') + '_'
-            i = _autoname_number(Subject, 'nickname', prefix)
-            subj.nickname = '%s%04d' % (prefix, i)
-            subj.save()
-        formset.save_m2m()
-
+# Cage
+# ------------------------------------------------------------------------------------------------
 
 class LitterInline(BaseInlineAdmin):
     model = Litter
@@ -221,6 +138,13 @@ class LitterInline(BaseInlineAdmin):
                 field.queryset = field.queryset.none()
 
         return field
+
+
+class SubjectCageInline(BaseInlineAdmin):
+    model = Subject
+    extra = 1
+    # fields = ('sex', 'ear_mark', 'notes')
+    # TODO: genotype
 
 
 class CageAdminForm(forms.ModelForm):
@@ -261,6 +185,99 @@ class CageAdmin(BaseAdmin):
         formset.save_m2m()
 
 
+# Litter
+# ------------------------------------------------------------------------------------------------
+
+class SubjectLitterInline(BaseInlineAdmin):
+    model = Subject
+    extra = 1
+    fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+              'ear_mark', 'notes')
+    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
+    show_change_link = True
+
+
+class LitterAdmin(BaseAdmin):
+    list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
+    fields = ['line', 'descriptive_name',
+              'mother', 'father', 'birth_date',
+              'notes', 'cage']
+
+    inlines = [SubjectLitterInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        litter = formset.instance
+        mother = litter.mother
+        to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
+        for instance in instances:
+            subj = instance
+            subj.birth_date = litter.birth_date
+            # Copy some fields from the mother to the subject.
+            for field in to_copy:
+                setattr(subj, field, getattr(mother, field))
+            prefix = getattr(subj.line, 'name', 'UNKNOWN') + '_'
+            i = _autoname_number(Subject, 'nickname', prefix)
+            subj.nickname = '%s%04d' % (prefix, i)
+            subj.save()
+        formset.save_m2m()
+
+
+# Line
+# ------------------------------------------------------------------------------------------------
+
+class SequencesInline(BaseInlineAdmin):
+    model = Line.sequences.through
+
+    fields = ['sequence']
+
+
+class LineAdmin(BaseAdmin):
+    fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
+
+    inlines = [SequencesInline, SubjectLitterInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        line = formset.instance
+        to_copy = 'species,strain'.split(',')
+        for instance in instances:
+            subj = instance
+            if isinstance(subj, Subject):
+                # Copy some fields from the line to the subject.
+                for field in to_copy:
+                    value = getattr(line, field, None)
+                    if value:
+                        setattr(subj, field, value)
+                subj.save()
+        formset.save_m2m()
+
+
+# Other
+# ------------------------------------------------------------------------------------------------
+
+class SubjectRequestAdmin(BaseAdmin):
+    fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
+
+
+class SpeciesAdmin(BaseAdmin):
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ['binomial']
+        return self.readonly_fields
+
+    fields = ['binomial', 'display_name']
+    list_display = ['binomial', 'display_name']
+    readonly_fields = []
+
+
 class StrainAdmin(BaseAdmin):
     fields = ['descriptive_name', 'description']
 
@@ -278,13 +295,13 @@ class SequenceAdmin(BaseAdmin):
 
 
 admin.site.register(Subject, SubjectAdmin)
-admin.site.register(SubjectRequest, SubjectRequestAdmin)
 admin.site.register(Litter, LitterAdmin)
-admin.site.register(Species, SpeciesAdmin)
-
 admin.site.register(Line, LineAdmin)
-admin.site.register(Allele, AlleleAdmin)
-admin.site.register(Sequence, SequenceAdmin)
+admin.site.register(Cage, CageAdmin)
+
+admin.site.register(SubjectRequest, SubjectRequestAdmin)
+admin.site.register(Species, SpeciesAdmin)
 admin.site.register(Strain, StrainAdmin)
 admin.site.register(Source, SourceAdmin)
-admin.site.register(Cage, CageAdmin)
+admin.site.register(Allele, AlleleAdmin)
+admin.site.register(Sequence, SequenceAdmin)
