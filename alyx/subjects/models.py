@@ -8,7 +8,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from alyx.base import BaseModel
 from equipment.models import LabLocation
-from actions.models import ProcedureType, OtherAction, Weighing, WaterAdministration
+from actions.models import WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
 
@@ -80,13 +80,7 @@ class Subject(BaseModel):
             return self.litter.father
 
     def water_restriction_date(self):
-        actname = 'Put on water restriction'
-        proc = ProcedureType.objects.filter(name=actname)
-        if not proc:
-            return
-        proc = proc[0]
-        restriction = OtherAction.objects.filter(subject__id=self.id,
-                                                 procedures__id=proc.id)
+        restriction = WaterRestriction.objects.filter(subject__id=self.id)
         restriction = restriction.order_by('-date_time')
         if not restriction:
             return

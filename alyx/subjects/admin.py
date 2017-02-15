@@ -5,7 +5,7 @@ from django.contrib import admin
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
 from .views import _autoname
-from actions.models import Surgery, Experiment
+from actions.models import Surgery, Experiment, OtherAction
 
 
 # Filters
