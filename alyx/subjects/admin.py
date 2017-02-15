@@ -119,7 +119,6 @@ class SubjectLitterInline(BaseInlineAdmin):
               'ear_mark', 'notes')
     readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
     show_change_link = True
-    # TODO: genotype
 
 
 class SubjectCageInline(BaseInlineAdmin):
@@ -132,7 +131,7 @@ class SubjectCageInline(BaseInlineAdmin):
 class SequencesInline(BaseInlineAdmin):
     model = Line.sequences.through
 
-    fields = ['sequence', 'test_result']
+    fields = ['sequence']
 
 
 class LineAdmin(BaseAdmin):

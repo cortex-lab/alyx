@@ -326,19 +326,14 @@ class GenotypeTest(BaseModel):
 
 
 class LineGenotypeTest(BaseModel):
-    TEST_RESULTS = (
-        (0, 'Absent'),
-        (1, 'Present'),
-    )
     """
     A junction table between Line and Sequence.
     """
     subject = models.ForeignKey('Line', on_delete=models.CASCADE)
     sequence = models.ForeignKey('Sequence', on_delete=models.CASCADE)
-    test_result = models.IntegerField(choices=TEST_RESULTS)
 
     class Meta:
-        verbose_name_plural = "genotype tests"
+        verbose_name_plural = "sequences"
 
 
 class Source(BaseModel):
