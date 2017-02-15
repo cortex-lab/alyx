@@ -96,9 +96,13 @@ class SubjectAdmin(admin.ModelAdmin):
                SurgeryInline, ExperimentInline]
 
     def mother(self, obj):
+        if not obj.litter:
+            return
         return obj.litter.mother
 
     def father(self, obj):
+        if not obj.litter:
+            return
         return obj.litter.father
 
     def weighing_plot(self, obj):
@@ -120,7 +124,8 @@ class SpeciesAdmin(admin.ModelAdmin):
 class SubjectLitterInline(admin.TabularInline):
     model = Subject
     extra = 1
-    fields = ('sex', 'ear_mark', 'notes')
+    fields = ('sex', 'cage', 'ear_mark', 'notes')
+    show_change_link = True
     # TODO: genotype
 
 
@@ -132,7 +137,7 @@ class SubjectCageInline(admin.TabularInline):
 
 
 class LineAdmin(admin.ModelAdmin):
-    pass
+    inlines = [SubjectLitterInline]
 
 
 class LitterAdmin(admin.ModelAdmin):
@@ -166,6 +171,7 @@ class LitterAdmin(admin.ModelAdmin):
 class LitterInline(admin.TabularInline):
     model = Litter
     extra = 1
+    show_change_link = True
 
 
 class CageAdminForm(forms.ModelForm):
