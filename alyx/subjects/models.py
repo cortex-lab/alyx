@@ -236,7 +236,8 @@ class Cage(BaseModel):
         ('R', 'Regular'),
     )
 
-    cage_label = models.CharField(max_length=255, null=True, blank=True)
+    cage_label = models.CharField(max_length=255, default='-',
+                                  help_text='Leave to "-" to autofill.')
     type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
                             help_text="Is this an IVC or regular cage?")
     line = models.ForeignKey('Line', null=True, blank=True,

@@ -2,10 +2,9 @@ from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib import admin
-from dal import autocomplete
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
-from .views import _autoname_number
+from .views import _autoname
 from actions.models import Surgery, Experiment
 
 
@@ -148,14 +147,6 @@ class SubjectCageInline(BaseInlineAdmin):
 
 
 class CageAdminForm(forms.ModelForm):
-
-    cage_label = forms.CharField(
-        widget=autocomplete.Select2(url='cage-label-autocomplete',
-                                    forward=['line'],
-                                    ),
-        required=True,
-    )
-
     class Meta:
         fields = '__all__'
         model = Cage
@@ -177,6 +168,13 @@ class CageAdmin(BaseAdmin):
         # Delete objects marked to delete.
         for obj in formset.deleted_objects:
             obj.delete()
+        if formset.instance.cage_label in (None, '-'):
+            autoname = _autoname(Cage,
+                                 formset.instance.line.auto_name,
+                                 'cage_label',
+                                 interfix='C_')
+            formset.instance.cage_label = autoname
+            formset.instance.save()
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
