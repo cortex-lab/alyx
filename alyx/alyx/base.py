@@ -35,7 +35,7 @@ class BaseAdmin(admin.ModelAdmin):
     }
 
     def __init__(self, *args, **kwargs):
-        if self.fields:
+        if self.fields and 'json' not in self.fields:
             self.fields += ('json',)
         super(BaseAdmin, self).__init__(*args, **kwargs)
 
