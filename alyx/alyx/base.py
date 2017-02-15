@@ -48,5 +48,5 @@ class BaseInlineAdmin(admin.TabularInline):
         JSONField: {'widget': forms.Textarea(
                     attrs={'rows': 3,
                            'cols': 30})},
-        models.CharField: {'widget': forms.TextInput(attrs={'size': 10})},
+        models.CharField: {'widget': forms.TextInput(attrs={'size': 16})},
     }

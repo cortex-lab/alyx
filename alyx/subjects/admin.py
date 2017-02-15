@@ -179,6 +179,12 @@ class CageAdmin(BaseAdmin):
         for instance in instances:
             if isinstance(instance, Litter):
                 instance.line = formset.instance.line
+                if instance.descriptive_name in (None, '-'):
+                    autoname = _autoname(Litter,
+                                         formset.instance.line.auto_name,
+                                         'descriptive_name',
+                                         interfix='L_')
+                    instance.descriptive_name = autoname
                 instance.save()
         formset.save_m2m()
 

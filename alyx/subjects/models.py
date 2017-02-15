@@ -208,7 +208,7 @@ class Species(BaseModel):
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
-    descriptive_name = models.CharField(max_length=255)
+    descriptive_name = models.CharField(max_length=255, default='-')
     mother = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
                                limit_choices_to={'sex': 'F'},
