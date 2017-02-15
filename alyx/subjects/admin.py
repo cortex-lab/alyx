@@ -170,6 +170,17 @@ class LitterInline(BaseInlineAdmin):
     extra = 1
     show_change_link = True
 
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(LitterInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        if db_field.name in ('mother', 'father'):
+            if request._obj_ is not None:
+                field.queryset = field.queryset.filter(line=request._obj_.line)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
+
 
 class CageAdminForm(forms.ModelForm):
 
@@ -190,6 +201,11 @@ class CageAdmin(BaseAdmin):
 
     fields = ('line', 'cage_label', 'type', 'location')
     inlines = [SubjectCageInline, LitterInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(CageAdmin, self).get_form(request, obj, **kwargs)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
