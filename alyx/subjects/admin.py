@@ -64,8 +64,8 @@ class ExperimentInline(BaseInlineAdmin):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
-                                'death_date', 'ear_mark', 'notes')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line')}),
+                                'death_date', 'ear_mark', 'notes', 'json')}),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line',)}),
         ('LITTER', {'fields': ('cage', 'litter',)}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing',
@@ -129,10 +129,16 @@ class SubjectCageInline(BaseInlineAdmin):
     # TODO: genotype
 
 
+class SequencesInline(BaseInlineAdmin):
+    model = Line.sequences.through
+
+    fields = ['sequence', 'test_result']
+
+
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'gene_name', 'description']
 
-    inlines = [SubjectLitterInline]
+    inlines = [SequencesInline, SubjectLitterInline]
 
 
 class LitterAdmin(BaseAdmin):
