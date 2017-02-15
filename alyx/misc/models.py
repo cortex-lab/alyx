@@ -3,17 +3,6 @@ from django.contrib.postgres.fields import ArrayField
 from alyx.base import BaseModel
 
 
-class LabLocation(BaseModel):
-    """
-    The physical location at which an experiment is performed or appliances are located.
-    This could be a room, a bench, a rig, etc.
-    """
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
-
 class BrainLocation(BaseModel):
     """Gives a brain location in stereotaxic coordinates, plus other information about location."""
     name = models.CharField(max_length=255)
