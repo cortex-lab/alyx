@@ -49,12 +49,11 @@ class WaterAdministration(BaseModel):
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
                                 related_name='water_administrations',
-                                help_text="The subject to which water "
-                                "was administered")
+                                help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
                                      default=datetime.now)
-    water_administered = models.FloatField(help_text="Water administered, "
-                                           "in millilitres")
+    water_administered = models.FloatField(help_text="Water administered, in millilitres")
+    hydrogel = models.NullBooleanField()
 
     def __str__(self):
         return str(self.subject) + " at " + str(self.date_time)

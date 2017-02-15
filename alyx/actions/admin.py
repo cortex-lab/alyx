@@ -12,7 +12,7 @@ class ProcedureTypeAdmin(BaseAdmin):
 
 
 class WaterAdministrationAdmin(BaseAdmin):
-    fields = ['subject', 'date_time', 'water_administered', 'user']
+    fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
 
 
 class WeighingAdmin(BaseAdmin):
