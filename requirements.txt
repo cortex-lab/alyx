@@ -3,3 +3,4 @@ psycopg2
 django-polymorphic
 djangorestframework
 django-autocomplete-light
+django-filters
