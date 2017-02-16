@@ -258,6 +258,10 @@ class SubjectLitterForm(forms.ModelForm):
                     test = GenotypeTest(subject=self.instance, sequence=sequence,
                                         test_result=result)
                     test.save()
+                else:
+                    test = res[0]
+                    test.test_result = result
+                    test.save()
         return super(SubjectLitterForm, self).save(commit=commit)
 
 
