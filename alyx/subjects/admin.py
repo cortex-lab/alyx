@@ -275,7 +275,7 @@ class LineAdmin(BaseAdmin):
                     value = getattr(line, field, None)
                     if value:
                         setattr(subj, field, value)
-                subj.save()
+            subj.save()
         formset.save_m2m()
 
 
