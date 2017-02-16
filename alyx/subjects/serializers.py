@@ -62,10 +62,17 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
+    litter = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='descriptive_name',
+        queryset=Litter.objects.all(),
+        allow_null=True,
+        required=False)
+
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'cage', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype')
+                  'species', 'cage', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -84,11 +91,13 @@ class SubjectDetailSerializer(SubjectListSerializer):
         allow_null=True,
         required=False)
 
+    alive = serializers.BooleanField()
+
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
                   'species', 'cage', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
-                  'actions_experiments', 'weighings', 'water_administrations', 'genotype')
+                  'actions_experiments', 'weighings', 'water_administrations', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
