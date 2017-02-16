@@ -1,6 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
 from .models import *
+from alyx.base import BaseAdmin
 
 
 class ApplianceChildAdmin(PolymorphicChildModelAdmin):
@@ -41,9 +42,26 @@ class ApplianceParentAdmin(PolymorphicParentModelAdmin):
                     'location', 'equipment_model')
     pk_regex = '([\w-]+)'
 
+
+class LabLocationAdmin(BaseAdmin):
+    fields = ['name']
+
+
+class EquipmentManufacturerAdmin(BaseAdmin):
+    fields = ['name', 'notes']
+
+
+class EquipmentModelAdmin(BaseAdmin):
+    fields = ['model_name', 'manufacturer', 'description']
+
+
+class VirusBatchAdmin(BaseAdmin):
+    fields = ['virus_type', 'virus_source', 'date_time_made', 'nominal_titer', 'description']
+
+
 admin.site.register(Appliance, ApplianceParentAdmin)
 
-admin.site.register(LabLocation)
-admin.site.register(EquipmentManufacturer)
-admin.site.register(EquipmentModel)
-admin.site.register(VirusBatch)
+admin.site.register(LabLocation, LabLocationAdmin)
+admin.site.register(EquipmentManufacturer, EquipmentManufacturerAdmin)
+admin.site.register(EquipmentModel, EquipmentModelAdmin)
+admin.site.register(VirusBatch, VirusBatchAdmin)
