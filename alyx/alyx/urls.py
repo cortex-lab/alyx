@@ -63,7 +63,7 @@ urlpatterns = [
 
 
     url(r'^weighings/$',
-        actions_views.WeighingAPICreate.as_view(),
+        actions_views.WeighingAPIListCreate.as_view(),
         name="weighing-create"),
 
     url(r'^weighings/(?P<pk>[-_\w].+)/$',
@@ -72,7 +72,7 @@ urlpatterns = [
 
 
     url(r'^water-administrations/$',
-        actions_views.WaterAdministrationAPICreate.as_view(),
+        actions_views.WaterAdministrationAPIListCreate.as_view(),
         name="water-administration-create"),
 
     url(r'^water-administrations/(?P<pk>[-_\w].+)/$',

@@ -36,9 +36,9 @@ class WeighingAPIList(generics.ListAPIView):
         return queryset
 
 
-class WeighingAPICreate(generics.CreateAPIView):
+class WeighingAPIListCreate(generics.ListCreateAPIView):
     """
-    Creates a new weighing.
+    Lists or creates a new weighing.
     """
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingDetailSerializer
@@ -68,9 +68,9 @@ class WaterAdministrationAPIList(generics.ListAPIView):
         return queryset
 
 
-class WaterAdministrationAPICreate(generics.CreateAPIView):
+class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     """
-    Creates a new water administration.
+    Lists or creates a new water administration.
     """
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WaterAdministrationDetailSerializer
