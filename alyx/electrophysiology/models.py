@@ -15,6 +15,11 @@ class ExtracellularRecording(BaseExperimentalData):
     TODO: sample rate? dead channels? Some linking of the same chronic implant location between
     multiple recordings/days?
     """
+
+    @property
+    def classname(self):
+        return 'extracellular-recording'
+
     RECORDING_TYPES = (
         ('C', 'Chronic'),
         ('A', 'Acute'),

@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, viewsets
 from .models import *
 from electrophysiology.models import *
 
-from .serializers import DatasetSerializer, FileRecordSerializer, ExpMetadataSummarySerializer
+from .serializers import *
 
 
 class DatasetViewSet(viewsets.ModelViewSet):
@@ -39,5 +39,5 @@ class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
     Lists experimental metadata classes. For now just supports ExtracellularRecording
     """
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataSummarySerializer
+    serializer_class = ExpMetadataDetailSerializer
     queryset = ExtracellularRecording.objects.all()
