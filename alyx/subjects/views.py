@@ -28,7 +28,6 @@ class SubjectFilter(FilterSet):
     alive = django_filters.BooleanFilter(name='alive')
     class Meta:
         model = Subject
-        fields = ['alive']
         exclude = ['json']
 
 class SubjectList(generics.ListCreateAPIView):
