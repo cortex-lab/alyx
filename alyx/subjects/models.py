@@ -168,7 +168,6 @@ class Subject(BaseModel):
     def zygosity_strings(self):
         return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
 
-
     def __str__(self):
         return self.nickname
 

@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from django.contrib import admin
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
-from .views import _autoname
+from .views import _autoname, _autoname_number
 from actions.models import Surgery, Experiment, OtherAction
 
 
@@ -209,18 +209,77 @@ class CageAdmin(BaseAdmin):
 # ------------------------------------------------------------------------------------------------
 
 class SubjectLitterForm(forms.ModelForm):
-    pass
+    TEST_RESULTS = (
+        ('', '----'),
+        (0, 'Absent'),
+        (1, 'Present'),
+    )
+    result1 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
+    result2 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
+    result3 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
+
+    class Meta:
+        model = Subject
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(SubjectLitterForm, self).__init__(*args, **kwargs)
+        subject = self.instance
+        line = subject.line
+        if not line:
+            return
+        seqs = line.sequences.all()
+        # Set the label of the columns in subject inline.
+        for i in range(min(3, len(seqs))):
+            self.fields['result%d' % (i + 1)].label = str(seqs[i])
+        # Set the initial data of the genotype tests for the inline subjects.
+        line_seqs = list(line.sequences.all())
+        tests = GenotypeTest.objects.filter(subject=subject)
+        for test in tests:
+            if test.sequence in line_seqs:
+                i = line_seqs.index(test.sequence) + 1
+                name = 'result%d' % (i + 1)
+                value = test.test_result
+                self.fields[name].initial = value
 
 
 class SubjectLitterInline(BaseInlineAdmin):
     model = Subject
-    extra = 1
+    extra = 0
     fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+              'sequence1', 'result1',
+              'sequence2', 'result2',
+              'sequence3', 'result3',
               'ear_mark', 'notes')
     readonly_fields = ('age_weeks', 'litter', 'mother', 'father',
+                       'sequence1', 'sequence2', 'sequence3',
                        )
     show_change_link = True
     form = SubjectLitterForm
+
+    def _get_sequence(self, obj, i):
+        if obj and obj.line:
+            sequences = obj.line.sequences.all()
+            if i < len(sequences):
+                return sequences[i]
+
+    def sequence1(self, obj):
+        return self._get_sequence(obj, 0)
+
+    def sequence2(self, obj):
+        return self._get_sequence(obj, 1)
+
+    def sequence3(self, obj):
+        return self._get_sequence(obj, 2)
+
+    def result1(self, obj):
+        return
+
+    def result2(self, obj):
+        return
+
+    def result3(self, obj):
+        return
 
 
 class LitterAdmin(BaseAdmin):
@@ -230,6 +289,11 @@ class LitterAdmin(BaseAdmin):
               'notes', 'cage']
 
     inlines = [SubjectLitterInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(LitterAdmin, self).get_form(request, obj, **kwargs)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -271,6 +335,11 @@ class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
 
     inlines = [SubjectRequestInline, SubjectLitterInline, SequencesInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(LineAdmin, self).get_form(request, obj, **kwargs)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
