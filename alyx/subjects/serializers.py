@@ -5,6 +5,20 @@ from django.contrib.auth.models import User
 
 class ZygosityListSerializer(serializers.ModelSerializer):
 
+    ZYGOSITY_TYPES = (
+        (0, 'Absent'),
+        (1, 'Heterozygous'),
+        (2, 'Homozygous'),
+        (3, 'Present'),
+    )
+
+    zygosity = serializers.ChoiceField(choices=ZYGOSITY_TYPES)
+    allele = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='informal_name',
+        queryset=Allele.objects.all(),
+        required=False)
+
     class Meta:
         model = Zygosity
         fields = ('allele', 'zygosity')
@@ -12,7 +26,7 @@ class ZygosityListSerializer(serializers.ModelSerializer):
 
 class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
-    genotype = serializers.ListField(source = 'zygosity_strings')
+    genotype = serializers.ListField(source='zygosity_strings')
 
     responsible_user = serializers.SlugRelatedField(
         read_only=False,
@@ -61,7 +75,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
     weighings = WeighingListSerializer(many=True, read_only=True)
     water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
     actions_experiments = ExperimentListSerializer(many=True, read_only=True)
-    genotype = ZygosityListSerializer(many=True, read_only=True)
+    genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
     source = serializers.SlugRelatedField(
         read_only=False,
