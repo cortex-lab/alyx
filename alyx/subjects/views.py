@@ -35,7 +35,7 @@ class SubjectList(generics.ListCreateAPIView):
     serializer_class = SubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
-    filter_fields = ['__all__']
+    filter_fields = ['__all__', 'alive']
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()

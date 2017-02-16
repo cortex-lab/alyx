@@ -95,7 +95,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
+        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
                   'species', 'cage', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
                   'actions_experiments', 'weighings', 'water_administrations', 'genotype', 'alive')
         lookup_field = 'nickname'

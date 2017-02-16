@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from actions.models import Experiment
-
+from electrophysiology.models import ExtracellularRecording
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
@@ -36,3 +36,12 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FileRecord
         fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}
+
+
+class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = ExtracellularRecording
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}

@@ -97,6 +97,9 @@ urlpatterns = [
         actions_views.ExperimentAPIDetail.as_view(),
         name="experiment-detail"),
 
+    url(r'^exp-metadata$', data_views.ExpMetadataList.as_view(), name="exp-metadata-list"),
+    url(r'^exp-metadata/(?P<pk>[-_\w].+)$', data_views.ExpMetadataDetail.as_view(), name="exp-metadata-detail"),
+
 
     url(r'^datasets$', dataset_list, name="dataset-list"),
 
@@ -118,7 +121,7 @@ urlpatterns = [
         user_list,
         name='user-list'),
 
-    url(r'^users/(?P<username>[-_\w].+)$',
+    url(r'^users/(?P<username>[-_\w].+) $',
         user_detail,
         name='user-detail'),
 
