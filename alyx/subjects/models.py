@@ -93,14 +93,14 @@ class Subject(BaseModel):
                                             date_time__lte=wr_date)
         weighings = weighings.order_by('-date_time')
         if not weighings:
-            return
+            return 0
         return weighings[0]
 
     def current_weighing(self):
         weighings = Weighing.objects.filter(subject__id=self.id)
         weighings = weighings.order_by('-date_time')
         if not weighings:
-            return
+            return 0
         return weighings[0]
 
     def expected_weighing_mean_std(self, age_w):

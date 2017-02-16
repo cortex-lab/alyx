@@ -85,11 +85,11 @@ class SubjectAdmin(BaseAdmin):
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line',)}),
         ('LITTER', {'fields': ('cage', 'litter',)}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
-                                        'reference_weighing',
-                                        'current_weighing',
+                                        'reference_weighing_f',
+                                        'current_weighing_f',
                                         'implant_weight',
-                                        'water_requirement_total',
-                                        'water_requirement_remaining',
+                                        'water_requirement_total_f',
+                                        'water_requirement_remaining_f',
                                         'weighing_plot',
                                         )}),
     )
@@ -103,15 +103,31 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__username']
     readonly_fields = ('age_days',
                        'water_restriction_date',
-                       'reference_weighing',
-                       'current_weighing',
-                       'water_requirement_total',
-                       'water_requirement_remaining',
+                       'reference_weighing_f',
+                       'current_weighing_f',
+                       'water_requirement_total_f',
+                       'water_requirement_remaining_f',
                        'weighing_plot',
                        )
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
+
+    def reference_weighing_f(self, obj):
+        return '%.2f' % obj.reference_weighing()
+    reference_weighing_f.short_description = 'reference weighing'
+
+    def current_weighing_f(self, obj):
+        return '%.2f' % obj.current_weighing()
+    current_weighing_f.short_description = 'current weighing'
+
+    def water_requirement_total_f(self, obj):
+        return '%.2f' % obj.water_requirement_total()
+    water_requirement_total_f.short_description = 'water requirement total'
+
+    def water_requirement_remaining_f(self, obj):
+        return '%.2f' % obj.water_requirement_remaining()
+    water_requirement_remaining_f.short_description = 'water requirement remaining'
 
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
