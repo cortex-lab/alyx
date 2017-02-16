@@ -66,20 +66,17 @@ class BaseAction(BaseModel):
     """
 
     users = models.ManyToManyField(User, blank=True,
-                                   help_text="The user(s) involved "
-                                   "in this action")
+                                   help_text="The user(s) involved in this action")
     subject = models.ForeignKey('subjects.Subject',
                                 related_name="%(app_label)s_%(class)ss",
-                                help_text="The subject on which this action "
-                                "was performed")
+                                help_text="The subject on which this action was performed")
     location = models.ForeignKey(LabLocation, null=True, blank=True,
-                                 help_text="The physical location at which "
-                                 "the action was performed")
+                                 help_text="The physical location at which the action was "
+                                 "performed")
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(null=True, blank=True)
-    date_time = models.DateTimeField(null=True, blank=True,
-                                     default=datetime.now)
+    date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
 
     def __str__(self):
         return (str(self.subject) + " at " +

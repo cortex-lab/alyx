@@ -1,10 +1,18 @@
 from django.contrib import admin
 from alyx.base import BaseAdmin
 from .models import *
+from subjects.models import Subject
 
 
 class BaseActionAdmin(BaseAdmin):
     fields = ['subject', 'date_time', 'users', 'location', 'procedures', 'narrative']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'subject':
+            kwargs["queryset"] = Subject.objects.filter(responsible_user=request.user,
+                                                        death_date=None,
+                                                        ).order_by('nickname')
+        return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProcedureTypeAdmin(BaseAdmin):
