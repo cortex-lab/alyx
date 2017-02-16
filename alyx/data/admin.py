@@ -1,6 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
 from .models import *
+from alyx.base import BaseAdmin
 
 
 class DataRepositoryChildAdmin(PolymorphicChildModelAdmin):
@@ -30,8 +31,20 @@ class DataRepositoryParentAdmin(PolymorphicParentModelAdmin):
     list_display = ('name', 'polymorphic_ctype')
     pk_regex = '([\w-]+)'
 
+
+class PhysicalArchiveAdmin(BaseAdmin):
+    fields = ['location']
+
+
+class FileRecordAdmin(BaseAdmin):
+    fields = ['dataset', 'filename']
+
+
+class DatasetAdmin(BaseAdmin):
+    fields = ['name']
+
+
 admin.site.register(DataRepository, DataRepositoryParentAdmin)
-admin.site.register(PhysicalArchive)
-admin.site.register(FileRecord)
-# admin.site.register(LogicalFile)
-admin.site.register(Dataset)
+admin.site.register(PhysicalArchive, PhysicalArchiveAdmin)
+admin.site.register(FileRecord, FileRecordAdmin)
+admin.site.register(Dataset, DatasetAdmin)
