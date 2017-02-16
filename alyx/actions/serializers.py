@@ -3,7 +3,7 @@ from .models import *
 from subjects.models import Subject
 from equipment.models import LabLocation
 from django.contrib.auth.models import User
-from data.serializers import DatasetSerializer
+from data.serializers import DatasetSerializer, ExpMetadataSummarySerializer
 
 
 class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
@@ -51,12 +51,12 @@ class ExperimentListSerializer(BaseActionSerializer):
 
 class ExperimentDetailSerializer(BaseActionSerializer):
 
-    datasets_related = DatasetSerializer(many=True, read_only=True)
+    exp_metadata_related = ExpMetadataSummarySerializer(many=True, read_only=True)
 
     class Meta:
         model = Experiment
         fields = ('subject', 'users', 'location', 'procedures',
-                  'narrative', 'date_time', 'url', 'json', 'datasets_related')
+                  'narrative', 'date_time', 'url', 'json', 'exp_metadata_related')
 
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):

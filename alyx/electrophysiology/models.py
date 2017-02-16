@@ -47,7 +47,7 @@ class ExtracellularRecording(BaseExperimentalData):
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="in seconds relative to experiment start")
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
-                                      help_text="Whether the recording is chronic or acute")
+                                      help_text="Whether the recording is chronic or acute", null=True, blank=True)
     ground_electrode = models.CharField(max_length=255, null=True, blank=True,
                                         help_text="e.g. 'screw above cerebellum'")
     reference_electrode = models.CharField(max_length=255, null=True, blank=True,

@@ -25,7 +25,7 @@ class FileRecordViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class ExpMetadataList(generics.ListAPIView):
+class ExpMetadataList(generics.ListCreateAPIView):
     """
     Lists experimental metadata classes. For now just supports ExtracellularRecording
     """
