@@ -165,6 +165,10 @@ class Subject(BaseModel):
         water_today = water_today.aggregate(models.Sum('water_administered'))
         return req_total - (water_today['water_administered__sum'] or 0)
 
+    def zygosity_strings(self):
+        return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
+
+
     def __str__(self):
         return self.nickname
 
