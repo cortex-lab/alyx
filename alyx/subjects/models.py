@@ -184,6 +184,11 @@ class SubjectRequest(BaseModel):
     notes = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, null=True, blank=True)
 
+    def __str__(self):
+        return '{count} {line} due {due_date} for {user}'.format(
+            count=self.count, line=self.line, due_date=self.due_date, user=self.user,
+        )
+
 
 class Species(BaseModel):
     """A single species, identified uniquely by its binomial name."""
@@ -312,7 +317,6 @@ class Zygosity(BaseModel):
 
     class Meta:
         verbose_name_plural = "zygosities"
-
 
 
 class Sequence(BaseModel):
