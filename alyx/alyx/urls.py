@@ -59,66 +59,66 @@ admin.site.site_header = 'Alyx'
 urlpatterns = [
     url(r'^$', misc_views.api_root),
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^auth-token/', av.obtain_auth_token),
+    url(r'^auth-token', av.obtain_auth_token),
 
 
-    url(r'^weighings/$',
+    url(r'^weighings$',
         actions_views.WeighingAPIListCreate.as_view(),
         name="weighing-create"),
 
-    url(r'^weighings/(?P<pk>[-_\w].+)/$',
+    url(r'^weighings/(?P<pk>[-_\w].+)$',
         actions_views.WeighingAPIDetail.as_view(),
         name="weighing-detail"),
 
 
-    url(r'^water-administrations/$',
+    url(r'^water-administrations$',
         actions_views.WaterAdministrationAPIListCreate.as_view(),
         name="water-administration-create"),
 
-    url(r'^water-administrations/(?P<pk>[-_\w].+)/$',
+    url(r'^water-administrations/(?P<pk>[-_\w].+)$',
         actions_views.WaterAdministrationAPIDetail.as_view(),
         name="water-administration-detail"),
 
 
-    url(r'^subjects/$',
+    url(r'^subjects$',
         subjects_views.SubjectList.as_view(),
         name="subject-list"),
 
-    url(r'^subjects/(?P<nickname>[-\w]+)/$',
+    url(r'^subjects/(?P<nickname>[-\w]+)$',
         subjects_views.SubjectDetail.as_view(),
         name="subject-detail"),
 
 
-    url(r'^experiments/$',
+    url(r'^experiments$',
         actions_views.ExperimentAPIList.as_view(),
         name="experiment-list"),
 
-    url(r'^experiments/(?P<pk>[-_\w].+)/$',
+    url(r'^experiments/(?P<pk>[-_\w].+)$',
         actions_views.ExperimentAPIDetail.as_view(),
         name="experiment-detail"),
 
 
-    url(r'^datasets/$', dataset_list, name="dataset-list"),
+    url(r'^datasets$', dataset_list, name="dataset-list"),
 
-    url(r'^datasets/(?P<pk>[-_\w].+)/$',
+    url(r'^datasets/(?P<pk>[-_\w].+)$',
         dataset_detail,
         name="dataset-detail"),
 
 
-    url(r'^files/$',
+    url(r'^files$',
         filerecord_list,
         name="filerecord-list"),
 
-    url(r'^files/(?P<pk>[-_\w].+)/$',
+    url(r'^files/(?P<pk>[-_\w].+)$',
         filerecord_detail,
         name="filerecord-detail"),
 
 
-    url(r'^users/$',
+    url(r'^users$',
         user_list,
         name='user-list'),
 
-    url(r'^users/(?P<username>[-_\w].+)/$',
+    url(r'^users/(?P<username>[-_\w].+)$',
         user_detail,
         name='user-detail'),
 
