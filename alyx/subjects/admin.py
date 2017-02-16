@@ -208,13 +208,19 @@ class CageAdmin(BaseAdmin):
 # Litter
 # ------------------------------------------------------------------------------------------------
 
+class SubjectLitterForm(forms.ModelForm):
+    pass
+
+
 class SubjectLitterInline(BaseInlineAdmin):
     model = Subject
     extra = 1
     fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
               'ear_mark', 'notes')
-    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',)
+    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',
+                       )
     show_change_link = True
+    form = SubjectLitterForm
 
 
 class LitterAdmin(BaseAdmin):
@@ -249,6 +255,12 @@ class LitterAdmin(BaseAdmin):
 # Line
 # ------------------------------------------------------------------------------------------------
 
+class SubjectRequestInline(BaseInlineAdmin):
+    model = SubjectRequest
+    extra = 1
+    fields = ['count', 'due_date', 'status', 'notes']
+
+
 class SequencesInline(BaseInlineAdmin):
     model = Line.sequences.through
     extra = 1
@@ -258,7 +270,7 @@ class SequencesInline(BaseInlineAdmin):
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
 
-    inlines = [SequencesInline, SubjectLitterInline]
+    inlines = [SubjectRequestInline, SubjectLitterInline, SequencesInline]
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -266,15 +278,17 @@ class LineAdmin(BaseAdmin):
         for obj in formset.deleted_objects:
             obj.delete()
         line = formset.instance
-        to_copy = 'species,strain'.split(',')
         for instance in instances:
             subj = instance
             if isinstance(subj, Subject):
                 # Copy some fields from the line to the subject.
-                for field in to_copy:
+                for field in ('species', 'strain'):
                     value = getattr(line, field, None)
                     if value:
                         setattr(subj, field, value)
+            elif isinstance(subj, SubjectRequest):
+                # Copy some fields from the line to the subject.
+                subj.user = request.user
             subj.save()
         formset.save_m2m()
 
