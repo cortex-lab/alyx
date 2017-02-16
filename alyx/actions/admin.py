@@ -15,15 +15,15 @@ class BaseActionAdmin(BaseAdmin):
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class ProcedureTypeAdmin(BaseAdmin):
+class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
 
 
-class WaterAdministrationAdmin(BaseAdmin):
+class WaterAdministrationAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
 
 
-class WeighingAdmin(BaseAdmin):
+class WeighingAdmin(BaseActionAdmin):
     list_display = ['subject', 'weight', 'date_time']
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
