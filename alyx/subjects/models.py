@@ -317,7 +317,6 @@ class Zygosity(BaseModel):
 
         return "{0:s} {1:s}".format(str(self.allele), symbol)
 
-
     class Meta:
         verbose_name_plural = "zygosities"
 
@@ -349,6 +348,9 @@ class GenotypeTest(BaseModel):
 
     class Meta:
         verbose_name_plural = "genotype tests"
+
+    def __str__(self):
+        return "Genotype test %s for %s: %d" % (self.sequence, self.subject, self.test_result)
 
 
 class LineGenotypeTest(BaseModel):

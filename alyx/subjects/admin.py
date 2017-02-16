@@ -214,9 +214,9 @@ class SubjectLitterForm(forms.ModelForm):
         (0, 'Absent'),
         (1, 'Present'),
     )
+    result0 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
     result1 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
     result2 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
-    result3 = forms.ChoiceField(choices=TEST_RESULTS, required=False)
 
     class Meta:
         model = Subject
@@ -224,35 +224,53 @@ class SubjectLitterForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(SubjectLitterForm, self).__init__(*args, **kwargs)
+        self.sequences = []
         subject = self.instance
         line = subject.line
         if not line:
             return
-        seqs = line.sequences.all()
+        self.sequences = line.sequences.all()
         # Set the label of the columns in subject inline.
-        for i in range(min(3, len(seqs))):
-            self.fields['result%d' % (i + 1)].label = str(seqs[i])
+        for i in range(min(3, len(self.sequences))):
+            self.fields['result%d' % i].label = str(self.sequences[i])
         # Set the initial data of the genotype tests for the inline subjects.
         line_seqs = list(line.sequences.all())
         tests = GenotypeTest.objects.filter(subject=subject)
         for test in tests:
             if test.sequence in line_seqs:
-                i = line_seqs.index(test.sequence) + 1
-                name = 'result%d' % (i + 1)
+                i = line_seqs.index(test.sequence)
+                name = 'result%d' % i
                 value = test.test_result
                 self.fields[name].initial = value
+
+    def save(self, commit=True):
+        # Save the genotype tests.
+        for i in range(min(3, len(self.sequences))):
+            sequence = self.sequences[i]
+            result = self.cleaned_data.get('result%d' % i, '')
+            if result == '':
+                res = GenotypeTest.objects.filter(subject=self.instance, sequence=sequence)
+                res.delete()
+            elif result in ('0', '1'):
+                result = int(result)
+                res = GenotypeTest.objects.filter(subject=self.instance, sequence=sequence)
+                if not res:
+                    test = GenotypeTest(subject=self.instance, sequence=sequence,
+                                        test_result=result)
+                    test.save()
+        return super(SubjectLitterForm, self).save(commit=commit)
 
 
 class SubjectLitterInline(BaseInlineAdmin):
     model = Subject
     extra = 0
     fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+              'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
-              'sequence3', 'result3',
               'ear_mark', 'notes')
     readonly_fields = ('age_weeks', 'litter', 'mother', 'father',
-                       'sequence1', 'sequence2', 'sequence3',
+                       'sequence0', 'sequence1', 'sequence2',
                        )
     show_change_link = True
     form = SubjectLitterForm
@@ -263,22 +281,22 @@ class SubjectLitterInline(BaseInlineAdmin):
             if i < len(sequences):
                 return sequences[i]
 
-    def sequence1(self, obj):
+    def sequence0(self, obj):
         return self._get_sequence(obj, 0)
 
-    def sequence2(self, obj):
+    def sequence1(self, obj):
         return self._get_sequence(obj, 1)
 
-    def sequence3(self, obj):
+    def sequence2(self, obj):
         return self._get_sequence(obj, 2)
+
+    def result0(self, obj):
+        return
 
     def result1(self, obj):
         return
 
     def result2(self, obj):
-        return
-
-    def result3(self, obj):
         return
 
 
@@ -408,3 +426,6 @@ admin.site.register(Strain, StrainAdmin)
 admin.site.register(Source, SourceAdmin)
 admin.site.register(Allele, AlleleAdmin)
 admin.site.register(Sequence, SequenceAdmin)
+
+admin.site.register(GenotypeTest)
+admin.site.register(Zygosity)
