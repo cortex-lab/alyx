@@ -80,10 +80,10 @@ class OtherActionInline(BaseInlineAdmin):
 
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
-        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
+        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
+                                'responsible_user',
                                 'death_date', 'ear_mark', 'notes', 'json')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line',)}),
-        ('LITTER', {'fields': ('cage', 'litter',)}),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing_f',
                                         'current_weighing_f',
