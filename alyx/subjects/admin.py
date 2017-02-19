@@ -279,6 +279,20 @@ class SubjectLitterInline(BaseInlineAdmin):
     show_change_link = True
     form = SubjectLitterForm
 
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        # Filter cages by cages that are part of that line.
+        field = super(SubjectLitterInline, self).formfield_for_foreignkey(db_field,
+                                                                          request, **kwargs)
+
+        if db_field.name == 'cage':
+            if request._obj_ is not None:
+                assert isinstance(request._obj_, Line)
+                field.queryset = field.queryset.filter(line=request._obj_)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
+
     def _get_sequence(self, obj, i):
         if obj and obj.line:
             sequences = obj.line.sequences.all()
