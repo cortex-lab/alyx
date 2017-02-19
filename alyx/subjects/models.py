@@ -255,7 +255,7 @@ class Cage(BaseModel):
 class Line(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    gene_name = models.CharField(max_length=1023)
+    target_phenotype = models.CharField(max_length=1023)
     auto_name = models.SlugField(max_length=255)
     sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)

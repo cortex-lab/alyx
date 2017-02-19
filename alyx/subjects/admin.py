@@ -354,7 +354,7 @@ class SequencesInline(BaseInlineAdmin):
 
 
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'gene_name', 'strain', 'species', 'description']
+    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
 
     inlines = [SubjectRequestInline, SubjectLitterInline, SequencesInline]
 
