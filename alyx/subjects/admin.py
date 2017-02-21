@@ -134,81 +134,10 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<img src="{url}" />', url=url)
 
 
-# Cage
+# Subject inline
 # ------------------------------------------------------------------------------------------------
 
-class LitterInline(BaseInlineAdmin):
-    model = Litter
-    fields = ['descriptive_name', 'mother', 'father', 'birth_date', 'notes']
-    extra = 1
-    show_change_link = True
-
-    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
-        field = super(LitterInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
-
-        if db_field.name in ('mother', 'father'):
-            if request._obj_ is not None:
-                field.queryset = field.queryset.filter(line=request._obj_.line)
-            else:
-                field.queryset = field.queryset.none()
-
-        return field
-
-
-class SubjectCageInline(BaseInlineAdmin):
-    model = Subject
-    extra = 1
-    # fields = ('sex', 'ear_mark', 'notes')
-    # TODO: genotype
-
-
-class CageAdminForm(forms.ModelForm):
-    class Meta:
-        fields = '__all__'
-        model = Cage
-
-
-class CageAdmin(BaseAdmin):
-    form = CageAdminForm
-
-    fields = ('line', 'cage_label', 'type', 'location')
-    inlines = [SubjectCageInline, LitterInline]
-
-    def get_form(self, request, obj=None, **kwargs):
-        # just save obj reference for future processing in Inline
-        request._obj_ = obj
-        return super(CageAdmin, self).get_form(request, obj, **kwargs)
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        # Delete objects marked to delete.
-        for obj in formset.deleted_objects:
-            obj.delete()
-        if formset.instance.cage_label in (None, '-'):
-            autoname = _autoname(Cage,
-                                 formset.instance.line.auto_name,
-                                 'cage_label',
-                                 interfix='C_')
-            formset.instance.cage_label = autoname
-            formset.instance.save()
-        # Set the line of all inline litters.
-        for instance in instances:
-            if isinstance(instance, Litter):
-                instance.line = formset.instance.line
-                if instance.descriptive_name in (None, '-'):
-                    autoname = _autoname(Litter,
-                                         formset.instance.line.auto_name,
-                                         'descriptive_name',
-                                         interfix='L_')
-                    instance.descriptive_name = autoname
-                instance.save()
-        formset.save_m2m()
-
-
-# Litter
-# ------------------------------------------------------------------------------------------------
-
-class SubjectLitterForm(forms.ModelForm):
+class SubjectInlineForm(forms.ModelForm):
     TEST_RESULTS = (
         ('', '----'),
         (0, 'Absent'),
@@ -223,7 +152,7 @@ class SubjectLitterForm(forms.ModelForm):
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
-        super(SubjectLitterForm, self).__init__(*args, **kwargs)
+        super(SubjectInlineForm, self).__init__(*args, **kwargs)
         self.sequences = []
         subject = self.instance
         line = subject.line
@@ -262,13 +191,13 @@ class SubjectLitterForm(forms.ModelForm):
                     test = res[0]
                     test.test_result = result
                     test.save()
-        return super(SubjectLitterForm, self).save(commit=commit)
+        return super(SubjectInlineForm, self).save(commit=commit)
 
 
-class SubjectLitterInline(BaseInlineAdmin):
+class SubjectInline(BaseInlineAdmin):
     model = Subject
-    extra = 0
-    fields = ('age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+    extra = 1
+    fields = ('nickname', 'age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
@@ -277,16 +206,15 @@ class SubjectLitterInline(BaseInlineAdmin):
                        'sequence0', 'sequence1', 'sequence2',
                        )
     show_change_link = True
-    form = SubjectLitterForm
+    form = SubjectInlineForm
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         # Filter cages by cages that are part of that line.
-        field = super(SubjectLitterInline, self).formfield_for_foreignkey(db_field,
-                                                                          request, **kwargs)
+        field = super(SubjectInline, self).formfield_for_foreignkey(db_field,
+                                                                    request, **kwargs)
 
         if db_field.name == 'cage':
-            if request._obj_ is not None:
-                assert isinstance(request._obj_, Line)
+            if isinstance(request._obj_, Line):
                 field.queryset = field.queryset.filter(line=request._obj_)
             else:
                 field.queryset = field.queryset.none()
@@ -318,13 +246,87 @@ class SubjectLitterInline(BaseInlineAdmin):
         return
 
 
+# Cage
+# ------------------------------------------------------------------------------------------------
+
+class LitterInline(BaseInlineAdmin):
+    model = Litter
+    fields = ['descriptive_name', 'mother', 'father', 'birth_date', 'notes']
+    extra = 1
+    show_change_link = True
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(LitterInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        if db_field.name in ('mother', 'father'):
+            if request._obj_ is not None:
+                field.queryset = field.queryset.filter(line=request._obj_.line)
+            else:
+                field.queryset = field.queryset.none()
+
+        return field
+
+
+class CageAdminForm(forms.ModelForm):
+    class Meta:
+        fields = '__all__'
+        model = Cage
+
+
+class CageAdmin(BaseAdmin):
+    form = CageAdminForm
+
+    fields = ('line', 'cage_label', 'type', 'location')
+    inlines = [SubjectInline, LitterInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(CageAdmin, self).get_form(request, obj, **kwargs)
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        if formset.instance.cage_label in (None, '-'):
+            autoname = _autoname(Cage,
+                                 formset.instance.line.auto_name,
+                                 'cage_label',
+                                 interfix='C_')
+            formset.instance.cage_label = autoname
+            formset.instance.save()
+        # Set the line of all inline litters.
+        for instance in instances:
+            if isinstance(instance, Litter):
+                instance.line = formset.instance.line
+                if instance.descriptive_name in (None, '-'):
+                    autoname = _autoname(Litter,
+                                         formset.instance.line.auto_name,
+                                         'descriptive_name',
+                                         interfix='L_')
+                    instance.descriptive_name = autoname
+            elif isinstance(instance, Subject):
+                if instance.nickname in (None, '-'):
+                    autoname = _autoname(Subject,
+                                         formset.instance.line.auto_name,
+                                         'nickname',
+                                         interfix='')
+                    instance.nickname = autoname
+            instance.save()
+        formset.save_m2m()
+
+
+# Litter
+# ------------------------------------------------------------------------------------------------
+
 class LitterAdmin(BaseAdmin):
     list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
     fields = ['line', 'descriptive_name',
               'mother', 'father', 'birth_date',
               'notes', 'cage']
 
-    inlines = [SubjectLitterInline]
+    inlines = [SubjectInline]
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
@@ -345,9 +347,13 @@ class LitterAdmin(BaseAdmin):
             # Copy some fields from the mother to the subject.
             for field in to_copy:
                 setattr(subj, field, getattr(mother, field))
-            prefix = getattr(subj.line, 'name', 'UNKNOWN') + '_'
-            i = _autoname_number(Subject, 'nickname', prefix)
-            subj.nickname = '%s%04d' % (prefix, i)
+            # Autofill nickname.
+            if subj.nickname in (None, '-'):
+                autoname = _autoname(Subject,
+                                     litter.line.auto_name,
+                                     'nickname',
+                                     interfix='')
+                subj.nickname = autoname
             subj.save()
         formset.save_m2m()
 
@@ -370,7 +376,7 @@ class SequencesInline(BaseInlineAdmin):
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
 
-    inlines = [SubjectRequestInline, SubjectLitterInline, SequencesInline]
+    inlines = [SubjectRequestInline, SubjectInline, SequencesInline]
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
