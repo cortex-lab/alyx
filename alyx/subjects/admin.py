@@ -391,6 +391,12 @@ class LineAdmin(BaseAdmin):
                     value = getattr(line, field, None)
                     if value:
                         setattr(subj, field, value)
+                if subj.nickname in (None, '-'):
+                    autoname = _autoname(Subject,
+                                         line.auto_name,
+                                         'nickname',
+                                         interfix='')
+                    subj.nickname = autoname
             elif isinstance(subj, SubjectRequest):
                 # Copy some fields from the line to the subject.
                 subj.user = request.user
