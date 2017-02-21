@@ -277,8 +277,9 @@ class CageAdminForm(forms.ModelForm):
 
 class CageAdmin(BaseAdmin):
     form = CageAdminForm
-
+    list_display = ['cage_label', 'line', 'location']
     fields = ('line', 'cage_label', 'type', 'location')
+    list_filter = ['line']
     inlines = [SubjectInline, LitterInline]
 
     def get_form(self, request, obj=None, **kwargs):
