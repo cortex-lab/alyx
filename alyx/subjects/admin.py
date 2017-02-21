@@ -343,13 +343,15 @@ class LitterAdmin(BaseAdmin):
             obj.delete()
         litter = formset.instance
         mother = litter.mother
-        to_copy = 'cage,species,strain,line,source,responsible_user'.split(',')
+        to_copy = 'species,strain,line,source,responsible_user'.split(',')
         for instance in instances:
             subj = instance
+            # Copy the birth date and cage from the litter.
             subj.birth_date = litter.birth_date
+            subj.cage = litter.cage
             # Copy some fields from the mother to the subject.
             for field in to_copy:
-                setattr(subj, field, getattr(mother, field))
+                setattr(subj, field, getattr(mother, field, None))
             # Autofill nickname.
             if subj.nickname in (None, '-'):
                 autoname = _autoname(Subject,
