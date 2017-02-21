@@ -376,10 +376,16 @@ class SequencesInline(BaseInlineAdmin):
     fields = ['sequence']
 
 
+class CageInline(BaseInlineAdmin):
+    model = Cage
+    fields = ('line', 'cage_label', 'type', 'location')
+    extra = 1
+
+
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
 
-    inlines = [SubjectRequestInline, SubjectInline, SequencesInline]
+    inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
@@ -406,6 +412,13 @@ class LineAdmin(BaseAdmin):
                                          'nickname',
                                          interfix='')
                     subj.nickname = autoname
+            elif isinstance(subj, Cage):
+                if subj.cage_label in (None, '-'):
+                    autoname = _autoname(Cage,
+                                         line.auto_name,
+                                         'cage_label',
+                                         interfix='C_')
+                    subj.cage_label = autoname
             elif isinstance(subj, SubjectRequest):
                 # Copy some fields from the line to the subject.
                 subj.user = request.user
