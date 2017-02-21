@@ -197,12 +197,12 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'age_weeks', 'sex', 'cage', 'litter', 'mother', 'father',
+    fields = ('nickname', 'age_weeks', 'sex', 'line', 'cage', 'litter', 'mother', 'father',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
               'ear_mark', 'notes')
-    readonly_fields = ('age_weeks', 'litter', 'mother', 'father',
+    readonly_fields = ('age_weeks', 'mother', 'father',
                        'sequence0', 'sequence1', 'sequence2',
                        )
     show_change_link = True
@@ -216,6 +216,8 @@ class SubjectInline(BaseInlineAdmin):
         if db_field.name == 'cage':
             if isinstance(request._obj_, Line):
                 field.queryset = field.queryset.filter(line=request._obj_)
+            elif isinstance(request._obj_, Litter):
+                field.queryset = field.queryset.filter(line=request._obj_.line)
             else:
                 field.queryset = field.queryset.none()
 
