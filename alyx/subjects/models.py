@@ -82,10 +82,10 @@ class Subject(BaseModel):
 
     def water_restriction_date(self):
         restriction = WaterRestriction.objects.filter(subject__id=self.id)
-        restriction = restriction.order_by('-date_time')
+        restriction = restriction.order_by('-start_time')
         if not restriction:
             return
-        return restriction[0].date_time
+        return restriction[0].start_time
 
     def reference_weighing(self):
         wr_date = self.water_restriction_date()
