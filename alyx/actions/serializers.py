@@ -46,7 +46,7 @@ class ExperimentListSerializer(BaseActionSerializer):
     class Meta:
         model = Experiment
         fields = ('subject', 'users', 'location', 'procedures',
-                  'narrative', 'date_time', 'url')
+                  'narrative', 'start_time', 'end_time', 'url')
 
 
 class ExperimentDetailSerializer(BaseActionSerializer):
@@ -56,7 +56,7 @@ class ExperimentDetailSerializer(BaseActionSerializer):
     class Meta:
         model = Experiment
         fields = ('subject', 'users', 'location', 'procedures',
-                  'narrative', 'date_time', 'url', 'json', 'exp_metadata_related')
+                  'narrative', 'start_time', 'end_time', 'url', 'json', 'exp_metadata_related')
 
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):

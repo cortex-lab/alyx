@@ -76,11 +76,12 @@ class BaseAction(BaseModel):
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(null=True, blank=True)
-    date_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    start_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    end_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return (str(self.subject) + " at " +
-                str(getattr(self, 'date_time', 'no time')))
+                str(getattr(self, 'start_time', 'no time')))
 
     class Meta:
         abstract = True

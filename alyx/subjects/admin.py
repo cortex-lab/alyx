@@ -60,21 +60,21 @@ class GenotypeTestInline(BaseInlineAdmin):
 class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
-    fields = ['brain_location', 'procedures', 'narrative', 'date_time',
+    fields = ['brain_location', 'procedures', 'narrative', 'start_time',
               'users', 'location']
 
 
 class ExperimentInline(BaseInlineAdmin):
     model = Experiment
     extra = 1
-    fields = ['procedures', 'narrative', 'date_time',
+    fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
 
 
 class OtherActionInline(BaseInlineAdmin):
     model = OtherAction
     extra = 1
-    fields = ['procedures', 'narrative', 'date_time',
+    fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
 
 
@@ -143,7 +143,7 @@ class SubjectAdmin(BaseAdmin):
         # Delete objects marked to delete.
         for obj in formset.deleted_objects:
             obj.delete()
-        if formset.instance.nickname in (None, '-'):
+        if formset.instance.nickname in (None, '-') and formset.instance.line:
             autoname = _autoname(Subject,
                                  formset.instance.line.auto_name,
                                  'nickname',

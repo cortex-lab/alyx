@@ -5,7 +5,8 @@ from subjects.models import Subject
 
 
 class BaseActionAdmin(BaseAdmin):
-    fields = ['subject', 'date_time', 'users', 'location', 'procedures', 'narrative']
+    fields = ['subject', 'start_time', 'end_time', 'users',
+              'location', 'procedures', 'narrative']
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
@@ -30,11 +31,7 @@ class WeighingAdmin(BaseActionAdmin):
 
 
 class SurgeryAdmin(BaseActionAdmin):
-    list_display = ['subject', 'location', 'date_time']
-
-
-class NoteAdmin(BaseActionAdmin):
-    list_display = ['subject', 'narrative']
+    list_display = ['subject', 'location', 'start_time']
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
