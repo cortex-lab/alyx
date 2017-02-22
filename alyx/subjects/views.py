@@ -14,7 +14,7 @@ def _autoname_number(model, auto_name, field, interfix=''):
     if not names:
         i = 1
     else:
-        i = int(names[-1][-4:]) + 1
+        i = int(names[-1].split('_')[-1]) + 1
     return i
 
 
