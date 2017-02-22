@@ -133,6 +133,43 @@ class SubjectAdmin(BaseAdmin):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" />', url=url)
 
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(SubjectAdmin, self).get_form(request, obj, **kwargs)
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        # Delete objects marked to delete.
+        for obj in formset.deleted_objects:
+            obj.delete()
+        if formset.instance.nickname in (None, '-'):
+            autoname = _autoname(Subject,
+                                 formset.instance.line.auto_name,
+                                 'nickname',
+                                 interfix='')
+            formset.instance.nickname = autoname
+            formset.instance.save()
+        # Set the line of all inline litters.
+        for instance in instances:
+            if isinstance(instance, Litter):
+                instance.line = formset.instance.line
+                if instance.descriptive_name in (None, '-'):
+                    autoname = _autoname(Litter,
+                                         formset.instance.line.auto_name,
+                                         'descriptive_name',
+                                         interfix='L_')
+                    instance.descriptive_name = autoname
+            elif isinstance(instance, Subject):
+                if instance.nickname in (None, '-'):
+                    autoname = _autoname(Subject,
+                                         formset.instance.line.auto_name,
+                                         'nickname',
+                                         interfix='')
+                    instance.nickname = autoname
+            instance.save()
+        formset.save_m2m()
+
 
 # Subject inline
 # ------------------------------------------------------------------------------------------------
@@ -342,6 +379,12 @@ class LitterAdmin(BaseAdmin):
         for obj in formset.deleted_objects:
             obj.delete()
         litter = formset.instance
+        if litter.descriptive_name in (None, '-'):
+            litter.descriptive_name = _autoname(Litter,
+                                                litter.line.auto_name,
+                                                'descriptive_name',
+                                                interfix='L_')
+            formset.instance.save()
         mother = litter.mother
         to_copy = 'species,strain,line,source,responsible_user'.split(',')
         for instance in instances:
