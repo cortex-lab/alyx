@@ -304,17 +304,7 @@ class Zygosity(BaseModel):
     zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
 
     def __str__(self):
-        if (self.zygosity == 0):
-            symbol = '-/-'
-        elif (self.zygosity == 1):
-            symbol = '+/-'
-        elif (self.zygosity == 2):
-            symbol = '+/+'
-        elif (self.zygosity == 3):
-            symbol = '+'
-        else:
-            symbol = '?'
-
+        symbol = ('-/-', '+/-', '+/+', '+')[self.zygosity] if self.zygosity is not None else '?'
         return "{0:s} {1:s}".format(str(self.allele), symbol)
 
     class Meta:

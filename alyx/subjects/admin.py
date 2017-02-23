@@ -125,12 +125,12 @@ class SubjectAdmin(BaseAdmin):
 
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'cage', 'mother', 'father',
-                    'sex', 'alive']
+                    'sex', 'zygosities', 'alive']
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
                      'responsible_user__username']
-    readonly_fields = ('age_days',
+    readonly_fields = ('age_days', 'zygosities',
                        'water_restriction_date',
                        'reference_weighing_f',
                        'current_weighing_f',
@@ -141,6 +141,10 @@ class SubjectAdmin(BaseAdmin):
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
+
+    def zygosities(self, obj):
+        genotype = Zygosity.objects.filter(subject=obj)
+        return '; '.join(map(str, genotype))
 
     def reference_weighing_f(self, obj):
         return '%.2f' % obj.reference_weighing()
