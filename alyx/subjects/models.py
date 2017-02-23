@@ -168,6 +168,12 @@ class Subject(BaseModel):
     def zygosity_strings(self):
         return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
 
+    def save(self, *args, **kwargs):
+        # When a subject dies, remove it from a cage.
+        if not self.alive() and self.cage is not None:
+            self.cage = None
+        return super(Subject, self).save(*args, **kwargs)
+
     def __str__(self):
         return self.nickname
 
