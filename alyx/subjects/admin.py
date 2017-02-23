@@ -172,13 +172,15 @@ class SubjectAdmin(BaseAdmin):
         # Delete objects marked to delete.
         for obj in formset.deleted_objects:
             obj.delete()
+        # Default user is the logged user.
+        if formset.instance.responsible_user is None:
+            formset.instance.responsible_user = request.user
         if formset.instance.nickname in (None, '-') and formset.instance.line:
             autoname = _autoname(Subject,
                                  formset.instance.line.auto_name,
                                  'nickname',
                                  interfix='')
             formset.instance.nickname = autoname
-            formset.instance.save()
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
@@ -197,6 +199,7 @@ class SubjectAdmin(BaseAdmin):
                                          interfix='')
                     instance.nickname = autoname
             instance.save()
+        formset.instance.save()
         formset.save_m2m()
 
 
@@ -377,6 +380,9 @@ class CageAdmin(BaseAdmin):
                                          interfix='L_')
                     instance.descriptive_name = autoname
             elif isinstance(instance, Subject):
+                # Default user is the logged user.
+                if instance.responsible_user is None:
+                    instance.responsible_user = request.user
                 if instance.nickname in (None, '-'):
                     autoname = _autoname(Subject,
                                          formset.instance.line.auto_name,
@@ -416,12 +422,15 @@ class LitterAdmin(BaseAdmin):
                                                 interfix='L_')
             formset.instance.save()
         mother = litter.mother
-        to_copy = 'species,strain,line,source,responsible_user'.split(',')
+        to_copy = 'species,strain,line,source'.split(',')
+        user = (litter.mother.responsible_user
+                if litter.mother and litter.mother.responsible_user else request.user)
         for instance in instances:
             subj = instance
             # Copy the birth date and cage from the litter.
             subj.birth_date = litter.birth_date
             subj.cage = litter.cage
+            subj.responsible_user = user
             # Copy some fields from the mother to the subject.
             for field in to_copy:
                 setattr(subj, field, getattr(mother, field, None))
@@ -481,6 +490,10 @@ class LineAdmin(BaseAdmin):
                     value = getattr(line, field, None)
                     if value:
                         setattr(subj, field, value)
+                # Default user is the logged user.
+                if subj.responsible_user is None:
+                    subj.responsible_user = request.user
+                # Autoname.
                 if subj.nickname in (None, '-'):
                     autoname = _autoname(Subject,
                                          line.auto_name,
