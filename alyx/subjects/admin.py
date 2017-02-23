@@ -107,6 +107,13 @@ class OtherActionInline(BaseInlineAdmin):
               'users', 'location']
 
 
+def get_admin_url(obj):
+    if not obj:
+        return '#'
+    info = (obj._meta.app_label, obj._meta.model_name)
+    return reverse('admin:%s_%s_change' % info, args=(obj.pk,))
+
+
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
@@ -124,13 +131,15 @@ class SubjectAdmin(BaseAdmin):
     )
 
     list_display = ['nickname', 'birth_date', 'responsible_user',
-                    'cage', 'mother', 'father',
+                    'cage_l', 'line_l', 'litter_l',
+                    'mother', 'father',
                     'sex', 'zygosities', 'alive']
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
                      'responsible_user__username']
     readonly_fields = ('age_days', 'zygosities',
+                       'cage_l', 'litter_l', 'line_l',
                        'water_restriction_date',
                        'reference_weighing_f',
                        'current_weighing_f',
@@ -141,6 +150,18 @@ class SubjectAdmin(BaseAdmin):
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
+
+    def cage_l(self, obj):
+        url = get_admin_url(obj.cage)
+        return format_html('<a href="{url}">{cage}</a>', cage=obj.cage or '-', url=url)
+
+    def litter_l(self, obj):
+        url = get_admin_url(obj.litter)
+        return format_html('<a href="{url}">{litter}</a>', litter=obj.litter or '-', url=url)
+
+    def line_l(self, obj):
+        url = get_admin_url(obj.line)
+        return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
 
     def zygosities(self, obj):
         genotype = Zygosity.objects.filter(subject=obj)
