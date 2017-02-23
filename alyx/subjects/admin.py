@@ -12,17 +12,33 @@ from actions.models import Surgery, Experiment, OtherAction
 # ------------------------------------------------------------------------------------------------
 
 class ResponsibleUserListFilter(admin.SimpleListFilter):
+    # Default filter value: "me"
+    # http://stackoverflow.com/a/16556771/1595060
+
     title = 'responsible user'
     parameter_name = 'responsible_user'
 
     def lookups(self, request, model_admin):
         return (
-            ('m', 'Me'),
+            (None, 'Me'),
+            ('all', 'All'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'm':
+        if self.value() is None:
             return queryset.filter(responsible_user=request.user)
+        elif self.value == 'all':
+            return queryset.all()
+
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
 
 
 class SubjectAliveListFilter(admin.SimpleListFilter):
@@ -31,15 +47,28 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('y', 'Yes'),
+            (None, 'Yes'),
             ('n', 'No'),
+            ('all', 'All'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'y':
+        if self.value() is None:
             return queryset.filter(death_date=None)
         if self.value() == 'n':
             return queryset.exclude(death_date=None)
+        elif self.value == 'all':
+            return queryset.all()
+
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
 
 
 # Subject
