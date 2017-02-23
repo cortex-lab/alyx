@@ -263,7 +263,8 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'age_weeks', 'sex', 'line', 'cage', 'litter', 'mother', 'father',
+    fields = ('nickname', 'birth_date', 'age_weeks', 'sex', 'line', 'cage',
+              'litter', 'mother', 'father',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
