@@ -109,7 +109,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_remaining_f',
                        'weighing_plot',
                        )
-    list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter]
+    list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
 
