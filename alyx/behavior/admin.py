@@ -9,3 +9,8 @@ class PupilTrackingAdmin(BaseAdmin):
 
 
 admin.site.register(PupilTracking, PupilTrackingAdmin)
+admin.site.register(HeadTracking)
+admin.site.register(EventSeries)
+admin.site.register(IntervalSeries)
+admin.site.register(OptogeneticStimulus)
+admin.site.register(Pharmacology)
