@@ -117,7 +117,7 @@ def get_admin_url(obj):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
-                                'responsible_user',
+                                'responsible_user', 'wean_date',
                                 'death_date', 'ear_mark', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
@@ -291,7 +291,7 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'birth_date', 'age_weeks', 'sex', 'line', 'cage',
+    fields = ('nickname', 'birth_date', 'wean_date', 'age_weeks', 'sex', 'line', 'cage',
               'litter', 'mother', 'father',
               'sequence0', 'result0',
               'sequence1', 'result1',

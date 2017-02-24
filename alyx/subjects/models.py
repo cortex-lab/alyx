@@ -41,6 +41,7 @@ class Subject(BaseModel):
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
+    wean_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
