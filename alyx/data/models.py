@@ -146,6 +146,13 @@ class Dataset(BaseModel):
         return str(getattr(self, 'name', 'unnamed')) + " belonging to " + str(self.experiment)
 
 
+class Timestamp(Dataset):
+    timebase_name = models.CharField(max_length=255, null=True, blank=True)
+    regularly_sampled = models.NullBooleanField(null=True, blank=True)
+    sample_rate = models.FloatField(null=True, blank=True)
+    first_sample_time = models.FloatField(null=True, blank=True)
+
+
 class BaseExperimentalData(BaseModel):
     """
     Abstract base class for all data acquisition models. Never used directly.
