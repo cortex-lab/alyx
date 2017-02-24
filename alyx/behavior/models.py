@@ -63,9 +63,10 @@ class EventSeries(BaseExperimentalData):
     event_times = models.ForeignKey(Dataset, blank=True, null=True,
                                     related_name="event_series_event_times",
                                     help_text="n*1 array of times in seconds")
-    event_descriptions = models.ForeignKey(Dataset, blank=True, null=True,
-                                           related_name="event_series_event_descriptions",
-                                           help_text="n*1 array listing the type of each event")
+    type_descriptions_id = models.ForeignKey(Dataset, blank=True, null=True)
+    event_types_id = models.ForeignKey(Dataset, blank=True, null=True,
+                                       related_name="event_series_event_descriptions",
+                                       help_text="n*1 array listing the type of each event")
     description = models.TextField(blank=True, null=True,
                                    help_text="misc. narrative e.g. "
                                    "'drifting gratings of different orientations', "
