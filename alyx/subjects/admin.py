@@ -311,8 +311,16 @@ class SubjectInline(BaseInlineAdmin):
         return field
 
     def _get_sequence(self, obj, i):
-        if self._parent_instance:
-            sequences = self._parent_instance.sequences.all()
+        if isinstance(self._parent_instance, Line):
+            line = self._parent_instance
+        elif isinstance(self._parent_instance, Litter):
+            line = self._parent_instance.line
+        elif isinstance(self._parent_instance, Cage):
+            line = self._parent_instance.line
+        else:
+            line = None
+        if line:
+            sequences = line.sequences.all()
             if i < len(sequences):
                 return sequences[i]
 
@@ -374,6 +382,13 @@ class CageAdmin(BaseAdmin):
         request._obj_ = obj
         return super(CageAdmin, self).get_form(request, obj, **kwargs)
 
+    def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
+        # Make the parent instance accessible from the inline admin.
+        # http://stackoverflow.com/a/24427952/1595060
+        for inline in self.get_inline_instances(request, obj):
+            inline._parent_instance = obj
+            yield inline.get_formset(request, obj), inline
+
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         # Delete objects marked to delete.
@@ -414,6 +429,13 @@ class LitterAdmin(BaseAdmin):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
         return super(LitterAdmin, self).get_form(request, obj, **kwargs)
+
+    def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
+        # Make the parent instance accessible from the inline admin.
+        # http://stackoverflow.com/a/24427952/1595060
+        for inline in self.get_inline_instances(request, obj):
+            inline._parent_instance = obj
+            yield inline.get_formset(request, obj), inline
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
