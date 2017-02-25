@@ -267,9 +267,41 @@ class Line(BaseModel):
     sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    subject_autoname_index = models.IntegerField(default=0)
+    cage_autoname_index = models.IntegerField(default=0)
+    litter_autoname_index = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
+
+    def new_cage_autoname(self):
+        self.cage_autoname_index = self.cage_autoname_index + 1
+        self.save()
+        return '%s_C_%d' % (self.auto_name, self.cage_autoname_index)
+
+    def new_litter_autoname(self):
+        self.litter_autoname_index = self.litter_autoname_index + 1
+        self.save()
+        return '%s_L_%d' % (self.auto_name, self.litter_autoname_index)
+
+    def new_subject_autoname(self):
+        self.subject_autoname_index = self.subject_autoname_index + 1
+        self.save()
+        return '%s_%d' % (self.auto_name, self.subject_autoname_index)
+
+    def set_autoname(self, obj):
+        if isinstance(obj, Cage):
+            field = 'cage_label'
+            m = self.new_cage_autoname
+        elif isinstance(obj, Litter):
+            field = 'descriptive_name'
+            m = self.new_litter_autoname
+        elif isinstance(obj, Subject):
+            field = 'nickname'
+            m = self.new_subject_autoname
+        if getattr(obj, field, None) in (None, '-'):
+            setattr(obj, field, m())
+            obj.save()
 
 
 class Strain(BaseModel):

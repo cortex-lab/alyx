@@ -4,7 +4,6 @@ from django.utils.html import format_html
 from django.contrib import admin
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
-from .views import _autoname, _autoname_number
 from actions.models import Surgery, Experiment, OtherAction
 
 
@@ -198,31 +197,22 @@ class SubjectAdmin(BaseAdmin):
         for obj in formset.deleted_objects:
             obj.delete()
         # Default user is the logged user.
-        if formset.instance.responsible_user is None:
-            formset.instance.responsible_user = request.user
-        if formset.instance.nickname in (None, '-') and formset.instance.line:
-            autoname = _autoname(Subject,
-                                 formset.instance.line.auto_name,
-                                 'nickname',
-                                 interfix='')
-            formset.instance.nickname = autoname
+        obj = formset.instance
+        line = obj.line
+        if obj.responsible_user is None:
+            obj.responsible_user = request.user
+        # Autoname.
+        if line:
+            line.set_autoname(obj)
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
-                instance.line = formset.instance.line
-                if instance.descriptive_name in (None, '-'):
-                    autoname = _autoname(Litter,
-                                         formset.instance.line.auto_name,
-                                         'descriptive_name',
-                                         interfix='L_')
-                    instance.descriptive_name = autoname
+                instance.line = line
+                if line:
+                    line.set_autoname(instance)
             elif isinstance(instance, Subject):
-                if instance.nickname in (None, '-'):
-                    autoname = _autoname(Subject,
-                                         formset.instance.line.auto_name,
-                                         'nickname',
-                                         interfix='')
-                    instance.nickname = autoname
+                if line:
+                    line.set_autoname(instance)
             instance.save()
         formset.instance.save()
         formset.save_m2m()
@@ -387,33 +377,22 @@ class CageAdmin(BaseAdmin):
         # Delete objects marked to delete.
         for obj in formset.deleted_objects:
             obj.delete()
-        if formset.instance.cage_label in (None, '-'):
-            autoname = _autoname(Cage,
-                                 formset.instance.line.auto_name,
-                                 'cage_label',
-                                 interfix='C_')
-            formset.instance.cage_label = autoname
-            formset.instance.save()
+        obj = formset.instance
+        line = obj.line
+        if line:
+            line.set_autoname(obj)
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
-                instance.line = formset.instance.line
-                if instance.descriptive_name in (None, '-'):
-                    autoname = _autoname(Litter,
-                                         formset.instance.line.auto_name,
-                                         'descriptive_name',
-                                         interfix='L_')
-                    instance.descriptive_name = autoname
+                instance.line = line
+                if line:
+                    line.set_autoname(instance)
             elif isinstance(instance, Subject):
                 # Default user is the logged user.
                 if instance.responsible_user is None:
                     instance.responsible_user = request.user
-                if instance.nickname in (None, '-'):
-                    autoname = _autoname(Subject,
-                                         formset.instance.line.auto_name,
-                                         'nickname',
-                                         interfix='')
-                    instance.nickname = autoname
+                if line:
+                    line.set_autoname(instance)
             instance.save()
         formset.save_m2m()
 
@@ -439,34 +418,26 @@ class LitterAdmin(BaseAdmin):
         # Delete objects marked to delete.
         for obj in formset.deleted_objects:
             obj.delete()
-        litter = formset.instance
-        if litter.descriptive_name in (None, '-'):
-            litter.descriptive_name = _autoname(Litter,
-                                                litter.line.auto_name,
-                                                'descriptive_name',
-                                                interfix='L_')
-            formset.instance.save()
-        mother = litter.mother
+        obj = formset.instance
+        line = obj.line
+        if line:
+            line.set_autoname(obj)
+        mother = obj.mother
         to_copy = 'species,strain,line,source'.split(',')
-        user = (litter.mother.responsible_user
-                if litter.mother and litter.mother.responsible_user else request.user)
+        user = (obj.mother.responsible_user
+                if obj.mother and obj.mother.responsible_user else request.user)
         for instance in instances:
-            subj = instance
             # Copy the birth date and cage from the litter.
-            subj.birth_date = litter.birth_date
-            subj.cage = litter.cage
-            subj.responsible_user = user
+            instance.birth_date = obj.birth_date
+            instance.cage = obj.cage
+            instance.responsible_user = user
             # Copy some fields from the mother to the subject.
             for field in to_copy:
-                setattr(subj, field, getattr(mother, field, None))
+                setattr(instance, field, getattr(mother, field, None))
             # Autofill nickname.
-            if subj.nickname in (None, '-'):
-                autoname = _autoname(Subject,
-                                     litter.line.auto_name,
-                                     'nickname',
-                                     interfix='')
-                subj.nickname = autoname
-            subj.save()
+            if line:
+                line.set_autoname(instance)
+            instance.save()
         formset.save_m2m()
 
 
@@ -493,6 +464,7 @@ class CageInline(BaseInlineAdmin):
 
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
+    list_display = ['name', 'target_phenotype', 'strain', 'species']
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
@@ -509,33 +481,25 @@ class LineAdmin(BaseAdmin):
         line = formset.instance
         for instance in instances:
             subj = instance
-            if isinstance(subj, Subject):
+            if isinstance(instance, Subject):
                 # Copy some fields from the line to the subject.
                 for field in ('species', 'strain'):
                     value = getattr(line, field, None)
                     if value:
-                        setattr(subj, field, value)
+                        setattr(instance, field, value)
                 # Default user is the logged user.
-                if subj.responsible_user is None:
-                    subj.responsible_user = request.user
+                if instance.responsible_user is None:
+                    instance.responsible_user = request.user
                 # Autoname.
-                if subj.nickname in (None, '-'):
-                    autoname = _autoname(Subject,
-                                         line.auto_name,
-                                         'nickname',
-                                         interfix='')
-                    subj.nickname = autoname
-            elif isinstance(subj, Cage):
-                if subj.cage_label in (None, '-'):
-                    autoname = _autoname(Cage,
-                                         line.auto_name,
-                                         'cage_label',
-                                         interfix='C_')
-                    subj.cage_label = autoname
-            elif isinstance(subj, SubjectRequest):
-                # Copy some fields from the line to the subject.
-                subj.user = request.user
-            subj.save()
+                line.set_autoname(instance)
+            elif isinstance(instance, Cage):
+                line.set_autoname(instance)
+            elif isinstance(instance, Litter):
+                line.set_autoname(instance)
+            elif isinstance(instance, SubjectRequest):
+                # Copy some fields from the line to the instanceect.
+                instance.user = request.user
+            instance.save()
         formset.save_m2m()
 
 
