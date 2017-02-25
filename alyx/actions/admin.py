@@ -32,6 +32,7 @@ class WeighingAdmin(BaseActionAdmin):
 
 class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject', 'location', 'start_time']
+    fields = ['subject', 'location', 'outcome_type', 'start_time']
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)

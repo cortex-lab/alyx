@@ -111,7 +111,15 @@ class Surgery(BaseAction):
     """
     Surgery performed on a subject.
     """
+    OUTCOME_TYPES = (
+        ('a', 'Acute'),
+        ('r', 'Recovery'),
+    )
     brain_location = models.ForeignKey(BrainLocation, null=True, blank=True)
+    outcome_type = models.CharField(max_length=1,
+                                    choices=OUTCOME_TYPES,
+                                    blank=True, null=True,
+                                    )
 
     class Meta:
         verbose_name_plural = "surgeries"
