@@ -131,7 +131,7 @@ class SubjectAdmin(BaseAdmin):
 
     list_display = ['nickname', 'birth_date', 'responsible_user',
                     'cage_l', 'line_l', 'litter_l',
-                    'mother', 'father',
+                    'mother', 'father', 'ear_mark',
                     'sex', 'zygosities', 'alive']
     search_fields = ['nickname',
                      'responsible_user__first_name',
@@ -146,6 +146,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_remaining_f',
                        'weighing_plot',
                        )
+    ordering = ['-birth_date']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
@@ -292,6 +293,7 @@ class SubjectInline(BaseInlineAdmin):
                        )
     show_change_link = True
     form = SubjectInlineForm
+    _parent_instance = None
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         # Filter cages by cages that are part of that line.
@@ -309,8 +311,8 @@ class SubjectInline(BaseInlineAdmin):
         return field
 
     def _get_sequence(self, obj, i):
-        if obj and obj.line:
-            sequences = obj.line.sequences.all()
+        if self._parent_instance:
+            sequences = self._parent_instance.sequences.all()
             if i < len(sequences):
                 return sequences[i]
 
@@ -468,6 +470,13 @@ class LineAdmin(BaseAdmin):
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
+    def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
+        # Make the parent instance accessible from the inline admin.
+        # http://stackoverflow.com/a/24427952/1595060
+        for inline in self.get_inline_instances(request, obj):
+            inline._parent_instance = obj
+            yield inline.get_formset(request, obj), inline
+
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
@@ -480,7 +489,6 @@ class LineAdmin(BaseAdmin):
             obj.delete()
         line = formset.instance
         for instance in instances:
-            subj = instance
             if isinstance(instance, Subject):
                 # Copy some fields from the line to the subject.
                 for field in ('species', 'strain'):
