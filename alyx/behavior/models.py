@@ -32,6 +32,9 @@ class PupilTracking(BaseExperimentalData):
                                              help_text="link to directory containing "
                                              "intermediate results")
 
+    class Meta:
+        verbose_name_plural = 'Pupil tracking'
+
 
 class HeadTracking(BaseExperimentalData):
     """
@@ -53,6 +56,9 @@ class HeadTracking(BaseExperimentalData):
                                              related_name="head_tracking_provenance",
                                              help_text="link to directory containing "
                                              "intermediate results")
+
+    class Meta:
+        verbose_name_plural = 'Head tracking'
 
 
 class EventSeries(BaseExperimentalData):
@@ -77,6 +83,9 @@ class EventSeries(BaseExperimentalData):
                                              related_name="event_series_provenance",
                                              help_text="link to directory containing "
                                              "intermediate results")
+
+    class Meta:
+        verbose_name_plural = 'Event series'
 
 
 class IntervalSeries(BaseExperimentalData):
@@ -103,6 +112,9 @@ class IntervalSeries(BaseExperimentalData):
                                              related_name="interval_series_provenance",
                                              help_text="link to directory containing "
                                              "intermediate results")
+
+    class Meta:
+        verbose_name_plural = 'Interval series'
 
 
 class OptogeneticStimulus(BaseExperimentalData):
@@ -140,6 +152,9 @@ class OptogeneticStimulus(BaseExperimentalData):
                                  help_text="link to a file giving the waveform "
                                  "of each stimulus.?")
 
+    class Meta:
+        verbose_name_plural = 'Optogenetic stimulus'
+
 
 class Pharmacology(BaseExperimentalData):
     # Let's not worry about this now! we aren't going to use it in our lab
@@ -163,3 +178,6 @@ class Pharmacology(BaseExperimentalData):
                                      "(e.g. g/kg; mM; %)")
     volume = models.CharField(max_length=255, blank=True, null=True,
                               help_text="TODO: not FloatField? include unit (e.g. µL)")
+
+    class Meta:
+        verbose_name_plural = 'Pharmacology'

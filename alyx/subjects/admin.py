@@ -154,14 +154,17 @@ class SubjectAdmin(BaseAdmin):
     def cage_l(self, obj):
         url = get_admin_url(obj.cage)
         return format_html('<a href="{url}">{cage}</a>', cage=obj.cage or '-', url=url)
+    cage_l.short_description = 'cage'
 
     def litter_l(self, obj):
         url = get_admin_url(obj.litter)
         return format_html('<a href="{url}">{litter}</a>', litter=obj.litter or '-', url=url)
+    litter_l.short_description = 'litter'
 
     def line_l(self, obj):
         url = get_admin_url(obj.line)
         return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
+    line_l.short_description = 'line'
 
     def zygosities(self, obj):
         genotype = Zygosity.objects.filter(subject=obj)
