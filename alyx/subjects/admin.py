@@ -196,6 +196,12 @@ class SubjectAdmin(BaseAdmin):
         request._obj_ = obj
         return super(SubjectAdmin, self).get_form(request, obj, **kwargs)
 
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        user = kwargs['request'].user
+        if db_field.name == 'responsible_user':
+            kwargs['initial'] = user
+        return super(SubjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         # Delete objects marked to delete.
@@ -542,6 +548,12 @@ class LineAdmin(BaseAdmin):
 
 class SubjectRequestAdmin(BaseAdmin):
     fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        user = kwargs['request'].user
+        if db_field.name == 'user':
+            kwargs['initial'] = user
+        return super(SubjectRequestAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
 
 class SpeciesAdmin(BaseAdmin):
