@@ -21,6 +21,13 @@ class Subject(BaseModel):
         ('F', 'Female'),
         ('U', 'Unknown')
     )
+    SEVERITY_CHOICES = (
+        ('st', 'Sub-threshold'),
+        ('mi', 'Mild'),
+        ('mo', 'Moderate'),
+        ('se', 'Severe'),
+        ('nr', 'Non-recovery'),
+    )
 
     nickname = models.SlugField(max_length=255,
                                 unique=True,
@@ -50,6 +57,11 @@ class Subject(BaseModel):
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
+
+    cull_method = models.TextField(null=True, blank=True)
+    adverse_effects = models.TextField(null=True, blank=True)
+    actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
+                                       null=True, blank=True)
 
     def alive(self):
         return self.death_date is None

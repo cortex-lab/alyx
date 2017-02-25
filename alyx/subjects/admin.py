@@ -119,6 +119,7 @@ class SubjectAdmin(BaseAdmin):
                                 'responsible_user', 'wean_date',
                                 'death_date', 'ear_mark', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
+        ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity')}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing_f',
                                         'current_weighing_f',
