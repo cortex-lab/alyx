@@ -116,7 +116,7 @@ def get_admin_url(obj):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
-                                'responsible_user', 'wean_date',
+                                'responsible_user', 'request', 'wean_date',
                                 'death_date', 'ear_mark', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity')}),
@@ -201,6 +201,19 @@ class SubjectAdmin(BaseAdmin):
         if db_field.name == 'responsible_user':
             kwargs['initial'] = user
         return super(SubjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'request':
+            try:
+                parent_obj_id = request.resolver_match.args[0]
+                instance = Subject.objects.get(pk=parent_obj_id)
+                line = instance.line
+                kwargs["queryset"] = SubjectRequest.objects.filter(line=line,
+                                                                   user=request.user,
+                                                                   )
+            except IndexError:
+                pass
+        return super(SubjectAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -482,6 +495,7 @@ class SubjectRequestInline(BaseInlineAdmin):
     model = SubjectRequest
     extra = 1
     fields = ['count', 'due_date', 'status', 'notes']
+    readonly_fields = ['status']
 
 
 class SequencesInline(BaseInlineAdmin):
@@ -547,7 +561,21 @@ class LineAdmin(BaseAdmin):
 # ------------------------------------------------------------------------------------------------
 
 class SubjectRequestAdmin(BaseAdmin):
-    fields = ['line', 'count', 'date_time', 'due_date', 'status', 'notes', 'user']
+    fields = ['line', 'count', 'date_time', 'due_date', 'notes', 'user',
+              'subjects_l', 'remaining', 'status']
+    readonly_fields = ['subjects_l', 'status', 'remaining']
+
+    def subjects_l(self, obj):
+        return format_html('; '.join('<a href="{url}">{subject}</a>'.format(
+                                     subject=subject or '-',
+                                     url=get_admin_url(subject))
+                           for subject in obj.subjects()))
+    subjects_l.short_description = 'subjects'
+
+    def get_form(self, request, obj=None, **kwargs):
+        # just save obj reference for future processing in Inline
+        request._obj_ = obj
+        return super(SubjectRequestAdmin, self).get_form(request, obj, **kwargs)
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         user = kwargs['request'].user

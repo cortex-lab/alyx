@@ -54,6 +54,8 @@ class Subject(BaseModel):
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
     cage = models.ForeignKey('Cage', null=True, blank=True, on_delete=models.SET_NULL)
+    request = models.ForeignKey('SubjectRequest', null=True, blank=True,
+                                on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
@@ -192,10 +194,6 @@ class Subject(BaseModel):
 
 
 class SubjectRequest(BaseModel):
-    STATUS_CHOICES = (
-        ('O', 'Open'),
-        ('C', 'Closed')
-    )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                              related_name='subjects_requested',
                              help_text="Who requested this subject.")
@@ -204,7 +202,18 @@ class SubjectRequest(BaseModel):
     date_time = models.DateField(default=datetime.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, null=True, blank=True)
+
+    def status(self):
+        return 'Open' if self.remaining() > 0 else 'Closed'
+
+    def remaining(self):
+        return (self.count or 0) - len(self.subjects())
+
+    def subjects(self):
+        return Subject.objects.filter(responsible_user=self.user,
+                                      line=self.line,
+                                      death_date__isnull=True,
+                                      )
 
     def __str__(self):
         return '{count} {line} due {due_date} for {user}'.format(
