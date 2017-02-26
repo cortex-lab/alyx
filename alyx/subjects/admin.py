@@ -10,10 +10,21 @@ from actions.models import Surgery, Experiment, OtherAction
 # Filters
 # ------------------------------------------------------------------------------------------------
 
-class ResponsibleUserListFilter(admin.SimpleListFilter):
-    # Default filter value: "me"
+class DefaultListFilter(admin.SimpleListFilter):
+    # Default filter value.
     # http://stackoverflow.com/a/16556771/1595060
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
 
+
+class ResponsibleUserListFilter(DefaultListFilter):
     title = 'responsible user'
     parameter_name = 'responsible_user'
 
@@ -29,18 +40,8 @@ class ResponsibleUserListFilter(admin.SimpleListFilter):
         elif self.value == 'all':
             return queryset.all()
 
-    def choices(self, cl):
-        for lookup, title in self.lookup_choices:
-            yield {
-                'selected': self.value() == lookup,
-                'query_string': cl.get_query_string({
-                    self.parameter_name: lookup,
-                }, []),
-                'display': title,
-            }
 
-
-class SubjectAliveListFilter(admin.SimpleListFilter):
+class SubjectAliveListFilter(DefaultListFilter):
     title = 'alive'
     parameter_name = 'alive'
 
@@ -58,16 +59,6 @@ class SubjectAliveListFilter(admin.SimpleListFilter):
             return queryset.exclude(death_date=None)
         elif self.value == 'all':
             return queryset.all()
-
-    def choices(self, cl):
-        for lookup, title in self.lookup_choices:
-            yield {
-                'selected': self.value() == lookup,
-                'query_string': cl.get_query_string({
-                    self.parameter_name: lookup,
-                }, []),
-                'display': title,
-            }
 
 
 # Subject
@@ -557,13 +548,64 @@ class LineAdmin(BaseAdmin):
         formset.save_m2m()
 
 
-# Other
+# Subject request
 # ------------------------------------------------------------------------------------------------
+
+class SubjectRequestStatusListFilter(DefaultListFilter):
+    title = 'status'
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Open'),
+            ('c', 'Closed'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        instances = queryset.all()
+        if self.value() is None:
+            pks = [obj.pk for obj in instances if obj.status() == 'Open']
+            print(pks)
+            return SubjectRequest.objects.filter(pk__in=pks)
+        if self.value() == 'c':
+            pks = [obj.pk for obj in instances if obj.status() == 'Closed']
+            return SubjectRequest.objects.filter(pk__in=pks)
+        elif self.value == 'all':
+            return queryset.all()
+
+
+class SubjectRequestUserListFilter(DefaultListFilter):
+    title = 'user'
+    parameter_name = 'user'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Me'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(user=request.user)
+        elif self.value == 'all':
+            return queryset.all()
+
 
 class SubjectRequestAdmin(BaseAdmin):
     fields = ['line', 'count', 'date_time', 'due_date', 'notes', 'user',
               'subjects_l', 'remaining', 'status']
-    readonly_fields = ['subjects_l', 'status', 'remaining']
+    list_display = ['line', 'user', 'remaining_count', 'date_time', 'due_date', 'is_closed']
+    readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
+    list_filter = ['line', SubjectRequestUserListFilter, SubjectRequestStatusListFilter]
+
+    def remaining_count(self, obj):
+        return '%d/%d' % (obj.count - obj.remaining(), obj.count)
+    remaining_count.short_description = 'count'
+
+    def is_closed(self, obj):
+        return obj.status() == 'Closed'
+    is_closed.boolean = True
 
     def subjects_l(self, obj):
         return format_html('; '.join('<a href="{url}">{subject}</a>'.format(
@@ -583,6 +625,9 @@ class SubjectRequestAdmin(BaseAdmin):
             kwargs['initial'] = user
         return super(SubjectRequestAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
+
+# Other
+# ------------------------------------------------------------------------------------------------
 
 class SpeciesAdmin(BaseAdmin):
 
