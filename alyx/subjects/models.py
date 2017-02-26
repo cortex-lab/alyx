@@ -213,6 +213,7 @@ class SubjectRequest(BaseModel):
         return Subject.objects.filter(responsible_user=self.user,
                                       line=self.line,
                                       death_date__isnull=True,
+                                      request=self,
                                       )
 
     def __str__(self):
