@@ -1,0 +1,4 @@
+
+psql -h rod.cortexlab.net -A -U alyx_ro -p 5432 -F $'\t' -f subjects_subjectrequest.sql alyx > subjects_subjectrequest.tsv
+psql -h rod.cortexlab.net -A -U alyx_ro -p 5432 -F $'\t' -f auth_user.sql alyx > auth_user.tsv
+psql -h rod.cortexlab.net -A -U alyx_ro -p 5432 -F $'\t' -f subjects_subject.sql alyx > subjects_subject.tsv
