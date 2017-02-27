@@ -18,12 +18,10 @@ from django.contrib import admin
 from rest_framework.authtoken import views as av
 
 from subjects import views as subjects_views
-
 from actions import views as actions_views
-
 from data import views as data_views
-
 from misc import views as misc_views
+
 
 dataset_list = data_views.DatasetViewSet.as_view({
     'get': 'list',
@@ -61,70 +59,36 @@ urlpatterns = [
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token', av.obtain_auth_token),
 
-
-    url(r'^weighings$',
-        actions_views.WeighingAPIListCreate.as_view(),
-        name="weighing-create"),
-
-    url(r'^weighings/(?P<pk>[-_\w].+)$',
-        actions_views.WeighingAPIDetail.as_view(),
+    url(r'^weighings$', actions_views.WeighingAPIListCreate.as_view(), name="weighing-create"),
+    url(r'^weighings/(?P<pk>[-_\w].+)$', actions_views.WeighingAPIDetail.as_view(),
         name="weighing-detail"),
 
-
-    url(r'^water-administrations$',
-        actions_views.WaterAdministrationAPIListCreate.as_view(),
+    url(r'^water-administrations$', actions_views.WaterAdministrationAPIListCreate.as_view(),
         name="water-administration-create"),
 
     url(r'^water-administrations/(?P<pk>[-_\w].+)$',
-        actions_views.WaterAdministrationAPIDetail.as_view(),
-        name="water-administration-detail"),
+        actions_views.WaterAdministrationAPIDetail.as_view(), name="water-administration-detail"),
 
-
-    url(r'^subjects$',
-        subjects_views.SubjectList.as_view(),
-        name="subject-list"),
-
-    url(r'^subjects/(?P<nickname>[-\w]+)$',
-        subjects_views.SubjectDetail.as_view(),
+    url(r'^subjects$', subjects_views.SubjectList.as_view(), name="subject-list"),
+    url(r'^subjects/(?P<nickname>[-\w]+)$', subjects_views.SubjectDetail.as_view(),
         name="subject-detail"),
 
-
-    url(r'^experiments$',
-        actions_views.ExperimentAPIList.as_view(),
-        name="experiment-list"),
-
-    url(r'^experiments/(?P<pk>[-_\w].+)$',
-        actions_views.ExperimentAPIDetail.as_view(),
+    url(r'^experiments$', actions_views.ExperimentAPIList.as_view(), name="experiment-list"),
+    url(r'^experiments/(?P<pk>[-_\w].+)$', actions_views.ExperimentAPIDetail.as_view(),
         name="experiment-detail"),
 
     url(r'^exp-metadata$', data_views.ExpMetadataList.as_view(), name="exp-metadata-list"),
-    url(r'^exp-metadata/(?P<pk>[-_\w].+)$', data_views.ExpMetadataDetail.as_view(), name="exp-metadata-detail"),
-
+    url(r'^exp-metadata/(?P<pk>[-_\w].+)$', data_views.ExpMetadataDetail.as_view(),
+        name="exp-metadata-detail"),
 
     url(r'^datasets$', dataset_list, name="dataset-list"),
+    url(r'^datasets/(?P<pk>[-_\w].+)$', dataset_detail, name="dataset-detail"),
 
-    url(r'^datasets/(?P<pk>[-_\w].+)$',
-        dataset_detail,
-        name="dataset-detail"),
+    url(r'^files$', filerecord_list, name="filerecord-list"),
+    url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name="filerecord-detail"),
 
-
-    url(r'^files$',
-        filerecord_list,
-        name="filerecord-list"),
-
-    url(r'^files/(?P<pk>[-_\w].+)$',
-        filerecord_detail,
-        name="filerecord-detail"),
-
-
-    url(r'^users$',
-        user_list,
-        name='user-list'),
-
-    url(r'^users/(?P<username>[-_\w].+) $',
-        user_detail,
-        name='user-detail'),
-
+    url(r'^users$', user_list, name='user-list'),
+    url(r'^users/(?P<username>[-_\w].+) $', user_detail, name='user-detail'),
 
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
