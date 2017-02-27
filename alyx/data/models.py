@@ -143,7 +143,7 @@ class Dataset(BaseModel):
     name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return str(getattr(self, 'name', 'unnamed')) + " belonging to " + str(self.experiment)
+        return str(getattr(self, 'name', 'unnamed'))
 
 
 class Timestamp(Dataset):
@@ -156,10 +156,11 @@ class Timestamp(Dataset):
 class TimeSeries(BaseModel):
     file = models.ForeignKey(Dataset, help_text="txn array where t is number of timepoints "
                              "and n is number of traces")
-    column_names = ArrayField(models.CharField(max_length=255))
+    column_names = ArrayField(models.CharField(max_length=255), null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    timestamps = models.ManyToManyField(Timestamp, related_name='timeseries')
-    experiment = models.ForeignKey(Experiment)
+    timestamps = models.ManyToManyField(Timestamp, blank=True,
+                                        related_name='timeseries')
+    experiment = models.ForeignKey(Experiment, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Time series'
