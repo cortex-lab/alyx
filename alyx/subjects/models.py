@@ -4,9 +4,14 @@ import logging
 import os.path as op
 import urllib
 
+from django.conf import settings
+from django.core.mail import send_mail
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils import timezone
+
 from alyx.base import BaseModel
 from equipment.models import LabLocation
 from actions.models import WaterRestriction, Weighing, WaterAdministration
@@ -220,6 +225,26 @@ class SubjectRequest(BaseModel):
         return '{count} {line} due {due_date} for {user}'.format(
             count=self.count, line=self.line, due_date=self.due_date, user=self.user,
         )
+
+
+@receiver(post_save, sender=SubjectRequest)
+def send_subject_request_mail(sender, instance=None, **kwargs):
+    """Send en email when a subject request is created."""
+    if not instance or not kwargs['created']:
+        return
+    subject = "[alyx] %s requested: %s" % (instance.user, str(instance))
+    body = ''
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.SUBJECT_REQUEST_EMAIL_FROM,
+            [settings.SUBJECT_REQUEST_EMAIL_TO],
+            fail_silently=True,
+        )
+        logger.debug("Mail sent.")
+    except Exception as e:
+        logger.warn("Mail failed: %s", e)
 
 
 class Species(BaseModel):
