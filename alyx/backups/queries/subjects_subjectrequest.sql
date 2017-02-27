@@ -6,6 +6,6 @@ subjects_subjectrequest.due_date,
 subjects_subjectrequest.notes,
 subjects_line.name AS line_name,
 auth_user.username AS username
-FROM subjects_subjectrequest 
+FROM subjects_subjectrequest
 INNER JOIN subjects_line on subjects_subjectrequest.line_id=subjects_line.id
 INNER JOIN auth_user on subjects_subjectrequest.user_id=auth_user.id

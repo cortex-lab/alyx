@@ -1,2 +1,2 @@
 SELECT *
-FROM auth_user 
+FROM auth_user
