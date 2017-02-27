@@ -70,6 +70,11 @@ class Subject(BaseModel):
     actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
                                        null=True, blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super(Subject, self).__init__(*args, **kwargs)
+        # Used to detect when the request has changed.
+        self._original_request = self.request
+
     def alive(self):
         return self.death_date is None
     alive.boolean = True
@@ -228,20 +233,41 @@ class SubjectRequest(BaseModel):
 
 
 @receiver(post_save, sender=SubjectRequest)
-def send_subject_request_mail(sender, instance=None, **kwargs):
+def send_subject_request_mail_new(sender, instance=None, **kwargs):
     """Send en email when a subject request is created."""
     if not instance or not kwargs['created']:
         return
     subject = "[alyx] %s requested: %s" % (instance.user, str(instance))
     body = ''
     try:
-        send_mail(
-            subject,
-            body,
-            settings.SUBJECT_REQUEST_EMAIL_FROM,
-            [settings.SUBJECT_REQUEST_EMAIL_TO],
-            fail_silently=True,
-        )
+        send_mail(subject, body, settings.SUBJECT_REQUEST_EMAIL_FROM,
+                  [settings.SUBJECT_REQUEST_EMAIL_TO],
+                  fail_silently=True,
+                  )
+        logger.debug("Mail sent.")
+    except Exception as e:
+        logger.warn("Mail failed: %s", e)
+
+
+@receiver(post_save, sender=Subject)
+def send_subject_request_mail_change(sender, instance=None, **kwargs):
+    """Send en email when a subject's request changes."""
+    if not instance:
+        return
+    # Only continue if the request has changed.
+    if not (instance._original_request is None and instance.request is not None):
+        return
+    # Only continue if there's an email.
+    if not instance.responsible_user.email:
+        return
+    subject = ("[alyx] Subject %s was assigned to you for request %s" %
+               (instance.nickname, str(instance.request)))
+    body = ''
+    try:
+        send_mail(subject, body, settings.SUBJECT_REQUEST_EMAIL_FROM,
+                  [instance.responsible_user.email],
+                  fail_silently=True,
+                  )
         logger.debug("Mail sent.")
     except Exception as e:
         logger.warn("Mail failed: %s", e)
