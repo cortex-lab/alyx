@@ -48,8 +48,13 @@ class TimestampAdmin(BaseAdmin):
     fields = ['name', 'timebase_name', 'regularly_sampled', 'sample_rate', 'first_sample_time']
 
 
+class TimeSeriesAdmin(BaseAdmin):
+    fields = ['file', 'column_names', 'description', 'timestamps', 'experiment']
+
+
 admin.site.register(DataRepository, DataRepositoryParentAdmin)
 admin.site.register(PhysicalArchive, PhysicalArchiveAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Timestamp, TimestampAdmin)
+admin.site.register(TimeSeries, TimeSeriesAdmin)

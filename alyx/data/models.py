@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import ArrayField, JSONField
 
 from actions.models import Experiment
 from alyx.base import BaseModel, BasePolymorphicModel
@@ -151,6 +151,18 @@ class Timestamp(Dataset):
     regularly_sampled = models.NullBooleanField(null=True, blank=True)
     sample_rate = models.FloatField(null=True, blank=True)
     first_sample_time = models.FloatField(null=True, blank=True)
+
+
+class TimeSeries(BaseModel):
+    file = models.ForeignKey(Dataset, help_text="txn array where t is number of timepoints "
+                             "and n is number of traces")
+    column_names = ArrayField(models.CharField(max_length=255))
+    description = models.TextField(null=True, blank=True)
+    timestamps = models.ManyToManyField(Timestamp, related_name='timeseries')
+    experiment = models.ForeignKey(Experiment)
+
+    class Meta:
+        verbose_name_plural = 'Time series'
 
 
 class BaseExperimentalData(BaseModel):
