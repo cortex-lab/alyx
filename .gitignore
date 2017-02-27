@@ -8,3 +8,4 @@ docs/_templates
 docs/_static
 *.tsv
 bin
+*.asv
