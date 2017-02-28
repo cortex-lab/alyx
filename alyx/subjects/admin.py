@@ -7,6 +7,21 @@ from .models import *
 from actions.models import Surgery, Experiment, OtherAction
 
 
+# Utility functions
+# ------------------------------------------------------------------------------------------------
+
+def create_modeladmin(modeladmin, model, name=None):
+    # http://stackoverflow.com/a/2228821/1595060
+    class Meta:
+        proxy = True
+        app_label = model._meta.app_label
+    attrs = {'__module__': '', 'Meta': Meta}
+    newmodel = type(name, (model,), attrs)
+    newmodel.Meta.verbose_name_plural = name
+    admin.site.register(newmodel, modeladmin)
+    return modeladmin
+
+
 # Filters
 # ------------------------------------------------------------------------------------------------
 
@@ -672,3 +687,23 @@ admin.site.register(Sequence, SequenceAdmin)
 
 admin.site.register(GenotypeTest)
 admin.site.register(Zygosity)
+
+
+# Alternative admin views
+# ------------------------------------------------------------------------------------------------
+
+class SubjectAdverseEffectsAdmin(SubjectAdmin):
+    list_display = ['nickname', 'responsible_user', 'sex', 'birth_date',
+                    'death_date', 'ear_mark', 'line', 'actual_severity',
+                    'adverse_effects', 'cull_method']
+    ordering = ['-birth_date']
+    list_filter = []
+
+    def get_queryset(self, request):
+        return (self.model.objects.
+                filter(responsible_user=request.user).
+                exclude(adverse_effects=''))
+
+
+create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject,
+                  name='Subjects - adverse effect')
