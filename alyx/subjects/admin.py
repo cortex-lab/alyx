@@ -694,15 +694,21 @@ admin.site.register(Zygosity)
 
 class SubjectAdverseEffectsAdmin(SubjectAdmin):
     list_display = ['nickname', 'responsible_user', 'sex', 'birth_date',
-                    'death_date', 'ear_mark', 'line', 'actual_severity',
+                    'death_date', 'ear_mark', 'line_l', 'actual_severity',
                     'adverse_effects', 'cull_method']
     ordering = ['-birth_date']
-    list_filter = []
+    list_filter = [ResponsibleUserListFilter]
 
     def get_queryset(self, request):
         return (self.model.objects.
                 filter(responsible_user=request.user).
                 exclude(adverse_effects=''))
+
+    def line_l(self, obj):
+        # obj is the Subject instance, obj.line is the subject's Line instance.
+        url = get_admin_url(obj.line)  # url to the Change line page
+        return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
+    line_l.short_description = 'line'
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject,
