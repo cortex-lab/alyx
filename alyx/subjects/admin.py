@@ -108,7 +108,8 @@ class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
                                 'responsible_user', 'request', 'wean_date',
-                                'death_date', 'ear_mark', 'notes', 'json')}),
+                                'death_date', 'ear_mark',
+                                'protocol_number', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity')}),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',

@@ -33,6 +33,7 @@ class Subject(BaseModel):
         ('se', 'Severe'),
         ('nr', 'Non-recovery'),
     )
+    PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
     nickname = models.SlugField(max_length=255,
                                 unique=True,
@@ -62,8 +63,9 @@ class Subject(BaseModel):
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
-    notes = models.TextField(null=True, blank=True)
     ear_mark = models.CharField(max_length=32, null=True, blank=True)
+    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='3')
+    notes = models.TextField(null=True, blank=True)
 
     cull_method = models.TextField(null=True, blank=True)
     adverse_effects = models.TextField(null=True, blank=True)
