@@ -18,3 +18,6 @@ migrate:
 	./manage.py migrate
 	./manage.py makemigrations actions behavior data electrophysiology equipment imaging misc subjects
 	./manage.py migrate
+
+reset_all:
+	psql -d postgres -c "DROP DATABASE alyx;" && psql -d postgres -c "CREATE DATABASE alyx;" && ./manage.py migrate
