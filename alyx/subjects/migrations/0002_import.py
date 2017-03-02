@@ -4,10 +4,13 @@ from __future__ import unicode_literals
 import json
 import os.path as op
 
-from dateutil.parser import parse
+from dateutil.parser import parse as parse_
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.db import migrations
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import is_aware, make_aware
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -20,6 +23,15 @@ DATA_DIR = op.abspath(op.join(__file__, '../../../../data'))
 
 # Functions
 # ------------------------------------------------------------------------------------------------
+
+def parse(date_str):
+    if not date_str:
+        return
+    ret = parse_(date_str)
+    if not is_aware(ret):
+        ret = make_aware(ret)
+    return ret
+
 
 def get_table(doc_name, sheet_name):
     scope = ['https://spreadsheets.google.com/feeds']
@@ -120,7 +132,14 @@ def get_surgery_kwargs(row):
 
 def load_static(apps, schema_editor):
     path = op.join(DATA_DIR, 'dumped_static.json')
-    call_command('loaddata', path, app_label='subjects')
+    call_command('loaddata', path)
+
+
+def make_admin(apps, schema_editor):
+    for username in ('Experiment', 'charu', 'cyrille', 'nick'):
+        u = User.objects.get(username=username)
+        u.is_superuser = True
+        u.save()
 
 
 def load_worksheets(apps, schema_editor):
@@ -152,9 +171,13 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('subjects', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('actions', '__latest__'),
+        ('contenttypes', '__latest__'),
     ]
 
     operations = [
         migrations.RunPython(load_static),
+        migrations.RunPython(make_admin),
         migrations.RunPython(load_worksheets),
     ]

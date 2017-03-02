@@ -1,5 +1,6 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+from django.utils import timezone
 from datetime import datetime
 from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
@@ -76,7 +77,7 @@ class BaseAction(BaseModel):
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(null=True, blank=True)
-    start_time = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    start_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

@@ -211,7 +211,7 @@ class SubjectRequest(BaseModel):
                              help_text="Who requested this subject.")
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     count = models.IntegerField(null=True, blank=True)
-    date_time = models.DateField(default=datetime.now, null=True, blank=True)
+    date_time = models.DateField(default=timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
