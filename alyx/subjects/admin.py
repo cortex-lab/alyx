@@ -2,6 +2,8 @@ from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib import admin
+from django.contrib.auth.models import User, Group
+from django.template.response import TemplateResponse
 from alyx.base import BaseAdmin, BaseInlineAdmin
 from .models import *
 from actions.models import Surgery, Experiment, OtherAction
@@ -582,7 +584,6 @@ class SubjectRequestStatusListFilter(DefaultListFilter):
         instances = queryset.all()
         if self.value() is None:
             pks = [obj.pk for obj in instances if obj.status() == 'Open']
-            print(pks)
             return SubjectRequest.objects.filter(pk__in=pks)
         if self.value() == 'c':
             pks = [obj.pk for obj in instances if obj.status() == 'Closed']
@@ -672,6 +673,84 @@ class SourceAdmin(BaseAdmin):
 class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
 
+
+# Reorganize admin index
+# ------------------------------------------------------------------------------------------------
+
+class Bunch(dict):
+    def __init__(self, *args, **kwargs):
+        super(Bunch, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
+flatten = lambda l: [item for sublist in l for item in sublist]
+
+
+class MyAdminSite(admin.AdminSite):
+    def index(self, request, extra_context=None):
+
+        order = [('Common', ['Subjects',
+                             'Surgeries',
+                             'Lines',
+                             'Cages',
+                             'Litters',
+                             'Virus injections',
+                             'Water restrictions',
+                             'Other actions',
+                             'Subject requests',
+                             ]),
+                 ('Static', ['Procedure types',
+                             'Species',
+                             'Strains',
+                             'Alleles',
+                             'Sequences',
+                             'Sources',
+                             ]),
+                 ('Other', ['Experiments',
+                            'Water administrations',
+                            'Weighings',
+                            'Genotype tests',
+                            'Zygosities',
+                            ]),
+                 ('IT admin', ['Tokens',
+                               'Groups',
+                               'Users',
+                               ]),
+                 ]
+        order_models = flatten([models for app, models in order])
+        app_list = self.get_app_list(request)
+        models_dict = {str(model['name']): model
+                       for app in app_list
+                       for model in app['models']}
+        model_to_app = {str(model['name']): str(app['name'])
+                        for app in app_list
+                        for model in app['models']}
+        category_list = [Bunch(name=name, models=[models_dict[m] for m in model_names])
+                         for name, model_names in order]
+        for model_name, app_name in model_to_app.items():
+            if model_name in order_models:
+                continue
+            if model_name.startswith('Subjects'):
+                category_list[0].models.append(models_dict[model_name])
+            elif app_name == 'Equipment':
+                category_list[1].models.append(models_dict[model_name])
+            else:
+                category_list[2].models.append(models_dict[model_name])
+        context = dict(
+            self.each_context(request),
+            title=self.index_title,
+            category_list=category_list,
+        )
+        context.update(extra_context or {})
+        request.current_app = self.name
+
+        return TemplateResponse(request, self.index_template or 'admin/index.html', context)
+
+
+mysite = MyAdminSite()
+admin.site = mysite
+admin.site.register(User)
+admin.site.register(Group)
 
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)

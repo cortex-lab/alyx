@@ -41,6 +41,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = (
     'dal',
     'dal_select2',
+    'subjects',
     'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.auth',
@@ -52,7 +53,6 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'django.contrib.admindocs',
     'equipment',
-    'subjects',
     'actions',
     'data',
     'misc',

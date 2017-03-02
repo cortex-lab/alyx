@@ -1,0 +1,35 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+
+{% if category_list %}
+    {% for category in category_list %}
+        <div class="module">
+        <table>
+        <caption>
+            {{ category.name }}
+        </caption>
+        {% for model in category.models %}
+            {% if model.name %}
+                <tr class="model-{{ model.object_name|lower }}">
+                <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+
+                {% if model.add_url %}
+                    <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
+                {% else %}
+                    <td>&nbsp;</td>
+                {% endif %}
+
+                </tr>
+            {% endif %}
+        {% endfor %}
+        </table>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>{% trans "You don't have permission to edit anything." %}</p>
+{% endif %}
+</div>
+{% endblock %}
