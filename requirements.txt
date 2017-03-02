@@ -4,3 +4,7 @@ django-polymorphic
 djangorestframework
 django-autocomplete-light
 django-filter
+gspread
+oauth2client
+matplotlib
+dateutil
