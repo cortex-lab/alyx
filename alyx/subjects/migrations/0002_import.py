@@ -84,7 +84,7 @@ def get_line_kwargs(row):
         auto_name=row['NICKNAME'],
         target_phenotype=row['LONG NAME'],
         description=row['BLURB'],
-        json=json.dumps(json.loads('''
+        json=json.loads('''
             {"stock_no": "%s",
              "source": "%s",
              "genotype": "%s",
@@ -95,7 +95,7 @@ def get_line_kwargs(row):
                row['GENOTYPE'],
                row['BRU STRAIN NUMBER'],
                row['ATLAS'],
-              )))
+              ))
     )
 
 
