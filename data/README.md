@@ -9,3 +9,7 @@ This directory should contain:
     Note: at the moment, you have to manually delete the permissions of Experiment or Charu in the json before importing, otherwise you'll enter into some bug. These users are set as superusers manually.
 
 * `gdrive.json` obtained as [explained here](http://gspread.readthedocs.io/en/latest/oauth2.html).
+
+Then, to import the data:
+
+* `make reset_all`: this will **completely erase the alyx database** and recreate it from the dumped data in the json file, and from the google sheets.
