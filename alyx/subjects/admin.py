@@ -212,7 +212,7 @@ class SubjectAdmin(BaseAdmin):
         return super(SubjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'request':
+        if db_field.name == 'request' and request.resolver_match:
             try:
                 parent_obj_id = request.resolver_match.args[0]
                 instance = Subject.objects.get(pk=parent_obj_id)

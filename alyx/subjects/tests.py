@@ -26,8 +26,17 @@ class ModelAdminTests(TestCase):
     def ar(self, r):
         assert r.status_code == 200
 
-    def test_1(self):
+    def test_subjects_1(self):
         ma = SubjectAdmin(Subject, self.site)
 
+        # List of subjects.
         r = ma.changelist_view(self.request)
+        self.ar(r)
+
+        # Get the first subject.
+        qs = ma.get_queryset(self.request)
+        subj = qs[0]
+
+        # Change page.
+        r = ma.change_view(self.request, subj.id.hex)
         self.ar(r)
