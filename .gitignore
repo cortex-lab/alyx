@@ -8,4 +8,7 @@ docs/_templates
 docs/_static
 *.tsv
 bin
+experimental
 *.asv
+*.json
+

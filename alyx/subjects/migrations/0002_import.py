@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 import json
 import os.path as op
+import sys
 
 from dateutil.parser import parse as parse_
 from django.conf import settings
@@ -11,14 +12,11 @@ from django.core.management import call_command
 from django.db import migrations
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 
 from actions.models import Surgery
 from subjects.models import Species, Subject, Line
 
-
-DATA_DIR = op.abspath(op.join(__file__, '../../../../data'))
+from core import DATA_DIR, get_table
 
 
 # Functions
@@ -31,21 +29,6 @@ def parse(date_str):
     if not is_aware(ret):
         ret = make_aware(ret)
     return ret
-
-
-def get_table(doc_name, sheet_name):
-    scope = ['https://spreadsheets.google.com/feeds']
-    path = op.join(DATA_DIR, 'gdrive.json')
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
-    gc = gspread.authorize(credentials)
-    wks = gc.open(doc_name).worksheet(sheet_name)
-    rows = wks.get_all_values()
-    table = []
-    headers = rows[0]
-    for row in rows[2:]:
-        l = {headers[i]: row[i].strip() for i in range(len(headers))}
-        table.append(l)
-    return table
 
 
 def get_user(initials):

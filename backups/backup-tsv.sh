@@ -16,3 +16,6 @@ for name in queries/*.sql; do
     psql -h $host -U $user -p $port -d $database -c "\copy ($(cat $name)) to '$output_dir/$bn_noext.tsv' with CSV DELIMITER E'\t' header encoding 'utf-8'"
 done
 echo "Backup done in $output_dir"
+
+# Upload to Google Sheets.
+./upload-gsheets.py $output_dir
