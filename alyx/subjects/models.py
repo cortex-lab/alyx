@@ -35,9 +35,8 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
-    nickname = models.SlugField(max_length=255,
+    nickname = models.CharField(max_length=255,
                                 unique=True,
-                                allow_unicode=True,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
@@ -338,7 +337,7 @@ class Line(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     target_phenotype = models.CharField(max_length=1023)
-    auto_name = models.SlugField(max_length=255)
+    auto_name = models.CharField(max_length=255)
     sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
