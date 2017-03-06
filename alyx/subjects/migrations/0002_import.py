@@ -130,7 +130,7 @@ def import_line(doc, line_name):
     # Create line.
     line, _ = Line.objects.get_or_create(name=line_name)
     line.sequences = list(sequences.values())
-    print("Created line %s with %d sequences." % (line_name, len(sequences)))
+    print("Set line %s with %d sequences." % (line_name, len(sequences)))
 
     mouse = Species.objects.get(display_name='Laboratory mouse')
 
@@ -175,7 +175,8 @@ def import_line(doc, line_name):
     for subject in subjects:
         mother = subject.json['F Parent']
         father = subject.json['M Parent']
-        litter, _ = Litter.objects.get_or_create(birth_date=subject.birth_date,
+        litter, _ = Litter.objects.get_or_create(line=line,
+                                                 birth_date=subject.birth_date,
                                                  notes='mother=%s\nfather=%s' % (mother, father),
                                                  )
         subject.litter = litter
@@ -204,12 +205,15 @@ def make_admin(apps, schema_editor):
 
 def load_worksheets_1(apps, schema_editor):
     mouse = Species.objects.get(display_name='Laboratory mouse')
-    table_subjects = get_table('Mice Procedure Log', 'PROCEDURE LOG')
-    table_line = get_table('Mice Stock - C57 and Transgenic', 'Current lines in the unit')
+    table_subjects = get_table('Mice Procedure Log', 'PROCEDURE LOG',
+                               header_line=0, first_line=2)
+    table_line = get_table('Mice Stock - C57 and Transgenic', 'Current lines in the unit',
+                           header_line=0, first_line=2)
 
     # Add lines.
     Line.objects.bulk_create(Line(**get_line_kwargs(row)) for row in table_line)
     print("%d lines added." % len(table_line))
+    return
 
     # Add subjects.
     Subject.objects.bulk_create(Subject(**get_subjects_kwargs(row,
@@ -246,5 +250,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(load_static),
         migrations.RunPython(make_admin),
+        migrations.RunPython(load_worksheets_1),
         migrations.RunPython(load_worksheets_2),
     ]

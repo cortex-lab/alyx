@@ -22,18 +22,22 @@ def get_sheet_doc(doc_name):
     return gc.open(doc_name)
 
 
-def get_table(doc_name, sheet_name):
-    return get_sheet_doc(doc_name).worksheet(sheet_name)
+def get_table(doc_name, sheet_name, header_line=0, first_line=2):
+    return sheet_to_table(get_sheet_doc(doc_name).worksheet(sheet_name),
+                          header_line=header_line,
+                          first_line=first_line,
+                          )
 
 
-def sheet_to_table(wks):
+def sheet_to_table(wks, header_line=2, first_line=3):
     rows = wks.get_all_values()
     table = []
-    headers = rows[2]
-    for row in rows[3:]:
+    headers = rows[header_line]
+    for row in rows[first_line:]:
         l = {headers[i]: row[i].strip() for i in range(len(headers))}
-        if not l.get('n', None):
-            continue
+        # Empty line = end of table.
+        if all(_ == '' for _ in l.values()):
+            break
         table.append(l)
     return table
 
