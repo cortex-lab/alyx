@@ -501,8 +501,12 @@ class CageInline(BaseInlineAdmin):
 
 
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
-    list_display = ['name', 'target_phenotype', 'strain', 'species']
+    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description',
+              'subject_autoname_index',
+              'cage_autoname_index',
+              'litter_autoname_index',
+              ]
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain']
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
