@@ -147,6 +147,7 @@ def import_line(doc, line_name):
         kwargs['wean_date'] = parse(row.get('wean date', None))
         kwargs['nickname'] = row['autoname']
         kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+        kwargs['line'] = line
         kwargs['species'] = mouse
 
         # Create the subject.

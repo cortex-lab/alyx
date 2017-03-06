@@ -19,6 +19,10 @@ from actions.models import WaterRestriction, Weighing, WaterAdministration
 logger = logging.getLogger(__name__)
 
 
+MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
+DEFAULT_RESPONSIBLE_USER_ID = 5
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -40,7 +44,8 @@ class Subject(BaseModel):
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
-    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
+                                default=MOUSE_SPECIES_ID)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
                            null=True, blank=True, default='U')
@@ -55,6 +60,7 @@ class Subject(BaseModel):
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                         default=DEFAULT_RESPONSIBLE_USER_ID,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
@@ -340,7 +346,8 @@ class Line(BaseModel):
     auto_name = models.CharField(max_length=255)
     sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
-    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
+                                default=MOUSE_SPECIES_ID)
     subject_autoname_index = models.IntegerField(default=0)
     cage_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
