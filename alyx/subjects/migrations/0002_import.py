@@ -125,14 +125,14 @@ def import_line(doc, line_name):
     cols = ws.row_values(3)
     genotype_cols = [c[8:].strip() for c in cols if c.startswith('Genotype')]
     # Get or create line's sequences.
-    sequences = {name: Sequence.objects.get_or_create(informal_name=name)
+    sequences = {name: Sequence.objects.get_or_create(informal_name=name)[0]
                  for name in genotype_cols}
     # Create line.
-    line = Line.objects.get_or_create(name=line_name)
-    print(line)
-    print(list(sequences.values()))
+    line, _ = Line.objects.get_or_create(name=line_name)
     line.sequences = list(sequences.values())
     print("Created line %s with %d sequences." % (line_name, len(sequences)))
+
+    mouse = Species.objects.get(display_name='Laboratory mouse')
 
     # Importing the subjects.
     table = sheet_to_table(ws)
@@ -147,36 +147,40 @@ def import_line(doc, line_name):
         kwargs['wean_date'] = parse(row.get('wean date', None))
         kwargs['nickname'] = row['autoname']
         kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+        kwargs['species'] = mouse
 
         # Create the subject.
-        subject = Subject.objects.get_or_create(**kwargs)
+        subject, _ = Subject.objects.get_or_create(**kwargs)
 
         # Set the genotype.
         for c in cols:
             if not c.startswith('Genotype'):
                 continue
             test_result = row[c]
-            if not rest_result:
+            if test_result not in ('-', '+'):
                 continue
+            test_result = '-+'.index(test_result)
             # Get the sequence.
             sequence = sequences[c[8:].strip()]
             # Set the genotype test.
-            gt = GenotypeTest.objects.get_or_create(subject=subject,
-                                                    sequence=sequence,
-                                                    test_result=test_result)
+            gt, _ = GenotypeTest.objects.get_or_create(subject=subject,
+                                                       sequence=sequence,
+                                                       test_result=test_result)
         subject.save()
         subjects.append(subject)
     print("Added %d subjects." % len(subjects))
 
     # Set the litters.
     for subject in subjects:
-        litter = Litter.objects.get_or_create(birth_date=subject.birth_date,
-                                              mother=subject.json['F Parent'],
-                                              father=subject.json['M Parent'])
+        mother = subject.json['F Parent']
+        father = subject.json['M Parent']
+        litter, _ = Litter.objects.get_or_create(birth_date=subject.birth_date,
+                                                 notes='mother=%s,father=%s' % (mother, father),
+                                                 )
         subject.litter = litter
         subject.save()
 
-    # Set autoname inedx.
+    # Set autoname index.
     line.subject_autoname_index = max(row['n'] for row in table)
 
     line.save()
@@ -223,9 +227,7 @@ def load_worksheets_1(apps, schema_editor):
 
 
 def load_worksheets_2(apps, schema_editor):
-    mouse = Species.objects.get(display_name='Laboratory mouse')
     doc = get_line_doc()
-    sheets = doc.worksheets()
     # TODO: loop over lines
     line_name = 'Camk2a-tTa'
     import_line(doc, line_name)

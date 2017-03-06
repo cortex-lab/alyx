@@ -13,9 +13,9 @@ class Migration(migrations.Migration):
     dependencies = [
         ('equipment', '0001_initial'),
         ('data', '0001_initial'),
-        ('behavior', '0002_auto_20170301_1600'),
-        ('actions', '0002_auto_20170301_1600'),
+        ('actions', '0001_initial'),
         ('misc', '0001_initial'),
+        ('behavior', '0002_auto_20170301_1600'),
     ]
 
     operations = [
