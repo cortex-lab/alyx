@@ -181,7 +181,7 @@ def import_line(doc, line_name):
         subject.save()
 
     # Set autoname index.
-    line.subject_autoname_index = max(row['n'] for row in table)
+    line.subject_autoname_index = table[-1]['n']
 
     line.save()
 
