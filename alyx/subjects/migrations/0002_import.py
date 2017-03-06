@@ -14,9 +14,9 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 
 from actions.models import Surgery
-from subjects.models import Species, Subject, Line
+from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, Cage
 
-from core import DATA_DIR, get_table
+from core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 
 
 # Functions
@@ -60,6 +60,9 @@ def get_subject(nickname):
         return
     return Subject.objects.get(nickname=nickname)
 
+
+# Import 1
+# ------------------------------------------------------------------------------------------------
 
 def get_line_kwargs(row):
     return dict(
@@ -110,6 +113,75 @@ def get_surgery_kwargs(row):
     )
 
 
+# Import 2
+# ------------------------------------------------------------------------------------------------
+
+def get_line_doc():
+    return get_sheet_doc('Mice Stock - C57 and Transgenic')
+
+
+def import_line(doc, line_name):
+    ws = doc.worksheet(line_name)
+    cols = ws.row_values(3)
+    genotype_cols = [c[8:].strip() for c in cols if c.startswith('Genotype')]
+    # Get or create line's sequences.
+    sequences = {name: Sequence.objects.get_or_create(informal_name=name)
+                 for name in genotype_cols}
+    # Create line.
+    line = Line.objects.get_or_create(name=line_name)
+    print(line)
+    print(list(sequences.values()))
+    line.sequences = list(sequences.values())
+    print("Created line %s with %d sequences." % (line_name, len(sequences)))
+
+    # Importing the subjects.
+    table = sheet_to_table(ws)
+    subjects = []
+    for row in table:
+        kwargs = {}
+        kwargs['ear_mark'] = row['Ear mark']
+        kwargs['sex'] = row['Sex']
+        kwargs['notes'] = row['Notes']
+        kwargs['birth_date'] = parse(row['DOB'])
+        kwargs['death_date'] = parse(row['death date'])
+        kwargs['wean_date'] = parse(row.get('wean date', None))
+        kwargs['nickname'] = row['autoname']
+        kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+
+        # Create the subject.
+        subject = Subject.objects.get_or_create(**kwargs)
+
+        # Set the genotype.
+        for c in cols:
+            if not c.startswith('Genotype'):
+                continue
+            test_result = row[c]
+            if not rest_result:
+                continue
+            # Get the sequence.
+            sequence = sequences[c[8:].strip()]
+            # Set the genotype test.
+            gt = GenotypeTest.objects.get_or_create(subject=subject,
+                                                    sequence=sequence,
+                                                    test_result=test_result)
+        subject.save()
+        subjects.append(subject)
+    print("Added %d subjects." % len(subjects))
+
+    # Set the litters.
+    for subject in subjects:
+        litter = Litter.objects.get_or_create(birth_date=subject.birth_date,
+                                              mother=subject.json['F Parent'],
+                                              father=subject.json['M Parent'])
+        subject.litter = litter
+        subject.save()
+
+    # Set autoname inedx.
+    line.subject_autoname_index = max(row['n'] for row in table)
+
+    line.save()
+
+
 # Migrations
 # ------------------------------------------------------------------------------------------------
 
@@ -125,7 +197,7 @@ def make_admin(apps, schema_editor):
         u.save()
 
 
-def load_worksheets(apps, schema_editor):
+def load_worksheets_1(apps, schema_editor):
     mouse = Species.objects.get(display_name='Laboratory mouse')
     table_subjects = get_table('Mice Procedure Log', 'PROCEDURE LOG')
     table_line = get_table('Mice Stock - C57 and Transgenic', 'Current lines in the unit')
@@ -150,6 +222,15 @@ def load_worksheets(apps, schema_editor):
     print("%d surgeries added." % len(table_subjects))
 
 
+def load_worksheets_2(apps, schema_editor):
+    mouse = Species.objects.get(display_name='Laboratory mouse')
+    doc = get_line_doc()
+    sheets = doc.worksheets()
+    # TODO: loop over lines
+    line_name = 'Camk2a-tTa'
+    import_line(doc, line_name)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -162,5 +243,5 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(load_static),
         migrations.RunPython(make_admin),
-        migrations.RunPython(load_worksheets),
+        migrations.RunPython(load_worksheets_2),
     ]
