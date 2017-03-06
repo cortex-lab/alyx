@@ -22,7 +22,8 @@ from core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 # ------------------------------------------------------------------------------------------------
 
 def parse(date_str):
-    if not date_str:
+    date_str = date_str.strip() if date_str is not None else date_str
+    if not date_str or date_str == '-':
         return
     ret = parse_(date_str)
     if not is_aware(ret):
@@ -114,9 +115,9 @@ def get_line_doc():
     return get_sheet_doc('Mice Stock - C57 and Transgenic')
 
 
-def import_line(doc, line_name):
-    ws = doc.worksheet(line_name)
-    cols = ws.row_values(3)
+def import_line(sheet):
+    cols = sheet.row_values(3)
+    line_name = sheet.title.strip()
     genotype_cols = [c[8:].strip() for c in cols if c.startswith('Genotype')]
     # Get or create line's sequences.
     sequences = {name: Sequence.objects.get_or_create(informal_name=name)[0]
@@ -133,7 +134,7 @@ def import_line(doc, line_name):
     mouse = Species.objects.get(display_name='Laboratory mouse')
 
     # Importing the subjects.
-    table = sheet_to_table(ws)
+    table = sheet_to_table(sheet)
     subjects = []
     for row in table:
         kwargs = {}
@@ -141,8 +142,8 @@ def import_line(doc, line_name):
         kwargs['sex'] = row['Sex']
         kwargs['notes'] = row['Notes']
         kwargs['birth_date'] = parse(row['DOB'])
-        kwargs['death_date'] = parse(row['death date'])
-        kwargs['wean_date'] = parse(row.get('wean date', None))
+        kwargs['death_date'] = parse(row.get('death date', None))
+        kwargs['wean_date'] = parse(row.get('Weaned', None))
         kwargs['nickname'] = row['autoname']
         kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
         kwargs['line'] = line
@@ -181,7 +182,8 @@ def import_line(doc, line_name):
         subject.save()
 
     # Set autoname index.
-    line.subject_autoname_index = table[-1]['n']
+    if table:
+        line.subject_autoname_index = int(table[-1].get('n', '') or 0)
 
     line.save()
 
@@ -231,9 +233,10 @@ def load_worksheets_1(apps, schema_editor):
 
 def load_worksheets_2(apps, schema_editor):
     doc = get_line_doc()
-    # TODO: loop over lines
-    line_name = 'Camk2a-tTa'
-    import_line(doc, line_name)
+    sheets = doc.worksheets()[7:]
+    for sheet in sheets:
+        print("Importing line %s..." % sheet.title.strip())
+        import_line(sheet)
 
 
 class Migration(migrations.Migration):
