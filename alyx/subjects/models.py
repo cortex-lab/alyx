@@ -338,7 +338,7 @@ class Line(BaseModel):
     description = models.TextField(null=True, blank=True)
     target_phenotype = models.CharField(max_length=1023)
     auto_name = models.CharField(max_length=255)
-    sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
+    sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
     subject_autoname_index = models.IntegerField(default=0)
@@ -454,17 +454,6 @@ class GenotypeTest(BaseModel):
 
     def __str__(self):
         return "Genotype test %s for %s: %d" % (self.sequence, self.subject, self.test_result)
-
-
-class LineGenotypeTest(BaseModel):
-    """
-    A junction table between Line and Sequence.
-    """
-    subject = models.ForeignKey('Line', on_delete=models.CASCADE)
-    sequence = models.ForeignKey('Sequence', on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name_plural = "sequences"
 
 
 class Source(BaseModel):
