@@ -176,7 +176,7 @@ def import_line(doc, line_name):
         mother = subject.json['F Parent']
         father = subject.json['M Parent']
         litter, _ = Litter.objects.get_or_create(birth_date=subject.birth_date,
-                                                 notes='mother=%s,father=%s' % (mother, father),
+                                                 notes='mother=%s\nfather=%s' % (mother, father),
                                                  )
         subject.litter = litter
         subject.save()
