@@ -14,22 +14,26 @@ DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../data'))
 logger = logging.getLogger(__name__)
 
 
-def get_worksheet(doc_name, sheet_name):
+def get_sheet_doc(doc_name):
     scope = ['https://spreadsheets.google.com/feeds']
     path = op.join(DATA_DIR, 'gdrive.json')
     credentials = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
     gc = gspread.authorize(credentials)
-    wks = gc.open(doc_name).worksheet(sheet_name)
-    return wks
+    return gc.open(doc_name)
 
 
 def get_table(doc_name, sheet_name):
-    wks = get_worksheet(doc_name, sheet_name)
+    return get_sheet_doc(doc_name).worksheet(sheet_name)
+
+
+def sheet_to_table(wks):
     rows = wks.get_all_values()
     table = []
-    headers = rows[0]
-    for row in rows[2:]:
+    headers = rows[2]
+    for row in rows[3:]:
         l = {headers[i]: row[i].strip() for i in range(len(headers))}
+        if not l.get('n', None):
+            continue
         table.append(l)
     return table
 
