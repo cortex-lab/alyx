@@ -739,7 +739,7 @@ class MyAdminSite(admin.AdminSite):
         context = dict(
             self.each_context(request),
             title=self.index_title,
-            category_list=category_list,
+            app_list=category_list,
         )
         context.update(extra_context or {})
         request.current_app = self.name
