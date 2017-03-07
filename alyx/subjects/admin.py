@@ -139,9 +139,11 @@ class SubjectAdmin(BaseAdmin):
                                         )}),
     )
 
-    list_display = ['nickname', 'birth_date', 'responsible_user',
-                    'cage_l', 'line_l', 'litter_l', 'ear_mark',
-                    'sex_l', 'genotype_l', 'zygosities', 'alive']
+    list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark',
+                    'cage_l', 'line_l', 'litter_l',
+                    'genotype_l', 'zygosities',
+                    'alive', 'responsible_user',
+                    ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
@@ -156,6 +158,7 @@ class SubjectAdmin(BaseAdmin):
                        'weighing_plot',
                        )
     ordering = ['-birth_date', 'nickname']
+    list_editable = ['responsible_user']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
