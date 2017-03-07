@@ -140,9 +140,8 @@ class SubjectAdmin(BaseAdmin):
     )
 
     list_display = ['nickname', 'birth_date', 'responsible_user',
-                    'cage_l', 'line_l', 'litter_l',
-                    'mother', 'father', 'ear_mark',
-                    'sex', 'zygosities', 'alive']
+                    'cage_l', 'line_l', 'litter_l', 'ear_mark',
+                    'sex_l', 'genotype_l', 'zygosities', 'alive']
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
@@ -160,6 +159,15 @@ class SubjectAdmin(BaseAdmin):
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
+
+    def sex_l(self, obj):
+        return obj.sex[0] if obj.sex else ''
+    sex_l.short_description = 'sex'
+
+    def genotype_l(self, obj):
+        genotype = GenotypeTest.objects.filter(subject=obj)
+        return ', '.join(map(str, genotype))
+    genotype_l.short_description = 'genotype'
 
     def cage_l(self, obj):
         url = get_admin_url(obj.cage)

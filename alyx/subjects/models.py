@@ -456,7 +456,7 @@ class GenotypeTest(BaseModel):
         verbose_name_plural = "genotype tests"
 
     def __str__(self):
-        return "Genotype test %s for %s: %d" % (self.sequence, self.subject, self.test_result)
+        return "%s %s" % (self.sequence, '-+'[self.test_result])
 
 
 class Source(BaseModel):
