@@ -785,9 +785,9 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
 
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date', 'death_date',
-                    'ear_mark', 'line']
+                    'ear_mark', 'line', 'responsible_user']
     ordering = ['-birth_date']
-    list_filter = ['line']
+    list_filter = [ResponsibleUserListFilter, 'line']
     list_editable = ['death_date']
 
 
