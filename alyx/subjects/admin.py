@@ -155,7 +155,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_remaining_f',
                        'weighing_plot',
                        )
-    ordering = ['-birth_date']
+    ordering = ['-birth_date', 'nickname']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, ExperimentInline, OtherActionInline]
