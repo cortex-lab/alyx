@@ -85,12 +85,14 @@ class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
     extra = 2
     fields = ['allele', 'zygosity']
+    classes = ['collapse']
 
 
 class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
     extra = 2
     fields = ['sequence', 'test_result']
+    classes = ['collapse']
 
 
 class SurgeryInline(BaseInlineAdmin):
@@ -98,6 +100,7 @@ class SurgeryInline(BaseInlineAdmin):
     extra = 1
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
+    classes = ['collapse']
 
 
 class ExperimentInline(BaseInlineAdmin):
@@ -105,6 +108,7 @@ class ExperimentInline(BaseInlineAdmin):
     extra = 1
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
+    classes = ['collapse']
 
 
 class OtherActionInline(BaseInlineAdmin):
@@ -112,6 +116,7 @@ class OtherActionInline(BaseInlineAdmin):
     extra = 1
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
+    classes = ['collapse']
 
 
 def get_admin_url(obj):
@@ -127,8 +132,12 @@ class SubjectAdmin(BaseAdmin):
                                 'responsible_user', 'request', 'wean_date',
                                 'death_date', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter')}),
-        ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity')}),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter'),
+                     'classes': ('collapse',),
+                     }),
+        ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
+                      'classes': ('collapse',),
+                      }),
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing_f',
                                         'current_weighing_f',
@@ -136,7 +145,9 @@ class SubjectAdmin(BaseAdmin):
                                         'water_requirement_total_f',
                                         'water_requirement_remaining_f',
                                         'weighing_plot',
-                                        )}),
+                                        ),
+                             'classes': ('collapse',),
+                             }),
     )
 
     list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark',
