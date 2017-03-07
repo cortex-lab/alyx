@@ -96,7 +96,7 @@ class GenotypeTestInline(BaseInlineAdmin):
 class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
-    fields = ['brain_location', 'procedures', 'narrative', 'start_time',
+    fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
 
 
