@@ -707,6 +707,7 @@ class MyAdminSite(admin.AdminSite):
                                'Users',
                                ]),
                  ]
+        extra_in_common = ['Adverse effects', 'Cull subjects']
         order_models = flatten([models for app, models in order])
         app_list = self.get_app_list(request)
         models_dict = {str(model['name']): model
@@ -720,7 +721,7 @@ class MyAdminSite(admin.AdminSite):
         for model_name, app_name in model_to_app.items():
             if model_name in order_models:
                 continue
-            if model_name.startswith('Subjects'):
+            if model_name.startswith('Subject') or model_name in extra_in_common:
                 category_list[0].models.append(models_dict[model_name])
             elif app_name == 'Equipment':
                 category_list[1].models.append(models_dict[model_name])
@@ -782,5 +783,13 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     line_l.short_description = 'line'
 
 
-create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject,
-                  name='Subjects - adverse effect')
+class CullMiceAdmin(SubjectAdmin):
+    list_display = ['nickname', 'birth_date', 'death_date',
+                    'ear_mark', 'line']
+    ordering = ['-birth_date']
+    list_filter = ['line']
+    list_editable = ['death_date']
+
+
+create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')
+create_modeladmin(CullMiceAdmin, model=Subject, name='Cull subject')
