@@ -80,15 +80,27 @@ def get_line_kwargs(row):
     )
 
 
-def get_subjects_kwargs(row, mouse=None, table_line=None):
-    sc = Subject.SEVERITY_CHOICES
+def import_procedure_subject(row, mouse=None, table_line=None):
     # Lookup severity.
+    sc = Subject.SEVERITY_CHOICES
     severity = {v: k for (k, v) in dict(sc).items()}.get(row['Actual Severity'], None)
-    return dict(
-         nickname=row['Nickname'],
-         birth_date=parse(row['Date of Birth']) if row['Date of Birth'] else None,
+
+    # New or existing subject?
+    ts_name = row['transgenic spreadsheet mouse name']
+    subjects = Subject.objects.filter(nickname=ts_name) if ts_name else None
+    if ts_name and subjects:
+        subject = subjects[0]
+        print("Updating existing subject %s." % ts_name)
+    else:
+        subject = Subject(nickname=row['Nickname'],
+                          birth_date=parse(row['Date of Birth']),
+                          )
+        print("Creating new subject %s." % row['Nickname'])
+
+    # Set/override the fields.
+    kwargs = dict(
          adverse_effects=row['Adverse Effects'],
-         death_date=parse(row['Cull Date']) if row['Cull Date'] else None,
+         death_date=parse(row['Cull Date']),
          cull_method=row['Cull Method'],
          actual_severity=severity,
          protocol_number=row['Protocol #'],
@@ -96,16 +108,20 @@ def get_subjects_kwargs(row, mouse=None, table_line=None):
          species=mouse,
          line=get_line(row['Line'], table_line=table_line),
      )
+    for k, v in kwargs.items():
+        setattr(subject, k, v)
+    subject.save()
 
-
-def get_surgery_kwargs(row):
-    return dict(
+    # Create the surgery.
+    kwargs = dict(
         users=[get_user(initials.strip()) for initials in row['Surgery Performed By'].split(',')],
-        subject=get_subject(row['Nickname']),
+        subject=subject,
         start_time=parse(row['Date of surgery']),
         outcome_type=row['Acute/ Recovery'][0],
         narrative=row['Procedures'],
     )
+    surgery = Surgery(**kwargs)
+    surgery.save()
 
 
 # Import 2
@@ -121,7 +137,7 @@ def import_line(sheet):
     genotype_cols = [c[8:].strip() for c in cols if c.startswith('Genotype')]
     # Get or create line's sequences.
     sequences = {name: Sequence.objects.get_or_create(informal_name=name)[0]
-                 for name in genotype_cols}
+                 for name in genotype_cols if name}
     # Get the existing line using the sheet name, or create a new line.
     lines = Line.objects.filter(json__sheet_name=line_name)
     if not lines:
@@ -137,6 +153,9 @@ def import_line(sheet):
     table = sheet_to_table(sheet)
     subjects = []
     for row in table:
+        # Skip rows with empty autonames.
+        if not row['autoname']:
+            continue
         kwargs = {}
         kwargs['ear_mark'] = row['Ear mark']
         kwargs['sex'] = row['Sex']
@@ -204,31 +223,12 @@ def make_admin(apps, schema_editor):
 
 
 def load_worksheets_1(apps, schema_editor):
-    mouse = Species.objects.get(display_name='Laboratory mouse')
-    table_subjects = get_table('Mice Procedure Log', 'PROCEDURE LOG',
-                               header_line=0, first_line=2)
     table_line = get_table('Mice Stock - C57 and Transgenic', 'Current lines in the unit',
                            header_line=0, first_line=2)
 
     # Add lines.
     Line.objects.bulk_create(Line(**get_line_kwargs(row)) for row in table_line)
     print("%d lines added." % len(table_line))
-    return
-
-    # Add subjects.
-    Subject.objects.bulk_create(Subject(**get_subjects_kwargs(row,
-                                                              mouse=mouse,
-                                                              table_line=table_line,
-                                                              ))
-                                for row in table_subjects
-                                if row['Nickname'])
-    print("%d subjects added." % len(table_subjects))
-
-    # Add surgeries.
-    Surgery.objects.bulk_create(Surgery(**get_surgery_kwargs(row))
-                                for row in table_subjects
-                                if row['Nickname'])
-    print("%d surgeries added." % len(table_subjects))
 
 
 def load_worksheets_2(apps, schema_editor):
@@ -237,6 +237,22 @@ def load_worksheets_2(apps, schema_editor):
     for sheet in sheets:
         print("Importing line %s..." % sheet.title.strip())
         import_line(sheet)
+
+
+def load_worksheets_3(apps, schema_editor):
+    mouse = Species.objects.get(display_name='Laboratory mouse')
+    table_subjects = get_table('Mice Procedure Log', 'PROCEDURE LOG',
+                               header_line=0, first_line=2)
+    table_line = get_table('Mice Stock - C57 and Transgenic', 'Current lines in the unit',
+                           header_line=0, first_line=2)
+    # Add subjects from procedure log.
+    for row in table_subjects:
+        if not row['Nickname']:
+            continue
+        import_procedure_subject(row,
+                                 mouse=mouse,
+                                 table_line=table_line,
+                                 )
 
 
 class Migration(migrations.Migration):
@@ -253,4 +269,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(make_admin),
         migrations.RunPython(load_worksheets_1),
         migrations.RunPython(load_worksheets_2),
+        migrations.RunPython(load_worksheets_3),
     ]
