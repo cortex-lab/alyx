@@ -234,18 +234,10 @@ class SubjectAdmin(BaseAdmin):
         line = obj.line
         if obj.responsible_user is None:
             obj.responsible_user = request.user
-        # Autoname.
-        if line:
-            line.set_autoname(obj)
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
                 instance.line = line
-                if line:
-                    line.set_autoname(instance)
-            elif isinstance(instance, Subject):
-                if line:
-                    line.set_autoname(instance)
             instance.save()
         formset.instance.save()
         formset.save_m2m()
@@ -428,20 +420,14 @@ class CageAdmin(BaseAdmin):
             obj.delete()
         obj = formset.instance
         line = obj.line
-        if line:
-            line.set_autoname(obj)
         # Set the line of all inline litters.
         for instance in instances:
             if isinstance(instance, Litter):
                 instance.line = line
-                if line:
-                    line.set_autoname(instance)
             elif isinstance(instance, Subject):
                 # Default user is the logged user.
                 if instance.responsible_user is None:
                     instance.responsible_user = request.user
-                if line:
-                    line.set_autoname(instance)
             instance.save()
         formset.save_m2m()
 
@@ -476,8 +462,6 @@ class LitterAdmin(BaseAdmin):
             obj.delete()
         obj = formset.instance
         line = obj.line
-        if line:
-            line.set_autoname(obj)
         mother = obj.mother
         to_copy = 'species,strain,line,source'.split(',')
         user = (obj.mother.responsible_user
@@ -490,9 +474,6 @@ class LitterAdmin(BaseAdmin):
             # Copy some fields from the mother to the subject.
             for field in to_copy:
                 setattr(instance, field, getattr(mother, field, None))
-            # Autofill nickname.
-            if line:
-                line.set_autoname(instance)
             instance.save()
         formset.save_m2m()
 
@@ -520,8 +501,12 @@ class CageInline(BaseInlineAdmin):
 
 
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description']
-    list_display = ['name', 'target_phenotype', 'strain', 'species']
+    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description',
+              'subject_autoname_index',
+              'cage_autoname_index',
+              'litter_autoname_index',
+              ]
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain']
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
@@ -553,12 +538,6 @@ class LineAdmin(BaseAdmin):
                 # Default user is the logged user.
                 if instance.responsible_user is None:
                     instance.responsible_user = request.user
-                # Autoname.
-                line.set_autoname(instance)
-            elif isinstance(instance, Cage):
-                line.set_autoname(instance)
-            elif isinstance(instance, Litter):
-                line.set_autoname(instance)
             elif isinstance(instance, SubjectRequest):
                 # Copy some fields from the line to the instanceect.
                 instance.user = request.user
@@ -739,7 +718,7 @@ class MyAdminSite(admin.AdminSite):
         context = dict(
             self.each_context(request),
             title=self.index_title,
-            category_list=category_list,
+            app_list=category_list,
         )
         context.update(extra_context or {})
         request.current_app = self.name
@@ -776,7 +755,9 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
                     'death_date', 'ear_mark', 'line_l', 'actual_severity',
                     'adverse_effects', 'cull_method']
     ordering = ['-birth_date']
-    list_filter = [ResponsibleUserListFilter]
+    list_filter = [SubjectAliveListFilter,
+                   ResponsibleUserListFilter,
+                   ]
 
     def get_queryset(self, request):
         return (self.model.objects.

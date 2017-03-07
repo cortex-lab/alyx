@@ -19,6 +19,10 @@ from actions.models import WaterRestriction, Weighing, WaterAdministration
 logger = logging.getLogger(__name__)
 
 
+MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
+DEFAULT_RESPONSIBLE_USER_ID = 5
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -40,7 +44,8 @@ class Subject(BaseModel):
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
-    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
+                                default=MOUSE_SPECIES_ID)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
                            null=True, blank=True, default='U')
@@ -55,6 +60,7 @@ class Subject(BaseModel):
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                         default=DEFAULT_RESPONSIBLE_USER_ID,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
@@ -198,6 +204,8 @@ class Subject(BaseModel):
         # When a subject dies, remove it from a cage.
         if not self.alive() and self.cage is not None:
             self.cage = None
+        if self.line and self.nickname in (None, '', '-'):
+            self.line.set_autoname(self)
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -274,21 +282,6 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
         logger.warn("Mail failed: %s", e)
 
 
-class Species(BaseModel):
-    """A single species, identified uniquely by its binomial name."""
-    binomial = models.CharField(max_length=255,
-                                help_text="Binomial name, "
-                                "e.g. \"mus musculus\"")
-    display_name = models.CharField(max_length=255,
-                                    help_text="common name, e.g. \"mouse\"")
-
-    def __str__(self):
-        return self.display_name
-
-    class Meta:
-        verbose_name_plural = "species"
-
-
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
@@ -310,6 +303,11 @@ class Litter(BaseModel):
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if self.line and self.descriptive_name in (None, '', '-'):
+            self.line.set_autoname(self)
+        return super(Litter, self).save(*args, **kwargs)
+
     def __str__(self):
         return self.descriptive_name
 
@@ -329,6 +327,11 @@ class Cage(BaseModel):
                              )
     location = models.ForeignKey(LabLocation)
 
+    def save(self, *args, **kwargs):
+        if self.line and self.cage_label in (None, '', '-'):
+            self.line.set_autoname(self)
+        return super(Cage, self).save(*args, **kwargs)
+
     def __str__(self):
         return self.cage_label
 
@@ -338,9 +341,10 @@ class Line(BaseModel):
     description = models.TextField(null=True, blank=True)
     target_phenotype = models.CharField(max_length=1023)
     auto_name = models.CharField(max_length=255)
-    sequences = models.ManyToManyField('Sequence', through='LineGenotypeTest')
+    sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
-    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL)
+    species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
+                                default=MOUSE_SPECIES_ID)
     subject_autoname_index = models.IntegerField(default=0)
     cage_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
@@ -375,7 +379,6 @@ class Line(BaseModel):
             m = self.new_subject_autoname
         if getattr(obj, field, None) in (None, '-'):
             setattr(obj, field, m())
-            obj.save()
 
 
 class Strain(BaseModel):
@@ -456,17 +459,6 @@ class GenotypeTest(BaseModel):
         return "Genotype test %s for %s: %d" % (self.sequence, self.subject, self.test_result)
 
 
-class LineGenotypeTest(BaseModel):
-    """
-    A junction table between Line and Sequence.
-    """
-    subject = models.ForeignKey('Line', on_delete=models.CASCADE)
-    sequence = models.ForeignKey('Sequence', on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name_plural = "sequences"
-
-
 class Source(BaseModel):
     """A supplier / source of subjects."""
     name = models.CharField(max_length=255)
@@ -474,3 +466,18 @@ class Source(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+class Species(BaseModel):
+    """A single species, identified uniquely by its binomial name."""
+    binomial = models.CharField(max_length=255,
+                                help_text="Binomial name, "
+                                "e.g. \"mus musculus\"")
+    display_name = models.CharField(max_length=255,
+                                    help_text="common name, e.g. \"mouse\"")
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta:
+        verbose_name_plural = "species"

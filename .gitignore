@@ -1,6 +1,7 @@
 *.pyc
 .DS_Store
 *~
+*!
 alyx/alyx/settings_secret.py
 docs/_build
 docs/_templates
@@ -10,4 +11,3 @@ bin
 experimental
 *.asv
 *.json
-
