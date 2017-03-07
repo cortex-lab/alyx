@@ -755,7 +755,9 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
                     'death_date', 'ear_mark', 'line_l', 'actual_severity',
                     'adverse_effects', 'cull_method']
     ordering = ['-birth_date']
-    list_filter = [ResponsibleUserListFilter]
+    list_filter = [SubjectAliveListFilter,
+                   ResponsibleUserListFilter,
+                   ]
 
     def get_queryset(self, request):
         return (self.model.objects.
