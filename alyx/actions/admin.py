@@ -31,8 +31,20 @@ class WeighingAdmin(BaseActionAdmin):
 
 
 class SurgeryAdmin(BaseActionAdmin):
-    list_display = ['subject', 'start_time', 'brain_location', 'outcome_type']
+    list_display = ['subject', 'date', 'users_l', 'procedures_l', 'narrative']
     fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type']
+    list_display_links = ['date']
+
+    def date(self, obj):
+        return obj.start_time.date()
+
+    def users_l(self, obj):
+        return ', '.join(map(str, obj.users.all()))
+    users_l.short_description = 'users'
+
+    def procedures_l(self, obj):
+        return ', '.join(map(str, obj.procedures.all()))
+    procedures_l.short_description = 'procedures'
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
