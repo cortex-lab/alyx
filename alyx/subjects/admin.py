@@ -784,8 +784,9 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
 
     def get_queryset(self, request):
         return (self.model.objects.
-                filter(responsible_user=request.user).
-                exclude(adverse_effects=''))
+                exclude(adverse_effects__isnull=True).
+                exclude(adverse_effects__exact='')
+                )
 
     def line_l(self, obj):
         # obj is the Subject instance, obj.line is the subject's Line instance.
