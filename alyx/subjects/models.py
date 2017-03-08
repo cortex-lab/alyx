@@ -12,6 +12,7 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel
 from equipment.models import LabLocation
 from actions.models import WaterRestriction, Weighing, WaterAdministration
@@ -21,6 +22,65 @@ logger = logging.getLogger(__name__)
 
 MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
 DEFAULT_RESPONSIBLE_USER_ID = 5
+
+
+class ZygosityFinder(object):
+    def _existing_alleles(self, subject):
+        return [allele.informal_name for allele in subject.genotype.all()]
+
+    def _alleles_in_line(self, line):
+        for l, allele, _ in ZYGOSITY_RULES:
+            if line and l == line.auto_name:
+                yield allele
+
+    def _parse_rule(self, rule):
+        string, res = rule
+        out = {}
+        for substr in string.split(','):
+            if substr[0] == '-':
+                sign = 0
+                substr = substr[1:]
+            else:
+                sign = 1
+            out[substr] = sign
+        out['res'] = res
+        return out
+
+    def _find_zygosity(self, rules, tests):
+        zygosities = ['-/-', '+/-', '+/+', '+']
+        if not tests:
+            return
+        tests = {test.sequence.informal_name: test.test_result for test in tests}
+        for rule in rules:
+            d = self._parse_rule(rule)
+            match = all(tests.get(test, None) == res for test, res in d.items() if test != 'res')
+            if match:
+                return zygosities.index(d['res'])
+
+    def _get_allele_rules(self, line, allele):
+        for l, a, rules in ZYGOSITY_RULES:
+            if l == line and a == allele:
+                return rules
+        return []
+
+    def _get_tests(self, subject):
+        return GenotypeTest.objects.filter(subject=subject)
+
+    def update_subject(self, subject):
+        if not subject.line:
+            return
+        line = subject.line.auto_name
+        alleles_in_line = list(self._alleles_in_line(subject.line))
+        existing_alleles = self._existing_alleles(subject)
+        tests = self._get_tests(subject)
+        for allele in set(alleles_in_line) - set(existing_alleles):
+            rules = self._get_allele_rules(line, allele)
+            zygosity = self._find_zygosity(rules, tests)
+            if zygosity is not None:
+                Zygosity(subject=subject,
+                         allele=Allele.objects.get_or_create(informal_name=allele)[0],
+                         zygosity=zygosity,
+                         ).save()
 
 
 class Subject(BaseModel):
@@ -200,12 +260,20 @@ class Subject(BaseModel):
     def zygosity_strings(self):
         return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
 
+    def genotype_test_string(self):
+        tests = GenotypeTest.objects.filter(subject=self).order_by('sequence__informal_name')
+        return ','.join('%s%s' % ('-' if test.test_result == 0 else '', str(test.sequence))
+                        for test in tests)
+
     def save(self, *args, **kwargs):
         # When a subject dies, remove it from a cage.
         if not self.alive() and self.cage is not None:
             self.cage = None
+        # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
+        # Default zygosities.
+        ZygosityFinder().update_subject(self)
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):

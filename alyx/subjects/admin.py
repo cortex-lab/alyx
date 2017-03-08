@@ -83,14 +83,14 @@ class SubjectAliveListFilter(DefaultListFilter):
 
 class ZygosityInline(BaseInlineAdmin):
     model = Zygosity
-    extra = 2
+    extra = 1
     fields = ['allele', 'zygosity']
     classes = ['collapse']
 
 
 class GenotypeTestInline(BaseInlineAdmin):
     model = GenotypeTest
-    extra = 2
+    extra = 1
     fields = ['sequence', 'test_result']
     classes = ['collapse']
 
@@ -529,6 +529,7 @@ class LineAdmin(BaseAdmin):
               'litter_autoname_index',
               ]
     list_display = ['name', 'auto_name', 'target_phenotype', 'strain']
+    ordering = ['auto_name']
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
 
