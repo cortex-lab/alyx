@@ -99,6 +99,7 @@ def import_procedure_subject(row, mouse=None, table_line=None):
 
     # Set/override the fields.
     kwargs = dict(
+         nickname=row['Nickname'],
          adverse_effects=row['Adverse Effects'],
          death_date=parse(row['Cull Date']),
          cull_method=row['Cull Method'],
