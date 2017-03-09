@@ -35,7 +35,7 @@ class ExtracellularRecording(BaseExperimentalData):
     highpass_data = models.ForeignKey(Dataset, blank=True, null=True,
                                       related_name="extracellular_recording_hpf",
                                       help_text="Extracellular high-passed data")
-    filter_info = models.CharField(max_length=255, null=True, blank=True,
+    filter_info = models.CharField(max_length=255, blank=True,
                                    help_text="Details of hardware corner frequencies, filter "
                                    "type, order. TODO: make this more structured?")
     start_time = models.FloatField(null=True, blank=True,
@@ -47,10 +47,10 @@ class ExtracellularRecording(BaseExperimentalData):
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="in seconds relative to experiment start")
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
-                                      help_text="Whether the recording is chronic or acute", null=True, blank=True)
-    ground_electrode = models.CharField(max_length=255, null=True, blank=True,
+                                      help_text="Whether the recording is chronic or acute", blank=True)
+    ground_electrode = models.CharField(max_length=255, blank=True,
                                         help_text="e.g. 'screw above cerebellum'")
-    reference_electrode = models.CharField(max_length=255, null=True, blank=True,
+    reference_electrode = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'shorted to ground'")
     impedances = models.ForeignKey(Dataset, blank=True, null=True,
                                    related_name="extracellular_impedances",
@@ -115,7 +115,7 @@ class SpikeSorting(BaseExperimentalData):
                                                related_name="spike_sorting_filtered_waveforms",
                                                help_text="mean filtered waveforms of every spike "
                                                "on every channel")
-    generating_software = models.CharField(max_length=255, null=True, blank=True,
+    generating_software = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'phy 0.8.3'")
     provenance_directory = models.ForeignKey(Dataset, blank=True, null=True,
                                              related_name="spike_sorting_provenance",
@@ -180,13 +180,13 @@ class SpikeSortedUnit(BaseExperimentalData):
                                      help_text="Human decision on cluster group")
     spike_width_class = models.CharField(max_length=1, choices=WIDTH_CLASSES,
                                          help_text="Human decision on spike width")
-    optogenetic_response = models.CharField(max_length=255, null=True, blank=True,
+    optogenetic_response = models.CharField(max_length=255, blank=True,
                                             help_text="e.g. 'Short latency' (only if applicable)")
-    putative_cell_type = models.CharField(max_length=255, null=True, blank=True,
+    putative_cell_type = models.CharField(max_length=255, blank=True,
                                           help_text="e.g. 'Sst interneuron', 'PT cell'. ")
     # TODO: more structured? match with Allen Cell Type nomenclature?
     # i think that would be premature
-    estimated_layer = models.CharField(max_length=255, null=True, blank=True,
+    estimated_layer = models.CharField(max_length=255, blank=True,
                                        help_text="e.g. 'Layer 5b'. ")
     # TODO: more structured?
     # again, probably premature
@@ -209,7 +209,7 @@ class IntracellularRecording(BaseExperimentalData):
                                        help_text="mm – before pulling")
     outer_diameter = models.FloatField(null=True, blank=True,
                                        help_text=" mm – before pulling")
-    electrode_solution = models.TextField(null=True, blank=True,
+    electrode_solution = models.TextField(blank=True,
                                           help_text="Solution details.")
     # TODO: standardize
     # that's what the Solutions object would be. but let's not prioritize this

@@ -11,7 +11,7 @@ class BrainLocation(BaseModel):
     # e.g. area, layer, comments on how estimated
     description = models.TextField()
     # using their vocabulary
-    allen_location_ontology = models.CharField(max_length=255, null=True, blank=True)
+    allen_location_ontology = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
@@ -27,7 +27,7 @@ class CoordinateTransformation(BaseModel):
     (e.g. electrode tip).
     """
     name = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     allen_location_ontology = models.CharField(max_length=1000)
 
     origin = ArrayField(models.FloatField(blank=True, null=True), size=3)
