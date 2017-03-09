@@ -2,7 +2,7 @@ ZYGOSITY_RULES = (
     ('CtTa', 'Camk2a-tTa', (('tTA', '+'),
                             ('-tTA', '-/-'))),
 
-    ('CtTa', 'Pv-Cre', (('Cre,WT', '+/-'),
+    ('Pv', 'Pv-Cre', (('Cre,WT', '+/-'),
                       ('Cre,-WT', '+/+'),
                       ('-Cre', '-/-'))),
 
