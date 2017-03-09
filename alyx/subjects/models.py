@@ -77,6 +77,9 @@ class Subject(BaseModel):
     actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
                                        null=True, blank=True)
 
+    class Meta:
+        ordering = ['nickname']
+
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
         # Used to detect when the request has changed.
@@ -222,6 +225,9 @@ class SubjectRequest(BaseModel):
     due_date = models.DateField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['-date_time']
+
     def status(self):
         return 'Open' if self.remaining() > 0 else 'Closed'
 
@@ -303,6 +309,9 @@ class Litter(BaseModel):
     notes = models.TextField(null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['-birth_date']
+
     def save(self, *args, **kwargs):
         if self.line and self.descriptive_name in (None, '', '-'):
             self.line.set_autoname(self)
@@ -327,6 +336,9 @@ class Cage(BaseModel):
                              )
     location = models.ForeignKey(LabLocation)
 
+    class Meta:
+        ordering = ['cage_label']
+
     def save(self, *args, **kwargs):
         if self.line and self.cage_label in (None, '', '-'):
             self.line.set_autoname(self)
@@ -348,6 +360,9 @@ class Line(BaseModel):
     subject_autoname_index = models.IntegerField(default=0)
     cage_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -388,6 +403,9 @@ class Strain(BaseModel):
                                         "http://www.informatics.jax.org/mgihome/nomen/")
     description = models.TextField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['descriptive_name']
+
     def __str__(self):
         return self.descriptive_name
 
@@ -400,6 +418,9 @@ class Allele(BaseModel):
                                      "http://www.informatics.jax.org/mgihome/nomen/")
     informal_name = models.CharField(max_length=255,
                                      help_text="informal name in lab, e.g. Pvalb-Cre")
+
+    class Meta:
+        ordering = ['standard_name']
 
     def __str__(self):
         return self.informal_name
@@ -436,6 +457,9 @@ class Sequence(BaseModel):
     informal_name = models.CharField(max_length=255,
                                      help_text="informal name in lab, e.g. ROSA-WT")
 
+    class Meta:
+        ordering = ['informal_name']
+
     def __str__(self):
         return self.informal_name
 
@@ -464,6 +488,9 @@ class Source(BaseModel):
     name = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return self.name
 
@@ -476,8 +503,9 @@ class Species(BaseModel):
     display_name = models.CharField(max_length=255,
                                     help_text="common name, e.g. \"mouse\"")
 
+    class Meta:
+        ordering = ['display_name']
+        verbose_name_plural = "species"
+
     def __str__(self):
         return self.display_name
-
-    class Meta:
-        verbose_name_plural = "species"
