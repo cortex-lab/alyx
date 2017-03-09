@@ -78,7 +78,7 @@ class Subject(BaseModel):
                                        null=True, blank=True)
 
     class Meta:
-        ordering = ['nickname']
+        ordering = ['-birth_date', 'nickname']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)

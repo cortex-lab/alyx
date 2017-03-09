@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.template.response import TemplateResponse
-from alyx.base import BaseAdmin, BaseInlineAdmin
+from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
 from .models import *
 from actions.models import Surgery, Experiment, OtherAction
 
@@ -26,20 +26,6 @@ def create_modeladmin(modeladmin, model, name=None):
 
 # Filters
 # ------------------------------------------------------------------------------------------------
-
-class DefaultListFilter(admin.SimpleListFilter):
-    # Default filter value.
-    # http://stackoverflow.com/a/16556771/1595060
-    def choices(self, cl):
-        for lookup, title in self.lookup_choices:
-            yield {
-                'selected': self.value() == lookup,
-                'query_string': cl.get_query_string({
-                    self.parameter_name: lookup,
-                }, []),
-                'display': title,
-            }
-
 
 class ResponsibleUserListFilter(DefaultListFilter):
     title = 'responsible user'
