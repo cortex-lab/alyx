@@ -9,7 +9,7 @@ class LabLocation(BaseModel):
     # minor but can we change this to Location or LabLocation? Because it could
     # also be a room in the animal house
     """
-    The physical location at which an experiment is performed or appliances are located.
+    The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
     """
     name = models.CharField(max_length=255)
@@ -132,7 +132,7 @@ class LightSource(Appliance):
 
 class Amplifier(Appliance):
     """
-    An amplifier used in electrophysiology experiments.
+    An amplifier used in electrophysiology sessions.
     """
     pass
 

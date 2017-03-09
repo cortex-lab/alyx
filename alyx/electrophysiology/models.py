@@ -39,13 +39,13 @@ class ExtracellularRecording(BaseExperimentalData):
                                    help_text="Details of hardware corner frequencies, filter "
                                    "type, order. TODO: make this more structured?")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start.")
+                                   help_text="in seconds relative to session start.")
     #                                  TODO: not DateTimeField? / TimeDifference")
-    # the idea is that the experiment has a single DateTime when it started,
+    # the idea is that the session has a single DateTime when it started,
     # then all times are in seconds relative to this. TimeDifference could work also,
     # but why not just float?
     end_time = models.FloatField(null=True, blank=True,
-                                 help_text="in seconds relative to experiment start")
+                                 help_text="in seconds relative to session start")
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
                                       help_text="Whether the recording is chronic or acute", blank=True)
     ground_electrode = models.CharField(max_length=255, blank=True,
@@ -90,19 +90,19 @@ class SpikeSorting(BaseExperimentalData):
     in a non-standardized format.
 
     Finally, while multiple extracellular_recordings can be sorted together,
-    they must all belong to the same experiment (i.e. the same action).
-    This is required as time zero is defined separately for each experiment.
-    When multiple experiments are clustered together (e.g. in a chronic recording
+    they must all belong to the same session (i.e. the same action).
+    This is required as time zero is defined separately for each session.
+    When multiple sessions are clustered together (e.g. in a chronic recording
     over several days), you will need to create multiple spike_sorting documents,
     and link them together (to be determined exactly how).
 
     """
     spike_times = models.ForeignKey(Dataset, blank=True, null=True,
                                     related_name="spike_sorting_spike_times",
-                                    help_text="time of each spike relative to experiment "
+                                    help_text="time of each spike relative to session "
                                     "start in seconds.")
-    # TODO: experiment or recording start?
-    # Experiment start. Everything should be relative to that.
+    # TODO: session or recording start?
+    # Session start. Everything should be relative to that.
     cluster_assignments = models.ForeignKey(Dataset, blank=True, null=True,
                                             related_name="spike_sorting_cluster_assignments",
                                             help_text="cluster assignment of each spike")

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 from django.template.response import TemplateResponse
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
 from .models import *
-from actions.models import Surgery, Experiment, OtherAction
+from actions.models import Surgery, Session, OtherAction
 
 
 # Utility functions
@@ -89,8 +89,8 @@ class SurgeryInline(BaseInlineAdmin):
     classes = ['collapse']
 
 
-class ExperimentInline(BaseInlineAdmin):
-    model = Experiment
+class SessionInline(BaseInlineAdmin):
+    model = Session
     extra = 1
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
@@ -158,7 +158,7 @@ class SubjectAdmin(BaseAdmin):
     list_editable = ['responsible_user']
     list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, ExperimentInline, OtherActionInline]
+               SurgeryInline, SessionInline, OtherActionInline]
 
     def sex_l(self, obj):
         return obj.sex[0] if obj.sex else ''
@@ -695,7 +695,7 @@ class MyAdminSite(admin.AdminSite):
                              'Sequences',
                              'Sources',
                              ]),
-                 ('Other', ['Experiments',
+                 ('Other', ['Sessions',
                             'Genotype tests',
                             'Zygosities',
                             ]),

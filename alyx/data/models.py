@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
 
-from actions.models import Experiment
+from actions.models import Session
 from alyx.base import BaseModel, BasePolymorphicModel
 
 
@@ -25,8 +25,8 @@ class DataRepository(BasePolymorphicModel):
     name = models.CharField(max_length=255)
     # TODO: type introspection for location type
 
-    def get_valid_name(experiment_id=None):
-        """TODO: Returns a default filepath for a new experiment. experiment_id
+    def get_valid_name(session_id=None):
+        """TODO: Returns a default filepath for a new session. session_id
         must exist and be linked to a valid Subject."""
         pass
 
@@ -160,7 +160,7 @@ class TimeSeries(BaseModel):
     description = models.TextField(blank=True)
     timestamps = models.ManyToManyField(Timestamp, blank=True,
                                         related_name='timeseries')
-    experiment = models.ForeignKey(Experiment, null=True, blank=True)
+    session = models.ForeignKey(Session, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Time series'
@@ -170,8 +170,8 @@ class BaseExperimentalData(BaseModel):
     """
     Abstract base class for all data acquisition models. Never used directly.
     """
-    experiment = models.ForeignKey(Experiment, related_name="%(app_label)s_%(class)s_related",
-                                   help_text="The Experiment to which this data belongs")
+    session = models.ForeignKey(Session, related_name="%(app_label)s_%(class)s_related",
+                                   help_text="The Session to which this data belongs")
 
     class Meta:
         abstract = True

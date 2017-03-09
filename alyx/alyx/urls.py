@@ -73,9 +73,9 @@ urlpatterns = [
     url(r'^subjects/(?P<nickname>[-\w]+)$', subjects_views.SubjectDetail.as_view(),
         name="subject-detail"),
 
-    url(r'^experiments$', actions_views.ExperimentAPIList.as_view(), name="experiment-list"),
-    url(r'^experiments/(?P<pk>[-_\w].+)$', actions_views.ExperimentAPIDetail.as_view(),
-        name="experiment-detail"),
+    url(r'^sessions$', actions_views.SessionAPIList.as_view(), name="session-list"),
+    url(r'^sessions/(?P<pk>[-_\w].+)$', actions_views.SessionAPIDetail.as_view(),
+        name="session-detail"),
 
     url(r'^exp-metadata$', data_views.ExpMetadataList.as_view(), name="exp-metadata-list"),
     url(r'^exp-metadata/(?P<pk>[-_\w].+)$', data_views.ExpMetadataDetail.as_view(),

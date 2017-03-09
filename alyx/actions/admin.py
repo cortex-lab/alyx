@@ -93,7 +93,7 @@ admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
 
-admin.site.register(Experiment, BaseActionAdmin)
+admin.site.register(Session, BaseActionAdmin)
 admin.site.register(WaterRestriction, BaseActionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)

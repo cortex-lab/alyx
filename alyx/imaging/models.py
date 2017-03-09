@@ -14,9 +14,9 @@ class WidefieldImaging(BaseExperimentalData):
                                         help_text="Link to SVD compressed movie, "
                                         "if compression was run")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
-    # again, all relative to experiment start in seconds.
+    # again, all relative to session start in seconds.
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="Equals start time if single application. "
                                  "TODO: should this be an offset? Or DateTimeField? "
@@ -55,7 +55,7 @@ class TwoPhotonImaging(BaseExperimentalData):
                                         related_name="two_photon_compressed",
                                         help_text="to Compressed_movie, if compression was run")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="Equals start time if single application. "

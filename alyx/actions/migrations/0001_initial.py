@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Experiment',
+            name='Session',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
@@ -166,17 +166,17 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, help_text='The user(s) involved in this action', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name='experiment',
+            model_name='session',
             name='procedures',
             field=models.ManyToManyField(blank=True, help_text='The procedure(s) performed', to='actions.ProcedureType'),
         ),
         migrations.AddField(
-            model_name='experiment',
+            model_name='session',
             name='subject',
-            field=models.ForeignKey(help_text='The subject on which this action was performed', on_delete=django.db.models.deletion.CASCADE, related_name='actions_experiments', to='subjects.Subject'),
+            field=models.ForeignKey(help_text='The subject on which this action was performed', on_delete=django.db.models.deletion.CASCADE, related_name='actions_sessions', to='subjects.Subject'),
         ),
         migrations.AddField(
-            model_name='experiment',
+            model_name='session',
             name='users',
             field=models.ManyToManyField(blank=True, help_text='The user(s) involved in this action', to=settings.AUTH_USER_MODEL),
         ),

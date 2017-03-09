@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
                 ('column_names', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), blank=True, null=True, size=None)),
                 ('description', models.TextField(blank=True)),
-                ('experiment', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='actions.Experiment')),
+                ('session', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='actions.Session')),
             ],
             options={
                 'verbose_name_plural': 'Time series',

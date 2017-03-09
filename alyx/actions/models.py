@@ -126,9 +126,9 @@ class Surgery(BaseAction):
         verbose_name_plural = "surgeries"
 
 
-class Experiment(BaseAction):
+class Session(BaseAction):
     """
-    An experiment or training session performed on a subject.
+    An session or training session performed on a subject.
     """
     pass
 

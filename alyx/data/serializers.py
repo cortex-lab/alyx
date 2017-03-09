@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from actions.models import Experiment
+from actions.models import Session
 from electrophysiology.models import ExtracellularRecording
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
@@ -12,9 +12,9 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                                                 allow_null=True,
                                                 required=False)
 
-    experiment = serializers.HyperlinkedRelatedField(
-        read_only=False, view_name="experiment-detail",
-        queryset=Experiment.objects.all())
+    session = serializers.HyperlinkedRelatedField(
+        read_only=False, view_name="session-detail",
+        queryset=Session.objects.all())
 
     def create(self, validated_data):
         return Dataset.objects.create(**validated_data)
@@ -42,7 +42,7 @@ class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ExtracellularRecording
-        fields = ('classname', 'json', 'start_time', 'end_time', 'experiment', 'url')
+        fields = ('classname', 'json', 'start_time', 'end_time', 'session', 'url')
         extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}
 
 class ExpMetadataDetailSerializer(serializers.HyperlinkedModelSerializer):

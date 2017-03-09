@@ -159,7 +159,7 @@ class OptogeneticStimulus(BaseExperimentalData):
 class Pharmacology(BaseExperimentalData):
     # Let's not worry about this now! we aren't going to use it in our lab
     """
-    Describes a drug application during the experiment.
+    Describes a drug application during the session.
     """
     drug = models.CharField(max_length=255, blank=True,
                             help_text="TODO: normalize? Also say what it is "
@@ -167,7 +167,7 @@ class Pharmacology(BaseExperimentalData):
     administration_route = models.CharField(max_length=255, blank=True,
                                             help_text="TODO: normalize? IP, IV, IM, surface etc…")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="equals start time if single application. "
