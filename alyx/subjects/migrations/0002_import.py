@@ -38,6 +38,7 @@ def get_user(initials):
         'AP': 'andy',
         'CR': 'charu',
         'NS': 'nick',
+        'JL': 'julie',
         'ICL': 'i-chun',
         'PZH': 'peter',
         'MDia': 'mika',
@@ -219,10 +220,9 @@ def load_static(apps, schema_editor):
 
 
 def make_admin(apps, schema_editor):
-    for username in ('Experiment', 'charu', 'cyrille', 'nick'):
-        u = User.objects.get(username=username)
-        u.is_superuser = True
-        u.save()
+    for user in User.objects.all():
+        user.is_superuser = True
+        user.save()
 
 
 def load_worksheets_1(apps, schema_editor):
