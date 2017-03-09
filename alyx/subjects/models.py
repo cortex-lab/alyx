@@ -59,6 +59,7 @@ class Subject(BaseModel):
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
+    genotype_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          default=DEFAULT_RESPONSIBLE_USER_ID,
                                          related_name='subjects_responsible',

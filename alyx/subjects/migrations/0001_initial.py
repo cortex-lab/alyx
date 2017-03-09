@@ -146,6 +146,7 @@ class Migration(migrations.Migration):
                 ('birth_date', models.DateField(blank=True, null=True)),
                 ('death_date', models.DateField(blank=True, null=True)),
                 ('wean_date', models.DateField(blank=True, null=True)),
+                ('genotype_date', models.DateField(blank=True, null=True)),
                 ('implant_weight', models.FloatField(blank=True, help_text='Implant weight in grams', null=True)),
                 ('ear_mark', models.CharField(blank=True, max_length=32)),
                 ('protocol_number', models.CharField(choices=[('1', '1'), ('2', '2'), ('3', '3'), ('4', '4')], default='3', max_length=1)),
