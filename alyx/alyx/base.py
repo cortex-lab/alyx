@@ -33,6 +33,7 @@ class BaseAdmin(admin.ModelAdmin):
                     attrs={'rows': 5,
                            'cols': 50})},
     }
+    list_per_page = 50
 
     def __init__(self, *args, **kwargs):
         if self.fields and 'json' not in self.fields:
