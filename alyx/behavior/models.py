@@ -20,12 +20,12 @@ class PupilTracking(BaseExperimentalData):
                               help_text="Link to raw data")
     eye = models.CharField(max_length=1,
                            choices=EYES,
-                           blank=True, null=True,  # I suggest we don't have a default for this
+                           blank=True,  # I suggest we don't have a default for this
                            help_text="Which eye was tracked; left or right")
-    description = models.TextField(blank=True, null=True,
+    description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "('unit: mm' or 'unknown scale factor')")
-    generating_software = models.CharField(max_length=255, null=True, blank=True,
+    generating_software = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'PupilTracka 0.8.3'")
     provenance_directory = models.ForeignKey(Dataset, blank=True, null=True,
                                              related_name="pupil_tracking_provenance",
@@ -47,10 +47,10 @@ class HeadTracking(BaseExperimentalData):
     movie = models.ForeignKey(Dataset, blank=True, null=True,
                               related_name="head_tracking_movie",
                               help_text="Link to raw data")
-    description = models.TextField(blank=True, null=True,
+    description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "('unit: cm' or 'unknown scale factor')")
-    generating_software = models.CharField(max_length=255, null=True, blank=True,
+    generating_software = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'HeadTracka 0.8.3'")
     provenance_directory = models.ForeignKey(Dataset, blank=True, null=True,
                                              related_name="head_tracking_provenance",
@@ -73,11 +73,11 @@ class EventSeries(BaseExperimentalData):
     event_types_id = models.ForeignKey(Dataset, blank=True, null=True,
                                        related_name="event_series_event_descriptions",
                                        help_text="n*1 array listing the type of each event")
-    description = models.TextField(blank=True, null=True,
+    description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "'drifting gratings of different orientations', "
                                    "'ChoiceWorld behavior events'")
-    generating_software = models.CharField(max_length=255, null=True, blank=True,
+    generating_software = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'ChoiceWorld 0.8.3'")
     provenance_directory = models.ForeignKey(Dataset, blank=True, null=True,
                                              related_name="event_series_provenance",
@@ -102,11 +102,11 @@ class IntervalSeries(BaseExperimentalData):
                                               "interval_descriptions",
                                               help_text="n*1 array listing the type "
                                               "of each interval")
-    description = models.TextField(blank=True, null=True,
+    description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "'drifting gratings of different orientations', "
                                    "'ChoiceWorld behavior intervals'")
-    generating_software = models.CharField(max_length=255, null=True, blank=True,
+    generating_software = models.CharField(max_length=255, blank=True,
                                            help_text="e.g. 'ChoiceWorld 0.8.3'")
     provenance_directory = models.ForeignKey(Dataset, blank=True, null=True,
                                              related_name="interval_series_provenance",
@@ -128,9 +128,9 @@ class OptogeneticStimulus(BaseExperimentalData):
     # This is a good example of how there will be new types of appliance all the time. I have
     # added a new one LightSource - but probably people will want to reference Appliance
     # directly sometimes
-    light_delivery = models.CharField(max_length=255, blank=True, null=True,
+    light_delivery = models.CharField(max_length=255, blank=True,
                                       help_text="e.g. 'fiber pointed at craniotomy'")
-    description = models.CharField(max_length=255, blank=True, null=True,
+    description = models.CharField(max_length=255, blank=True,
                                    help_text="e.g. 'square pulses', 'ramps'")
     wavelength = models.FloatField(null=True, blank=True, help_text="in nm")
     brain_location = models.ForeignKey(BrainLocation, null=True, blank=True,
@@ -145,7 +145,7 @@ class OptogeneticStimulus(BaseExperimentalData):
     power = models.ForeignKey(Dataset, blank=True, null=True,
                               related_name="optogenetic_stimulus_power",
                               help_text="link to an n*1 array giving each pulse power")
-    power_calculation_method = models.CharField(max_length=255, blank=True, null=True,
+    power_calculation_method = models.CharField(max_length=255, blank=True,
                                                 help_text="TODO: normalize? measured, nominal")
     waveform = models.ForeignKey(Dataset, blank=True, null=True,
                                  related_name="optogenetic_stimulus_waveform",
@@ -159,24 +159,24 @@ class OptogeneticStimulus(BaseExperimentalData):
 class Pharmacology(BaseExperimentalData):
     # Let's not worry about this now! we aren't going to use it in our lab
     """
-    Describes a drug application during the experiment.
+    Describes a drug application during the session.
     """
-    drug = models.CharField(max_length=255, blank=True, null=True,
+    drug = models.CharField(max_length=255, blank=True,
                             help_text="TODO: normalize? Also say what it is "
                             "dissolved in (DMSO etc)")
-    administration_route = models.CharField(max_length=255, blank=True, null=True,
+    administration_route = models.CharField(max_length=255, blank=True,
                                             help_text="TODO: normalize? IP, IV, IM, surface etc…")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="equals start time if single application. "
                                  "TODO: should this be an offset? Or DateTimeField? "
                                  "Or TimeDifference?")
-    concentration = models.CharField(max_length=255, blank=True, null=True,
+    concentration = models.CharField(max_length=255, blank=True,
                                      help_text="TODO: not FloatField? include unit "
                                      "(e.g. g/kg; mM; %)")
-    volume = models.CharField(max_length=255, blank=True, null=True,
+    volume = models.CharField(max_length=255, blank=True,
                               help_text="TODO: not FloatField? include unit (e.g. µL)")
 
     class Meta:

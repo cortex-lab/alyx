@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
 
-from actions.models import Experiment
+from actions.models import Session
 from alyx.base import BaseModel, BasePolymorphicModel
 
 
@@ -25,8 +25,8 @@ class DataRepository(BasePolymorphicModel):
     name = models.CharField(max_length=255)
     # TODO: type introspection for location type
 
-    def get_valid_name(experiment_id=None):
-        """TODO: Returns a default filepath for a new experiment. experiment_id
+    def get_valid_name(session_id=None):
+        """TODO: Returns a default filepath for a new session. session_id
         must exist and be linked to a valid Subject."""
         pass
 
@@ -41,9 +41,9 @@ class LocalDataRepository(DataRepository):
     """
     A local data repository on a single computer.
     """
-    hostname = models.CharField(max_length=1000, null=True, blank=True,
+    hostname = models.CharField(max_length=1000, blank=True,
                                 help_text="Hostname must be unique. e.g. 'NSLaptop'")
-    path = models.CharField(max_length=1000, null=True, blank=True,
+    path = models.CharField(max_length=1000, blank=True,
                             help_text="e.g. 'D:/Data/acquisition/'")
 
     class Meta:
@@ -55,12 +55,12 @@ class NetworkDataRepository(DataRepository):
     A network data repository, accessible over several different protocols.
     This will be be turned into a browsable path depending on the client and protocol.
     """
-    fqdn = models.CharField(max_length=1000, null=True, blank=True,
+    fqdn = models.CharField(max_length=1000, blank=True,
                             help_text="Fully Qualified Domain Name or IP, "
                             "e.g. 1.2.3.4 or foxtrot.neuro.ucl.ac.uk")
-    share = models.CharField(max_length=1000, null=True, blank=True,
+    share = models.CharField(max_length=1000, blank=True,
                              help_text="Share name, e.g. 'Data'")
-    path = models.CharField(max_length=1000, null=True, blank=True,
+    path = models.CharField(max_length=1000, blank=True,
                             help_text="Path name after share, e.g. '/subjects/'")
     nfs_supported = models.BooleanField(help_text="NFS supported (Linux)")
     smb_supported = models.BooleanField(help_text="SMB supported (Windows)")
@@ -88,7 +88,7 @@ class ArchiveDataRepository(DataRepository):
     """
 
     physical_archive = models.ForeignKey('PhysicalArchive')
-    identifier = models.CharField(max_length=255, null=True, blank=True)
+    identifier = models.CharField(max_length=255, blank=True)
     tape_contents = JSONField(null=True, blank=True,
                               help_text="Tape contents, including untracked files.")
 
@@ -140,14 +140,14 @@ class FileRecord(BaseModel):
 
 class Dataset(BaseModel):
     """Collection of LogicalFiles (files or folders) grouped together."""
-    name = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return str(getattr(self, 'name', 'unnamed'))
 
 
 class Timestamp(Dataset):
-    timebase_name = models.CharField(max_length=255, null=True, blank=True)
+    timebase_name = models.CharField(max_length=255, blank=True)
     regularly_sampled = models.NullBooleanField(null=True, blank=True)
     sample_rate = models.FloatField(null=True, blank=True)
     first_sample_time = models.FloatField(null=True, blank=True)
@@ -157,10 +157,10 @@ class TimeSeries(BaseModel):
     file = models.ForeignKey(Dataset, help_text="txn array where t is number of timepoints "
                              "and n is number of traces")
     column_names = ArrayField(models.CharField(max_length=255), null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     timestamps = models.ManyToManyField(Timestamp, blank=True,
                                         related_name='timeseries')
-    experiment = models.ForeignKey(Experiment, null=True, blank=True)
+    session = models.ForeignKey(Session, null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Time series'
@@ -170,8 +170,8 @@ class BaseExperimentalData(BaseModel):
     """
     Abstract base class for all data acquisition models. Never used directly.
     """
-    experiment = models.ForeignKey(Experiment, related_name="%(app_label)s_%(class)s_related",
-                                   help_text="The Experiment to which this data belongs")
+    session = models.ForeignKey(Session, related_name="%(app_label)s_%(class)s_related",
+                                   help_text="The Session to which this data belongs")
 
     class Meta:
         abstract = True

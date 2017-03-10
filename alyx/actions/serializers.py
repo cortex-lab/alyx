@@ -41,20 +41,20 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
     )
 
 
-class ExperimentListSerializer(BaseActionSerializer):
+class SessionListSerializer(BaseActionSerializer):
 
     class Meta:
-        model = Experiment
+        model = Session
         fields = ('subject', 'users', 'location', 'procedures',
                   'narrative', 'start_time', 'end_time', 'url')
 
 
-class ExperimentDetailSerializer(BaseActionSerializer):
+class SessionDetailSerializer(BaseActionSerializer):
 
     exp_metadata_related = ExpMetadataSummarySerializer(many=True, read_only=True)
 
     class Meta:
-        model = Experiment
+        model = Session
         fields = ('subject', 'users', 'location', 'procedures',
                   'narrative', 'start_time', 'end_time', 'url', 'json', 'exp_metadata_related')
 

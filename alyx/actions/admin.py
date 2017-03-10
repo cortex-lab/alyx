@@ -1,3 +1,4 @@
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 
 from alyx.base import BaseAdmin, DefaultListFilter
@@ -75,7 +76,10 @@ class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject', 'date', 'users_l', 'procedures_l', 'narrative']
     fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type']
     list_display_links = ['date']
-    list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'subject__line']
+    list_filter = [SubjectAliveListFilter,
+                   ResponsibleUserListFilter,
+                   ('subject__line', RelatedDropdownFilter),
+                   ]
 
     def date(self, obj):
         return obj.start_time.date()
@@ -93,7 +97,7 @@ admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
 
-admin.site.register(Experiment, BaseActionAdmin)
+admin.site.register(Session, BaseActionAdmin)
 admin.site.register(WaterRestriction, BaseActionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)

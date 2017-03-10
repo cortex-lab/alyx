@@ -19,7 +19,7 @@ def api_root(request, format=None):
     return Response({
         'users-url': reverse('user-list', request=request, format=format),
         'subjects-url': reverse('subject-list', request=request, format=format),
-        'experiments-url': reverse('experiment-list', request=request, format=format),
+        'sessions-url': reverse('session-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'weighings-url': reverse('weighing-create', request=request, format=format),
         'water-administrations-url': reverse('water-administration-create', request=request, format=format),

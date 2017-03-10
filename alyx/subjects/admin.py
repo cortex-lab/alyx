@@ -1,12 +1,14 @@
 from django import forms
-from django.urls import reverse
-from django.utils.html import format_html
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.template.response import TemplateResponse
+from django.utils.html import format_html
+from django.urls import reverse
+
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
 from .models import *
-from actions.models import Surgery, Experiment, OtherAction
+from actions.models import Surgery, Session, OtherAction
 
 
 # Utility functions
@@ -89,8 +91,8 @@ class SurgeryInline(BaseInlineAdmin):
     classes = ['collapse']
 
 
-class ExperimentInline(BaseInlineAdmin):
-    model = Experiment
+class SessionInline(BaseInlineAdmin):
+    model = Session
     extra = 1
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
@@ -115,7 +117,7 @@ def get_admin_url(obj):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
-                                'responsible_user', 'request', 'wean_date',
+                                'responsible_user', 'request', 'wean_date', 'genotype_date',
                                 'death_date', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter'),
@@ -156,9 +158,12 @@ class SubjectAdmin(BaseAdmin):
                        )
     ordering = ['-birth_date', 'nickname']
     list_editable = ['responsible_user']
-    list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
+    list_filter = [SubjectAliveListFilter,
+                   ResponsibleUserListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, ExperimentInline, OtherActionInline]
+               SurgeryInline, SessionInline, OtherActionInline]
 
     def sex_l(self, obj):
         return obj.sex[0] if obj.sex else ''
@@ -314,7 +319,8 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'birth_date', 'wean_date', 'age_weeks', 'sex', 'line', 'cage',
+    fields = ('nickname', 'birth_date', 'wean_date', 'genotype_date',
+              'age_weeks', 'sex', 'line', 'cage',
               'litter', 'mother', 'father',
               'sequence0', 'result0',
               'sequence1', 'result1',
@@ -406,7 +412,8 @@ class CageAdmin(BaseAdmin):
     form = CageAdminForm
     list_display = ['cage_label', 'line', 'location']
     fields = ('line', 'cage_label', 'type', 'location')
-    list_filter = ['line']
+    list_filter = [('line', RelatedDropdownFilter),
+                   ]
     inlines = [SubjectInline, LitterInline]
 
     def get_form(self, request, obj=None, **kwargs):
@@ -601,7 +608,10 @@ class SubjectRequestAdmin(BaseAdmin):
               'subjects_l', 'remaining', 'status']
     list_display = ['line', 'user', 'remaining_count', 'date_time', 'due_date', 'is_closed']
     readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
-    list_filter = ['line', SubjectRequestUserListFilter, SubjectRequestStatusListFilter]
+    list_filter = [SubjectRequestUserListFilter,
+                   SubjectRequestStatusListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
 
     def remaining_count(self, obj):
         return '%d/%d' % (obj.count - obj.remaining(), obj.count)
@@ -695,7 +705,7 @@ class MyAdminSite(admin.AdminSite):
                              'Sequences',
                              'Sources',
                              ]),
-                 ('Other', ['Experiments',
+                 ('Other', ['Sessions',
                             'Genotype tests',
                             'Zygosities',
                             ]),
@@ -781,12 +791,40 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     line_l.short_description = 'line'
 
 
+class CullSubjectAliveListFilter(DefaultListFilter):
+    title = 'alive'
+    parameter_name = 'alive'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Yes'),
+            ('n', 'No'),
+            ('nr', 'Not reduced'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(death_date=None)
+        if self.value() == 'n':
+            return queryset.exclude(death_date=None)
+        if self.value() == 'nr':
+            return queryset.filter(reduced=False).exclude(death_date=None)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'birth_date', 'death_date',
-                    'ear_mark', 'line', 'responsible_user']
+    list_display = ['nickname', 'birth_date',
+                    'ear_mark', 'line', 'responsible_user',
+                    'death_date', 'to_be_culled', 'reduced',
+                    ]
     ordering = ['-birth_date']
-    list_filter = [ResponsibleUserListFilter, 'line']
-    list_editable = ['death_date']
+    list_filter = [ResponsibleUserListFilter,
+                   CullSubjectAliveListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
+    list_editable = ['death_date', 'to_be_culled', 'reduced']
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')
