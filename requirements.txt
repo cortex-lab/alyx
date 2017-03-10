@@ -8,4 +8,4 @@ git+http://github.com/mrts/django-admin-list-filter-dropdown.git
 gspread
 oauth2client
 matplotlib
-dateutil
+python-dateutil
