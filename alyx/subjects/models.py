@@ -463,7 +463,7 @@ class ZygosityFinder(object):
     def _existing_alleles(self, subject):
         if not subject:
             return []
-        return [allele.informal_name for allele in subject.genotype.all()]
+        return set([allele.informal_name for allele in subject.genotype.all()])
 
     def _alleles_in_line(self, line):
         for l, allele, _ in ZYGOSITY_RULES:
@@ -484,7 +484,6 @@ class ZygosityFinder(object):
         return out
 
     def _find_zygosity(self, rules, tests):
-        zygosities = ['-/-', '+/-', '+/+', '+']
         if not tests:
             return
         tests = {test.sequence.informal_name: test.test_result for test in tests}
@@ -492,7 +491,7 @@ class ZygosityFinder(object):
             d = self._parse_rule(rule)
             match = all(tests.get(test, None) == res for test, res in d.items() if test != 'res')
             if match:
-                return zygosities.index(d['res'])
+                return d['res']
 
     def _get_allele_rules(self, line, allele):
         for l, a, rules in ZYGOSITY_RULES:
@@ -506,24 +505,34 @@ class ZygosityFinder(object):
     def _get_allele(self, name):
         return Allele.objects.get_or_create(informal_name=name)[0]
 
-    def _create_zygosity(self, subject, allele_name, zygosity):
-        if zygosity is not None:
-            Zygosity(subject=subject,
-                     allele=self._get_allele(allele_name),
-                     zygosity=zygosity,
-                     ).save()
+    def _create_zygosity(self, subject, allele_name, symbol):
+        if symbol is not None:
+            zygosity = Zygosity.objects.filter(subject=subject,
+                                               allele=self._get_allele(allele_name),
+                                               )
+            z = Zygosity.from_symbol(symbol)
+            # Get or create the zygosity.
+            if zygosity:
+                zygosity = zygosity[0]
+                zygosity.zygosity = z
+            else:
+                zygosity = Zygosity(subject=subject,
+                                    allele=self._get_allele(allele_name),
+                                    zygosity=z,
+                                    )
+            zygosity.save()
 
     def update_subject(self, subject):
         if not subject.line:
             return
         line = subject.line.auto_name
-        alleles_in_line = list(self._alleles_in_line(subject.line))
-        existing_alleles = self._existing_alleles(subject)
+        alleles_in_line = set(self._alleles_in_line(subject.line))
+        # existing_alleles = self._existing_alleles(subject)
         tests = self._get_tests(subject)
-        for allele in set(alleles_in_line) - set(existing_alleles):
+        for allele in alleles_in_line:# - existing_alleles:
             rules = self._get_allele_rules(line, allele)
-            zygosity = self._find_zygosity(rules, tests)
-            self._create_zygosity(subject, allele, zygosity)
+            z = self._find_zygosity(rules, tests)
+            self._create_zygosity(subject, allele, z)
 
     def _get_parents_alleles(self, subject, allele):
         out = {'mother': None, 'father': None}
@@ -563,7 +572,7 @@ class ZygosityFinder(object):
         alleles = set(alleles_m).union(set(alleles_f))
         for allele in alleles:
             z = self._zygosity_from_parents(subject, allele)
-            self._create_zygosity(subject, allele, Zygosity.from_symbol(z))
+            self._create_zygosity(subject, allele, z)
 
 
 class Allele(BaseModel):
@@ -648,5 +657,6 @@ class GenotypeTest(BaseModel):
         return "%s %s" % (self.sequence, '-+'[self.test_result])
 
     def save(self, *args, **kwargs):
-        ZygosityFinder().update_subject(self.subject)
         super(GenotypeTest, self).save(*args, **kwargs)
+        # First, save, then update the subject's zygosities.
+        ZygosityFinder().update_subject(self.subject)

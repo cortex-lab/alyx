@@ -1,20 +1,4 @@
 ZYGOSITY_RULES = (
-    ('CtTa', 'Camk2a-tTa', (('tTA', '+'),
-                            ('-tTA', '-/-'))),
-
-    ('Pv', 'Pv-Cre', (('Cre,WT', '+/-'),
-                      ('Cre,-WT', '+/+'),
-                      ('-Cre', '-/-'))),
-
-    ('TetO', 'TetO-G6s', (('TRE,WT', '+/-'),
-                          ('TRE,-WT', '+/+'),
-                          ('-TRE', '-/-'))),
-
-    ('TetO.CtTa', 'TetO-G6s', (('TRE', '+/-'),
-                               ('-TRE', '-/-'))),
-
-    ('TetO.CtTa', 'Camk2a-tTa', (('tTA', '+/-'),
-                                 ('-tTA', '-/-'))),
 
     ('N.KHA', 'Ntsr1-Cre', (('Cre', '+/-'),  # need to check on this one too.
                             ('-Cre', '-/-'))),
