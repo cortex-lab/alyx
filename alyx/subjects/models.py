@@ -486,7 +486,7 @@ class ZygosityFinder(object):
     def _create_zygosity(self, subject, allele_name, zygosity):
         if zygosity is not None:
             Zygosity(subject=subject,
-                     allele=_get_allele(allele_name),
+                     allele=self._get_allele(allele_name),
                      zygosity=zygosity,
                      ).save()
 
@@ -537,7 +537,7 @@ class ZygosityFinder(object):
         father = subject.litter.father
         alleles_m = self._existing_alleles(mother)
         alleles_f = self._existing_alleles(father)
-        alleles = set(alleles_m) + set(alleles_f)
+        alleles = set(alleles_m).union(set(alleles_f))
         for allele in alleles:
             z = self._zygosity_from_parents(subject, allele)
             self._create_zygosity(subject, allele, Zygosity.from_symbol(z))
