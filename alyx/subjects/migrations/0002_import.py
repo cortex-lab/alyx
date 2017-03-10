@@ -167,7 +167,7 @@ def import_line(sheet):
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
         kwargs['nickname'] = row['autoname']
-        kwargs['json'] = {k: row[k] for k in ('LAMIS BreedingPair number', 'F Parent', 'M Parent')}
+        kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
         kwargs['line'] = line
         kwargs['species'] = mouse
 
