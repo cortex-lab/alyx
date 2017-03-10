@@ -87,7 +87,7 @@ class Subject(BaseModel):
     reduced = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-birth_date', 'nickname']
+        ordering = ['nickname', '-birth_date']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
@@ -332,7 +332,7 @@ class Litter(BaseModel):
     birth_date = models.DateField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-birth_date']
+        ordering = ['descriptive_name', '-birth_date']
 
     def save(self, *args, **kwargs):
         if self.line and self.descriptive_name in (None, '', '-'):
@@ -527,9 +527,8 @@ class ZygosityFinder(object):
             return
         line = subject.line.auto_name
         alleles_in_line = set(self._alleles_in_line(subject.line))
-        # existing_alleles = self._existing_alleles(subject)
         tests = self._get_tests(subject)
-        for allele in alleles_in_line:# - existing_alleles:
+        for allele in alleles_in_line:
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
             self._create_zygosity(subject, allele, z)
@@ -537,7 +536,7 @@ class ZygosityFinder(object):
     def _get_parents_alleles(self, subject, allele):
         out = {'mother': None, 'father': None}
         for which_parent in ('mother', 'father'):
-            parent = getattr(subject, which_parent)
+            parent = getattr(subject, which_parent)()
             if parent is not None:
                 zygosities = Zygosity.objects.filter(subject=parent,
                                                      allele__informal_name=allele,
@@ -585,7 +584,7 @@ class Allele(BaseModel):
                                      help_text="informal name in lab, e.g. Pvalb-Cre")
 
     class Meta:
-        ordering = ['standard_name']
+        ordering = ['informal_name']
 
     def __str__(self):
         return self.informal_name
