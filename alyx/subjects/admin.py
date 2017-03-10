@@ -455,6 +455,8 @@ class LitterAdmin(BaseAdmin):
     fields = ['line', 'descriptive_name',
               'mother', 'father', 'birth_date',
               'notes', 'cage']
+    list_filter = [('line', RelatedDropdownFilter),
+                   ]
 
     inlines = [SubjectInline]
 
