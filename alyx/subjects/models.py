@@ -69,7 +69,7 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    cage = models.ForeignKey('Cage', null=True, blank=True, on_delete=models.SET_NULL)
+    lamis_cage = models.IntegerField(null=True, blank=True)
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
@@ -119,11 +119,11 @@ class Subject(BaseModel):
 
     def mother(self):
         if self.litter:
-            return self.litter.mother
+            return self.litter.breeding_pair.mother1
 
     def father(self):
         if self.litter:
-            return self.litter.father
+            return self.litter.breeding_pair.father
 
     def water_restriction_date(self):
         restriction = WaterRestriction.objects.filter(subject__id=self.id)
@@ -219,9 +219,6 @@ class Subject(BaseModel):
                         for test in tests)
 
     def save(self, *args, **kwargs):
-        # When a subject dies, remove it from a cage.
-        if not self.alive() and self.cage is not None:
-            self.cage = None
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
@@ -314,20 +311,12 @@ class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
     descriptive_name = models.CharField(max_length=255, default='-')
-    mother = models.ForeignKey('Subject', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               limit_choices_to={'sex': 'F'},
-                               related_name="litter_mother")
-    father = models.ForeignKey('Subject', null=True, blank=True,
-                               on_delete=models.SET_NULL,
-                               limit_choices_to={'sex': 'M'},
-                               related_name="litter_father")
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
-    cage = models.ForeignKey('Cage', null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             )
+    breeding_pair = models.ForeignKey('BreedingPair', null=True, blank=True,
+                                      on_delete=models.SET_NULL,
+                                      )
     notes = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
@@ -343,31 +332,38 @@ class Litter(BaseModel):
         return self.descriptive_name
 
 
-class Cage(BaseModel):
-    CAGE_TYPES = (
-        ('I', 'IVC'),
-        ('R', 'Regular'),
-    )
-
-    cage_label = models.CharField(max_length=255, default='-',
-                                  help_text='Leave to "-" to autofill.')
-    type = models.CharField(max_length=1, choices=CAGE_TYPES, default='I',
-                            help_text="Is this an IVC or regular cage?")
+class BreedingPair(BaseModel):
+    name = models.CharField(max_length=255, default='-',
+                            help_text='Leave to "-" to autofill.')
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
-    location = models.ForeignKey(LabLocation)
+    start_date = models.DateField(null=True, blank=True, default=timezone.now)
+    end_date = models.DateField(null=True, blank=True)
+    father = models.ForeignKey('Subject', null=True, blank=True,
+                               on_delete=models.SET_NULL,
+                               limit_choices_to={'sex': 'M'},
+                               related_name="litter_father")
+    mother1 = models.ForeignKey('Subject', null=True, blank=True,
+                                on_delete=models.SET_NULL,
+                                limit_choices_to={'sex': 'F'},
+                                related_name="mother1")
+    mother2 = models.ForeignKey('Subject', null=True, blank=True,
+                                on_delete=models.SET_NULL,
+                                limit_choices_to={'sex': 'F'},
+                                related_name="mother2")
 
     class Meta:
-        ordering = ['cage_label']
+        ordering = ['name']
+        verbose_name_plural = 'Breeding pairs'
 
     def save(self, *args, **kwargs):
-        if self.line and self.cage_label in (None, '', '-'):
+        if self.line and self.name in (None, '', '-'):
             self.line.set_autoname(self)
-        return super(Cage, self).save(*args, **kwargs)
+        return super(BreedingPair, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.cage_label
+        return self.name
 
 
 class Line(BaseModel):
@@ -380,7 +376,7 @@ class Line(BaseModel):
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=MOUSE_SPECIES_ID)
     subject_autoname_index = models.IntegerField(default=0)
-    cage_autoname_index = models.IntegerField(default=0)
+    breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
 
     class Meta:
@@ -389,10 +385,10 @@ class Line(BaseModel):
     def __str__(self):
         return self.name
 
-    def new_cage_autoname(self):
-        self.cage_autoname_index = self.cage_autoname_index + 1
+    def new_breeding_pair_autoname(self):
+        self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
         self.save()
-        return '%s_C_%d' % (self.auto_name, self.cage_autoname_index)
+        return '%s_BP_%d' % (self.auto_name, self.breeding_pair_autoname_index)
 
     def new_litter_autoname(self):
         self.litter_autoname_index = self.litter_autoname_index + 1
@@ -405,9 +401,9 @@ class Line(BaseModel):
         return '%s_%d' % (self.auto_name, self.subject_autoname_index)
 
     def set_autoname(self, obj):
-        if isinstance(obj, Cage):
-            field = 'cage_label'
-            m = self.new_cage_autoname
+        if isinstance(obj, BreedingPair):
+            field = 'name'
+            m = self.new_breeding_pair_autoname
         elif isinstance(obj, Litter):
             field = 'descriptive_name'
             m = self.new_litter_autoname

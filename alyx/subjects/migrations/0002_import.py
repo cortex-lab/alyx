@@ -14,7 +14,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 
 from actions.models import Surgery
-from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, Cage
+from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, BreedingPair
 
 from core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 
@@ -167,7 +167,7 @@ def import_line(sheet):
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
         kwargs['nickname'] = row['autoname']
-        kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+        kwargs['json'] = {k: row[k] for k in ('LAMIS BreedingPair number', 'F Parent', 'M Parent')}
         kwargs['line'] = line
         kwargs['species'] = mouse
 
