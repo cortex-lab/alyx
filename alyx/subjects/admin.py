@@ -82,9 +82,9 @@ class ZygosityFilter(DefaultListFilter):
             return queryset.all()
         elif self.value() in ('p', 'h'):
             # Only keep subjects with a non-null geontype.
-            queryset = queryset.filter(genotype__isnull=False)
+            queryset = queryset.filter(genotype__isnull=False).distinct()
             # Exclude subjects that have a specific zygosity/
-            d = dict(zygosity=0) if self.value() == 'p' else dict(zygosity__lt=3)
+            d = dict(zygosity=0) if self.value() == 'p' else dict(zygosity__in=(0, 1, 3))
             nids = set([z.subject.id.hex for z in Zygosity.objects.filter(**d)])
             return queryset.exclude(pk__in=nids)
 
