@@ -167,7 +167,11 @@ def import_line(sheet):
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
         kwargs['nickname'] = row['autoname']
-        kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+        kwargs['json'] = {}
+        kwargs['json']['lamis_cage'] = row['LAMIS Cage number']
+        kwargs['json']['f_parent'] = row.get('F Parent', None)
+        kwargs['json']['m_parent'] = row.get('M Parent', None)
+        kwargs['json']['bp_index'] = row.get('BP index', None)
         kwargs['line'] = line
         kwargs['species'] = mouse
 
@@ -194,8 +198,8 @@ def import_line(sheet):
 
     # Set the litters.
     for subject in subjects:
-        mother = subject.json['F Parent']
-        father = subject.json['M Parent']
+        mother = subject.json['f_parent']
+        father = subject.json['m_parent']
         litter, _ = Litter.objects.get_or_create(line=line,
                                                  birth_date=subject.birth_date,
                                                  notes='mother=%s\nfather=%s' % (mother, father),
@@ -294,7 +298,15 @@ def load_worksheets_4(apps, schema_editor):
         BreedingPair(**d).save()
         print("Added breeding pair %s." % d['name'])
 
-        # TODO: for each subject in lines, assign breeding pair with row['BP index']
+    # For each existing subject in lines, assign breeding pair with BP index
+    for subject in Subject.objects.filter(json__bp_index__isnull=False):
+        if subject.litter and subject.line:
+            index = subject.json['bp_index']
+            name = '%s_BP_%s' % (subject.line.auto_name, index)
+            bp = BreedingPair.objects.filter(name=name)
+            if bp:
+                subject.litter.breeding_pair = bp[0]
+                subject.litter.save()
 
 
 class Migration(migrations.Migration):
