@@ -791,14 +791,40 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     line_l.short_description = 'line'
 
 
+class CullSubjectAliveListFilter(DefaultListFilter):
+    title = 'alive'
+    parameter_name = 'alive'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Yes'),
+            ('n', 'No'),
+            ('nr', 'Not reduced'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(death_date=None)
+        if self.value() == 'n':
+            return queryset.exclude(death_date=None)
+        if self.value() == 'nr':
+            return queryset.filter(reduced=False).exclude(death_date=None)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'birth_date', 'death_date',
-                    'ear_mark', 'line', 'responsible_user']
+    list_display = ['nickname', 'birth_date',
+                    'ear_mark', 'line', 'responsible_user',
+                    'death_date', 'to_be_culled', 'reduced',
+                    ]
     ordering = ['-birth_date']
     list_filter = [ResponsibleUserListFilter,
+                   CullSubjectAliveListFilter,
                    ('line', RelatedDropdownFilter),
                    ]
-    list_editable = ['death_date']
+    list_editable = ['death_date', 'to_be_culled', 'reduced']
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')

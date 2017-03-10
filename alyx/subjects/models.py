@@ -78,6 +78,10 @@ class Subject(BaseModel):
     actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
                                        blank=True)
 
+    to_be_genotyped = models.BooleanField(default=False)
+    to_be_culled = models.BooleanField(default=False)
+    reduced = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['-birth_date', 'nickname']
 
