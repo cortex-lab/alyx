@@ -24,64 +24,8 @@ MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
 DEFAULT_RESPONSIBLE_USER_ID = 5
 
 
-class ZygosityFinder(object):
-    def _existing_alleles(self, subject):
-        return [allele.informal_name for allele in subject.genotype.all()]
-
-    def _alleles_in_line(self, line):
-        for l, allele, _ in ZYGOSITY_RULES:
-            if line and l == line.auto_name:
-                yield allele
-
-    def _parse_rule(self, rule):
-        string, res = rule
-        out = {}
-        for substr in string.split(','):
-            if substr[0] == '-':
-                sign = 0
-                substr = substr[1:]
-            else:
-                sign = 1
-            out[substr] = sign
-        out['res'] = res
-        return out
-
-    def _find_zygosity(self, rules, tests):
-        zygosities = ['-/-', '+/-', '+/+', '+']
-        if not tests:
-            return
-        tests = {test.sequence.informal_name: test.test_result for test in tests}
-        for rule in rules:
-            d = self._parse_rule(rule)
-            match = all(tests.get(test, None) == res for test, res in d.items() if test != 'res')
-            if match:
-                return zygosities.index(d['res'])
-
-    def _get_allele_rules(self, line, allele):
-        for l, a, rules in ZYGOSITY_RULES:
-            if l == line and a == allele:
-                return rules
-        return []
-
-    def _get_tests(self, subject):
-        return GenotypeTest.objects.filter(subject=subject)
-
-    def update_subject(self, subject):
-        if not subject.line:
-            return
-        line = subject.line.auto_name
-        alleles_in_line = list(self._alleles_in_line(subject.line))
-        existing_alleles = self._existing_alleles(subject)
-        tests = self._get_tests(subject)
-        for allele in set(alleles_in_line) - set(existing_alleles):
-            rules = self._get_allele_rules(line, allele)
-            zygosity = self._find_zygosity(rules, tests)
-            if zygosity is not None:
-                Zygosity(subject=subject,
-                         allele=Allele.objects.get_or_create(informal_name=allele)[0],
-                         zygosity=zygosity,
-                         ).save()
-
+# Subject
+# ------------------------------------------------------------------------------------------------
 
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
@@ -141,6 +85,7 @@ class Subject(BaseModel):
         super(Subject, self).__init__(*args, **kwargs)
         # Used to detect when the request has changed.
         self._original_request = self.request
+        self._original_litter = self.litter
 
     def alive(self):
         return self.death_date is None
@@ -272,8 +217,9 @@ class Subject(BaseModel):
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
-        # Default zygosities.
-        ZygosityFinder().update_subject(self)
+        # Update the zygosities when the subject is assigned a litter.
+        if self.litter and not self._original_litter:
+            ZygosityFinder().genotype_from_litter(self)
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -349,6 +295,9 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
     except Exception as e:
         logger.warn("Mail failed: %s", e)
 
+
+# Other
+# ------------------------------------------------------------------------------------------------
 
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
@@ -460,6 +409,140 @@ class Strain(BaseModel):
         return self.descriptive_name
 
 
+class Source(BaseModel):
+    """A supplier / source of subjects."""
+    name = models.CharField(max_length=255)
+    notes = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Species(BaseModel):
+    """A single species, identified uniquely by its binomial name."""
+    binomial = models.CharField(max_length=255,
+                                help_text="Binomial name, "
+                                "e.g. \"mus musculus\"")
+    display_name = models.CharField(max_length=255,
+                                    help_text="common name, e.g. \"mouse\"")
+
+    def __str__(self):
+        return self.display_name
+
+    class Meta:
+        verbose_name_plural = "species"
+
+
+# Genotypes
+# ------------------------------------------------------------------------------------------------
+
+class ZygosityFinder(object):
+    def _existing_alleles(self, subject):
+        if not subject:
+            return []
+        return [allele.informal_name for allele in subject.genotype.all()]
+
+    def _alleles_in_line(self, line):
+        for l, allele, _ in ZYGOSITY_RULES:
+            if line and l == line.auto_name:
+                yield allele
+
+    def _parse_rule(self, rule):
+        string, res = rule
+        out = {}
+        for substr in string.split(','):
+            if substr[0] == '-':
+                sign = 0
+                substr = substr[1:]
+            else:
+                sign = 1
+            out[substr] = sign
+        out['res'] = res
+        return out
+
+    def _find_zygosity(self, rules, tests):
+        zygosities = ['-/-', '+/-', '+/+', '+']
+        if not tests:
+            return
+        tests = {test.sequence.informal_name: test.test_result for test in tests}
+        for rule in rules:
+            d = self._parse_rule(rule)
+            match = all(tests.get(test, None) == res for test, res in d.items() if test != 'res')
+            if match:
+                return zygosities.index(d['res'])
+
+    def _get_allele_rules(self, line, allele):
+        for l, a, rules in ZYGOSITY_RULES:
+            if l == line and a == allele:
+                return rules
+        return []
+
+    def _get_tests(self, subject):
+        return GenotypeTest.objects.filter(subject=subject)
+
+    def _get_allele(self, name):
+        return Allele.objects.get_or_create(informal_name=name)[0]
+
+    def _create_zygosity(self, subject, allele_name, zygosity):
+        if zygosity is not None:
+            Zygosity(subject=subject,
+                     allele=_get_allele(allele_name),
+                     zygosity=zygosity,
+                     ).save()
+
+    def update_subject(self, subject):
+        if not subject.line:
+            return
+        line = subject.line.auto_name
+        alleles_in_line = list(self._alleles_in_line(subject.line))
+        existing_alleles = self._existing_alleles(subject)
+        tests = self._get_tests(subject)
+        for allele in set(alleles_in_line) - set(existing_alleles):
+            rules = self._get_allele_rules(line, allele)
+            zygosity = self._find_zygosity(rules, tests)
+            self._create_zygosity(subject, allele, zygosity)
+
+    def _get_parents_alleles(self, subject, allele):
+        out = {'mother': None, 'father': None}
+        for which_parent in ('mother', 'father'):
+            parent = getattr(subject, which_parent)
+            if parent is not None:
+                zygosities = Zygosity.objects.filter(subject=parent,
+                                                     allele__informal_name=allele,
+                                                     )
+                if zygosities:
+                    z = zygosities[0]
+                    out[which_parent] = z.symbol()
+        return out['mother'], out['father']
+
+    def _zygosity_from_parents(self, subject, allele):
+        zm, zf = self._get_parents_alleles(subject, allele)
+        if zm == '+/+' and zf == '+/+':
+            return '+/+'
+        elif zm and zf and '+/+' in (zm, zf):
+            return '+'
+        elif zm and zf and '-/-' in (zm, zf):
+            return '-/-'
+        elif '+/+' in (zm, zf) and None in (zm, zf):
+            return '+/-'
+        elif '-/-' in (zm, zf) and None in (zm, zf):
+            return '-/-'
+        else:
+            return None
+
+    def genotype_from_litter(self, subject):
+        if not subject.litter:
+            return
+        mother = subject.litter.mother
+        father = subject.litter.father
+        alleles_m = self._existing_alleles(mother)
+        alleles_f = self._existing_alleles(father)
+        alleles = set(alleles_m) + set(alleles_f)
+        for allele in alleles:
+            z = self._zygosity_from_parents(subject, allele)
+            self._create_zygosity(subject, allele, Zygosity.from_symbol(z))
+
+
 class Allele(BaseModel):
     """A single allele."""
     standard_name = models.CharField(max_length=1023,
@@ -483,13 +566,22 @@ class Zygosity(BaseModel):
         (2, 'Homozygous'),
         (3, 'Present'),
     )
+    ZYGOSITY_SYMBOLS = ('-/-', '+/-', '+/+', '+')
+
     subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
     allele = models.ForeignKey('Allele', on_delete=models.CASCADE)
     zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
 
+    @staticmethod
+    def from_symbol(symbol):
+        return Zygosity.ZYGOSITY_SYMBOLS.index(symbol)
+
+    def symbol(self):
+        return (self.ZYGOSITY_SYMBOLS[self.zygosity]
+                if self.zygosity is not None else '?')
+
     def __str__(self):
-        symbol = ('-/-', '+/-', '+/+', '+')[self.zygosity] if self.zygosity is not None else '?'
-        return "{0:s} {1:s}".format(str(self.allele), symbol)
+        return "{0:s} {1:s}".format(str(self.allele), self.symbol())
 
     class Meta:
         verbose_name_plural = "zygosities"
@@ -526,26 +618,6 @@ class GenotypeTest(BaseModel):
     def __str__(self):
         return "%s %s" % (self.sequence, '-+'[self.test_result])
 
-
-class Source(BaseModel):
-    """A supplier / source of subjects."""
-    name = models.CharField(max_length=255)
-    notes = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Species(BaseModel):
-    """A single species, identified uniquely by its binomial name."""
-    binomial = models.CharField(max_length=255,
-                                help_text="Binomial name, "
-                                "e.g. \"mus musculus\"")
-    display_name = models.CharField(max_length=255,
-                                    help_text="common name, e.g. \"mouse\"")
-
-    def __str__(self):
-        return self.display_name
-
-    class Meta:
-        verbose_name_plural = "species"
+    def save(self, *args, **kwargs):
+        ZygosityFinder().update_subject(self.subject)
+        super(GenotypeTest, self).save(*args, **kwargs)
