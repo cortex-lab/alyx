@@ -338,7 +338,7 @@ class BreedingPair(BaseModel):
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
-    start_date = models.DateField(null=True, blank=True, default=timezone.now)
+    start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     father = models.ForeignKey('Subject', null=True, blank=True,
                                on_delete=models.SET_NULL,
@@ -352,6 +352,7 @@ class BreedingPair(BaseModel):
                                 on_delete=models.SET_NULL,
                                 limit_choices_to={'sex': 'F'},
                                 related_name="mother2")
+    notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ['name']
@@ -560,8 +561,11 @@ class ZygosityFinder(object):
     def genotype_from_litter(self, subject):
         if not subject.litter:
             return
-        mother = subject.litter.mother
-        father = subject.litter.father
+        bp = subject.litter.breeding_pair
+        if not bp:
+            return
+        mother = bp.mother
+        father = bp.father
         alleles_m = self._existing_alleles(mother)
         alleles_f = self._existing_alleles(father)
         alleles = set(alleles_m).union(set(alleles_f))

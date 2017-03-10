@@ -257,6 +257,46 @@ def load_worksheets_3(apps, schema_editor):
                                  )
 
 
+def load_worksheets_4(apps, schema_editor):
+    # Breeding pairs.
+    mouse = Species.objects.get(display_name='Laboratory mouse')
+    table_pairs = get_table('Mice Stock - C57 and Transgenic', 'September 2016',
+                               header_line=2, first_line=3)
+    for row in table_pairs:
+        line = row['line']
+        index = row['index']
+        if not line:
+            continue
+        line = Line.objects.get(auto_name=line)
+
+        father = Subject.objects.get_or_create(nickname=row['father'])[0]
+        father.birth_date = parse(row['father DOB'])
+        father.line = line
+        father.save()
+
+        mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
+        mother1.birth_date = parse(row['mother DOB'])
+        mother1.line = line
+        mother1.save()
+
+        mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
+        mother2.line = line
+        mother2.save()
+
+        d = dict(name='%s_BP_%s' % (line, index),
+                 line=line,
+                 father=father,
+                 mother1=mother1,
+                 mother2=mother2,
+                 notes=row['Notes'],
+                 )
+
+        BreedingPair(**d).save()
+        print("Added breeding pair %s." % d['name'])
+
+        # TODO: for each subject in lines, assign breeding pair with row['BP index']
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -272,4 +312,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(load_worksheets_1),
         migrations.RunPython(load_worksheets_2),
         migrations.RunPython(load_worksheets_3),
+        migrations.RunPython(load_worksheets_4),
     ]

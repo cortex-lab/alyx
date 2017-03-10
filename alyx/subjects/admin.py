@@ -149,7 +149,7 @@ class SubjectForm(forms.ModelForm):
 
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
-        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'breeding_pair',
+        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
                                 'responsible_user', 'request', 'wean_date', 'genotype_date',
                                 'death_date', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
@@ -210,8 +210,10 @@ class SubjectAdmin(BaseAdmin):
     genotype_l.short_description = 'genotype'
 
     def breeding_pair_l(self, obj):
-        url = get_admin_url(obj.breeding_pair)
-        return format_html('<a href="{url}">{breeding_pair}</a>', breeding_pair=obj.breeding_pair or '-', url=url)
+        bp = obj.litter.breeding_pair if obj.litter else None
+        url = get_admin_url(bp)
+        return format_html('<a href="{url}">{breeding_pair}</a>',
+                           breeding_pair=bp or '-', url=url)
     breeding_pair_l.short_description = 'breeding_pair'
 
     def litter_l(self, obj):
@@ -456,7 +458,7 @@ class BreedingPairAdminForm(forms.ModelForm):
 class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
     list_display = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
-    fields = list_display
+    fields = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
     list_filter = [('line', RelatedDropdownFilter),
                    ]
     inlines = [LitterInline]

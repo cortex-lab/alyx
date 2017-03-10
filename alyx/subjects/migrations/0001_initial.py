@@ -288,8 +288,9 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
                 ('name', models.CharField(default='-', help_text='Leave to "-" to autofill.', max_length=255)),
-                ('start_date', models.DateField(blank=True, default=django.utils.timezone.now, null=True)),
+                ('start_date', models.DateField(blank=True, null=True)),
                 ('end_date', models.DateField(blank=True, null=True)),
+                ('notes', models.TextField(blank=True)),
             ],
             options={
                 'ordering': ['name'],
