@@ -149,7 +149,6 @@ def import_line(sheet):
     else:
         line = lines[0]
     line.sequences = list(sequences.values())
-    print("Set line %s with %d sequences." % (line_name, len(sequences)))
 
     mouse = Species.objects.get(display_name='Laboratory mouse')
 
@@ -238,7 +237,7 @@ def load_worksheets_2(apps, schema_editor):
     doc = get_line_doc()
     sheets = doc.worksheets()[7:]
     for sheet in sheets:
-        print("Importing line %s..." % sheet.title.strip())
+        print("Importing line %s..." % sheet.title.strip(), end=' ')
         import_line(sheet)
 
 

@@ -235,6 +235,21 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='subjects.Strain'),
         ),
         migrations.AddField(
+            model_name='subject',
+            name='reduced',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='subject',
+            name='to_be_culled',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='subject',
+            name='to_be_genotyped',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
             model_name='litter',
             name='father',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='litter_father', to='subjects.Subject'),
