@@ -1,0 +1,28 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+
+<script>
+$(document).keydown(function(e) {
+    switch(e.which) {
+        case 38: // up
+        var cell = $(':focus').closest('td');
+        var cls = cell.attr('class');
+        var row = cell.closest('tr').prev().find('.' + cls).find('input').focus();
+        break;
+
+        case 40: // down
+        var cell = $(':focus').closest('td');
+        var cls = cell.attr('class');
+        var row = cell.closest('tr').next().find('.' + cls).find('input').focus();
+        break;
+
+        default: return;
+    }
+    e.preventDefault();
+});
+</script>
+
+{% endblock %}
