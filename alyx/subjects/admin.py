@@ -37,11 +37,14 @@ class ResponsibleUserListFilter(DefaultListFilter):
         return (
             (None, 'Me'),
             ('all', 'All'),
+            ('stock', 'Stock'),
         )
 
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset.filter(responsible_user=request.user)
+        if self.value() == 'stock':
+            return queryset.filter(responsible_user__pk=DEFAULT_RESPONSIBLE_USER_ID)
         elif self.value == 'all':
             return queryset.all()
 
