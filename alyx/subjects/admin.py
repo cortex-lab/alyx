@@ -140,6 +140,13 @@ def get_admin_url(obj):
     return reverse('admin:%s_%s_change' % info, args=(obj.pk,))
 
 
+class SubjectForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(SubjectForm, self).__init__(*args, **kwargs)
+        if self.instance.line:
+            self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
+
+
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
@@ -189,6 +196,7 @@ class SubjectAdmin(BaseAdmin):
                    ZygosityFilter,
                    ('line', RelatedDropdownFilter),
                    ]
+    form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, SessionInline, OtherActionInline]
 
