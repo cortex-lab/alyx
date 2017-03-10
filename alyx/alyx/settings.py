@@ -41,6 +41,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = (
     'dal',
     'dal_select2',
+    'django_admin_listfilter_dropdown',
     'subjects',
     'django.contrib.admin',
     'django.contrib.contenttypes',

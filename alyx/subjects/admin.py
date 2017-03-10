@@ -1,9 +1,11 @@
 from django import forms
-from django.urls import reverse
-from django.utils.html import format_html
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.template.response import TemplateResponse
+from django.utils.html import format_html
+from django.urls import reverse
+
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
 from .models import *
 from actions.models import Surgery, Session, OtherAction
@@ -156,7 +158,10 @@ class SubjectAdmin(BaseAdmin):
                        )
     ordering = ['-birth_date', 'nickname']
     list_editable = ['responsible_user']
-    list_filter = [SubjectAliveListFilter, ResponsibleUserListFilter, 'line']
+    list_filter = [SubjectAliveListFilter,
+                   ResponsibleUserListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, SessionInline, OtherActionInline]
 
@@ -407,7 +412,8 @@ class CageAdmin(BaseAdmin):
     form = CageAdminForm
     list_display = ['cage_label', 'line', 'location']
     fields = ('line', 'cage_label', 'type', 'location')
-    list_filter = ['line']
+    list_filter = [('line', RelatedDropdownFilter),
+                   ]
     inlines = [SubjectInline, LitterInline]
 
     def get_form(self, request, obj=None, **kwargs):
@@ -602,7 +608,10 @@ class SubjectRequestAdmin(BaseAdmin):
               'subjects_l', 'remaining', 'status']
     list_display = ['line', 'user', 'remaining_count', 'date_time', 'due_date', 'is_closed']
     readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
-    list_filter = ['line', SubjectRequestUserListFilter, SubjectRequestStatusListFilter]
+    list_filter = [SubjectRequestUserListFilter,
+                   SubjectRequestStatusListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
 
     def remaining_count(self, obj):
         return '%d/%d' % (obj.count - obj.remaining(), obj.count)
@@ -786,7 +795,9 @@ class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date', 'death_date',
                     'ear_mark', 'line', 'responsible_user']
     ordering = ['-birth_date']
-    list_filter = [ResponsibleUserListFilter, 'line']
+    list_filter = [ResponsibleUserListFilter,
+                   ('line', RelatedDropdownFilter),
+                   ]
     list_editable = ['death_date']
 
 
