@@ -66,6 +66,29 @@ class SubjectAliveListFilter(DefaultListFilter):
             return queryset.all()
 
 
+class ZygosityFilter(DefaultListFilter):
+    title = 'zygosity'
+    parameter_name = 'zygosity'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'All'),
+            ('p', 'All positive'),
+            ('h', 'All homo'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.all()
+        elif self.value() in ('p', 'h'):
+            # Only keep subjects with a non-null geontype.
+            queryset = queryset.filter(genotype__isnull=False)
+            # Exclude subjects that have a specific zygosity/
+            d = dict(zygosity=0) if self.value() == 'p' else dict(zygosity__lt=3)
+            nids = set([z.subject.id.hex for z in Zygosity.objects.filter(**d)])
+            return queryset.exclude(pk__in=nids)
+
+
 # Subject
 # ------------------------------------------------------------------------------------------------
 
@@ -160,6 +183,7 @@ class SubjectAdmin(BaseAdmin):
     list_editable = ['responsible_user']
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
+                   ZygosityFilter,
                    ('line', RelatedDropdownFilter),
                    ]
     inlines = [ZygosityInline, GenotypeTestInline,
