@@ -83,7 +83,7 @@ class Migration(migrations.Migration):
                 ('cage', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='subjects.Cage')),
             ],
             options={
-                'ordering': ['-birth_date'],
+                'ordering': ['descriptive_name', '-birth_date'],
             },
         ),
         migrations.CreateModel(
@@ -157,7 +157,7 @@ class Migration(migrations.Migration):
                 ('cage', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='subjects.Cage')),
             ],
             options={
-                'ordering': ['-birth_date', 'nickname'],
+                'ordering': ['nickname', '-birth_date'],
             },
         ),
         migrations.CreateModel(
@@ -187,6 +187,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'verbose_name_plural': 'zygosities',
+                'ordering': ['informal_name'],
             },
         ),
         migrations.AddField(
