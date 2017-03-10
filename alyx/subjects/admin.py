@@ -459,7 +459,7 @@ class LitterForm(forms.ModelForm):
                 self.fields[which_parent].queryset = Subject.objects.filter(
                     line=self.instance.line,
                     sex=sex[which_parent],
-                    )
+                )
 
 
 class LitterAdmin(BaseAdmin):
