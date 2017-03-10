@@ -1,5 +1,6 @@
-from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django import forms
 from django.contrib import admin
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 
 from alyx.base import BaseAdmin, DefaultListFilter
 from .models import *
@@ -22,8 +23,21 @@ class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
 
 
+class WaterAdministrationForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(WaterAdministrationForm, self).__init__(*args, **kwargs)
+        # Only show subjects that are on water restriction.
+        self.fields['subject'].queryset = Subject.objects.filter(
+            pk__in=[wr.subject.pk
+                    for wr in WaterRestriction.objects.filter(start_time__isnull=False,
+                                                              end_time__isnull=True)],
+        )
+
+
 class WaterAdministrationAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
+
+    form = WaterAdministrationForm
 
 
 class WeighingAdmin(BaseActionAdmin):
