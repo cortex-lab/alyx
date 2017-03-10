@@ -52,7 +52,7 @@ class Subject(BaseModel):
                                 default=MOUSE_SPECIES_ID)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
-                           null=True, blank=True, default='U')
+                           blank=True, default='U')
     strain = models.ForeignKey('Strain', null=True, blank=True,
                                on_delete=models.SET_NULL,
                                )
@@ -63,6 +63,7 @@ class Subject(BaseModel):
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
+    genotype_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
                                          default=DEFAULT_RESPONSIBLE_USER_ID,
                                          related_name='subjects_responsible',
@@ -72,14 +73,21 @@ class Subject(BaseModel):
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
-    ear_mark = models.CharField(max_length=32, null=True, blank=True)
+    ear_mark = models.CharField(max_length=32, blank=True)
     protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='3')
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(blank=True)
 
-    cull_method = models.TextField(null=True, blank=True)
-    adverse_effects = models.TextField(null=True, blank=True)
+    cull_method = models.TextField(blank=True)
+    adverse_effects = models.TextField(blank=True)
     actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
-                                       null=True, blank=True)
+                                       blank=True)
+
+    to_be_genotyped = models.BooleanField(default=False)
+    to_be_culled = models.BooleanField(default=False)
+    reduced = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-birth_date', 'nickname']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
@@ -234,7 +242,10 @@ class SubjectRequest(BaseModel):
     count = models.IntegerField(null=True, blank=True)
     date_time = models.DateField(default=timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-date_time']
 
     def status(self):
         return 'Open' if self.remaining() > 0 else 'Closed'
@@ -317,8 +328,11 @@ class Litter(BaseModel):
     cage = models.ForeignKey('Cage', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-birth_date']
 
     def save(self, *args, **kwargs):
         if self.line and self.descriptive_name in (None, '', '-'):
@@ -344,6 +358,9 @@ class Cage(BaseModel):
                              )
     location = models.ForeignKey(LabLocation)
 
+    class Meta:
+        ordering = ['cage_label']
+
     def save(self, *args, **kwargs):
         if self.line and self.cage_label in (None, '', '-'):
             self.line.set_autoname(self)
@@ -355,7 +372,7 @@ class Cage(BaseModel):
 
 class Line(BaseModel):
     name = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     target_phenotype = models.CharField(max_length=1023)
     auto_name = models.CharField(max_length=255)
     sequences = models.ManyToManyField('Sequence')
@@ -365,6 +382,9 @@ class Line(BaseModel):
     subject_autoname_index = models.IntegerField(default=0)
     cage_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -403,7 +423,10 @@ class Strain(BaseModel):
     descriptive_name = models.CharField(max_length=255,
                                         help_text="Standard descriptive name E.g. \"C57BL/6J\", "
                                         "http://www.informatics.jax.org/mgihome/nomen/")
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['descriptive_name']
 
     def __str__(self):
         return self.descriptive_name
@@ -552,6 +575,9 @@ class Allele(BaseModel):
     informal_name = models.CharField(max_length=255,
                                      help_text="informal name in lab, e.g. Pvalb-Cre")
 
+    class Meta:
+        ordering = ['standard_name']
+
     def __str__(self):
         return self.informal_name
 
@@ -595,6 +621,9 @@ class Sequence(BaseModel):
                                    help_text="any other relevant information about this test")
     informal_name = models.CharField(max_length=255,
                                      help_text="informal name in lab, e.g. ROSA-WT")
+
+    class Meta:
+        ordering = ['informal_name']
 
     def __str__(self):
         return self.informal_name

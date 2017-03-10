@@ -81,7 +81,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     weighings = WeighingListSerializer(many=True, read_only=True)
     water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
-    actions_experiments = ExperimentListSerializer(many=True, read_only=True)
+    actions_sessions = SessionListSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
     source = serializers.SlugRelatedField(
@@ -97,7 +97,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
                   'species', 'cage', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
-                  'actions_experiments', 'weighings', 'water_administrations', 'genotype', 'alive')
+                  'actions_sessions', 'weighings', 'water_administrations', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 

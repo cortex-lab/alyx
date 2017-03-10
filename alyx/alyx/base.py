@@ -24,6 +24,20 @@ class BasePolymorphicModel(PolymorphicModel):
         abstract = True
 
 
+class DefaultListFilter(admin.SimpleListFilter):
+    # Default filter value.
+    # http://stackoverflow.com/a/16556771/1595060
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
+
+
 class BaseAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
@@ -33,6 +47,7 @@ class BaseAdmin(admin.ModelAdmin):
                     attrs={'rows': 5,
                            'cols': 50})},
     }
+    list_per_page = 50
 
     def __init__(self, *args, **kwargs):
         if self.fields and 'json' not in self.fields:

@@ -49,7 +49,7 @@ class TimestampAdmin(BaseAdmin):
 
 
 class TimeSeriesAdmin(BaseAdmin):
-    fields = ['file', 'column_names', 'description', 'timestamps', 'experiment']
+    fields = ['file', 'column_names', 'description', 'timestamps', 'session']
 
 
 admin.site.register(DataRepository, DataRepositoryParentAdmin)

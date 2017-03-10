@@ -9,7 +9,7 @@ class LabLocation(BaseModel):
     # minor but can we change this to Location or LabLocation? Because it could
     # also be a room in the animal house
     """
-    The physical location at which an experiment is performed or appliances are located.
+    The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
     """
     name = models.CharField(max_length=255)
@@ -24,7 +24,7 @@ class Supplier(BasePolymorphicModel):
     This is a base class, to be accessed by subclasses
     """
     name = models.CharField(max_length=255, help_text="i.e. 'NeuroNexus'")
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
@@ -54,7 +54,7 @@ class EquipmentModel(BaseModel):
         'EquipmentManufacturer', null=True, blank=True)
     model_name = models.CharField(
         max_length=255, help_text="e.g. 'BrainScanner 4X'")
-    description = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
@@ -68,9 +68,9 @@ class VirusBatch(BaseModel):
     """
     A virus batch
     """
-    virus_type = models.CharField(max_length=255, null=True, blank=True,
+    virus_type = models.CharField(max_length=255, blank=True,
                                   help_text="UPenn ID or equivalent")
-    description = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
     virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
                                      help_text="Who supplied the virus")
     date_time_made = models.DateTimeField(null=True, blank=True, default=datetime.now)
@@ -98,11 +98,11 @@ class Appliance(BasePolymorphicModel):
     location = models.ForeignKey('LabLocation', null=True, blank=True,
                                  help_text="The physical location of the appliance.")
     equipment_model = models.ForeignKey('EquipmentModel')
-    serial = models.CharField(max_length=255, null=True, blank=True,
+    serial = models.CharField(max_length=255, blank=True,
                               help_text="The serial number of the appliance.")
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(blank=True)
 
-    descriptive_name = models.CharField(max_length=255, null=True, blank=True)
+    descriptive_name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         if self.descriptive_name:
@@ -132,7 +132,7 @@ class LightSource(Appliance):
 
 class Amplifier(Appliance):
     """
-    An amplifier used in electrophysiology experiments.
+    An amplifier used in electrophysiology sessions.
     """
     pass
 

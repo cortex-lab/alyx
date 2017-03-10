@@ -14,20 +14,20 @@ class WidefieldImaging(BaseExperimentalData):
                                         help_text="Link to SVD compressed movie, "
                                         "if compression was run")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
-    # again, all relative to experiment start in seconds.
+    # again, all relative to session start in seconds.
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="Equals start time if single application. "
                                  "TODO: should this be an offset? Or DateTimeField? "
                                  "Or TimeDifference?")
-    imaging_indicator = models.CharField(max_length=255, null=True, blank=True,
+    imaging_indicator = models.CharField(max_length=255, blank=True,
                                          help_text="<GCaMP6f, GCaMP6m, GCaMP6s, "
                                          "VSFPb1.2, intrinsic, …>. TODO: normalize!")
-    preprocessing = models.CharField(max_length=255, null=True, blank=True,
+    preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="e.g. 'computed (F-F0) / F0, "
                                      "estimating F0 as running min'")
-    description = models.CharField(max_length=255, null=True, blank=True,
+    description = models.CharField(max_length=255, blank=True,
                                    help_text="e.g. 'field of view includes V1, S1, "
                                    "retrosplenial'")
     image_position = models.ForeignKey(
@@ -42,7 +42,7 @@ class WidefieldImaging(BaseExperimentalData):
     # help_text="e.g. LED part number. Can be array for multispectral. TODO:
     # Appliance subclass - what name?")
     excitation_device = models.ForeignKey(LightSource, blank=True, null=True)
-    recording_device = models.CharField(max_length=255, null=True, blank=True,
+    recording_device = models.CharField(max_length=255, blank=True,
                                         help_text="e.g. camera manufacturer, plus filter "
                                         "description etc. TODO: Appliance subclass - what name?")
 
@@ -55,16 +55,16 @@ class TwoPhotonImaging(BaseExperimentalData):
                                         related_name="two_photon_compressed",
                                         help_text="to Compressed_movie, if compression was run")
     start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to experiment start. "
+                                   help_text="in seconds relative to session start. "
                                    "TODO: not DateTimeField? / TimeDifference")
     end_time = models.FloatField(null=True, blank=True,
                                  help_text="Equals start time if single application. "
                                  "TODO: should this be an offset? Or DateTimeField? "
                                  "Or TimeDifference?")
-    imaging_indicator = models.CharField(max_length=255, null=True, blank=True,
+    imaging_indicator = models.CharField(max_length=255, blank=True,
                                          help_text="<GCaMP6f, GCaMP6m, GCaMP6s …>. "
                                          "TODO: normalize!")
-    description = models.CharField(max_length=255, null=True, blank=True,
+    description = models.CharField(max_length=255, blank=True,
                                    help_text="e.g. 'V1 layers 2-4'")
     image_position = models.ForeignKey(CoordinateTransformation, null=True, blank=True,
                                        help_text="Note if different planes have different "
@@ -97,7 +97,7 @@ class ROIDetection(BaseExperimentalData):
                                              related_name="roi_detection_provenance",
                                              help_text="link to directory containing "
                                              "intermediate results")
-    preprocessing = models.CharField(max_length=255, null=True, blank=True,
+    preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="computed (F-F0) / F0, estimating "
                                      "F0 as running min'")
     f = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f",
@@ -111,13 +111,13 @@ class ROIDetection(BaseExperimentalData):
 
 
 class ROI(BaseExperimentalData):
-    roi_type = models.CharField(max_length=255, null=True, blank=True,
+    roi_type = models.CharField(max_length=255, blank=True,
                                 help_text="soma, dendrite, neuropil, …> TODO: normalize?")
-    optogenetic_response = models.CharField(max_length=255, null=True, blank=True,
+    optogenetic_response = models.CharField(max_length=255, blank=True,
                                             help_text="e.g. 'Short latency' (only if applicable)")
-    putative_cell_type = models.CharField(max_length=255, null=True, blank=True,
+    putative_cell_type = models.CharField(max_length=255, blank=True,
                                           help_text="e.g. 'Sst interneuron', 'PT cell'")
-    estimated_layer = models.CharField(max_length=255, null=True, blank=True,
+    estimated_layer = models.CharField(max_length=255, blank=True,
                                        help_text="e.g. 'Layer 5b'")
     roi_detection_id = models.ForeignKey('ROIDetection', blank=True, null=True,
                                          help_text="link to detection entry")

@@ -12,7 +12,7 @@ class ProcedureType(BaseModel):
     A procedure to be performed on a subject.
     """
     name = models.CharField(max_length=255, help_text="Short procedure name")
-    description = models.TextField(null=True, blank=True,
+    description = models.TextField(blank=True,
                                    help_text="Detailed description "
                                    "of the procedure")
 
@@ -76,7 +76,7 @@ class BaseAction(BaseModel):
                                  "performed")
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
-    narrative = models.TextField(null=True, blank=True)
+    narrative = models.TextField(blank=True)
     start_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
 
@@ -103,7 +103,7 @@ class VirusInjection(BaseAction):
         null=True, blank=True, help_text="TODO: Nanoliters per second / per minute?")
     injection_type = models.CharField(max_length=1,
                                       choices=INJECTION_TYPES,
-                                      default='I', blank=True, null=True,
+                                      default='I', blank=True,
                                       help_text="Whether the injection was through "
                                       "iontophoresis or pressure")
 
@@ -119,16 +119,16 @@ class Surgery(BaseAction):
     brain_location = models.ForeignKey(BrainLocation, null=True, blank=True)
     outcome_type = models.CharField(max_length=1,
                                     choices=OUTCOME_TYPES,
-                                    blank=True, null=True,
+                                    blank=True,
                                     )
 
     class Meta:
         verbose_name_plural = "surgeries"
 
 
-class Experiment(BaseAction):
+class Session(BaseAction):
     """
-    An experiment or training session performed on a subject.
+    An session or training session performed on a subject.
     """
     pass
 

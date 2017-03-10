@@ -4,21 +4,21 @@ from .models import *
 from .serializers import *
 
 
-class ExperimentAPIList(generics.ListCreateAPIView):
+class SessionAPIList(generics.ListCreateAPIView):
     """
-    List and create experiments - view in summary form
+    List and create sessions - view in summary form
     """
-    queryset = Experiment.objects.all()
-    serializer_class = ExperimentListSerializer
+    queryset = Session.objects.all()
+    serializer_class = SessionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class ExperimentAPIDetail(generics.RetrieveUpdateDestroyAPIView):
+class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
-    Detail of one experiment
+    Detail of one session
     """
-    queryset = Experiment.objects.all()
-    serializer_class = ExperimentDetailSerializer
+    queryset = Session.objects.all()
+    serializer_class = SessionDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
