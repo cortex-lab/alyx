@@ -564,7 +564,7 @@ class ZygosityFinder(object):
         bp = subject.litter.breeding_pair
         if not bp:
             return
-        mother = bp.mother
+        mother = bp.mother1
         father = bp.father
         alleles_m = self._existing_alleles(mother)
         alleles_f = self._existing_alleles(father)
