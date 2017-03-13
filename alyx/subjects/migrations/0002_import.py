@@ -309,7 +309,7 @@ def load_worksheets_4(apps, schema_editor):
         else:
             mother2 = None
 
-        d = dict(name='%s_BP_%03d' % (line, int(index or 0)),
+        d = dict(name='%s_BP_%03d' % (line.auto_name, int(index or 0)),
                  line=line,
                  father=father,
                  mother1=mother1,
