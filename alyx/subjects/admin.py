@@ -540,7 +540,6 @@ class LitterAdmin(BaseAdmin):
                 if father and father.responsible_user else request.user)
         for instance in instances:
             # Copy the birth date and breeding_pair from the litter.
-            instance.birth_date = bp.birth_date
             instance.breeding_pair = bp
             instance.line = obj.line
             instance.responsible_user = user
