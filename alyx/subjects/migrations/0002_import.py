@@ -14,7 +14,8 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 
 from actions.models import Surgery
-from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, BreedingPair
+from subjects.models import (Species, Subject, Strain, Line, GenotypeTest,
+                             Sequence, Litter, BreedingPair)
 
 from alyx.core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 
@@ -76,6 +77,8 @@ def get_line_kwargs(row):
         auto_name=row['Autoname'],
         target_phenotype=row['LONG NAME'],
         description=row['BLURB'],
+        strain=(Strain.objects.get_or_create(descriptive_name=row['strain'])[0]
+                if row['strain'] else None),
         json={"stock_no": row['STOCK NO'],
               "source": row['SOURCE'],
               "genotype": row['GENOTYPE'],
@@ -104,6 +107,7 @@ def import_procedure_subject(row, mouse=None, table_line=None):
         print("Creating new subject %s." % row['Nickname'])
 
     # Set/override the fields.
+    line = get_line(row['Line'], table_line=table_line)
     kwargs = dict(
          nickname=pad(row['Nickname']),
          adverse_effects=row['Adverse Effects'],
@@ -113,7 +117,8 @@ def import_procedure_subject(row, mouse=None, table_line=None):
          protocol_number=row['Protocol #'],
          responsible_user=get_user(row['Responsible User']),
          species=mouse,
-         line=get_line(row['Line'], table_line=table_line),
+         line=line,
+         strain=line.strain,
      )
     for k, v in kwargs.items():
         setattr(subject, k, v)
@@ -177,6 +182,7 @@ def import_line(sheet):
         kwargs['json']['m_parent'] = row.get('M Parent', None)
         kwargs['json']['bp_index'] = row.get('BP index', None)
         kwargs['line'] = line
+        kwargs['strain'] = line.strain
         kwargs['species'] = mouse
 
         # Create the subject.
