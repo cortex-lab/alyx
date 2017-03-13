@@ -877,7 +877,7 @@ class CullMiceAdmin(SubjectAdmin):
                     'ear_mark', 'line', 'responsible_user',
                     'death_date', 'to_be_culled', 'reduced',
                     ]
-    ordering = ['-birth_date']
+    ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
                    ('line', RelatedDropdownFilter),
