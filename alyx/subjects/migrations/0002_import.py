@@ -276,15 +276,18 @@ def load_worksheets_4(apps, schema_editor):
         father = Subject.objects.get_or_create(nickname=row['father'])[0]
         father.birth_date = parse(row['father DOB'])
         father.line = line
+        father.sex = 'M'
         father.save()
 
         mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
         mother1.birth_date = parse(row['mother DOB'])
         mother1.line = line
+        mother1.sex = 'F'
         mother1.save()
 
         mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
         mother2.line = line
+        mother2.sex = 'F'
         mother2.save()
 
         d = dict(name='%s_BP_%s' % (line, index),
