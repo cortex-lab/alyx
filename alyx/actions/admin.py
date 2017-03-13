@@ -97,6 +97,7 @@ class SurgeryAdmin(BaseActionAdmin):
 
     def date(self, obj):
         return obj.start_time.date()
+    date.admin_order_field = 'start_time'
 
     def users_l(self, obj):
         return ', '.join(map(str, obj.users.all()))
