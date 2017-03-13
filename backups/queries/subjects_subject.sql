@@ -6,7 +6,7 @@ subjects_subject.death_date,
 subjects_subject.implant_weight,
 subjects_subject.notes,
 subjects_subject.ear_mark,
-subjects_cage.cage_label AS cage,
+subjects_breedingpair.name AS breeding_pair,
 subjects_line.name AS line,
 subjects_litter.descriptive_name AS litter,
 auth_user.username AS responsible_user,
@@ -21,9 +21,9 @@ subjects_subject.json,
 subjects_subject.request_id
 FROM subjects_subject
 LEFT JOIN subjects_line on subjects_subject.line_id=subjects_line.id
-LEFT JOIN subjects_cage on subjects_subject.cage_id=subjects_cage.id
 LEFT JOIN auth_user on subjects_subject.responsible_user_id=auth_user.id
 LEFT JOIN subjects_litter on subjects_subject.litter_id=subjects_litter.id
+LEFT JOIN subjects_breedingpair on subjects_litter.breeding_pair_id=subjects_breedingpair.id
 LEFT JOIN subjects_source on subjects_subject.source_id=subjects_source.id
 LEFT JOIN subjects_species on subjects_subject.species_id=subjects_species.id
 LEFT JOIN subjects_strain on subjects_subject.strain_id=subjects_strain.id

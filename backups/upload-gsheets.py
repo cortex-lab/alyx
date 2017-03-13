@@ -3,9 +3,8 @@ import csv
 import os.path as op
 import sys
 
-sys.path.append(op.join(op.dirname(__file__), '../'))
-
-from alyx.core import get_worksheet  # noqa
+sys.path.append(op.abspath(op.join(op.dirname(__file__), '../alyx')))
+from alyx.core import get_sheet_doc  # noqa
 
 
 class Bunch(dict):
@@ -36,7 +35,7 @@ def upload_gsheets(path):
         reader = csv.reader(csvfile, delimiter='\t')
         headers = next(reader)
         subjects = list(reader)
-    ws = get_worksheet('Alyx Backup', 'Subjects')
+    ws = get_sheet_doc('Alyx Backup').worksheet('Subjects')
     n_rows = len(subjects)
     n_cols = len(headers)
 

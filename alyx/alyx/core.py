@@ -8,7 +8,7 @@ from django.utils import timezone
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../data'))
+DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 
 logger = logging.getLogger(__name__)

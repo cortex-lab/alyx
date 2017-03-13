@@ -3,6 +3,7 @@ from .models import *
 from actions.serializers import *
 from django.contrib.auth.models import User
 
+
 class ZygosityListSerializer(serializers.ModelSerializer):
 
     ZYGOSITY_TYPES = (
@@ -41,10 +42,10 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
-    cage = serializers.SlugRelatedField(
+    breeding_pair = serializers.SlugRelatedField(
         read_only=False,
-        slug_field='cage_label',
-        queryset=Cage.objects.all(),
+        slug_field='breeding_pair_label',
+        queryset=BreedingPair.objects.all(),
         allow_null=True,
         required=False)
 
@@ -72,7 +73,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'cage', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
+                  'species', 'breeding_pair', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -96,7 +97,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
-                  'species', 'cage', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
+                  'species', 'breeding_pair', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
                   'actions_sessions', 'weighings', 'water_administrations', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}

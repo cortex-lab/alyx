@@ -14,9 +14,9 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 
 from actions.models import Surgery
-from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, Cage
+from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, BreedingPair
 
-from core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
+from alyx.core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 
 
 # Functions
@@ -167,7 +167,11 @@ def import_line(sheet):
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
         kwargs['nickname'] = row['autoname']
-        kwargs['json'] = {k: row[k] for k in ('LAMIS Cage number', 'F Parent', 'M Parent')}
+        kwargs['json'] = {}
+        kwargs['json']['lamis_cage'] = row['LAMIS Cage number']
+        kwargs['json']['f_parent'] = row.get('F Parent', None)
+        kwargs['json']['m_parent'] = row.get('M Parent', None)
+        kwargs['json']['bp_index'] = row.get('BP index', None)
         kwargs['line'] = line
         kwargs['species'] = mouse
 
@@ -194,8 +198,8 @@ def import_line(sheet):
 
     # Set the litters.
     for subject in subjects:
-        mother = subject.json['F Parent']
-        father = subject.json['M Parent']
+        mother = subject.json['f_parent']
+        father = subject.json['m_parent']
         litter, _ = Litter.objects.get_or_create(line=line,
                                                  birth_date=subject.birth_date,
                                                  notes='mother=%s\nfather=%s' % (mother, father),
@@ -257,6 +261,57 @@ def load_worksheets_3(apps, schema_editor):
                                  )
 
 
+def load_worksheets_4(apps, schema_editor):
+    # Breeding pairs.
+    mouse = Species.objects.get(display_name='Laboratory mouse')
+    table_pairs = get_table('Mice Stock - C57 and Transgenic', 'September 2016',
+                               header_line=2, first_line=3)
+    for row in table_pairs:
+        line = row['line']
+        index = row['index']
+        if not line:
+            continue
+        line = Line.objects.get(auto_name=line)
+
+        father = Subject.objects.get_or_create(nickname=row['father'])[0]
+        father.birth_date = parse(row['father DOB'])
+        father.line = line
+        father.sex = 'M'
+        father.save()
+
+        mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
+        mother1.birth_date = parse(row['mother DOB'])
+        mother1.line = line
+        mother1.sex = 'F'
+        mother1.save()
+
+        mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
+        mother2.line = line
+        mother2.sex = 'F'
+        mother2.save()
+
+        d = dict(name='%s_BP_%s' % (line, index),
+                 line=line,
+                 father=father,
+                 mother1=mother1,
+                 mother2=mother2,
+                 notes=row['Notes'],
+                 )
+
+        BreedingPair(**d).save()
+        print("Added breeding pair %s." % d['name'])
+
+    # For each existing subject in lines, assign breeding pair with BP index
+    for subject in Subject.objects.filter(json__bp_index__isnull=False):
+        if subject.litter and subject.line:
+            index = subject.json['bp_index']
+            name = '%s_BP_%s' % (subject.line.auto_name, index)
+            bp = BreedingPair.objects.filter(name=name)
+            if bp:
+                subject.litter.breeding_pair = bp[0]
+                subject.litter.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -272,4 +327,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(load_worksheets_1),
         migrations.RunPython(load_worksheets_2),
         migrations.RunPython(load_worksheets_3),
+        migrations.RunPython(load_worksheets_4),
     ]

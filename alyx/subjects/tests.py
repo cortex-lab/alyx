@@ -43,7 +43,7 @@ class ModelAdminTests(TestCase):
 
     def test_model_admins(self):
         self._test_list_change(SubjectAdmin(Subject, self.site))
-        self._test_list_change(CageAdmin(Cage, self.site))
+        self._test_list_change(BreedingPairAdmin(BreedingPair, self.site))
         self._test_list_change(LitterAdmin(Litter, self.site))
         self._test_list_change(LineAdmin(Line, self.site))
         self._test_list_change(SpeciesAdmin(Species, self.site))

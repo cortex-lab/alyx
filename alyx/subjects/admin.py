@@ -149,7 +149,7 @@ class SubjectForm(forms.ModelForm):
 
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
-        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'cage',
+        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
                                 'responsible_user', 'request', 'wean_date', 'genotype_date',
                                 'death_date', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
@@ -172,7 +172,7 @@ class SubjectAdmin(BaseAdmin):
     )
 
     list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark',
-                    'cage_l', 'line_l', 'litter_l',
+                    'breeding_pair_l', 'line_l', 'litter_l',
                     'genotype_l', 'zygosities',
                     'alive', 'responsible_user',
                     ]
@@ -181,7 +181,7 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__last_name',
                      'responsible_user__username']
     readonly_fields = ('age_days', 'zygosities',
-                       'cage_l', 'litter_l', 'line_l',
+                       'breeding_pair_l', 'litter_l', 'line_l',
                        'water_restriction_date',
                        'reference_weighing_f',
                        'current_weighing_f',
@@ -209,10 +209,12 @@ class SubjectAdmin(BaseAdmin):
         return ', '.join(map(str, genotype))
     genotype_l.short_description = 'genotype'
 
-    def cage_l(self, obj):
-        url = get_admin_url(obj.cage)
-        return format_html('<a href="{url}">{cage}</a>', cage=obj.cage or '-', url=url)
-    cage_l.short_description = 'cage'
+    def breeding_pair_l(self, obj):
+        bp = obj.litter.breeding_pair if obj.litter else None
+        url = get_admin_url(bp)
+        return format_html('<a href="{url}">{breeding_pair}</a>',
+                           breeding_pair=bp or '-', url=url)
+    breeding_pair_l.short_description = 'breeding_pair'
 
     def litter_l(self, obj):
         url = get_admin_url(obj.litter)
@@ -355,13 +357,13 @@ class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
     fields = ('nickname', 'birth_date', 'wean_date', 'genotype_date',
-              'age_weeks', 'sex', 'line', 'cage',
-              'litter', 'mother', 'father',
+              'age_weeks', 'sex', 'line',
+              'litter',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
               'ear_mark', 'notes')
-    readonly_fields = ('age_weeks', 'mother', 'father',
+    readonly_fields = ('age_weeks',
                        'sequence0', 'sequence1', 'sequence2',
                        )
     show_change_link = True
@@ -369,11 +371,11 @@ class SubjectInline(BaseInlineAdmin):
     _parent_instance = None
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
-        # Filter cages by cages that are part of that line.
+        # Filter breeding_pairs by breeding_pairs that are part of that line.
         field = super(SubjectInline, self).formfield_for_foreignkey(db_field,
                                                                     request, **kwargs)
 
-        if db_field.name == 'cage':
+        if db_field.name == 'breeding_pair':
             if isinstance(request._obj_, Line):
                 field.queryset = field.queryset.filter(line=request._obj_)
             elif isinstance(request._obj_, Litter):
@@ -388,7 +390,7 @@ class SubjectInline(BaseInlineAdmin):
             line = self._parent_instance
         elif isinstance(self._parent_instance, Litter):
             line = self._parent_instance.line
-        elif isinstance(self._parent_instance, Cage):
+        elif isinstance(self._parent_instance, BreedingPair):
             line = self._parent_instance.line
         else:
             line = None
@@ -416,19 +418,19 @@ class SubjectInline(BaseInlineAdmin):
         return
 
 
-# Cage
+# BreedingPair
 # ------------------------------------------------------------------------------------------------
 
 class LitterInline(BaseInlineAdmin):
     model = Litter
-    fields = ['descriptive_name', 'mother', 'father', 'birth_date', 'notes']
+    fields = ['descriptive_name', 'breeding_pair', 'birth_date', 'notes']
     extra = 1
     show_change_link = True
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         field = super(LitterInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
-        if db_field.name in ('mother', 'father'):
+        if db_field.name == ('breeding_pair'):
             if request._obj_ is not None:
                 field.queryset = field.queryset.filter(line=request._obj_.line)
             else:
@@ -437,24 +439,34 @@ class LitterInline(BaseInlineAdmin):
         return field
 
 
-class CageAdminForm(forms.ModelForm):
+class BreedingPairAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
+        if self.instance.line:
+            sex = {'mother1': 'F', 'mother2': 'F', 'father': 'M'}
+            for which_parent in sex.keys():
+                self.fields[which_parent].queryset = Subject.objects.filter(
+                    line=self.instance.line,
+                    sex=sex[which_parent],
+                )
+
     class Meta:
         fields = '__all__'
-        model = Cage
+        model = BreedingPair
 
 
-class CageAdmin(BaseAdmin):
-    form = CageAdminForm
-    list_display = ['cage_label', 'line', 'location']
-    fields = ('line', 'cage_label', 'type', 'location')
+class BreedingPairAdmin(BaseAdmin):
+    form = BreedingPairAdminForm
+    list_display = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
+    fields = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
     list_filter = [('line', RelatedDropdownFilter),
                    ]
-    inlines = [SubjectInline, LitterInline]
+    inlines = [LitterInline]
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
-        return super(CageAdmin, self).get_form(request, obj, **kwargs)
+        return super(BreedingPairAdmin, self).get_form(request, obj, **kwargs)
 
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.
@@ -498,10 +510,11 @@ class LitterForm(forms.ModelForm):
 
 
 class LitterAdmin(BaseAdmin):
-    list_display = ['descriptive_name', 'mother', 'father', 'birth_date']
+    list_display = ['descriptive_name', 'breeding_pair', 'birth_date']
     fields = ['line', 'descriptive_name',
-              'mother', 'father', 'birth_date',
-              'notes', 'cage']
+              'breeding_pair', 'birth_date',
+              'notes',
+              ]
     list_filter = [('line', RelatedDropdownFilter),
                    ]
     form = LitterForm
@@ -526,19 +539,21 @@ class LitterAdmin(BaseAdmin):
         for obj in formset.deleted_objects:
             obj.delete()
         obj = formset.instance
-        line = obj.line
-        mother = obj.mother
-        to_copy = 'species,strain,line,source'.split(',')
-        user = (obj.mother.responsible_user
-                if obj.mother and obj.mother.responsible_user else request.user)
+        # obj is a Litter instance.
+        bp = obj.breeding_pair
+        father = obj.breeding_pair.father
+        to_copy = 'species,strain,source'.split(',')
+        user = (father.responsible_user
+                if father and father.responsible_user else request.user)
         for instance in instances:
-            # Copy the birth date and cage from the litter.
-            instance.birth_date = obj.birth_date
-            instance.cage = obj.cage
+            # Copy the birth date and breeding_pair from the litter.
+            instance.birth_date = bp.birth_date
+            instance.breeding_pair = bp
+            instance.line = obj.line
             instance.responsible_user = user
             # Copy some fields from the mother to the subject.
             for field in to_copy:
-                setattr(instance, field, getattr(mother, field, None))
+                setattr(instance, field, getattr(father, field, None))
             instance.save()
         formset.save_m2m()
 
@@ -559,22 +574,22 @@ class SequencesInline(BaseInlineAdmin):
     fields = ['sequence']
 
 
-class CageInline(BaseInlineAdmin):
-    model = Cage
-    fields = ('line', 'cage_label', 'type', 'location')
+class BreedingPairInline(BaseInlineAdmin):
+    model = BreedingPair
+    fields = ('line', 'name', 'father', 'mother1', 'mother2')
     extra = 1
 
 
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description',
               'subject_autoname_index',
-              'cage_autoname_index',
+              'breeding_pair_autoname_index',
               'litter_autoname_index',
               ]
     list_display = ['name', 'auto_name', 'target_phenotype', 'strain']
     ordering = ['auto_name']
 
-    inlines = [SubjectRequestInline, SubjectInline, SequencesInline, CageInline]
+    inlines = [SubjectRequestInline, SubjectInline, SequencesInline, BreedingPairInline]
 
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.
@@ -740,7 +755,7 @@ class MyAdminSite(admin.AdminSite):
         order = [('Common', ['Subjects',
                              'Surgeries',
                              'Lines',
-                             'Cages',
+                             'Breeding pairs',
                              'Litters',
                              'Virus injections',
                              'Water administrations',
@@ -804,7 +819,7 @@ admin.site.register(Group)
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Litter, LitterAdmin)
 admin.site.register(Line, LineAdmin)
-admin.site.register(Cage, CageAdmin)
+admin.site.register(BreedingPair, BreedingPairAdmin)
 
 admin.site.register(SubjectRequest, SubjectRequestAdmin)
 admin.site.register(Species, SpeciesAdmin)
