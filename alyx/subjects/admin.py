@@ -189,7 +189,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_remaining_f',
                        'weighing_plot',
                        )
-    ordering = ['-birth_date', 'nickname']
+    ordering = ['-birth_date', '-nickname']
     list_editable = ['responsible_user']
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
