@@ -389,17 +389,17 @@ class Line(BaseModel):
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
         self.save()
-        return '%s_BP_%d' % (self.auto_name, self.breeding_pair_autoname_index)
+        return '%s_BP_%03d' % (self.auto_name, self.breeding_pair_autoname_index)
 
     def new_litter_autoname(self):
         self.litter_autoname_index = self.litter_autoname_index + 1
         self.save()
-        return '%s_L_%d' % (self.auto_name, self.litter_autoname_index)
+        return '%s_L_%03d' % (self.auto_name, self.litter_autoname_index)
 
     def new_subject_autoname(self):
         self.subject_autoname_index = self.subject_autoname_index + 1
         self.save()
-        return '%s_%d' % (self.auto_name, self.subject_autoname_index)
+        return '%s_%04d' % (self.auto_name, self.subject_autoname_index)
 
     def set_autoname(self, obj):
         if isinstance(obj, BreedingPair):
