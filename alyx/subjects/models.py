@@ -87,7 +87,7 @@ class Subject(BaseModel):
     reduced = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['nickname', '-birth_date']
+        ordering = ['-nickname', '-birth_date']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
