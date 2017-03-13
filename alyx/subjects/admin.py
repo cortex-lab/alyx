@@ -171,10 +171,10 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark',
+    list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
                     'breeding_pair_l', 'line_l', 'litter_l',
                     'genotype_l', 'zygosities',
-                    'alive', 'responsible_user',
+                    'alive', 'responsible_user', 'notes'
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
@@ -200,6 +200,10 @@ class SubjectAdmin(BaseAdmin):
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, SessionInline, OtherActionInline]
 
+    def ear_mark_(self, obj):
+        return obj.ear_mark
+    ear_mark_.short_description = 'EM'
+
     def sex_l(self, obj):
         return obj.sex[0] if obj.sex else ''
     sex_l.short_description = 'sex'
@@ -214,7 +218,7 @@ class SubjectAdmin(BaseAdmin):
         url = get_admin_url(bp)
         return format_html('<a href="{url}">{breeding_pair}</a>',
                            breeding_pair=bp or '-', url=url)
-    breeding_pair_l.short_description = 'breeding_pair'
+    breeding_pair_l.short_description = 'BP'
 
     def litter_l(self, obj):
         url = get_admin_url(obj.litter)
