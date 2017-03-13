@@ -875,14 +875,14 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date',
                     'ear_mark', 'line', 'responsible_user',
-                    'death_date', 'to_be_genotyped', 'to_be_culled', 'reduced',
+                    'death_date', 'to_be_culled', 'reduced',
                     ]
     ordering = ['-birth_date']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
                    ('line', RelatedDropdownFilter),
                    ]
-    list_editable = ['death_date', 'to_be_genotyped', 'to_be_culled', 'reduced']
+    list_editable = ['death_date', 'to_be_culled', 'reduced']
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')
