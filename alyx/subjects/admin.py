@@ -534,7 +534,7 @@ class LitterAdmin(BaseAdmin):
         obj = formset.instance
         # obj is a Litter instance.
         bp = obj.breeding_pair
-        father = obj.breeding_pair.father
+        father = bp.father if bp else None
         to_copy = 'species,strain,source'.split(',')
         user = (father.responsible_user
                 if father and father.responsible_user else request.user)
