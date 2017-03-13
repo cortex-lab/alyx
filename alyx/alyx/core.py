@@ -34,7 +34,7 @@ def sheet_to_table(wks, header_line=2, first_line=3):
     table = []
     headers = rows[header_line]
     for row in rows[first_line:]:
-        l = {headers[i]: row[i].strip() for i in range(len(headers))}
+        l = {headers[i].strip(): row[i].strip() for i in range(len(headers))}
         # Empty line = end of table.
         if all(_ == '' for _ in l.values()):
             break

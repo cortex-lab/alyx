@@ -157,7 +157,7 @@ def import_line(sheet):
     subjects = []
     for row in table:
         # Skip rows with empty autonames.
-        if not row['autoname']:
+        if not row['autoname'].strip():
             continue
         kwargs = {}
         kwargs['ear_mark'] = row['Ear mark']
@@ -166,7 +166,7 @@ def import_line(sheet):
         kwargs['birth_date'] = parse(row['DOB'])
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
-        kwargs['nickname'] = row['autoname']
+        kwargs['nickname'] = row['autoname'].strip()
         kwargs['json'] = {}
         kwargs['json']['lamis_cage'] = row['LAMIS Cage number']
         kwargs['json']['f_parent'] = row.get('F Parent', None)
@@ -273,22 +273,31 @@ def load_worksheets_4(apps, schema_editor):
             continue
         line = Line.objects.get(auto_name=line)
 
-        father = Subject.objects.get_or_create(nickname=row['father'])[0]
-        father.birth_date = parse(row['father DOB'])
-        father.line = line
-        father.sex = 'M'
-        father.save()
+        if row['father']:
+            father = Subject.objects.get_or_create(nickname=row['father'])[0]
+            father.birth_date = parse(row['father DOB'])
+            father.line = line
+            father.sex = 'M'
+            father.save()
+        else:
+            father=None
 
-        mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
-        mother1.birth_date = parse(row['mother DOB'])
-        mother1.line = line
-        mother1.sex = 'F'
-        mother1.save()
+        if row['mother1']:
+            mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
+            mother1.birth_date = parse(row['mother DOB'])
+            mother1.line = line
+            mother1.sex = 'F'
+            mother1.save()
+        else:
+            mother1 = None
 
-        mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
-        mother2.line = line
-        mother2.sex = 'F'
-        mother2.save()
+        if row['mother2']:
+            mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
+            mother2.line = line
+            mother2.sex = 'F'
+            mother2.save()
+        else:
+            mother2 = None
 
         d = dict(name='%s_BP_%s' % (line, index),
                  line=line,
