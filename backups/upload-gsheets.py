@@ -4,7 +4,6 @@ import os.path as op
 import sys
 
 sys.path.append(op.abspath(op.join(op.dirname(__file__), '../alyx')))
-print(sys.path[-1])
 from alyx.core import get_sheet_doc  # noqa
 
 

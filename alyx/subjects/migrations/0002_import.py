@@ -16,7 +16,7 @@ from django.utils.timezone import is_aware, make_aware
 from actions.models import Surgery
 from subjects.models import Species, Subject, Line, GenotypeTest, Sequence, Litter, BreedingPair
 
-from core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
+from alyx.core import DATA_DIR, get_table, get_sheet_doc, sheet_to_table
 
 
 # Functions
