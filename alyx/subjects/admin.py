@@ -500,13 +500,6 @@ class BreedingPairAdmin(BaseAdmin):
 class LitterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(LitterForm, self).__init__(*args, **kwargs)
-        if self.instance.line:
-            sex = {'mother': 'F', 'father': 'M'}
-            for which_parent in ('mother', 'father'):
-                self.fields[which_parent].queryset = Subject.objects.filter(
-                    line=self.instance.line,
-                    sex=sex[which_parent],
-                )
 
 
 class LitterAdmin(BaseAdmin):

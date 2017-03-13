@@ -32,6 +32,10 @@ def parse(date_str):
     return ret
 
 
+def pad(s):
+    return re.sub(r'\_([0-9]+)$', lambda m: '_%04d' % int(m.group(1)), s)
+
+
 def get_user(initials):
     nickname = {
         'AL': 'armin',
@@ -101,7 +105,7 @@ def import_procedure_subject(row, mouse=None, table_line=None):
 
     # Set/override the fields.
     kwargs = dict(
-         nickname=row['Nickname'],
+         nickname=pad(row['Nickname']),
          adverse_effects=row['Adverse Effects'],
          death_date=parse(row['Cull Date']),
          cull_method=row['Cull Method'],
@@ -166,7 +170,7 @@ def import_line(sheet):
         kwargs['birth_date'] = parse(row['DOB'])
         kwargs['death_date'] = parse(row.get('death date', None))
         kwargs['wean_date'] = parse(row.get('Weaned', None))
-        kwargs['nickname'] = row['autoname'].strip()
+        kwargs['nickname'] = pad(row['autoname'].strip())
         kwargs['json'] = {}
         kwargs['json']['lamis_cage'] = row['LAMIS Cage number']
         kwargs['json']['f_parent'] = row.get('F Parent', None)
@@ -274,7 +278,7 @@ def load_worksheets_4(apps, schema_editor):
         line = Line.objects.get(auto_name=line)
 
         if row['father']:
-            father = Subject.objects.get_or_create(nickname=row['father'])[0]
+            father = Subject.objects.get_or_create(nickname=pad(row['father']))[0]
             father.birth_date = parse(row['father DOB'])
             father.line = line
             father.sex = 'M'
@@ -283,7 +287,7 @@ def load_worksheets_4(apps, schema_editor):
             father=None
 
         if row['mother1']:
-            mother1 = Subject.objects.get_or_create(nickname=row['mother1'])[0]
+            mother1 = Subject.objects.get_or_create(nickname=pad(row['mother1']))[0]
             mother1.birth_date = parse(row['mother DOB'])
             mother1.line = line
             mother1.sex = 'F'
@@ -292,14 +296,14 @@ def load_worksheets_4(apps, schema_editor):
             mother1 = None
 
         if row['mother2']:
-            mother2 = Subject.objects.get_or_create(nickname=row['mother2'])[0]
+            mother2 = Subject.objects.get_or_create(nickname=pad(row['mother2']))[0]
             mother2.line = line
             mother2.sex = 'F'
             mother2.save()
         else:
             mother2 = None
 
-        d = dict(name='%s_BP_%s' % (line, index),
+        d = dict(name='%s_BP_%03d' % (line, int(index or 0)),
                  line=line,
                  father=father,
                  mother1=mother1,
@@ -314,7 +318,7 @@ def load_worksheets_4(apps, schema_editor):
     for subject in Subject.objects.filter(json__bp_index__isnull=False):
         if subject.litter and subject.line:
             index = subject.json['bp_index']
-            name = '%s_BP_%s' % (subject.line.auto_name, index)
+            name = '%s_BP_%03d' % (subject.line.auto_name, int(index or 0))
             bp = BreedingPair.objects.filter(name=name)
             if bp:
                 subject.litter.breeding_pair = bp[0]
