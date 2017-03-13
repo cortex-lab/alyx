@@ -835,6 +835,7 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ]
+    list_editable = []
 
     def get_queryset(self, request):
         return (self.model.objects.
