@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import logging
 from operator import itemgetter
@@ -26,6 +27,8 @@ SEVERITY_CHOICES = (
     (4, 'Severe'),
     (5, 'Non-recovery'),
 )
+MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
+DEFAULT_RESPONSIBLE_USER_ID = 5
 
 
 def pad(s):
@@ -76,12 +79,12 @@ def get_sheet_doc(doc_name):
 
 
 def _load(fn):
-    with open(fn, 'rb') as f:
+    with open(op.join(DATA_DIR, fn), 'rb') as f:
         return load(f)
 
 
 def _dump(obj, fn):
-    with open(fn, 'wb') as f:
+    with open(op.join(DATA_DIR, fn), 'wb') as f:
         dump(obj, f)
 
 
@@ -105,6 +108,20 @@ def sheet_to_table(wks, header_line=0, first_line=2):
     return table
 
 
+def make_fixture(model, data, name_field='name'):
+    def _gen():
+        for item in data.values() if isinstance(data, dict) else data:
+            yield OrderedDict((
+                ('model', model),
+                ('pk', None),
+                ('fields', ({k: v for k, v in item.items()}
+                            if isinstance(item, dict)
+                            else {name_field: item})),
+            ))
+    with open(op.join(DATA_DIR, model + '.json'), 'w') as f:
+        json.dump(list(_gen()), f, indent=2)
+
+
 class GoogleSheetImporter(object):
     _table_names = ('procedure_table',
                     'current_lines_table',
@@ -124,7 +141,7 @@ class GoogleSheetImporter(object):
         self.sequences = self._get_sequences(self.line_tables)
         self.subjects = self._get_subjects(self.line_tables)
         self.litters = self._get_litters(self.subjects)
-        self.line_subject_autoname_indices = self._get_autoname_indices(self.line_tables)
+        self._set_autoname_indices(self.line_tables)
         self.surgeries = self._process_procedures(self.procedure_table)
         self.breeding_pairs = self._get_breeding_pairs(self.breeding_pairs_table)
         self._set_breeding_pairs()
@@ -181,7 +198,7 @@ class GoogleSheetImporter(object):
             fields['auto_name'] = row['Autoname']
             fields['target_phenotype'] = row['LONG NAME']
             fields['description'] = row['BLURB']
-            fields['strain'] = row['strain']
+            fields['strain'] = [row['strain']] if row['strain'] else None
             fields['json'] = {
                 "stock_no": row['STOCK NO'],
                 "source": row['SOURCE'],
@@ -203,7 +220,7 @@ class GoogleSheetImporter(object):
         seqs = []
         for name, line_table in line_tables.items():
             sequences = self._get_line_sequences(line_table)
-            self.lines[name]['sequences'] = sequences
+            self.lines[name]['sequences'] = [[_] for _ in sequences]
             seqs.append(sequences)
         return sorted(set(flatten(seqs)))
 
@@ -256,6 +273,14 @@ class GoogleSheetImporter(object):
             subjects.update(self._get_subjects_in_line(line, table))
         return subjects
 
+    def _get_line(self, line):
+        out = self.lines.get(line, None)
+        if not out:
+            for l in self.lines.values():
+                if l.auto_name == line:
+                    return l
+        return out
+
     def _get_litters(self, subjects):
         """Return a set of unique tuples (line, birth_date, notes)."""
         litters_set = sorted(set([subject.litter for subject in subjects.values()]),
@@ -274,14 +299,16 @@ class GoogleSheetImporter(object):
                                   birth_date=birth_date,
                                   notes=notes,
                                   )
+            self._get_line(line)['litter_autoname_index'] = i
             litter_map[line, birth_date, notes] = name
         # Replace the litter tuples by the litter names.
         for subject in subjects.values():
-            subject.litter = litter_map[subject.litter]
+            subject.litter = [litter_map[subject.litter]]
         return litters
 
-    def _get_autoname_indices(self, line_tables):
-        return {line: int(table[-1].get('n', '') or 0) for line, table in line_tables.items()}
+    def _set_autoname_indices(self, line_tables):
+        for line, table in line_tables.items():
+            self.lines[line]['subject_autoname_index'] = int(table[-1].get('n', '') or 0)
 
     def _get_severity(self, severity_name):
         for s, n in SEVERITY_CHOICES:
@@ -301,7 +328,7 @@ class GoogleSheetImporter(object):
 
             subject['nickname'] = new_name
             subject['severity'] = self._get_severity(row['Actual Severity'])
-            subject['line'] = self.lines[row['Line']].auto_name
+            subject['line'] = [self.lines[row['Line']].auto_name] if row['Line'] else None
             subject['adverse_effects'] = row['Adverse Effects']
             subject['death_date'] = parse(row['Cull Date'])
             subject['cull_method'] = row['Cull Method']
@@ -310,7 +337,7 @@ class GoogleSheetImporter(object):
 
             # Add the surgery.
             surgery = Bunch()
-            surgery['users'] = [get_username(initials.strip())
+            surgery['users'] = [[get_username(initials.strip())]
                                 for initials in re.split(',|/', row['Surgery Performed By'])],
             surgery['subject'] = new_name
             surgery['start_time'] = parse(row['Date of surgery'])
@@ -324,14 +351,15 @@ class GoogleSheetImporter(object):
         breeding_pairs = {}
         for row in table:
             line = row['line']
-            index = row['index']
+            index = row['index'] or 0
             if not line:
                 continue
 
             bp = Bunch()
-            bp['name'] = '%s_BP_%03d' % (line, int(index or 0))
-            bp['line'] = line
+            bp['name'] = '%s_BP_%03d' % (line, int(index))
+            bp['line'] = [line]
             bp['notes'] = row['Notes']
+            self._get_line(line)['breeding_pair_autoname_index'] = index
 
             for which_parent in ('father', 'mother1', 'mother2'):
                 if not row[which_parent]:
@@ -341,7 +369,7 @@ class GoogleSheetImporter(object):
                 wp = {'father': 'father', 'mother1': 'mother'}.get(which_parent, '')
                 sex = {'father': 'M', 'mother1': 'F', 'mother2': 'F'}[which_parent]
                 parent['birth_date'] = parse(row['%s DOB' % wp]) if wp else None
-                parent['line'] = line
+                parent['line'] = [line]
                 parent['sex'] = sex
                 bp[which_parent] = name
 
@@ -357,9 +385,24 @@ class GoogleSheetImporter(object):
             line_name = subject['line']
             bp_name = '%s_BP_%03d' % (line_name, int(bp_index))
             # assert bp_name in self.breeding_pairs
-            litter = subject['litter']
-            self.litters[litter]['breeding_pair'] = bp_name
+            litter = subject['litter'][0]
+            self.litters[litter]['breeding_pair'] = [bp_name]
+
+
+def import_data():
+    importer = GoogleSheetImporter()
+
+    make_fixture('subjects.strain', importer.strains, 'descriptive_name')
+    make_fixture('subjects.allele', importer.alleles, 'informal_name')
+    make_fixture('subjects.sequence', importer.sequences, 'informal_name')
+    make_fixture('subjects.line', importer.lines, 'auto_name')
+
+    # importer.lines
+    # importer.subjects
+    # importer.litters
+    # importer.surgeries
+    # importer.breeding_pairs
 
 
 if __name__ == '__main__':
-    importer = GoogleSheetImporter()
+    import_data()
