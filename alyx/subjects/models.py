@@ -35,6 +35,7 @@ class Subject(BaseModel):
         ('U', 'Unknown')
     )
     SEVERITY_CHOICES = (
+        (None, ''),
         (1, 'Sub-threshold'),
         (2, 'Mild'),
         (3, 'Moderate'),
@@ -309,6 +310,11 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
 # Other
 # ------------------------------------------------------------------------------------------------
 
+class LitterManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(descriptive_name=name)
+
+
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
@@ -321,6 +327,11 @@ class Litter(BaseModel):
                                       )
     notes = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
+
+    objects = LitterManager()
+
+    def natural_key(self):
+        return (self.descriptive_name,)
 
     class Meta:
         ordering = ['descriptive_name', '-birth_date']
@@ -437,15 +448,6 @@ class Line(BaseModel):
             setattr(obj, field, m())
 
 
-class Source(BaseModel):
-    """A supplier / source of subjects."""
-    name = models.CharField(max_length=255)
-    notes = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.name
-
-
 class SpeciesManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(display_name=name)
@@ -493,6 +495,15 @@ class Strain(BaseModel):
 
     def __str__(self):
         return self.descriptive_name
+
+
+class Source(BaseModel):
+    """A supplier / source of subjects."""
+    name = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 # Genotypes
