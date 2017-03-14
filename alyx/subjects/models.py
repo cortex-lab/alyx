@@ -35,11 +35,11 @@ class Subject(BaseModel):
         ('U', 'Unknown')
     )
     SEVERITY_CHOICES = (
-        ('st', 'Sub-threshold'),
-        ('mi', 'Mild'),
-        ('mo', 'Moderate'),
-        ('se', 'Severe'),
-        ('nr', 'Non-recovery'),
+        (1, 'Sub-threshold'),
+        (2, 'Mild'),
+        (3, 'Moderate'),
+        (4, 'Severe'),
+        (5, 'Non-recovery'),
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
@@ -79,8 +79,7 @@ class Subject(BaseModel):
 
     cull_method = models.TextField(blank=True)
     adverse_effects = models.TextField(blank=True)
-    actual_severity = models.CharField(max_length=2, choices=SEVERITY_CHOICES,
-                                       blank=True)
+    actual_severity = models.IntegerField(null=True, blank=True, choices=SEVERITY_CHOICES)
 
     to_be_genotyped = models.BooleanField(default=False)
     to_be_culled = models.BooleanField(default=False)
@@ -222,6 +221,9 @@ class Subject(BaseModel):
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
+        # Default strain.
+        if self.line and not self.strain:
+            self.strain = self.line.strain
         # Update the zygosities when the subject is assigned a litter.
         if self.litter and not self._original_litter:
             ZygosityFinder().genotype_from_litter(self)
@@ -332,6 +334,11 @@ class Litter(BaseModel):
         return self.descriptive_name
 
 
+class BreedingPairManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class BreedingPair(BaseModel):
     name = models.CharField(max_length=255, default='-',
                             help_text='Leave to "-" to autofill.')
@@ -354,6 +361,8 @@ class BreedingPair(BaseModel):
                                 related_name="mother2")
     notes = models.TextField(blank=True)
 
+    objects = BreedingPairManager()
+
     class Meta:
         ordering = ['name']
         verbose_name_plural = 'Breeding pairs'
@@ -367,11 +376,16 @@ class BreedingPair(BaseModel):
         return self.name
 
 
+class LineManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(auto_name=name)
+
+
 class Line(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     target_phenotype = models.CharField(max_length=1023)
-    auto_name = models.CharField(max_length=255)
+    auto_name = models.CharField(max_length=255, unique=True)
     sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
@@ -379,6 +393,8 @@ class Line(BaseModel):
     subject_autoname_index = models.IntegerField(default=0)
     breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
+
+    objects = LineManager()
 
     class Meta:
         ordering = ['name']
@@ -415,18 +431,9 @@ class Line(BaseModel):
             setattr(obj, field, m())
 
 
-class Strain(BaseModel):
-    """A strain with a standardised name. """
-    descriptive_name = models.CharField(max_length=255,
-                                        help_text="Standard descriptive name E.g. \"C57BL/6J\", "
-                                        "http://www.informatics.jax.org/mgihome/nomen/")
-    description = models.TextField(blank=True)
-
-    class Meta:
-        ordering = ['descriptive_name']
-
-    def __str__(self):
-        return self.descriptive_name
+class StrainManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(descriptive_name=name)
 
 
 class Source(BaseModel):
@@ -438,19 +445,42 @@ class Source(BaseModel):
         return self.name
 
 
+class SpeciesManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(display_name=name)
+
+
 class Species(BaseModel):
     """A single species, identified uniquely by its binomial name."""
     binomial = models.CharField(max_length=255,
                                 help_text="Binomial name, "
                                 "e.g. \"mus musculus\"")
-    display_name = models.CharField(max_length=255,
+    display_name = models.CharField(max_length=255, unique=True,
                                     help_text="common name, e.g. \"mouse\"")
+
+    objects = SpeciesManager
 
     def __str__(self):
         return self.display_name
 
     class Meta:
         verbose_name_plural = "species"
+
+
+class Strain(BaseModel):
+    """A strain with a standardised name. """
+    descriptive_name = models.CharField(max_length=255, unique=True,
+                                        help_text="Standard descriptive name E.g. \"C57BL/6J\", "
+                                        "http://www.informatics.jax.org/mgihome/nomen/")
+    description = models.TextField(blank=True)
+
+    objects = StrainManager
+
+    class Meta:
+        ordering = ['descriptive_name']
+
+    def __str__(self):
+        return self.descriptive_name
 
 
 # Genotypes
@@ -574,14 +604,21 @@ class ZygosityFinder(object):
             self._create_zygosity(subject, allele, z)
 
 
+class AlleleManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(informal_name=name)
+
+
 class Allele(BaseModel):
     """A single allele."""
     standard_name = models.CharField(max_length=1023,
                                      help_text="MGNC-standard genotype name e.g. "
                                      "Pvalb<tm1(cre)Arbr>, "
                                      "http://www.informatics.jax.org/mgihome/nomen/")
-    informal_name = models.CharField(max_length=255,
+    informal_name = models.CharField(max_length=255, unique=True,
                                      help_text="informal name in lab, e.g. Pvalb-Cre")
+
+    objects = AlleleManager()
 
     class Meta:
         ordering = ['informal_name']
@@ -621,14 +658,21 @@ class Zygosity(BaseModel):
         verbose_name_plural = "zygosities"
 
 
+class SequenceManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(informal_name=name)
+
+
 class Sequence(BaseModel):
     """A genetic sequence that you run a genotyping test for."""
     base_pairs = models.TextField(
         help_text="the actual sequence of base pairs in the test")
     description = models.CharField(max_length=1023,
                                    help_text="any other relevant information about this test")
-    informal_name = models.CharField(max_length=255,
+    informal_name = models.CharField(max_length=255, unique=True,
                                      help_text="informal name in lab, e.g. ROSA-WT")
+
+    objects = SequenceManager()
 
     class Meta:
         ordering = ['informal_name']
