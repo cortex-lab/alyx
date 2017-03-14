@@ -136,9 +136,9 @@ class GoogleSheetImporter(object):
                     )
 
     def __init__(self):
-        # self._download_tables()
-        # self._cache_tables()
-        # return
+        if not op.exists(op.join(DATA_DIR, 'dumped_google_sheets.pkl')):
+            self._download_tables()
+            self._cache_tables()
         self._load_tables()
 
         self.users = self._load_users()
@@ -182,12 +182,11 @@ class GoogleSheetImporter(object):
                                                    header_line=2, first_line=3)
 
     def _cache_tables(self):
-        for n in self._table_names:
-            _dump(getattr(self, n), n)
+        _dump({n: getattr(self, n) for n in self._table_names}, 'dumped_google_sheets.pkl')
 
     def _load_tables(self):
-        for n in self._table_names:
-            setattr(self, n, _load(n))
+        for n, v in _load('dumped_google_sheets.pkl').items():
+            setattr(self, n, v)
 
     def _load_users(self):
         with open(op.join(DATA_DIR, 'dumped_static.json'), 'r') as f:
