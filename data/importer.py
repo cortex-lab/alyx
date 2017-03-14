@@ -9,6 +9,7 @@ import re
 import sys
 
 # from django.utils.timezone import is_aware, make_aware
+from django.core.management import call_command
 from dateutil.parser import parse as parse_
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -140,6 +141,8 @@ class GoogleSheetImporter(object):
         # return
         self._load_tables()
 
+        self.users = self._load_users()
+
         self.strains = self._get_strains(self.current_lines_table)
         self.alleles = self._get_alleles()
         self.lines = self._get_lines(self.current_lines_table)
@@ -185,6 +188,15 @@ class GoogleSheetImporter(object):
     def _load_tables(self):
         for n in self._table_names:
             setattr(self, n, _load(n))
+
+    def _load_users(self):
+        with open(op.join(DATA_DIR, 'dumped_static.json'), 'r') as f:
+            l = json.load(f)
+        users = {}
+        for item in l:
+            if item['model'] == 'auth.user':
+                users[item['fields']['username']] = item['pk']
+        return users
 
     def _get_strains(self, table):
         return sorted(set(row['strain'] for row in table if row.get('strain', None)))
@@ -344,8 +356,8 @@ class GoogleSheetImporter(object):
             # Add the surgery.
             surgery = Bunch()
             surgery['users'] = [[get_username(initials.strip())]
-                                for initials in re.split(',|/', row['Surgery Performed By'])],
-            surgery['subject'] = new_name
+                                for initials in re.split(',|/', row['Surgery Performed By'])]
+            surgery['subject'] = [new_name]
             surgery['start_time'] = parse(row['Date of surgery'])
             surgery['outcome_type'] = row['Acute/ Recovery'][0]
             surgery['narrative'] = row['Procedures']
@@ -377,7 +389,9 @@ class GoogleSheetImporter(object):
                 parent['birth_date'] = parse(row['%s DOB' % wp]) if wp else None
                 parent['line'] = [line]
                 parent['sex'] = sex
-                bp[which_parent] = name
+                # Make sure the parent is in the subjects dictionary.
+                self.subjects[name] = parent
+                bp[which_parent] = [name]
 
             breeding_pairs[bp['name']] = bp
 
@@ -417,8 +431,8 @@ def import_data():
     make_fixture('subjects.litter', importer.litters, 'descriptive_name')
     make_fixture('subjects.subject', importer.subjects, 'nickname')
     make_fixture('subjects.genotypetest', importer.genotype_tests)
-    # make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name')
-    # make_fixture('actions.surgery', importer.surgeries)
+    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name')
+    make_fixture('actions.surgery', importer.surgeries)
 
     # TODO: set breeding pairs to litters
 
