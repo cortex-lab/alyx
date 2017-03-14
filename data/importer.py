@@ -416,8 +416,8 @@ def import_data():
     make_fixture('subjects.line', importer.lines, 'auto_name')
     make_fixture('subjects.litter', importer.litters, 'descriptive_name')
     make_fixture('subjects.subject', importer.subjects, 'nickname')
+    make_fixture('subjects.genotypetest', importer.genotype_tests)
     # make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name')
-    # make_fixture('subjects.genotype_test', importer.genotype_tests)
     # make_fixture('actions.surgery', importer.surgeries)
 
     # TODO: set breeding pairs to litters

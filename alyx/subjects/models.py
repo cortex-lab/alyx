@@ -27,6 +27,11 @@ DEFAULT_RESPONSIBLE_USER_ID = 5
 # Subject
 # ------------------------------------------------------------------------------------------------
 
+class SubjectManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(nickname=name)
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -85,6 +90,11 @@ class Subject(BaseModel):
     to_be_genotyped = models.BooleanField(default=False)
     to_be_culled = models.BooleanField(default=False)
     reduced = models.BooleanField(default=False)
+
+    objects = SubjectManager()
+
+    def natural_key(self):
+        return (self.nickname,)
 
     class Meta:
         ordering = ['-nickname', '-birth_date']
