@@ -363,6 +363,9 @@ class BreedingPair(BaseModel):
 
     objects = BreedingPairManager()
 
+    def natural_key(self):
+        return (self.name,)
+
     class Meta:
         ordering = ['name']
         verbose_name_plural = 'Breeding pairs'
@@ -395,6 +398,9 @@ class Line(BaseModel):
     litter_autoname_index = models.IntegerField(default=0)
 
     objects = LineManager()
+
+    def natural_key(self):
+        return (self.auto_name,)
 
     class Meta:
         ordering = ['name']
@@ -431,11 +437,6 @@ class Line(BaseModel):
             setattr(obj, field, m())
 
 
-class StrainManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(descriptive_name=name)
-
-
 class Source(BaseModel):
     """A supplier / source of subjects."""
     name = models.CharField(max_length=255)
@@ -458,13 +459,21 @@ class Species(BaseModel):
     display_name = models.CharField(max_length=255, unique=True,
                                     help_text="common name, e.g. \"mouse\"")
 
-    objects = SpeciesManager
+    objects = SpeciesManager()
+
+    def natural_key(self):
+        return (self.display_name,)
 
     def __str__(self):
         return self.display_name
 
     class Meta:
         verbose_name_plural = "species"
+
+
+class StrainManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(descriptive_name=name)
 
 
 class Strain(BaseModel):
@@ -474,7 +483,10 @@ class Strain(BaseModel):
                                         "http://www.informatics.jax.org/mgihome/nomen/")
     description = models.TextField(blank=True)
 
-    objects = StrainManager
+    objects = StrainManager()
+
+    def natural_key(self):
+        return (self.descriptive_name,)
 
     class Meta:
         ordering = ['descriptive_name']
@@ -620,6 +632,9 @@ class Allele(BaseModel):
 
     objects = AlleleManager()
 
+    def natural_key(self):
+        return (self.informal_name,)
+
     class Meta:
         ordering = ['informal_name']
 
@@ -673,6 +688,9 @@ class Sequence(BaseModel):
                                      help_text="informal name in lab, e.g. ROSA-WT")
 
     objects = SequenceManager()
+
+    def natural_key(self):
+        return (self.informal_name,)
 
     class Meta:
         ordering = ['informal_name']
