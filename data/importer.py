@@ -109,12 +109,17 @@ def sheet_to_table(wks, header_line=0, first_line=2):
 
 
 def make_fixture(model, data, name_field='name'):
+    def _transform(k, v):
+        if k.endswith('_date') and not v:
+            return None
+        return v
+
     def _gen():
         for item in data.values() if isinstance(data, dict) else data:
             yield OrderedDict((
                 ('model', model),
                 ('pk', None),
-                ('fields', ({k: v for k, v in item.items()}
+                ('fields', ({k: _transform(k, v) for k, v in item.items()}
                             if isinstance(item, dict)
                             else {name_field: item})),
             ))
@@ -145,6 +150,7 @@ class GoogleSheetImporter(object):
         self.surgeries = self._process_procedures(self.procedure_table)
         self.breeding_pairs = self._get_breeding_pairs(self.breeding_pairs_table)
         self._set_breeding_pairs()
+        self.genotype_tests = self._process_genotype_tests()
 
     def _download_tables(self):
         self._line_doc = get_sheet_doc('Mice Stock - C57 and Transgenic')
@@ -257,10 +263,10 @@ class GoogleSheetImporter(object):
             fields['nickname'] = pad(row['autoname'].strip())
             fields['json'] = {}
             fields['json']['lamis_cage'] = row['LAMIS Cage number']
-            fields['line'] = line_name
+            fields['line'] = [line_name]
             litter_notes = self._get_litter_notes(row)
             fields['litter'] = (line_name, fields['birth_date'], litter_notes)
-            fields['genotype_tests'] = list(self._get_genotype_test(row))
+            fields['genotype_test'] = list(self._get_genotype_test(row))
             # Temporary values used later on.
             fields['bp_index'] = row.get('BP index', None)
 
@@ -295,7 +301,7 @@ class GoogleSheetImporter(object):
                     continue
                 break
             litters[name] = Bunch(descriptive_name=name,
-                                  line=line,
+                                  line=[line],
                                   birth_date=birth_date,
                                   notes=notes,
                                   )
@@ -327,13 +333,13 @@ class GoogleSheetImporter(object):
             subject = self.subjects[new_name]
 
             subject['nickname'] = new_name
-            subject['severity'] = self._get_severity(row['Actual Severity'])
+            subject['actual_severity'] = self._get_severity(row['Actual Severity'])
             subject['line'] = [self.lines[row['Line']].auto_name] if row['Line'] else None
             subject['adverse_effects'] = row['Adverse Effects']
             subject['death_date'] = parse(row['Cull Date'])
             subject['cull_method'] = row['Cull Method']
             subject['protocol_number'] = row['Protocol #']
-            subject['responsible_user'] = get_username(row['Responsible User'])
+            subject['responsible_user'] = [get_username(row['Responsible User'])]
 
             # Add the surgery.
             surgery = Bunch()
@@ -379,14 +385,26 @@ class GoogleSheetImporter(object):
 
     def _set_breeding_pairs(self):
         for subject in self.subjects.values():
-            bp_index = subject.get('bp_index', None)
+            bp_index = subject.pop('bp_index', None)
             if not bp_index:
                 continue
             line_name = subject['line']
             bp_name = '%s_BP_%03d' % (line_name, int(bp_index))
             # assert bp_name in self.breeding_pairs
             litter = subject['litter'][0]
-            self.litters[litter]['breeding_pair'] = [bp_name]
+            # TODO
+            # self.litters[litter]['breeding_pair'] = [bp_name]
+
+    def _process_genotype_tests(self):
+        tests = []
+        for subject in self.subjects.values():
+            for test in subject.pop('genotype_test', []):
+                tests.append(dict(
+                    subject=[subject['nickname']],
+                    sequence=[test['sequence']],
+                    test_result=test['test_result'],
+                ))
+        return tests
 
 
 def import_data():
@@ -396,12 +414,13 @@ def import_data():
     make_fixture('subjects.allele', importer.alleles, 'informal_name')
     make_fixture('subjects.sequence', importer.sequences, 'informal_name')
     make_fixture('subjects.line', importer.lines, 'auto_name')
+    make_fixture('subjects.litter', importer.litters, 'descriptive_name')
+    make_fixture('subjects.subject', importer.subjects, 'nickname')
+    # make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name')
+    # make_fixture('subjects.genotype_test', importer.genotype_tests)
+    # make_fixture('actions.surgery', importer.surgeries)
 
-    # importer.lines
-    # importer.subjects
-    # importer.litters
-    # importer.surgeries
-    # importer.breeding_pairs
+    # TODO: set breeding pairs to litters
 
 
 if __name__ == '__main__':
