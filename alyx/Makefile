@@ -22,4 +22,8 @@ migrate:
 delete_all:
 	psql -d postgres -c "DROP DATABASE alyx;" && psql -d postgres -c "CREATE DATABASE alyx;"
 
-reset_all: delete_all migrate
+import_fixtures:
+	python ../data/importer.py
+	./manage.py loaddata ../data/json/*.json
+
+reset_all: clean-pyc rmmigrations delete_all migrate import_fixtures
