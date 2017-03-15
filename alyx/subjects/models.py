@@ -148,15 +148,15 @@ class Subject(BaseModel):
                                             date_time__lte=wr_date)
         weighings = weighings.order_by('-date_time')
         if not weighings:
-            return 0
-        return weighings[0].weight
+            return None
+        return weighings[0]
 
     def current_weighing(self):
         weighings = Weighing.objects.filter(subject__id=self.id)
         weighings = weighings.order_by('-date_time')
         if not weighings:
-            return 0
-        return weighings[0].weight
+            return None
+        return weighings[0]
 
     def expected_weighing_mean_std(self, age_w):
         sex = 'male' if self.sex == 'M' else 'female'
@@ -176,21 +176,16 @@ class Subject(BaseModel):
 
     def water_requirement_total(self):
         # returns the amount of water the subject needs today in total
-
         rw = self.reference_weighing()
         cw = self.current_weighing()
-
         start_weight = rw.weight
         implant_weight = self.implant_weight or 0
-
         if not self.birth_date:
             logger.warn("Subject %s has no birth date!", self)
             return 0
         start_age = (rw.date_time.date() - self.birth_date).days // 7
-
         today_weight = cw.weight
         today_age = self.age_days() // 7  # in weeks
-
         start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
         today_mrw, today_srw = self.expected_weighing_mean_std(today_age)
 
