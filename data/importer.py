@@ -14,6 +14,7 @@ from django.core.management import call_command
 from dateutil.parser import parse as parse_
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import pytz
 # from pytz import timezone
 
 
@@ -62,14 +63,17 @@ def get_username(initials):
     }[initials]
 
 
-def parse(date_str):
+def parse(date_str, time=False):
     date_str = date_str.strip() if date_str is not None else date_str
     if not date_str or date_str == '-':
         return ''
     ret = parse_(date_str)
+    if not time:
+        return ret.strftime("%Y-%m-%d")
+    ret = ret.replace(tzinfo=pytz.UTC)
     # if not is_aware(ret):
     #     ret = make_aware(ret, timezone=timezone('Europe/London'))
-    return ret.strftime("%Y-%m-%d")
+    return ret.isoformat()
 
 
 def get_sheet_doc(doc_name):
@@ -118,11 +122,11 @@ def make_fixture(model, data, name_field='name', path=None):
 
     def _gen():
         for item in data.values() if isinstance(data, dict) else data:
-            pk = item.pop('pk', None) if isinstance(item, dict) else None
+            pk = item.get('pk', None) if isinstance(item, dict) else None
             yield OrderedDict((
                 ('model', model),
                 ('pk', pk),
-                ('fields', ({k: _transform(k, v) for k, v in item.items()}
+                ('fields', ({k: _transform(k, v) for k, v in item.items() if k != 'pk'}
                             if isinstance(item, dict)
                             else {name_field: item})),
             ))
@@ -351,7 +355,7 @@ class GoogleSheetImporter(object):
             surgery['users'] = [[get_username(initials.strip())]
                                 for initials in re.split(',|/', row['Surgery Performed By'])]
             surgery['subject'] = [new_name]
-            surgery['start_time'] = parse(row['Date of surgery'])
+            surgery['start_time'] = parse(row['Date of surgery'], time=True)
             surgery['outcome_type'] = row['Acute/ Recovery'][0]
             surgery['narrative'] = row['Procedures']
 
@@ -404,10 +408,9 @@ class GoogleSheetImporter(object):
                 continue
             # assert bp_name in self.breeding_pairs
             litter = subject['litter'][0]
-            litter_bps.append(Bunch(
-                pk=self.litters[litter].pk,
-                breeding_pair=[bp_name],
-            ))
+            item = self.litters[litter].copy()
+            item['breeding_pair'] = [bp_name]
+            litter_bps.append(item)
             bp_names.add(bp_name)
         return litter_bps
 
