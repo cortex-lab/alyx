@@ -50,7 +50,6 @@ class Subject(BaseModel):
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
     nickname = models.CharField(max_length=255,
-                                unique=True,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
