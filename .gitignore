@@ -12,3 +12,4 @@ experimental
 *.asv
 *.json
 migrations
+*.pkl
