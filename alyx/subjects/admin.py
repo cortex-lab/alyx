@@ -506,6 +506,10 @@ class BreedingPairAdmin(BaseAdmin):
 class LitterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(LitterForm, self).__init__(*args, **kwargs)
+        if self.instance.line:
+            self.fields['breeding_pair'].queryset = BreedingPair.objects.filter(
+                line=self.instance.line,
+            )
 
 
 class LitterAdmin(BaseAdmin):
