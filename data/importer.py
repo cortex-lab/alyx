@@ -335,6 +335,7 @@ class GoogleSheetImporter(object):
         for row in table:
             old_name = row['transgenic spreadsheet mouse name']
             new_name = pad(row['Nickname'])
+            new_name = new_name if new_name not in (None, '', '-') else old_name
             birth_date = parse(row['Date of Birth'])
             # Get or create the subject.
             self.subjects[new_name] = self.subjects.pop(old_name, Bunch(birth_date=birth_date))
