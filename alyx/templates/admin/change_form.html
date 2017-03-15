@@ -23,6 +23,11 @@ $(document).keydown(function(e) {
     }
     e.preventDefault();
 });
+
+$(document).ready(function() {
+    $(":input").attr("autocomplete", "off");
+});
+
 </script>
 
 {% endblock %}
