@@ -269,8 +269,8 @@ class GoogleSheetImporter(object):
             fields['death_date'] = parse(row.get('death date', None))
             fields['wean_date'] = parse(row.get('Weaned', None))
             fields['nickname'] = pad(row['autoname'].strip())
-            fields['json'] = {}
-            fields['json']['lamis_cage'] = row['LAMIS Cage number']
+            fields['lamis_cage'] = (int(re.sub("[^0-9]", "", row['LAMIS Cage number']))
+                                    if row['LAMIS Cage number'] else None)
             fields['line'] = [line_name]
             litter_notes = self._get_litter_notes(row)
             fields['litter'] = (line_name, fields['birth_date'], litter_notes)
@@ -335,6 +335,7 @@ class GoogleSheetImporter(object):
         for row in table:
             old_name = row['transgenic spreadsheet mouse name']
             new_name = pad(row['Nickname'])
+            new_name = new_name if new_name not in (None, '', '-') else old_name
             birth_date = parse(row['Date of Birth'])
             # Get or create the subject.
             self.subjects[new_name] = self.subjects.pop(old_name, Bunch(birth_date=birth_date))

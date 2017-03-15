@@ -26,9 +26,8 @@ def weighing_plot(request, subject_id=None):
         subject_id=subj.id).order_by('date_time')
 
     f, ax = plt.subplots(1, 1, figsize=(8, 2))
-    ax.xaxis.set_major_locator(DayLocator(interval=7))
+    ax.xaxis.set_major_locator(DayLocator(interval=14))
     ax.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
-    plt.locator_params(axis='x', nticks=8)
 
     if weighins:
         x, y = zip(*((w.date_time, w.weight) for w in weighins))

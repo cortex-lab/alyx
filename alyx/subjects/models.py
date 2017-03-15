@@ -50,7 +50,6 @@ class Subject(BaseModel):
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
     nickname = models.CharField(max_length=255,
-                                unique=True,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
                                           "(e.g. 'Hercules').")
@@ -104,6 +103,7 @@ class Subject(BaseModel):
         # Used to detect when the request has changed.
         self._original_request = self.request
         self._original_litter = self.litter
+        self._original_genotype_date = self.genotype_date
 
     def alive(self):
         return self.death_date is None
@@ -233,6 +233,9 @@ class Subject(BaseModel):
         # Update the zygosities when the subject is assigned a litter.
         if self.litter and not self._original_litter:
             ZygosityFinder().genotype_from_litter(self)
+        # Remove "to be genotyped" if genotype date is set.
+        if self.genotype_date and not self._original_genotype_date:
+            self.to_be_genotyped = False
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):

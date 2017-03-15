@@ -150,10 +150,11 @@ class SubjectForm(forms.ModelForm):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
-                                'responsible_user', 'request', 'wean_date', 'genotype_date',
+                                'responsible_user', 'request', 'wean_date',
+                                'to_be_genotyped', 'genotype_date',
                                 'death_date', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter'),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter', 'lamis_cage',),
                      'classes': ('collapse',),
                      }),
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
@@ -362,9 +363,9 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'birth_date', 'wean_date', 'genotype_date',
+    fields = ('nickname', 'birth_date', 'wean_date', 'genotype_date', 'to_be_genotyped',
               'age_weeks', 'sex', 'line',
-              'litter',
+              'litter', 'lamis_cage',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
@@ -372,6 +373,7 @@ class SubjectInline(BaseInlineAdmin):
     readonly_fields = ('age_weeks',
                        'sequence0', 'sequence1', 'sequence2',
                        )
+    list_editable = ('lamis_cage',)
     show_change_link = True
     form = SubjectInlineForm
     _parent_instance = None
@@ -886,7 +888,7 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date',
-                    'ear_mark', 'line', 'responsible_user',
+                    'ear_mark', 'line', 'lamis_cage', 'responsible_user',
                     'death_date', 'to_be_culled', 'reduced',
                     ]
     ordering = ['-birth_date', '-nickname']
