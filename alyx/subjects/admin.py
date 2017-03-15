@@ -235,11 +235,13 @@ class SubjectAdmin(BaseAdmin):
         return '; '.join(map(str, genotype))
 
     def reference_weighing_f(self, obj):
-        return '%.2f' % obj.reference_weighing()
+        res = obj.reference_weighing()
+        return '%.2f' % res.weight if res else '0'
     reference_weighing_f.short_description = 'reference weighing'
 
     def current_weighing_f(self, obj):
-        return '%.2f' % obj.current_weighing()
+        res = obj.current_weighing()
+        return '%.2f' % res.weight if res else '0'
     current_weighing_f.short_description = 'current weighing'
 
     def water_requirement_total_f(self, obj):

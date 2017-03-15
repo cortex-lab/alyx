@@ -22,5 +22,4 @@ migrate:
 delete_all:
 	psql -d postgres -c "DROP DATABASE alyx;" && psql -d postgres -c "CREATE DATABASE alyx;"
 
-reset_all: delete_all
-	 ./manage.py migrate
+reset_all: delete_all migrate
