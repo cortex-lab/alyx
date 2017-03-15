@@ -125,6 +125,12 @@ class Surgery(BaseAction):
     class Meta:
         verbose_name_plural = "surgeries"
 
+    def save(self, *args, **kwargs):
+        if self.outcome_type == 'a' and self.start_time:
+            self.subject.death_date = self.start_time.date()
+            self.subject.save()
+        return super(Surgery, self).save(*args, **kwargs)
+
 
 class Session(BaseAction):
     """
