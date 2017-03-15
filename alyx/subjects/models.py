@@ -144,6 +144,8 @@ class Subject(BaseModel):
 
     def reference_weighing(self):
         wr_date = self.water_restriction_date()
+        if not wr_date:
+            return None
         weighings = Weighing.objects.filter(subject__id=self.id,
                                             date_time__lte=wr_date)
         weighings = weighings.order_by('-date_time')
@@ -152,6 +154,9 @@ class Subject(BaseModel):
         return weighings[0]
 
     def current_weighing(self):
+        if not self.water_restriction_date():
+            return None
+
         weighings = Weighing.objects.filter(subject__id=self.id)
         weighings = weighings.order_by('-date_time')
         if not weighings:
@@ -159,6 +164,9 @@ class Subject(BaseModel):
         return weighings[0]
 
     def expected_weighing_mean_std(self, age_w):
+        if not self.water_restriction_date():
+            return None
+
         sex = 'male' if self.sex == 'M' else 'female'
         path = op.join(op.dirname(__file__),
                        'static/ref_weighings_%s.csv' % sex)
@@ -175,7 +183,10 @@ class Subject(BaseModel):
             return d[age_w]
 
     def water_requirement_total(self):
-        # returns the amount of water the subject needs today in total
+        '''Returns the amount of water the subject needs today in total'''
+        if not self.water_restriction_date():
+            return None
+
         rw = self.reference_weighing()
         cw = self.current_weighing()
         start_weight = rw.weight
@@ -201,8 +212,11 @@ class Subject(BaseModel):
             return 0.04 * today_weight
 
     def water_requirement_remaining(self):
-        # returns the amount of water the subject still needs, given how much
-        # it got already today
+        '''Returns the amount of water the subject still needs, given how much
+        it got already today'''
+
+        if not self.water_restriction_date():
+            return None
 
         req_total = self.water_requirement_total()
 
