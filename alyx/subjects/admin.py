@@ -552,6 +552,7 @@ class LitterAdmin(BaseAdmin):
             # Copy the birth date and breeding_pair from the litter.
             instance.breeding_pair = bp
             instance.line = obj.line
+            instance.birth_date = obj.birth_date
             instance.responsible_user = user
             # Copy some fields from the mother to the subject.
             for field in to_copy:
