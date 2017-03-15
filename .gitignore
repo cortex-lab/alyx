@@ -11,3 +11,4 @@ bin
 experimental
 *.asv
 *.json
+migrations/0*.py
