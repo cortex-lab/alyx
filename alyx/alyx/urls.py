@@ -70,7 +70,7 @@ urlpatterns = [
         actions_views.WaterAdministrationAPIDetail.as_view(), name="water-administration-detail"),
 
     url(r'^subjects$', subjects_views.SubjectList.as_view(), name="subject-list"),
-    url(r'^subjects/(?P<nickname>[-\w]+)$', subjects_views.SubjectDetail.as_view(),
+    url(r'^subjects/(?P<nickname>[-.()\s\w]+)$', subjects_views.SubjectDetail.as_view(),
         name="subject-detail"),
 
     url(r'^sessions$', actions_views.SessionAPIList.as_view(), name="session-list"),

@@ -42,13 +42,6 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
-    breeding_pair = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='breeding_pair_label',
-        queryset=BreedingPair.objects.all(),
-        allow_null=True,
-        required=False)
-
     strain = serializers.SlugRelatedField(
         read_only=False,
         slug_field='descriptive_name',
@@ -73,7 +66,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'breeding_pair', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
+                  'species', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -97,7 +90,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
-                  'species', 'breeding_pair', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
+                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
                   'actions_sessions', 'weighings', 'water_administrations', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
