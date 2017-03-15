@@ -1,10 +1,22 @@
 #!/usr/bin/env python
 import csv
+import glob
 import os.path as op
 import sys
 
-sys.path.append(op.abspath(op.join(op.dirname(__file__), '../alyx')))
-from alyx.core import get_sheet_doc  # noqa
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+
+def get_gc():
+    scope = [
+        'https://spreadsheets.google.com/feeds',
+        'https://www.googleapis.com/auth/drive'
+    ]
+    path = op.join(op.dirname(__file__), '../data', 'gdrive.json')
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(path, scope)
+    gc = gspread.authorize(credentials)
+    return gc
 
 
 class Bunch(dict):
@@ -13,30 +25,16 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-# def add_columns(path):
-#     with open(path) as csvfile:
-#         reader = csv.DictReader(csvfile, delimiter='\t')
-#         subjects = [Bunch(_) for _ in reader]
-#     # TODO: the backup query should set the fields below.
-#     for subject in subjects:
-#         wrt = water_requirement_total(reference_weighing=None,
-#                                       current_weighing=None,
-#                                       start_weight=None,
-#                                       implant_weight=None,
-#                                       birth_date=None,
-#                                       death_date=None,
-#                                       sex=None
-#                                       )
-
-
-def upload_gsheets(path):
+def upload_gsheets(doc, path):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     with open(path) as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         headers = next(reader)
-        subjects = list(reader)
-    ws = get_sheet_doc('Alyx Backup').worksheet('Subjects')
-    n_rows = len(subjects)
+        items = list(reader)
+    # Get the sheet.
+    name = op.splitext(op.basename(path))[0]
+    ws = doc.worksheet(name)
+    n_rows = len(items)
     n_cols = len(headers)
 
     # Write headers.
@@ -50,14 +48,20 @@ def upload_gsheets(path):
     cell_list = ws.range('A2:%s%d' % (last_col, n_rows + 1))
     for cell in cell_list:
         row, col = cell.row - 2, cell.col - 1
-        subject = subjects[row]
-        cell.value = subject[col]
+        if 0 <= row < len(items):
+            item = items[row]
+            if 0 <= col < len(item):
+                cell.value = item[col]
     ws.update_cells(cell_list)
 
     return n_rows
 
 
-output_dir = sys.argv[1]
-path = op.join(output_dir, 'subjects_subject.tsv')
-n_subjects = upload_gsheets(path)
-print("%d subjects uploaded to Google Sheets." % n_subjects)
+output_dir = sys.argv[1] if len(sys.argv) >= 2 else op.join(op.dirname(__file__), 'queries')
+files = sorted(glob.glob(op.join(output_dir, '*.tsv')))
+gc = get_gc()
+doc = gc.open('Alyx Backup')
+for path in files:
+    name = op.splitext(op.basename(path))[0]
+    n = upload_gsheets(doc, path)
+    print("%d items uploaded to `%s` sheet of Google Sheet backup document." % (n, name))
