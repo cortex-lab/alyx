@@ -341,10 +341,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(load_static),
-        migrations.RunPython(make_admin),
-        migrations.RunPython(load_worksheets_1),
-        migrations.RunPython(load_worksheets_2),
-        migrations.RunPython(load_worksheets_3),
-        migrations.RunPython(load_worksheets_4),
+        # migrations.RunPython(load_static),
+        # migrations.RunPython(make_admin),
+        # migrations.RunPython(load_worksheets_1),
+        # migrations.RunPython(load_worksheets_2),
+        # migrations.RunPython(load_worksheets_3),
+        # migrations.RunPython(load_worksheets_4),
     ]

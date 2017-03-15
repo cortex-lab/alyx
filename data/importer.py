@@ -7,6 +7,7 @@ from pickle import load, dump
 from pprint import pprint
 import re
 import sys
+import uuid
 
 # from django.utils.timezone import is_aware, make_aware
 from django.core.management import call_command
@@ -109,7 +110,7 @@ def sheet_to_table(wks, header_line=0, first_line=2):
     return table
 
 
-def make_fixture(model, data, name_field='name'):
+def make_fixture(model, data, name_field='name', path=None):
     def _transform(k, v):
         if k.endswith('_date') and not v:
             return None
@@ -117,14 +118,15 @@ def make_fixture(model, data, name_field='name'):
 
     def _gen():
         for item in data.values() if isinstance(data, dict) else data:
+            pk = item.pop('pk', None) if isinstance(item, dict) else None
             yield OrderedDict((
                 ('model', model),
-                ('pk', None),
+                ('pk', pk),
                 ('fields', ({k: _transform(k, v) for k, v in item.items()}
                             if isinstance(item, dict)
                             else {name_field: item})),
             ))
-    with open(op.join(DATA_DIR, model + '.json'), 'w') as f:
+    with open(op.join(DATA_DIR, 'json', (path or model) + '.json'), 'w') as f:
         json.dump(list(_gen()), f, indent=2)
 
 
@@ -141,8 +143,6 @@ class GoogleSheetImporter(object):
             self._cache_tables()
         self._load_tables()
 
-        self.users = self._load_users()
-
         self.strains = self._get_strains(self.current_lines_table)
         self.alleles = self._get_alleles()
         self.lines = self._get_lines(self.current_lines_table)
@@ -150,10 +150,10 @@ class GoogleSheetImporter(object):
         self.subjects = self._get_subjects(self.line_tables)
         self.litters = self._get_litters(self.subjects)
         self._set_autoname_indices(self.line_tables)
-        self.surgeries = self._process_procedures(self.procedure_table)
+        self.surgeries = self._get_surgeries(self.procedure_table)
         self.breeding_pairs = self._get_breeding_pairs(self.breeding_pairs_table)
-        self._set_breeding_pairs()
-        self.genotype_tests = self._process_genotype_tests()
+        self.litter_breeding_pairs = self._get_litter_breeding_pairs()
+        self.genotype_tests = self._get_genotype_tests()
 
     def _download_tables(self):
         self._line_doc = get_sheet_doc('Mice Stock - C57 and Transgenic')
@@ -188,21 +188,14 @@ class GoogleSheetImporter(object):
         for n, v in _load('dumped_google_sheets.pkl').items():
             setattr(self, n, v)
 
-    def _load_users(self):
-        with open(op.join(DATA_DIR, 'dumped_static.json'), 'r') as f:
-            l = json.load(f)
-        users = {}
-        for item in l:
-            if item['model'] == 'auth.user':
-                users[item['fields']['username']] = item['pk']
-        return users
-
     def _get_strains(self, table):
         return sorted(set(row['strain'] for row in table if row.get('strain', None)))
 
     def _get_alleles(self):
-        with open(op.join(DATA_DIR, 'alleles.json'), 'r') as f:
-            return json.load(f)['alleles']
+        return ["Ai32-ChR2", "DAT-Cre", "Drd1a-Cre", "Emx1-Cre", "Gad-Cre", "KHA1-KO",
+                "Ai95-G6f", "Ntsr1-Cre", "Pv-Cre", "Sst-Cre", "Snap26-G6s", "TetO-G6s",
+                "TdTom-Cre", "Thy18", "Vip-Cre", "Vglut1-Cre", "Ai78-VSFP", "Ai93-G6f",
+                "Ai94-G6s", "Ai148-G6f", "Rasgrf-Cre", "Camk2a-tTa"]
 
     def _get_lines(self, table):
         """Dict of lines indexed by sheet name."""
@@ -315,6 +308,7 @@ class GoogleSheetImporter(object):
                                   line=[line],
                                   birth_date=birth_date,
                                   notes=notes,
+                                  pk=uuid.uuid4().hex,
                                   )
             self._get_line(line)['litter_autoname_index'] = i
             litter_map[line, birth_date, notes] = name
@@ -332,7 +326,7 @@ class GoogleSheetImporter(object):
             if n == severity_name:
                 return s
 
-    def _process_procedures(self, table):
+    def _get_surgeries(self, table):
         surgeries = []
         for row in table:
             old_name = row['transgenic spreadsheet mouse name']
@@ -396,19 +390,28 @@ class GoogleSheetImporter(object):
 
         return breeding_pairs
 
-    def _set_breeding_pairs(self):
+    def _get_litter_breeding_pairs(self):
+        litter_bps = []
+        bp_names = set()
         for subject in self.subjects.values():
             bp_index = subject.pop('bp_index', None)
             if not bp_index:
                 continue
-            line_name = subject['line']
+            line_name = subject['line'][0]
             bp_name = '%s_BP_%03d' % (line_name, int(bp_index))
+            # Skip existing items.
+            if bp_name in bp_names:
+                continue
             # assert bp_name in self.breeding_pairs
             litter = subject['litter'][0]
-            # TODO
-            # self.litters[litter]['breeding_pair'] = [bp_name]
+            litter_bps.append(Bunch(
+                pk=self.litters[litter].pk,
+                breeding_pair=[bp_name],
+            ))
+            bp_names.add(bp_name)
+        return litter_bps
 
-    def _process_genotype_tests(self):
+    def _get_genotype_tests(self):
         tests = []
         for subject in self.subjects.values():
             for test in subject.pop('genotype_test', []):
@@ -423,17 +426,16 @@ class GoogleSheetImporter(object):
 def import_data():
     importer = GoogleSheetImporter()
 
-    make_fixture('subjects.strain', importer.strains, 'descriptive_name')
-    make_fixture('subjects.allele', importer.alleles, 'informal_name')
-    make_fixture('subjects.sequence', importer.sequences, 'informal_name')
-    make_fixture('subjects.line', importer.lines, 'auto_name')
-    make_fixture('subjects.litter', importer.litters, 'descriptive_name')
-    make_fixture('subjects.subject', importer.subjects, 'nickname')
-    make_fixture('subjects.genotypetest', importer.genotype_tests)
-    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name')
-    make_fixture('actions.surgery', importer.surgeries)
-
-    # TODO: set breeding pairs to litters
+    make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
+    make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
+    make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
+    make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
+    make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
+    make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
+    make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
+    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
+    make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
+    make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
 
 
 if __name__ == '__main__':
