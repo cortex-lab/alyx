@@ -5,6 +5,12 @@ from subjects.models import Subject
 from actions.models import Weighing
 
 
+class Bunch(dict):
+    def __init__(self, *args, **kwargs):
+        super(Bunch, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 def _plot_weighings(ax, weighings, coeff=1., *args, **kwargs):
     if not weighings:
         return
@@ -31,8 +37,10 @@ def weighing_plot(request, subject_id=None):
 
     # Get data.
     subj = Subject.objects.get(pk=subject_id)
-    weighings = Weighing.objects.filter(subject=subj).order_by('date_time')
-    eweighings = [subj.expected_weighing(subj.to_weeks(w.date_time))
+    weighings = Weighing.objects.filter(subject=subj,
+                                        date_time__isnull=False).order_by('date_time')
+    eweighings = [Bunch(date_time=w.date_time,
+                        weight=subj.expected_weighing(subj.to_weeks(w.date_time)))
                   for w in weighings]
 
     # Axes.
@@ -44,10 +52,11 @@ def weighing_plot(request, subject_id=None):
     _plot_weighings(ax, eweighings, coeff=.7)
     _plot_weighings(ax, eweighings, coeff=.8)
     y0, y1 = ax.get_ylim()
-    x = [w.weight for w in weighings]
+    x = [w.date_time.date() for w in weighings]
     n = len(x)
     where = [w.weight < ew.weight * .8 for w, ew in zip(weighings, eweighings)]
-    ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where, interpolate=True)
+    ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where, interpolate=True,
+                    facecolor=(1., .902, .808, .5))
 
     # Params.
     ax.set_title("Weighings for %s" % subj.nickname)

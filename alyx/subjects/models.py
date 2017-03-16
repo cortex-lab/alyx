@@ -175,10 +175,14 @@ class Subject(BaseModel):
             return d[age_w]
 
     def to_weeks(self, datetime):
-        return (datetime - self.birth_date).days // 7
+        if not datetime:
+            return 0
+        return (datetime.date() - self.birth_date).days // 7
 
     def expected_weighing(self, age):
         rw = self.reference_weighing()
+        if not rw:
+            return 0
         iw = self.implant_weight or 0
         start_age = self.to_weeks(rw.date_time)
         start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
@@ -193,6 +197,8 @@ class Subject(BaseModel):
             return 0
         # returns the amount of water the subject needs today in total
         expected_weight = self.expected_weighing(self.age_weeks())
+        if not expected_weight:
+            return 0
         weight = self.current_weighing().weight
         return 0.05 * weight if weight < 0.8 * expected_weight else 0.04 * weight
 
