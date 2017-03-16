@@ -1,10 +1,13 @@
 from django import forms
 from django.contrib import admin
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django.utils.html import format_html
+from django.urls import reverse
 
 from alyx.base import BaseAdmin, DefaultListFilter
 from .models import *
 from subjects.models import Subject
+from subjects.admin import get_admin_url
 
 
 class BaseActionAdmin(BaseAdmin):
@@ -41,10 +44,16 @@ class WaterAdministrationAdmin(BaseActionAdmin):
 
 
 class WeighingAdmin(BaseActionAdmin):
-    list_display = ['subject', 'weight', 'date_time']
+    list_display = ['subject_l', 'weight', 'date_time']
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
+    readonly_fields = ['subject_l']
+
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
 
 
 # Filters
