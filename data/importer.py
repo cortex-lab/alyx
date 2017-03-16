@@ -79,7 +79,7 @@ def parse(date_str, time=False):
 def _parse_float(x):
     if not x:
         return None
-    if x in ('-', 'FREE WATER'):
+    if x.lower() in ('-', 'free water', 'free'):
         return None
     x = float(x)
     return x
@@ -209,14 +209,22 @@ class GoogleSheetImporter(object):
             if n == '<mouseID>':
                 break
             logger.info("Downloading the %s table..." % n)
+            # Water restrictions.
+            wrs = []
+            for i in range(4):
+                start_date = parse(sheet.acell('A%d' % (9 + i)).value)
+                end_date = parse(sheet.acell('G%d' % (9 + i)).value)
+                weight = sheet.acell('D%d' % (9 + i)).value
+                if not start_date:
+                    break
+                wrs.append(Bunch(date=start_date, weight=float(weight), end_date=end_date))
             self.water_info[n] = {
                 'sex': sheet.acell('C4').value,
                 'birth_date': parse(sheet.acell('C5').value),
                 'implant_weight': float(sheet.acell('C6').value),
-                'water_restriction_date': parse(sheet.acell('A9').value),
-                'water_restriction_weighing': float(sheet.acell('D9').value),
+                'water_restrictions': wrs,
             }
-            self.water_tables[n] = sheet_to_table(sheet, header_line=11, first_line=12)
+            self.water_tables[n] = sheet_to_table(sheet, header_line=13, first_line=14)
             for row in self.water_tables[n]:
                 row['Type'] = row.pop('', None)
 
@@ -480,20 +488,22 @@ class GoogleSheetImporter(object):
         weighings = []
         restrictions = []
         for n, info in self.water_info.items():
-            w = Bunch()
-            r = Bunch()
-            wr_date = info['water_restriction_date']
-            wr_weighing = info['water_restriction_weighing']
+            for restriction in info['water_restrictions']:
+                w = Bunch()
+                r = Bunch()
+                date = restriction['date']
+                weight = restriction['weight']
 
-            w['subject'] = [n]
-            w['date_time'] = wr_date
-            w['weight'] = wr_weighing
+                w['subject'] = [n]
+                w['date_time'] = date
+                w['weight'] = weight
 
-            r['subject'] = [n]
-            r['start_time'] = wr_date
+                r['subject'] = [n]
+                r['start_time'] = date
+                r['end_time'] = restriction['end_date']
 
-            weighings.append(w)
-            restrictions.append(r)
+                weighings.append(w)
+                restrictions.append(r)
         return restrictions, weighings
 
     def _add_water_administrations(self):
@@ -540,20 +550,21 @@ class GoogleSheetImporter(object):
 
 def import_data():
     importer = GoogleSheetImporter()
-    pprint(importer.restrictions)
-    pprint(importer.weighings)
-    pprint(importer.administrations)
 
-    # make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
-    # make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
-    # make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
-    # make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
-    # make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
-    # make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
-    # make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
-    # make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
-    # make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
-    # make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
+    make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
+    make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
+    make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
+    make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
+    make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
+    make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
+    make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
+    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
+    make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
+    make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
+    make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
+    make_fixture('actions.weighing', importer.weighings, path='12-weighings')
+    make_fixture('actions.wateradministration', importer.administrations,
+                 path='13-water-administrations')
 
 
 if __name__ == '__main__':
