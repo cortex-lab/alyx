@@ -212,19 +212,20 @@ class GoogleSheetImporter(object):
             # Water restrictions.
             wrs = []
             for i in range(4):
-                start_date = parse(sheet.acell('A%d' % (9 + i)).value)
-                end_date = parse(sheet.acell('G%d' % (9 + i)).value)
+                start_date = sheet.acell('A%d' % (9 + i)).value
+                end_date = sheet.acell('G%d' % (9 + i)).value
                 weight = sheet.acell('D%d' % (9 + i)).value
                 if not start_date:
                     break
-                wrs.append(Bunch(date=start_date, weight=float(weight), end_date=end_date))
+                wrs.append(Bunch(start_date=start_date, weight=weight, end_date=end_date))
             self.water_info[n] = {
                 'sex': sheet.acell('C4').value,
-                'birth_date': parse(sheet.acell('C5').value),
-                'implant_weight': float(sheet.acell('C6').value),
+                'birth_date': sheet.acell('C5').value,
+                'implant_weight': sheet.acell('C6').value,
                 'water_restrictions': wrs,
             }
             self.water_tables[n] = sheet_to_table(sheet, header_line=13, first_line=14)
+            # HACK: empty header = header is "type"
             for row in self.water_tables[n]:
                 row['Type'] = row.pop('', None)
 
@@ -479,19 +480,22 @@ class GoogleSheetImporter(object):
                 continue
             # Update the subject.
             subj = self.subjects[n]
-            if subj['birth_date'] != info['birth_date']:
-                subj['birth_date'] = info['birth_date']
-            subj['implant_weight'] = info['implant_weight']
+            bd = parse(info['birth_date'])
+            if subj['birth_date'] != bd:
+                subj['birth_date'] = bd
+            subj['implant_weight'] = float(info['implant_weight'])
             subj['sex'] = info['sex']
 
     def _add_water_restriction(self):
         weighings = []
         restrictions = []
         for n, info in self.water_info.items():
+            if n not in self.subjects:
+                continue
             for restriction in info['water_restrictions']:
                 w = Bunch()
                 r = Bunch()
-                date = restriction['date']
+                date = parse(restriction['start_date'], time=True)
                 weight = restriction['weight']
 
                 w['subject'] = [n]
@@ -500,7 +504,7 @@ class GoogleSheetImporter(object):
 
                 r['subject'] = [n]
                 r['start_time'] = date
-                r['end_time'] = restriction['end_date']
+                r['end_time'] = parse(restriction['end_date'], time=True) or None
 
                 weighings.append(w)
                 restrictions.append(r)
@@ -509,12 +513,14 @@ class GoogleSheetImporter(object):
     def _add_water_administrations(self):
         administrations = []
         for n, table in self.water_tables.items():
+            if n not in self.subjects:
+                continue
             for row in table:
                 # No date? end of the table.
                 date = row['Date']
                 if not date:
                     break
-                date = parse(date)
+                date = parse(date, time=True)
 
                 weight = _parse_float(row['weight (g)'])
                 water = _parse_float(row['Water (ml)'])
