@@ -185,7 +185,7 @@ class Subject(BaseModel):
     def water_requirement_total(self):
         '''Returns the amount of water the subject needs today in total'''
         if not self.water_restriction_date():
-            return None
+            return 0
 
         rw = self.reference_weighing()
         cw = self.current_weighing()
@@ -216,7 +216,7 @@ class Subject(BaseModel):
         it got already today'''
 
         if not self.water_restriction_date():
-            return None
+            return 0
 
         req_total = self.water_requirement_total()
 
