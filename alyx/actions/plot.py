@@ -33,7 +33,7 @@ def weighing_plot(request, subject_id=None):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.dates import DayLocator, DateFormatter
-    f, ax = plt.subplots(1, 1, figsize=(8, 2))
+    f, ax = plt.subplots(1, 1, figsize=(8, 3))
 
     # Get data.
     subj = Subject.objects.get(pk=subject_id)
@@ -48,15 +48,19 @@ def weighing_plot(request, subject_id=None):
     ax.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
 
     # Plots.
-    _plot_weighings(ax, weighings)
-    _plot_weighings(ax, eweighings, coeff=.7)
-    _plot_weighings(ax, eweighings, coeff=.8)
+    _plot_weighings(ax, weighings, lw=2, color='k')
+    _plot_weighings(ax, eweighings, coeff=.8, lw=2, color='#FF7F37')
+    _plot_weighings(ax, eweighings, coeff=.7, lw=2, color='#FF4137')
     y0, y1 = ax.get_ylim()
     x = [w.date_time.date() for w in weighings]
     n = len(x)
-    where = [w.weight < ew.weight * .8 for w, ew in zip(weighings, eweighings)]
-    ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where, interpolate=True,
-                    facecolor=(1., .902, .808, .5))
+    for threshold, fc in [(.8, '#FFE3D3'), (.7, '#FFC3C0')]:
+        where = [w.weight < ew.weight * threshold for w, ew in zip(weighings, eweighings)]
+        ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where,
+                        interpolate=False,
+                        lw=0,
+                        facecolor=fc,
+                        )
 
     # Params.
     ax.set_title("Weighings for %s" % subj.nickname)
