@@ -10,7 +10,7 @@ from subjects.models import ZygosityFinder, Subject
 
 zf = ZygosityFinder()
 
+print("Updating the zygosities...")
 for subject in Subject.objects.all():
-    print(subject)
     zf.genotype_from_litter(subject)
     zf.update_subject(subject)
