@@ -140,6 +140,7 @@ class GoogleSheetImporter(object):
                     'line_tables',
                     'breeding_pairs_table',
                     'water_tables',
+                    'water_info',
                     )
 
     def __init__(self):
@@ -190,11 +191,19 @@ class GoogleSheetImporter(object):
         # Load all subject water sheets into tables.
         water_sheets = self._water_doc.worksheets()
         self.water_tables = {}
+        self.water_info = {}
         for sheet in water_sheets:
             n = sheet.title.strip()
             if n == '<mouseID>':
                 break
             logger.info("Downloading the %s table..." % n)
+            self.water_info[n] = {
+                'sex': sheet.acell('C4').value,
+                'birth_date': parse(sheet.acell('C5').value),
+                'implant_weight': float(sheet.acell('C6').value),
+                'water_restriction_date': parse(sheet.acell('A9').value),
+                'water_restriction_weighing': float(sheet.acell('D9').value),
+            }
             self.water_tables[n] = sheet_to_table(sheet, header_line=11, first_line=12)
             for row in self.water_tables[n]:
                 row['Type'] = row.pop('', None)
