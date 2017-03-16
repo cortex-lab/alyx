@@ -182,12 +182,6 @@ class Subject(BaseModel):
         else:
             return d[age_w]
 
-
-    def water_requirement_total(self):
-        '''Returns the amount of water the subject needs today in total'''
-        if not self.water_restriction_date():
-            return 0
-
     def to_weeks(self, datetime):
         if not datetime:
             return 0
@@ -207,6 +201,10 @@ class Subject(BaseModel):
         return (srw * subj_zscore) + mrw + iw
 
     def water_requirement_total(self):
+        '''Returns the amount of water the subject needs today in total'''
+        if not self.water_restriction_date():
+            return 0
+
         if not self.birth_date:
             logger.warn("Subject %s has no birth date!", self)
             return 0
