@@ -145,6 +145,7 @@ class SubjectForm(forms.ModelForm):
         super(SubjectForm, self).__init__(*args, **kwargs)
         if self.instance.line:
             self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
+        self.fields['responsible_user'].queryset = User.objects.all().order_by('username')
 
 
 class SubjectAdmin(BaseAdmin):
@@ -674,6 +675,12 @@ class SubjectRequestUserListFilter(DefaultListFilter):
             return queryset.all()
 
 
+class SubjectRequestForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(SubjectRequestForm, self).__init__(*args, **kwargs)
+        self.fields['user'].queryset = User.objects.all().order_by('username')
+
+
 class SubjectRequestAdmin(BaseAdmin):
     fields = ['line', 'count', 'date_time', 'due_date', 'notes', 'user',
               'subjects_l', 'remaining', 'status']
@@ -683,6 +690,8 @@ class SubjectRequestAdmin(BaseAdmin):
                    SubjectRequestStatusListFilter,
                    ('line', RelatedDropdownFilter),
                    ]
+
+    form = SubjectRequestForm
 
     def remaining_count(self, obj):
         return '%d/%d' % (obj.count - obj.remaining(), obj.count)
