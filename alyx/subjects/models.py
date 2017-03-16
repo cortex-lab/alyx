@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core import validators
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel
@@ -49,10 +50,14 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
+    nickname_validator = validators.RegexValidator(r'^[-._~\w]+$',
+                                                    "Nicknames must only contain letters, numbers, or any of -._~.")
+
     nickname = models.CharField(max_length=255,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
-                                          "(e.g. 'Hercules').")
+                                          "(e.g. 'Hercules').",
+                                validators=[nickname_validator])
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=MOUSE_SPECIES_ID)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
@@ -145,6 +150,8 @@ class Subject(BaseModel):
 
     def reference_weighing(self):
         wr_date = self.water_restriction_date()
+        if not wr_date:
+            return None
         weighings = Weighing.objects.filter(subject__id=self.id,
                                             date_time__lte=wr_date)
         weighings = weighings.order_by('-date_time')
@@ -176,7 +183,10 @@ class Subject(BaseModel):
             return d[age_w]
 
     def water_requirement_total(self):
-        # returns the amount of water the subject needs today in total
+        '''Returns the amount of water the subject needs today in total'''
+        if not self.water_restriction_date():
+            return None
+
         rw = self.reference_weighing()
         cw = self.current_weighing()
         start_weight = rw.weight
@@ -202,8 +212,11 @@ class Subject(BaseModel):
             return 0.04 * today_weight
 
     def water_requirement_remaining(self):
-        # returns the amount of water the subject still needs, given how much
-        # it got already today
+        '''Returns the amount of water the subject still needs, given how much
+        it got already today'''
+
+        if not self.water_restriction_date():
+            return None
 
         req_total = self.water_requirement_total()
 
