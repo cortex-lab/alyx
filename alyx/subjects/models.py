@@ -11,6 +11,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core import validators
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel
@@ -49,10 +50,14 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
+    nickname_validator = validators.RegexValidator(r'^[-._~\w]+$',
+                                                    "Nicknames must only contain letters, numbers, or any of -._~.")
+
     nickname = models.CharField(max_length=255,
                                 default='-',
                                 help_text="Easy-to-remember, unique name "
-                                          "(e.g. 'Hercules').")
+                                          "(e.g. 'Hercules').",
+                                validators=[nickname_validator])
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=MOUSE_SPECIES_ID)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
