@@ -51,10 +51,9 @@ ZYGOSITY_RULES = (
                               ('Rasgrf Cre,-Rasgrf WT', '+/+'),
                               ('-Rasgrf Cre', '-/-'))),
 
-    #  fwiw it is intentional that the logic is inverted here relative to usual
-    ('KHA', 'KHA1-KO', (('Vglut1 MD,Vglut1 WT', '+/-'),
-                        ('Vglut1 MD,-Vglut1 WT', '-/-'),
-                        ('-Vglut1 MD', '+/+'))),
+    ('KHA', 'Vglut1-MD', (('Vglut1 MD,Vglut1 WT', '+/-'),
+                          ('Vglut1 MD,-Vglut1 WT', '+/+'),
+                          ('-Vglut1 MD', '-/-'))),
 
     ('Gad', 'Gad-Cre', (('Cre,WT', '+/-'),
                         ('Cre,-WT', '+/+'),
