@@ -19,7 +19,7 @@ import pytz
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 DATA_DIR = op.abspath(op.dirname(__file__))
@@ -101,7 +101,7 @@ class Bunch(dict):
 
 
 def sheet_to_table(wks, header_line=0, first_line=2):
-    logger.debug("Downloading %s...", wks)
+    logger.info("Downloading %s...", wks)
     rows = wks.get_all_values()
     table = []
     headers = rows[header_line]
@@ -139,6 +139,7 @@ class GoogleSheetImporter(object):
                     'current_lines_table',
                     'line_tables',
                     'breeding_pairs_table',
+                    'water_tables',
                     )
 
     def __init__(self):
@@ -162,13 +163,14 @@ class GoogleSheetImporter(object):
     def _download_tables(self):
         self._line_doc = get_sheet_doc('Mice Stock - C57 and Transgenic')
         self._procedure_doc = get_sheet_doc('Mice Procedure Log')
+        self._water_doc = get_sheet_doc('Water control')
 
         # Load the procedure table.
-        logger.debug("Downloading the procedure table...")
+        logger.info("Downloading the procedure table...")
         self.procedure_table = sheet_to_table(self._procedure_doc.worksheet('PROCEDURE LOG'))
 
         # Load the current lines in the unit table.
-        logger.debug("Downloading the current lines table...")
+        logger.info("Downloading the current lines table...")
         self.current_lines_table = sheet_to_table(self._line_doc.worksheet('Current lines in the '
                                                                            'unit'))
 
@@ -177,13 +179,25 @@ class GoogleSheetImporter(object):
         self.line_tables = {}
         for sheet in line_sheets:
             n = sheet.title.strip()
-            logger.debug("Downloading the %s table..." % n)
+            logger.info("Downloading the %s table..." % n)
             self.line_tables[n] = sheet_to_table(sheet, header_line=2, first_line=3)
 
         # Load the breeding pairs table.
-        logger.debug("Downloading the breeding pairs table...")
+        logger.info("Downloading the breeding pairs table...")
         self.breeding_pairs_table = sheet_to_table(self._line_doc.worksheet('September 2016'),
                                                    header_line=2, first_line=3)
+
+        # Load all subject water sheets into tables.
+        water_sheets = self._water_doc.worksheets()
+        self.water_tables = {}
+        for sheet in water_sheets:
+            n = sheet.title.strip()
+            if n == '<mouseID>':
+                break
+            logger.info("Downloading the %s table..." % n)
+            self.water_tables[n] = sheet_to_table(sheet, header_line=11, first_line=12)
+            for row in self.water_tables[n]:
+                row['Type'] = row.pop('', None)
 
     def _cache_tables(self):
         _dump({n: getattr(self, n) for n in self._table_names}, 'dumped_google_sheets.pkl')
@@ -429,17 +443,18 @@ class GoogleSheetImporter(object):
 
 def import_data():
     importer = GoogleSheetImporter()
+    pprint(importer.water_tables)
 
-    make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
-    make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
-    make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
-    make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
-    make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
-    make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
-    make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
-    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
-    make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
-    make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
+    # make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
+    # make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
+    # make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
+    # make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
+    # make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
+    # make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
+    # make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
+    # make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
+    # make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
+    # make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
 
 
 if __name__ == '__main__':
