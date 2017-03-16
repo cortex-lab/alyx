@@ -102,6 +102,7 @@ class Subject(BaseModel):
         super(Subject, self).__init__(*args, **kwargs)
         # Used to detect when the request has changed.
         self._original_request = self.request
+        self._original_nickname = self.nickname
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
 
@@ -227,6 +228,16 @@ class Subject(BaseModel):
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
+        # Nickname has been manually changed.
+        elif self.nickname != self._original_nickname:
+            if not self.json:
+                self.json = {}
+            if 'aliases' not in self.json:
+                self.json['aliases'] = []
+            # Add the old nickname to the JSON field.
+            if self._original_nickname not in self.json['aliases']:
+                self.json['aliases'].append(self._original_nickname)
+            self._original_nickname = self.nickname
         # Default strain.
         if self.line and not self.strain:
             self.strain = self.line.strain
