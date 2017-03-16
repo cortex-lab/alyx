@@ -9,13 +9,10 @@ import re
 import sys
 import uuid
 
-# from django.utils.timezone import is_aware, make_aware
-from django.core.management import call_command
 from dateutil.parser import parse as parse_
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
-# from pytz import timezone
 
 
 logger = logging.getLogger(__name__)

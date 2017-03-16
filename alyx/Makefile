@@ -25,5 +25,6 @@ delete_all:
 import_fixtures:
 	python ../data/importer.py
 	./manage.py loaddata ../data/json/*.json
+	python make_zygosities.py
 
 reset_all: clean-pyc rmmigrations delete_all migrate import_fixtures
