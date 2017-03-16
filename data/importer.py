@@ -76,6 +76,15 @@ def parse(date_str, time=False):
     return ret.isoformat()
 
 
+def _parse_float(x):
+    if not x:
+        return None
+    if x in ('-', 'FREE WATER'):
+        return None
+    x = float(x)
+    return x
+
+
 def get_sheet_doc(doc_name):
     scope = ['https://spreadsheets.google.com/feeds']
     path = op.join(DATA_DIR, 'gdrive.json')
@@ -160,6 +169,9 @@ class GoogleSheetImporter(object):
         self.breeding_pairs = self._get_breeding_pairs(self.breeding_pairs_table)
         self.litter_breeding_pairs = self._get_litter_breeding_pairs()
         self.genotype_tests = self._get_genotype_tests()
+        self._add_water_info()
+        self.restrictions, self.weighings = self._add_water_restriction()
+        self.administrations = self._add_water_administrations()
 
     def _download_tables(self):
         self._line_doc = get_sheet_doc('Mice Stock - C57 and Transgenic')
@@ -449,10 +461,88 @@ class GoogleSheetImporter(object):
                 ))
         return tests
 
+    def _add_water_info(self):
+        names = sorted(self.water_info)
+        for n in names:
+            info = self.water_info[n]
+            # Skip non-existing subjects.
+            if n not in self.subjects:
+                del self.water_info[n]
+                continue
+            # Update the subject.
+            subj = self.subjects[n]
+            if subj['birth_date'] != info['birth_date']:
+                subj['birth_date'] = info['birth_date']
+            subj['implant_weight'] = info['implant_weight']
+            subj['sex'] = info['sex']
+
+    def _add_water_restriction(self):
+        weighings = []
+        restrictions = []
+        for n, info in self.water_info.items():
+            w = Bunch()
+            r = Bunch()
+            wr_date = info['water_restriction_date']
+            wr_weighing = info['water_restriction_weighing']
+
+            w['subject'] = [n]
+            w['date_time'] = wr_date
+            w['weight'] = wr_weighing
+
+            r['subject'] = [n]
+            r['start_time'] = wr_date
+
+            weighings.append(w)
+            restrictions.append(r)
+        return restrictions, weighings
+
+    def _add_water_administrations(self):
+        administrations = []
+        for n, table in self.water_tables.items():
+            for row in table:
+                # No date? end of the table.
+                date = row['Date']
+                if not date:
+                    break
+                date = parse(date)
+
+                weight = _parse_float(row['weight (g)'])
+                water = _parse_float(row['Water (ml)'])
+                hydrogel = _parse_float(row['Hydrogel (g)'])
+
+                # Add weighings.
+                if weight is not None:
+                    w = Bunch()
+                    w['subject'] = [n]
+                    w['date_time'] = date
+                    w['weight'] = weight
+                    self.weighings.append(w)
+
+                # Add water administrations.
+                if water:
+                    a = Bunch()
+                    a['subject'] = [n]
+                    a['date_time'] = date
+                    a['water_administered'] = water
+                    a['hydrogel'] = False
+                    administrations.append(a)
+
+                if hydrogel:
+                    a = Bunch()
+                    a['subject'] = [n]
+                    a['date_time'] = date
+                    a['water_administered'] = hydrogel
+                    a['hydrogel'] = True
+                    administrations.append(a)
+
+        return administrations
+
 
 def import_data():
     importer = GoogleSheetImporter()
-    pprint(importer.water_tables)
+    pprint(importer.restrictions)
+    pprint(importer.weighings)
+    pprint(importer.administrations)
 
     # make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
     # make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
