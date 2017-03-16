@@ -18,6 +18,20 @@ def _plot_weighings(ax, weighings, coeff=1., *args, **kwargs):
     ax.plot(x, y, *args, **kwargs)
 
 
+def _plot_bands(ax, weighings, eweighings):
+    import numpy as np
+    y0, y1 = ax.get_ylim()
+    x = [w.date_time.date() for w in weighings]
+    n = len(x)
+    for threshold, fc in [(.8, '#FFE3D3'), (.7, '#FFC3C0')]:
+        where = [w.weight < ew.weight * threshold for w, ew in zip(weighings, eweighings)]
+        ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where,
+                        interpolate=False,
+                        lw=0,
+                        facecolor=fc,
+                        )
+
+
 def weighing_plot(request, subject_id=None):
     if not request.user.is_authenticated():
         return HttpResponse('')
@@ -26,7 +40,6 @@ def weighing_plot(request, subject_id=None):
 
     # Import matplotlib.
     try:
-        import numpy as np
         import matplotlib
     except ImportError:
         return HttpResponse('Please install numpy and matplotlib.')
@@ -47,26 +60,17 @@ def weighing_plot(request, subject_id=None):
     ax.xaxis.set_major_locator(DayLocator(interval=14))
     ax.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
 
-    # Plots.
-    _plot_weighings(ax, weighings, lw=2, color='k')
+    # Plot liness.
     _plot_weighings(ax, eweighings, coeff=.8, lw=2, color='#FF7F37')
     _plot_weighings(ax, eweighings, coeff=.7, lw=2, color='#FF4137')
-    y0, y1 = ax.get_ylim()
-    x = [w.date_time.date() for w in weighings]
-    n = len(x)
-    for threshold, fc in [(.8, '#FFE3D3'), (.7, '#FFC3C0')]:
-        where = [w.weight < ew.weight * threshold for w, ew in zip(weighings, eweighings)]
-        ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where,
-                        interpolate=False,
-                        lw=0,
-                        facecolor=fc,
-                        )
+    _plot_weighings(ax, weighings, lw=2, color='k')
+    _plot_bands(ax, weighings, eweighings)
 
     # Params.
     ax.set_title("Weighings for %s" % subj.nickname)
-    plt.tight_layout()
     plt.xlabel('Date')
     plt.ylabel('Weight (g)')
+    plt.tight_layout()
     plt.grid('on')
 
     # Return the PNG.
