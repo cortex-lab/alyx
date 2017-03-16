@@ -182,10 +182,17 @@ class Subject(BaseModel):
         else:
             return d[age_w]
 
+
+    def water_requirement_total(self):
+        '''Returns the amount of water the subject needs today in total'''
+        if not self.water_restriction_date():
+            return 0
+
     def to_weeks(self, datetime):
         if not datetime:
             return 0
         return (datetime.date() - self.birth_date).days // 7
+
 
     def expected_weighing(self, age):
         rw = self.reference_weighing()
@@ -215,7 +222,7 @@ class Subject(BaseModel):
         it got already today'''
 
         if not self.water_restriction_date():
-            return None
+            return 0
 
         req_total = self.water_requirement_total()
 
