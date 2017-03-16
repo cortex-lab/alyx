@@ -65,6 +65,8 @@ def weighing_plot(request, subject_id=None):
     # Params.
     ax.set_title("Weighings for %s" % subj.nickname)
     plt.tight_layout()
+    plt.xlabel('Date')
+    plt.ylabel('Weight (g)')
     plt.grid('on')
 
     # Return the PNG.
