@@ -182,34 +182,33 @@ class Subject(BaseModel):
         else:
             return d[age_w]
 
-    def water_requirement_total(self):
-        '''Returns the amount of water the subject needs today in total'''
-        if not self.water_restriction_date():
-            return None
+    def to_weeks(self, datetime):
+        if not datetime:
+            return 0
+        return (datetime.date() - self.birth_date).days // 7
 
+    def expected_weighing(self, age):
         rw = self.reference_weighing()
-        cw = self.current_weighing()
+        if not rw:
+            return 0
+        iw = self.implant_weight or 0
+        start_age = self.to_weeks(rw.date_time)
+        start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
         start_weight = rw.weight
-        implant_weight = self.implant_weight or 0
+        mrw, srw = self.expected_weighing_mean_std(age)
+        subj_zscore = (start_weight - iw - start_mrw) / start_srw
+        return (srw * subj_zscore) + mrw + iw
+
+    def water_requirement_total(self):
         if not self.birth_date:
             logger.warn("Subject %s has no birth date!", self)
             return 0
-        start_age = (rw.date_time.date() - self.birth_date).days // 7
-        today_weight = cw.weight
-        today_age = self.age_days() // 7  # in weeks
-        start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
-        today_mrw, today_srw = self.expected_weighing_mean_std(today_age)
-
-        subj_zscore = (start_weight - implant_weight - start_mrw) / start_srw
-
-        expected_weight_today = (today_srw * subj_zscore) + \
-            today_mrw + implant_weight
-        thresh_weight = 0.8 * expected_weight_today
-
-        if today_weight < thresh_weight:
-            return 0.05 * today_weight
-        else:
-            return 0.04 * today_weight
+        # returns the amount of water the subject needs today in total
+        expected_weight = self.expected_weighing(self.age_weeks())
+        if not expected_weight:
+            return 0
+        weight = self.current_weighing().weight
+        return 0.05 * weight if weight < 0.8 * expected_weight else 0.04 * weight
 
     def water_requirement_remaining(self):
         '''Returns the amount of water the subject still needs, given how much

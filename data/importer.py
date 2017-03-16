@@ -19,7 +19,7 @@ import pytz
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 DATA_DIR = op.abspath(op.dirname(__file__))
@@ -76,6 +76,15 @@ def parse(date_str, time=False):
     return ret.isoformat()
 
 
+def _parse_float(x):
+    if not x:
+        return None
+    if x.lower() in ('-', 'free water', 'free'):
+        return None
+    x = float(x)
+    return x
+
+
 def get_sheet_doc(doc_name):
     scope = ['https://spreadsheets.google.com/feeds']
     path = op.join(DATA_DIR, 'gdrive.json')
@@ -101,7 +110,7 @@ class Bunch(dict):
 
 
 def sheet_to_table(wks, header_line=0, first_line=2):
-    logger.debug("Downloading %s...", wks)
+    logger.info("Downloading %s...", wks)
     rows = wks.get_all_values()
     table = []
     headers = rows[header_line]
@@ -139,6 +148,8 @@ class GoogleSheetImporter(object):
                     'current_lines_table',
                     'line_tables',
                     'breeding_pairs_table',
+                    'water_tables',
+                    'water_info',
                     )
 
     def __init__(self):
@@ -158,17 +169,21 @@ class GoogleSheetImporter(object):
         self.breeding_pairs = self._get_breeding_pairs(self.breeding_pairs_table)
         self.litter_breeding_pairs = self._get_litter_breeding_pairs()
         self.genotype_tests = self._get_genotype_tests()
+        self._add_water_info()
+        self.restrictions, self.weighings = self._add_water_restriction()
+        self.administrations = self._add_water_administrations()
 
     def _download_tables(self):
         self._line_doc = get_sheet_doc('Mice Stock - C57 and Transgenic')
         self._procedure_doc = get_sheet_doc('Mice Procedure Log')
+        self._water_doc = get_sheet_doc('Water control')
 
         # Load the procedure table.
-        logger.debug("Downloading the procedure table...")
+        logger.info("Downloading the procedure table...")
         self.procedure_table = sheet_to_table(self._procedure_doc.worksheet('PROCEDURE LOG'))
 
         # Load the current lines in the unit table.
-        logger.debug("Downloading the current lines table...")
+        logger.info("Downloading the current lines table...")
         self.current_lines_table = sheet_to_table(self._line_doc.worksheet('Current lines in the '
                                                                            'unit'))
 
@@ -177,13 +192,42 @@ class GoogleSheetImporter(object):
         self.line_tables = {}
         for sheet in line_sheets:
             n = sheet.title.strip()
-            logger.debug("Downloading the %s table..." % n)
+            logger.info("Downloading the %s table..." % n)
             self.line_tables[n] = sheet_to_table(sheet, header_line=2, first_line=3)
 
         # Load the breeding pairs table.
-        logger.debug("Downloading the breeding pairs table...")
+        logger.info("Downloading the breeding pairs table...")
         self.breeding_pairs_table = sheet_to_table(self._line_doc.worksheet('September 2016'),
                                                    header_line=2, first_line=3)
+
+        # Load all subject water sheets into tables.
+        water_sheets = self._water_doc.worksheets()
+        self.water_tables = {}
+        self.water_info = {}
+        for sheet in water_sheets:
+            n = sheet.title.strip()
+            if n == '<mouseID>':
+                break
+            logger.info("Downloading the %s table..." % n)
+            # Water restrictions.
+            wrs = []
+            for i in range(4):
+                start_date = sheet.acell('A%d' % (9 + i)).value
+                end_date = sheet.acell('G%d' % (9 + i)).value
+                weight = sheet.acell('D%d' % (9 + i)).value
+                if not start_date:
+                    break
+                wrs.append(Bunch(start_date=start_date, weight=weight, end_date=end_date))
+            self.water_info[n] = {
+                'sex': sheet.acell('C4').value,
+                'birth_date': sheet.acell('C5').value,
+                'implant_weight': sheet.acell('C6').value,
+                'water_restrictions': wrs,
+            }
+            self.water_tables[n] = sheet_to_table(sheet, header_line=13, first_line=14)
+            # HACK: empty header = header is "type"
+            for row in self.water_tables[n]:
+                row['Type'] = row.pop('', None)
 
     def _cache_tables(self):
         _dump({n: getattr(self, n) for n in self._table_names}, 'dumped_google_sheets.pkl')
@@ -426,6 +470,89 @@ class GoogleSheetImporter(object):
                 ))
         return tests
 
+    def _add_water_info(self):
+        names = sorted(self.water_info)
+        for n in names:
+            info = self.water_info[n]
+            # Skip non-existing subjects.
+            if n not in self.subjects:
+                del self.water_info[n]
+                continue
+            # Update the subject.
+            subj = self.subjects[n]
+            bd = parse(info['birth_date'])
+            if subj['birth_date'] != bd:
+                subj['birth_date'] = bd
+            subj['implant_weight'] = float(info['implant_weight'])
+            subj['sex'] = info['sex']
+
+    def _add_water_restriction(self):
+        weighings = []
+        restrictions = []
+        for n, info in self.water_info.items():
+            if n not in self.subjects:
+                continue
+            for restriction in info['water_restrictions']:
+                w = Bunch()
+                r = Bunch()
+                date = parse(restriction['start_date'], time=True)
+                weight = restriction['weight']
+
+                w['subject'] = [n]
+                w['date_time'] = date
+                w['weight'] = weight
+
+                r['subject'] = [n]
+                r['start_time'] = date
+                r['end_time'] = parse(restriction['end_date'], time=True) or None
+
+                weighings.append(w)
+                restrictions.append(r)
+        return restrictions, weighings
+
+    def _add_water_administrations(self):
+        administrations = []
+        for n, table in self.water_tables.items():
+            if n not in self.subjects:
+                continue
+            for row in table:
+                # No date? end of the table.
+                date = row['Date']
+                if not date:
+                    break
+                date = parse(date, time=True)
+
+                weight = _parse_float(row['weight (g)'])
+                water = _parse_float(row['Water (ml)'])
+                hydrogel = _parse_float(row['Hydrogel (g)'])
+
+                # Add weighings.
+                if weight is not None:
+                    w = Bunch()
+                    w['subject'] = [n]
+                    w['date_time'] = date
+                    w['weight'] = weight
+                    self.weighings.append(w)
+
+                # Add water administrations.
+                if water:
+                    a = Bunch()
+                    a['subject'] = [n]
+                    a['date_time'] = date
+                    a['water_administered'] = water
+                    a['hydrogel'] = False
+                    administrations.append(a)
+
+                if hydrogel:
+                    a = Bunch()
+                    a['subject'] = [n]
+                    a['date_time'] = date
+                    a['water_administered'] = hydrogel
+                    a['hydrogel'] = True
+                    administrations.append(a)
+
+        return administrations
+
 
 def import_data():
     importer = GoogleSheetImporter()
@@ -440,6 +567,10 @@ def import_data():
     make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
     make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
     make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
+    make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
+    make_fixture('actions.weighing', importer.weighings, path='12-weighings')
+    make_fixture('actions.wateradministration', importer.administrations,
+                 path='13-water-administrations')
 
 
 if __name__ == '__main__':
