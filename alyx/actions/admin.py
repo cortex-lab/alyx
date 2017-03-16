@@ -10,9 +10,20 @@ from subjects.models import Subject
 from subjects.admin import get_admin_url
 
 
+class BaseActionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(BaseActionForm, self).__init__(*args, **kwargs)
+        if 'users' in self.fields:
+            self.fields['users'].queryset = User.objects.all().order_by('username')
+        if 'user' in self.fields:
+            self.fields['user'].queryset = User.objects.all().order_by('username')
+
+
 class BaseActionAdmin(BaseAdmin):
     fields = ['subject', 'start_time', 'end_time', 'users',
               'location', 'procedures', 'narrative']
+
+    form = BaseActionForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
@@ -35,6 +46,7 @@ class WaterAdministrationForm(forms.ModelForm):
                     for wr in WaterRestriction.objects.filter(start_time__isnull=False,
                                                               end_time__isnull=True)],
         )
+        self.fields['user'].queryset = User.objects.all().order_by('username')
 
 
 class WaterAdministrationAdmin(BaseActionAdmin):

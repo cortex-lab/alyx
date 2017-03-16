@@ -27,4 +27,4 @@ LEFT JOIN subjects_breedingpair on subjects_litter.breeding_pair_id=subjects_bre
 LEFT JOIN subjects_source on subjects_subject.source_id=subjects_source.id
 LEFT JOIN subjects_species on subjects_subject.species_id=subjects_species.id
 LEFT JOIN subjects_strain on subjects_subject.strain_id=subjects_strain.id
-ORDER BY subjects_subject.birth_date DESC
+ORDER BY line, subjects_subject.birth_date DESC, subjects_subject.nickname DESC
