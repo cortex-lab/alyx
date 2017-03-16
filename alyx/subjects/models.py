@@ -154,9 +154,6 @@ class Subject(BaseModel):
         return weighings[0]
 
     def current_weighing(self):
-        if not self.water_restriction_date():
-            return None
-
         weighings = Weighing.objects.filter(subject__id=self.id)
         weighings = weighings.order_by('-date_time')
         if not weighings:
@@ -164,9 +161,6 @@ class Subject(BaseModel):
         return weighings[0]
 
     def expected_weighing_mean_std(self, age_w):
-        if not self.water_restriction_date():
-            return None
-
         sex = 'male' if self.sex == 'M' else 'female'
         path = op.join(op.dirname(__file__),
                        'static/ref_weighings_%s.csv' % sex)
