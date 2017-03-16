@@ -44,6 +44,7 @@ class WeighingAdmin(BaseActionAdmin):
     list_display = ['subject', 'weight', 'date_time']
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
+    list_display_links = ('weight',)
 
 
 # Filters
