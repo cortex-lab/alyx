@@ -882,6 +882,7 @@ class CullSubjectAliveListFilter(DefaultListFilter):
             (None, 'Yes'),
             ('n', 'No'),
             ('nr', 'Not reduced'),
+            ('tbc', 'To be culled'),
             ('all', 'All'),
         )
 
@@ -892,6 +893,8 @@ class CullSubjectAliveListFilter(DefaultListFilter):
             return queryset.exclude(death_date=None)
         if self.value() == 'nr':
             return queryset.filter(reduced=False).exclude(death_date=None)
+        if self.value() == 'tbc':
+            return queryset.filter(to_be_culled=True, death_date=None)
         elif self.value == 'all':
             return queryset.all()
 
