@@ -18,9 +18,8 @@ def _plot_weighings(ax, weighings, coeff=1., *args, **kwargs):
     ax.plot(x, y, *args, **kwargs)
 
 
-def _plot_bands(ax, weighings, eweighings):
+def _plot_bands(ax, weighings, eweighings, y0, y1):
     import numpy as np
-    y0, y1 = ax.get_ylim()
     x = [w.date_time.date() for w in weighings]
     n = len(x)
     for threshold, fc in [(.8, '#FFE3D3'), (.7, '#FFC3C0')]:
@@ -30,6 +29,8 @@ def _plot_bands(ax, weighings, eweighings):
                         lw=0,
                         facecolor=fc,
                         )
+        for i in np.nonzero(where)[0]:
+            ax.axvline(x[i], lw=10, color=fc)
 
 
 def weighing_plot(request, subject_id=None):
@@ -45,28 +46,40 @@ def weighing_plot(request, subject_id=None):
         return HttpResponse('Please install numpy and matplotlib.')
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from matplotlib.dates import DayLocator, DateFormatter
+    import matplotlib.dates as mpld
     f, ax = plt.subplots(1, 1, figsize=(8, 3))
 
     # Get data.
     subj = Subject.objects.get(pk=subject_id)
-    weighings = Weighing.objects.filter(subject=subj,
-                                        date_time__isnull=False).order_by('date_time')
+    weighings = [w for w in Weighing.objects.filter(subject=subj, date_time__isnull=False)
+                                            .order_by('date_time')]
     eweighings = [Bunch(date_time=w.date_time,
                         weight=subj.expected_weighing(subj.to_weeks(w.date_time)))
                   for w in weighings]
 
-    # Axes.
-    ax.xaxis.set_major_locator(DayLocator(interval=14))
-    ax.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
+    weights = ([w.weight for w in weighings] +
+               [w.weight * .7 for w in eweighings] +
+               [w.weight * .8 for w in weighings])
 
-    # Plot liness.
-    _plot_weighings(ax, eweighings, coeff=.8, lw=2, color='#FF7F37')
-    _plot_weighings(ax, eweighings, coeff=.7, lw=2, color='#FF4137')
-    _plot_weighings(ax, weighings, lw=2, color='k')
-    _plot_bands(ax, weighings, eweighings)
+    if weighings:
+        xlim = weighings[0].date_time, weighings[-1].date_time
+        ylim = min(weights) - 1, max(weights) + 1
 
-    # Params.
+        # Axes.
+        ax.xaxis.set_major_locator(mpld.AutoDateLocator())
+        ax.xaxis.set_major_formatter(mpld.DateFormatter('%d/%m/%y'))
+
+        # Bands.
+        _plot_bands(ax, weighings, eweighings, *ylim)
+
+        # Weighing curves.
+        _plot_weighings(ax, eweighings, coeff=.8, lw=2, color='#FF7F37')
+        _plot_weighings(ax, eweighings, coeff=.7, lw=2, color='#FF4137')
+        _plot_weighings(ax, weighings, lw=2, color='k')
+
+        plt.xlim(*xlim)
+        plt.ylim(*ylim)
+
     ax.set_title("Weighings for %s" % subj.nickname)
     plt.xlabel('Date')
     plt.ylabel('Weight (g)')
