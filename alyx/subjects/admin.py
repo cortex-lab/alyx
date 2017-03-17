@@ -92,6 +92,29 @@ class ZygosityFilter(DefaultListFilter):
             return queryset.exclude(pk__in=nids)
 
 
+class TodoFilter(DefaultListFilter):
+    title = 'todo'
+    parameter_name = 'todo'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'All'),
+            ('g', 'To be genotyped'),
+            ('c', 'To be culled'),
+            ('r', 'To be reduced'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.all()
+        elif self.value() == 'g':
+            return queryset.filter(to_be_genotyped=True)
+        elif self.value() == 'c':
+            return queryset.filter(to_be_culled=True)
+        elif self.value() == 'r':
+            return queryset.filter(death_date__isnull=False, reduced=False)
+
+
 # Subject
 # ------------------------------------------------------------------------------------------------
 
@@ -153,7 +176,7 @@ class SubjectAdmin(BaseAdmin):
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
                                 'responsible_user', 'request', 'wean_date',
                                 'to_be_genotyped', 'genotype_date',
-                                'death_date', 'ear_mark',
+                                'death_date', 'to_be_culled', 'reduced', 'ear_mark',
                                 'protocol_number', 'notes', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter', 'lamis_cage',),
                      'classes': ('collapse',),
@@ -196,6 +219,7 @@ class SubjectAdmin(BaseAdmin):
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ZygosityFilter,
+                   TodoFilter,
                    ('line', RelatedDropdownFilter),
                    ]
     form = SubjectForm
