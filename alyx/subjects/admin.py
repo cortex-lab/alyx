@@ -690,6 +690,7 @@ class SubjectRequestAdmin(BaseAdmin):
                    SubjectRequestStatusListFilter,
                    ('line', RelatedDropdownFilter),
                    ]
+    inlines = [SubjectInline]
 
     form = SubjectRequestForm
 

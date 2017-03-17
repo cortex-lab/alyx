@@ -110,6 +110,7 @@ class Subject(BaseModel):
         self._original_nickname = self.nickname
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
+        self._original_responsible_user = self.responsible_user
 
     def alive(self):
         return self.death_date is None
@@ -187,7 +188,6 @@ class Subject(BaseModel):
             return 0
         return (datetime.date() - self.birth_date).days // 7
 
-
     def expected_weighing(self, age):
         rw = self.reference_weighing()
         if not rw:
@@ -264,6 +264,15 @@ class Subject(BaseModel):
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not self._original_genotype_date:
             self.to_be_genotyped = False
+        # Update subject request.
+        if (self.responsible_user and
+                self.responsible_user != self._original_responsible_user and
+                self.line is not None and
+                self.request is None):
+            srs = SubjectRequest.objects.filter(user=self.responsible_user,
+                                                line=self.line)
+            if srs:
+                self.request = srs[0]
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
