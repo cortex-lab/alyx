@@ -143,7 +143,9 @@ class Subject(BaseModel):
             return self.litter.breeding_pair.father
 
     def water_restriction_date(self):
-        restriction = WaterRestriction.objects.filter(subject__id=self.id)
+        restriction = WaterRestriction.objects.filter(subject__id=self.id,
+                                                      end_time__isnull=True,
+                                                      )
         restriction = restriction.order_by('-start_time')
         if not restriction:
             return
