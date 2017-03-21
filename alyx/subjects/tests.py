@@ -1,9 +1,16 @@
+import logging
+import sys
+
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import TestCase
 from django.test.client import RequestFactory
 
 from .admin import *
 from .models import *
+
+logger = logging.getLogger(__file__)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class MockSuperUser(User):
@@ -12,6 +19,9 @@ class MockSuperUser(User):
 
     class Meta:
         proxy = True
+
+
+DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 
 class ModelAdminTests(TestCase):
@@ -23,6 +33,10 @@ class ModelAdminTests(TestCase):
         request.csrf_processing_done = True
         self.request = request
 
+    @classmethod
+    def setUpTestData(cls):
+        call_command('loaddata', op.join(DATA_DIR, 'all_dumped'), verbosity=0)
+
     def ar(self, r):
         assert r.status_code == 200
 
@@ -33,6 +47,7 @@ class ModelAdminTests(TestCase):
 
         # Get the first subject.
         qs = ma.get_queryset(self.request)
+        logger.debug("Found %d items for %s.", len(qs), qs.model)
         if not len(qs):
             return
         subj = qs[0]
