@@ -1,5 +1,6 @@
 import logging
 import sys
+from uuid import UUID
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -18,7 +19,7 @@ DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 class ModelAdminTests(TestCase):
     def setUp(self):
-        self.site = MyAdminSite()
+        self.site = mysite
         self.factory = RequestFactory()
         request = self.factory.get('/')
         request.user = User.objects.get(username='charu')
@@ -46,17 +47,10 @@ class ModelAdminTests(TestCase):
         subj = qs[0]
 
         # Change page.
-        r = ma.change_view(self.request, subj.id.hex)
+        identifier = subj.id.hex if isinstance(subj.id, UUID) else str(subj.id)
+        r = ma.change_view(self.request, identifier)
         self.ar(r)
 
     def test_model_admins(self):
-        self._test_list_change(SubjectAdmin(Subject, self.site))
-        self._test_list_change(BreedingPairAdmin(BreedingPair, self.site))
-        self._test_list_change(LitterAdmin(Litter, self.site))
-        self._test_list_change(LineAdmin(Line, self.site))
-        self._test_list_change(SpeciesAdmin(Species, self.site))
-        self._test_list_change(StrainAdmin(Strain, self.site))
-        self._test_list_change(AlleleAdmin(Allele, self.site))
-        self._test_list_change(SourceAdmin(Source, self.site))
-        self._test_list_change(SequenceAdmin(Sequence, self.site))
-        self._test_list_change(SubjectAdverseEffectsAdmin(Subject, self.site))
+        for model, admin in self.site._registry.items():
+            self._test_list_change(admin)
