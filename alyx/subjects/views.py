@@ -1,14 +1,14 @@
 
-from .models import Subject
-
-from .serializers import SubjectListSerializer, SubjectDetailSerializer
+from .models import *
+from .serializers import *
 from rest_framework import generics, permissions
 import django_filters
 from django_filters.rest_framework import FilterSet
 
 
 class SubjectFilter(FilterSet):
-    alive = django_filters.BooleanFilter(name='alive')
+    alive = django_filters.BooleanFilter(name='death_date', lookup_expr='isnull')
+    responsible_user = django_filters.CharFilter(name='responsible_user__username')
 
     class Meta:
         model = Subject
@@ -20,7 +20,6 @@ class SubjectList(generics.ListCreateAPIView):
     serializer_class = SubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
-    filter_fields = ['__all__', 'alive']
 
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
