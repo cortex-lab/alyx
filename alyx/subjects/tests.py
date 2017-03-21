@@ -13,14 +13,6 @@ logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-class MockSuperUser(User):
-    def has_perm(self, perm):
-        return True
-
-    class Meta:
-        proxy = True
-
-
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 
@@ -29,16 +21,17 @@ class ModelAdminTests(TestCase):
         self.site = MyAdminSite()
         self.factory = RequestFactory()
         request = self.factory.get('/')
-        request.user = MockSuperUser()
+        request.user = User.objects.get(username='charu')
         request.csrf_processing_done = True
         self.request = request
 
     @classmethod
     def setUpTestData(cls):
-        call_command('loaddata', op.join(DATA_DIR, 'all_dumped'), verbosity=0)
+        call_command('loaddata', op.join(DATA_DIR, 'all_dumped'), verbosity=1)
 
     def ar(self, r):
-        assert r.status_code == 200
+        r.render()
+        self.assertTrue(r.status_code == 200)
 
     def _test_list_change(self, ma):
         # List of subjects.
