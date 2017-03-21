@@ -5,13 +5,14 @@ import os.path as op
 import urllib
 
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core import validators
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth.models import User
 from django.utils import timezone
-from django.core import validators
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel
@@ -107,7 +108,10 @@ class Subject(BaseModel):
         self._original_nickname = self.nickname
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
-        self._original_responsible_user = self.responsible_user
+        try:
+            self._original_responsible_user = self.responsible_user
+        except ObjectDoesNotExist:
+            self._original_responsible_user = None
 
     def alive(self):
         return self.death_date is None
