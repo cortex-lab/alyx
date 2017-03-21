@@ -15,7 +15,6 @@ from django.core import validators
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel
-from equipment.models import LabLocation
 from actions.models import WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
@@ -51,7 +50,8 @@ class Subject(BaseModel):
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
     nickname_validator = validators.RegexValidator(r'^[-._~\w]+$',
-                                                    "Nicknames must only contain letters, numbers, or any of -._~.")
+                                                   "Nicknames must only contain letters, "
+                                                   "numbers, or any of -._~.")
 
     nickname = models.CharField(max_length=255,
                                 default='-',
@@ -96,9 +96,6 @@ class Subject(BaseModel):
     reduced = models.BooleanField(default=False)
 
     objects = SubjectManager()
-
-    def natural_key(self):
-        return (self.nickname,)
 
     class Meta:
         ordering = ['-nickname', '-birth_date']
