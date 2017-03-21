@@ -28,3 +28,6 @@ import_fixtures:
 	python make_zygosities.py
 
 reset_all: clean-pyc rmmigrations delete_all migrate import_fixtures
+
+dump_all:
+	./manage.py dumpdata -e contenttypes -e auth.permission --indent 1 --natural-foreign --natural-primary -o ../data/all_dumped.json
