@@ -490,11 +490,35 @@ class BreedingPairAdminForm(forms.ModelForm):
 
 class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
-    list_display = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
+    list_display = ['name', 'line_l', 'start_date', 'end_date',
+                    'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
     list_filter = [('line', RelatedDropdownFilter),
                    ]
     inlines = [LitterInline]
+
+    def line_l(self, obj):
+        url = get_admin_url(obj.line)
+        return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
+    line_l.short_description = 'line'
+
+    def father_l(self, obj):
+        url = get_admin_url(obj.father)
+        return format_html('<a href="{url}">{name}</a>',
+                           name=obj.father.nickname if obj.father else '-', url=url)
+    father_l.short_description = 'father'
+
+    def mother1_l(self, obj):
+        url = get_admin_url(obj.mother1)
+        return format_html('<a href="{url}">{name}</a>',
+                           name=obj.mother1.nickname if obj.mother1 else '-', url=url)
+    mother1_l.short_description = 'mother1'
+
+    def mother2_l(self, obj):
+        url = get_admin_url(obj.mother2)
+        return format_html('<a href="{url}">{name}</a>',
+                           name=obj.mother2.nickname if obj.mother2 else '-', url=url)
+    mother2_l.short_description = 'mother2'
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
