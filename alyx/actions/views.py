@@ -9,6 +9,21 @@ from .serializers import (SessionListSerializer,
                           WeighingDetailSerializer,
                           )
 
+import django_filters
+from django_filters.rest_framework import FilterSet
+
+class SessionFilter(FilterSet):
+    subject = django_filters.CharFilter(name='subject__nickname')
+    start_date = django_filters.DateFilter(name='start_time__date',lookup_expr=('exact'))
+    end_date = django_filters.DateFilter(name='end_time__date',lookup_expr=('exact'))
+    starts_before = django_filters.DateFilter(name='start_time',lookup_expr=('lte'))
+    starts_after = django_filters.DateFilter(name='start_time',lookup_expr=('gte'))
+    ends_before = django_filters.DateFilter(name='start_time',lookup_expr=('lte'))
+    ends_after = django_filters.DateFilter(name='start_time',lookup_expr=('gte'))
+
+    class Meta:
+        model = Session
+        exclude = ['json']
 
 class SessionAPIList(generics.ListCreateAPIView):
     """
@@ -17,6 +32,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_class = SessionFilter
 
 
 class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
