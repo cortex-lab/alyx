@@ -138,6 +138,7 @@ class SurgeryInline(BaseInlineAdmin):
     fields = ['procedures', 'narrative', 'start_time', 'outcome_type',
               'users', 'location']
     classes = ['collapse']
+    show_change_link = True
 
 
 class SessionInline(BaseInlineAdmin):
