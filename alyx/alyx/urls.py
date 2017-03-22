@@ -90,7 +90,6 @@ urlpatterns = [
     url(r'^users$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+) $', user_detail, name='user-detail'),
 
-    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^admin-subjects/', include('subjects.urls')),

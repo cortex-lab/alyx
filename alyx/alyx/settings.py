@@ -52,7 +52,6 @@ INSTALLED_APPS = (
     'polymorphic',
     'rest_framework',
     'rest_framework.authtoken',
-    'django.contrib.admindocs',
     'equipment',
     'actions',
     'data',
