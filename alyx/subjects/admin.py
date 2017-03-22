@@ -188,6 +188,7 @@ class SubjectAdmin(BaseAdmin):
         ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
                                         'reference_weighing_f',
                                         'current_weighing_f',
+                                        'weight_zscore_f',
                                         'implant_weight',
                                         'water_requirement_total_f',
                                         'water_requirement_remaining_f',
@@ -211,6 +212,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_restriction_date',
                        'reference_weighing_f',
                        'current_weighing_f',
+                       'weight_zscore_f',
                        'water_requirement_total_f',
                        'water_requirement_remaining_f',
                        'weighing_plot',
@@ -270,6 +272,11 @@ class SubjectAdmin(BaseAdmin):
         res = obj.current_weighing()
         return '%.2f' % res.weight if res else '0'
     current_weighing_f.short_description = 'current weighing'
+
+    def weight_zscore_f(self, obj):
+        res = obj.weight_zscore()
+        return '%.2f' % res if res else '0'
+    weight_zscore_f.short_description = 'weight z-score'
 
     def water_requirement_total_f(self, obj):
         return '%.2f' % obj.water_requirement_total()

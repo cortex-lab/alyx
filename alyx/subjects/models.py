@@ -191,7 +191,7 @@ class Subject(BaseModel):
             return 0
         return (datetime.date() - self.birth_date).days // 7
 
-    def expected_weighing(self, age):
+    def weight_zscore(self):
         rw = self.reference_weighing()
         if not rw:
             return 0
@@ -199,8 +199,15 @@ class Subject(BaseModel):
         start_age = self.to_weeks(rw.date_time)
         start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
         start_weight = rw.weight
+        return (start_weight - iw - start_mrw) / start_srw
+
+    def expected_weighing(self, age):
+        rw = self.reference_weighing()
+        if not rw:
+            return 0
+        iw = self.implant_weight or 0
         mrw, srw = self.expected_weighing_mean_std(age)
-        subj_zscore = (start_weight - iw - start_mrw) / start_srw
+        subj_zscore = self.weight_zscore()
         return (srw * subj_zscore) + mrw + iw
 
     def water_requirement_total(self):
