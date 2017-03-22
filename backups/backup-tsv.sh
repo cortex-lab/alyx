@@ -20,4 +20,4 @@ done
 echo "Backup done in $output_dir"
 
 # Upload to Google Sheets.
-$script_path/upload-gsheets.py $output_dir
+sudo python3 $script_path/upload-gsheets.py $output_dir
