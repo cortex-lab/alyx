@@ -883,24 +883,30 @@ class MyAdminSite(admin.AdminSite):
 
 
 mysite = MyAdminSite()
+mysite.site_header = 'Alyx'
+mysite.site_title = 'Alyx'
+mysite.site_url = None
+mysite.index_title = 'Welcome to Alyx'
+
 admin.site = mysite
-admin.site.register(User)
-admin.site.register(Group)
 
-admin.site.register(Subject, SubjectAdmin)
-admin.site.register(Litter, LitterAdmin)
-admin.site.register(Line, LineAdmin)
-admin.site.register(BreedingPair, BreedingPairAdmin)
+mysite.register(User)
+mysite.register(Group)
 
-admin.site.register(SubjectRequest, SubjectRequestAdmin)
-admin.site.register(Species, SpeciesAdmin)
-admin.site.register(Strain, StrainAdmin)
-admin.site.register(Source, SourceAdmin)
-admin.site.register(Allele, AlleleAdmin)
-admin.site.register(Sequence, SequenceAdmin)
+mysite.register(Subject, SubjectAdmin)
+mysite.register(Litter, LitterAdmin)
+mysite.register(Line, LineAdmin)
+mysite.register(BreedingPair, BreedingPairAdmin)
 
-admin.site.register(GenotypeTest)
-admin.site.register(Zygosity)
+mysite.register(SubjectRequest, SubjectRequestAdmin)
+mysite.register(Species, SpeciesAdmin)
+mysite.register(Strain, StrainAdmin)
+mysite.register(Source, SourceAdmin)
+mysite.register(Allele, AlleleAdmin)
+mysite.register(Sequence, SequenceAdmin)
+
+mysite.register(GenotypeTest)
+mysite.register(Zygosity)
 
 
 # Alternative admin views
