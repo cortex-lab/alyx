@@ -861,7 +861,10 @@ class MyAdminSite(admin.AdminSite):
         model_to_app = {str(model['name']): str(app['name'])
                         for app in app_list
                         for model in app['models']}
-        category_list = [Bunch(name=name, models=[models_dict[m] for m in model_names])
+        category_list = [Bunch(name=name,
+                               models=[models_dict[m] for m in model_names],
+                               collapsed='' if name == 'Common' else 'collapsed'
+                               )
                          for name, model_names in order]
         for model_name, app_name in model_to_app.items():
             if model_name in order_models:
