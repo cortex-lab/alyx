@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib import admin
+from django.db.models import Q
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.utils.html import format_html
-from django.urls import reverse
 
 from alyx.base import BaseAdmin, DefaultListFilter
 from .models import *
@@ -17,6 +17,11 @@ class BaseActionForm(forms.ModelForm):
             self.fields['users'].queryset = User.objects.all().order_by('username')
         if 'user' in self.fields:
             self.fields['user'].queryset = User.objects.all().order_by('username')
+        if 'subject' in self.fields:
+            qs = Subject.objects.filter(Q(responsible_user=self.current_user, death_date=None) |
+                                        Q(pk=self.instance.subject.pk)
+                                        ).order_by('nickname')
+            self.fields['subject'].queryset = qs
 
 
 class BaseActionAdmin(BaseAdmin):
@@ -25,12 +30,10 @@ class BaseActionAdmin(BaseAdmin):
 
     form = BaseActionForm
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'subject':
-            kwargs["queryset"] = Subject.objects.filter(responsible_user=request.user,
-                                                        death_date=None,
-                                                        ).order_by('nickname')
-        return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(BaseActionAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
 
 
 class WaterRestrictionAdmin(BaseActionAdmin):
