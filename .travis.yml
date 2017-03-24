@@ -1,0 +1,16 @@
+language: python
+python:
+  - 3.6
+services: postgresql
+env:
+  - DJANGO=1.10
+before_install:
+  - export DJANGO_SETTINGS_MODULE=alyx.settings
+  - export PYTHONPATH=$HOME/builds/cortexlab/alyx
+  - export PIP_USE_MIRRORS=true
+install:
+  - pip install -r requirements.txt
+before_script:
+  - psql -c "CREATE DATABASE alyx;" -U postgres
+script:
+  - python manage.py test -k
