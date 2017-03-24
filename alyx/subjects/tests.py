@@ -23,13 +23,13 @@ class ModelAdminTests(TestCase):
         self.site = mysite
         self.factory = RequestFactory()
         request = self.factory.get('/')
-        request.user = User.objects.get(username='charu')
+        request.user = User.objects.get(pk=5)  # default responsible user
         request.csrf_processing_done = True
         self.request = request
 
     @classmethod
     def setUpTestData(cls):
-        call_command('loaddata', op.join(DATA_DIR, 'all_dumped'), verbosity=1)
+        call_command('loaddata', op.join(DATA_DIR, 'all_dumped_anon.json.gz'), verbosity=1)
 
     def ar(self, r):
         r.render()
