@@ -30,7 +30,7 @@ import_fixtures:
 reset_all: delete_all migrate import_fixtures
 
 dump_all:
-	python3 manage.py dumpdata -e contenttypes -e auth.permission --indent 1 --natural-foreign --natural-primary -o ../data/all_dumped.json
+	python3 manage.py dumpdata -e contenttypes -e auth.permission --indent 1 -o ../data/all_dumped.json
 
 test:
 	./manage.py test -k

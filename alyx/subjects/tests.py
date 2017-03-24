@@ -1,4 +1,5 @@
 import logging
+from operator import attrgetter
 import sys
 from uuid import UUID
 
@@ -52,5 +53,6 @@ class ModelAdminTests(TestCase):
         self.ar(r)
 
     def test_model_admins(self):
-        for model, admin in self.site._registry.items():
-            self._test_list_change(admin)
+        names = sorted(self.site._registry, key=attrgetter('__name__'))
+        for name in names:
+            self._test_list_change(self.site._registry[name])
