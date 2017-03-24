@@ -481,15 +481,24 @@ class LitterInline(BaseInlineAdmin):
 
 
 class BreedingPairAdminForm(forms.ModelForm):
+    lamis_cage = forms.CharField(required=False)
+
     def __init__(self, *args, **kwargs):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
-        if self.instance.line:
-            sex = {'mother1': 'F', 'mother2': 'F', 'father': 'M'}
-            for which_parent in sex.keys():
-                self.fields[which_parent].queryset = Subject.objects.filter(
-                    line=self.instance.line,
-                    sex=sex[which_parent],
-                )
+        for w in ('father', 'mother1', 'mother2'):
+            p = getattr(self.instance, w, None)
+            if p and p.lamis_cage:
+                self.fields['lamis_cage'].initial = p.lamis_cage
+
+    def save(self, commit=True):
+        lamis_cage = self.cleaned_data.get('lamis_cage')
+        if lamis_cage:
+            for w in ('father', 'mother1', 'mother2'):
+                p = getattr(self.instance, w, None)
+                if p:
+                    p.lamis_cage = int(lamis_cage)
+                    p.save()
+        return super(BreedingPairAdminForm, self).save(commit=commit)
 
     class Meta:
         fields = '__all__'
@@ -500,7 +509,8 @@ class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
     list_display = ['name', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
-    fields = ['name', 'line', 'start_date', 'end_date', 'father', 'mother1', 'mother2']
+    fields = ['name', 'line', 'start_date', 'end_date',
+              'father', 'mother1', 'mother2', 'lamis_cage']
     list_filter = [('line', RelatedDropdownFilter),
                    ]
     inlines = [LitterInline]
