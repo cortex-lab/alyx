@@ -18,9 +18,11 @@ class BaseActionForm(forms.ModelForm):
         if 'user' in self.fields:
             self.fields['user'].queryset = User.objects.all().order_by('username')
         if 'subject' in self.fields:
-            qs = Subject.objects.filter(Q(responsible_user=self.current_user, death_date=None) |
-                                        Q(pk=self.instance.subject.pk)
-                                        ).order_by('nickname')
+            inst = self.instance
+            q = Q(responsible_user=self.current_user, death_date=None)
+            if getattr(inst, 'subject', None):
+                q |= Q(pk=inst.subject.pk)
+            qs = Subject.objects.filter(q).order_by('nickname')
             self.fields['subject'].queryset = qs
 
 

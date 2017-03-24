@@ -40,6 +40,9 @@ class ModelAdminTests(TestCase):
         r = ma.changelist_view(self.request)
         self.ar(r)
 
+        # Test the add page.
+        r = ma.add_view(self.request)
+
         # Get the first subject.
         qs = ma.get_queryset(self.request)
         logger.debug("Found %d items for %s.", len(qs), qs.model)
@@ -47,10 +50,12 @@ class ModelAdminTests(TestCase):
             return
         subj = qs[0]
 
-        # Change page.
+        # Test the change page.
         identifier = subj.id.hex if isinstance(subj.id, UUID) else str(subj.id)
         r = ma.change_view(self.request, identifier)
         self.ar(r)
+
+        # TODO: test saving
 
     def test_model_admins(self):
         names = sorted(self.site._registry, key=attrgetter('__name__'))
