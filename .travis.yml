@@ -13,4 +13,5 @@ install:
 before_script:
   - psql -c "CREATE DATABASE alyx;" -U postgres
 script:
+  - cd alyx
   - python manage.py test -k
