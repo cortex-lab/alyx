@@ -28,6 +28,33 @@ DEFAULT_RESPONSIBLE_USER_ID = 5
 # Subject
 # ------------------------------------------------------------------------------------------------
 
+def init_old_fields(obj, fields):
+    obj._original_fields = getattr(obj, '_original_fields', {})
+    for field in fields:
+        obj._original_fields[field] = str(getattr(obj, field)) if hasattr(obj, field) else None
+
+
+def save_old_fields(obj, fields):
+    date_time = datetime.now(timezone.utc).isoformat()
+    d = (getattr(obj, 'json', None) or {}).get('history', {})
+    for field in fields:
+        v = str(getattr(obj, field)) if hasattr(obj, field) else None
+        if v is None or v == obj._original_fields.get(field, None):
+            continue
+        if field not in d:
+            d[field] = []
+        l = d[field]
+        l.append({'date_time': date_time, 'value': obj._original_fields[field]})
+        # Update the new value.
+        obj._original_fields[field] = v
+        # Set the object's JSON if necessary.
+        if not obj.json:
+            obj.json = {}
+        if 'history' not in obj.json:
+            obj.json['history'] = {}
+        obj.json['history'].update(d)
+
+
 class SubjectManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(nickname=name)
@@ -98,6 +125,9 @@ class Subject(BaseModel):
 
     objects = SubjectManager()
 
+    # We save the history of these fields.
+    _fields_history = ('nickname', 'responsible_user', 'lamis_cage',)
+
     class Meta:
         ordering = ['-nickname', '-birth_date']
 
@@ -112,6 +142,8 @@ class Subject(BaseModel):
             self._original_responsible_user = self.responsible_user
         except ObjectDoesNotExist:
             self._original_responsible_user = None
+        # Initialize the history of some fields.
+        init_old_fields(self, self._fields_history)
 
     def alive(self):
         return self.death_date is None
@@ -255,16 +287,6 @@ class Subject(BaseModel):
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
-        # Nickname has been manually changed.
-        elif self.nickname != self._original_nickname:
-            if not self.json:
-                self.json = {}
-            if 'aliases' not in self.json:
-                self.json['aliases'] = []
-            # Add the old nickname to the JSON field.
-            if self._original_nickname not in self.json['aliases']:
-                self.json['aliases'].append(self._original_nickname)
-            self._original_nickname = self.nickname
         # Default strain.
         if self.line and not self.strain:
             self.strain = self.line.strain
@@ -283,6 +305,8 @@ class Subject(BaseModel):
                                                 line=self.line)
             if srs:
                 self.request = srs[0]
+        # Keep the history of some fields in the JSON.
+        save_old_fields(self, self._fields_history)
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):
