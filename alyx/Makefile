@@ -36,3 +36,4 @@ dump_all:
 
 test:
 	python3 manage.py test -k
+	flake8
