@@ -4,7 +4,6 @@ import logging
 from operator import itemgetter
 import os.path as op
 from pickle import load, dump
-from pprint import pprint
 import re
 import sys
 import uuid
