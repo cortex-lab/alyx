@@ -1,6 +1,8 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
-from .models import *
+from .models import (Appliance, WeighingScale, Amplifier, PipettePuller, DAQ, ExtracellularProbe,
+                     VirusBatch, LabLocation, EquipmentManufacturer, EquipmentModel
+                     )
 from alyx.base import BaseAdmin
 
 

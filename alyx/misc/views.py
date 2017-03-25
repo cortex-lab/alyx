@@ -22,7 +22,8 @@ def api_root(request, format=None):
         'sessions-url': reverse('session-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'weighings-url': reverse('weighing-create', request=request, format=format),
-        'water-administrations-url': reverse('water-administration-create', request=request, format=format),
+        'water-administrations-url': reverse('water-administration-create',
+                                             request=request, format=format),
         'exp-metadata-url': reverse('exp-metadata-list', request=request, format=format),
         'files-url': reverse('filerecord-list', request=request, format=format)
     })
