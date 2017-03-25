@@ -13,11 +13,11 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 try:
-    from .settings_secret import *
+    from .settings_secret import *  # noqa
 except ImportError:
     # We're probably autobuilding some documentation so let's just import something
     # to keep Django happy...
-    from .settings_secret_template import *
+    from .settings_secret_template import *  # noqa
 
 
 if 'TRAVIS' in os.environ:

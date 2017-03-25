@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import *
+from .models import (PupilTracking, HeadTracking, EventSeries, IntervalSeries,
+                     OptogeneticStimulus, Pharmacology)
 from alyx.base import BaseAdmin
 
 
