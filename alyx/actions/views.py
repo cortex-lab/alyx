@@ -1,7 +1,13 @@
 from rest_framework import generics, permissions
 
-from .models import *
-from .serializers import *
+from .models import Session, WaterAdministration, Weighing
+from .serializers import (SessionListSerializer,
+                          SessionDetailSerializer,
+                          WaterAdministrationListSerializer,
+                          WaterAdministrationDetailSerializer,
+                          WeighingListSerializer,
+                          WeighingDetailSerializer,
+                          )
 
 
 class SessionAPIList(generics.ListCreateAPIView):

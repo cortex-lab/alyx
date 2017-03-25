@@ -1,13 +1,12 @@
 from rest_framework import serializers
-from .models import *
+from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
 from equipment.models import LabLocation
 from django.contrib.auth.models import User
-from data.serializers import DatasetSerializer, ExpMetadataSummarySerializer
+from data.serializers import ExpMetadataSummarySerializer
 
 
 class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
-
     subject = serializers.SlugRelatedField(
         read_only=False,
         slug_field='nickname',

@@ -1,11 +1,14 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.utils.html import format_html
 
 from alyx.base import BaseAdmin, DefaultListFilter
-from .models import *
+from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
+                     WaterAdministration, WaterRestriction, Weighing,
+                     )
 from subjects.models import Subject
 from subjects.admin import get_admin_url
 
