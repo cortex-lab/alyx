@@ -1,5 +1,6 @@
 import logging
 from operator import attrgetter
+import os.path as op
 import sys
 from uuid import UUID
 
@@ -8,8 +9,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.test.client import RequestFactory
 
-from .admin import *
-from .models import *
+from .admin import mysite
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

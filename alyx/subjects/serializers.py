@@ -1,11 +1,13 @@
 from rest_framework import serializers
-from .models import *
-from actions.serializers import *
+from .models import Allele, Line, Litter, Source, Species, Strain, Subject, Zygosity
+from actions.serializers import (WeighingListSerializer,
+                                 WaterAdministrationListSerializer,
+                                 SessionListSerializer,
+                                 )
 from django.contrib.auth.models import User
 
 
 class ZygosityListSerializer(serializers.ModelSerializer):
-
     ZYGOSITY_TYPES = (
         (0, 'Absent'),
         (1, 'Heterozygous'),
@@ -26,7 +28,6 @@ class ZygosityListSerializer(serializers.ModelSerializer):
 
 
 class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
-
     genotype = serializers.ListField(source='zygosity_strings')
 
     responsible_user = serializers.SlugRelatedField(
@@ -72,7 +73,6 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class SubjectDetailSerializer(SubjectListSerializer):
-
     weighings = WeighingListSerializer(many=True, read_only=True)
     water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
     actions_sessions = SessionListSerializer(many=True, read_only=True)
@@ -91,11 +91,8 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes', 'actions_sessions',
-                  'weighings', 'water_administrations', 'genotype', 'water_requirement_total',
-                  'water_requirement_remaining')
+                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
+                  'actions_sessions', 'weighings', 'water_administrations', 'genotype',
+                  'water_requirement_total', 'water_requirement_remaining')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
-
-
-

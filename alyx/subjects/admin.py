@@ -7,7 +7,9 @@ from django.utils.html import format_html
 from django.urls import reverse
 
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
-from .models import *
+from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
+                     Species, Strain, Subject, SubjectRequest, Zygosity,
+                     DEFAULT_RESPONSIBLE_USER_ID)
 from actions.models import Surgery, Session, OtherAction
 
 
@@ -772,7 +774,7 @@ class SubjectRequestAdmin(BaseAdmin):
         return format_html('; '.join('<a href="{url}">{subject}</a>'.format(
                                      subject=subject or '-',
                                      url=get_admin_url(subject))
-                           for subject in obj.subjects()))
+                                     for subject in obj.subjects()))
     subjects_l.short_description = 'subjects'
 
     def get_form(self, request, obj=None, **kwargs):
@@ -827,7 +829,8 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-flatten = lambda l: [item for sublist in l for item in sublist]
+def flatten(l):
+    return [item for sublist in l for item in sublist]
 
 
 class MyAdminSite(admin.AdminSite):

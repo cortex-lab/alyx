@@ -1,7 +1,7 @@
 
-from .models import *
+from .models import Subject
 
-from .serializers import *
+from .serializers import SubjectListSerializer, SubjectDetailSerializer
 from rest_framework import generics, permissions
 import django_filters
 from django_filters.rest_framework import FilterSet

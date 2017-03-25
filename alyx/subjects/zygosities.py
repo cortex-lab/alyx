@@ -1,5 +1,4 @@
 ZYGOSITY_RULES = (
-
     ('N.KHA', 'Ntsr1-Cre', (('Cre', '+/-'),  # need to check on this one too.
                             ('-Cre', '-/-'))),
 
