@@ -171,7 +171,7 @@ class BaseExperimentalData(BaseModel):
     Abstract base class for all data acquisition models. Never used directly.
     """
     session = models.ForeignKey(Session, related_name="%(app_label)s_%(class)s_related",
-                                   help_text="The Session to which this data belongs")
+                                help_text="The Session to which this data belongs")
 
     class Meta:
         abstract = True

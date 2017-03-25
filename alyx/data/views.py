@@ -1,8 +1,12 @@
 from rest_framework import generics, permissions, viewsets
-from .models import *
-from electrophysiology.models import *
+from .models import Dataset, FileRecord
+from electrophysiology.models import ExtracellularRecording
 
-from .serializers import *
+from .serializers import (DatasetSerializer,
+                          FileRecordSerializer,
+                          ExpMetadataDetailSerializer,
+                          ExpMetadataSummarySerializer,
+                          )
 
 
 class DatasetViewSet(viewsets.ModelViewSet):

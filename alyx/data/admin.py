@@ -1,6 +1,8 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
-from .models import *
+from .models import (DataRepository, LocalDataRepository, NetworkDataRepository,
+                     ArchiveDataRepository, PhysicalArchive, FileRecord,
+                     Dataset, Timestamp, TimeSeries)
 from alyx.base import BaseAdmin
 
 
