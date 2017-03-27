@@ -3,6 +3,7 @@ from polymorphic.models import PolymorphicModel
 from django.db import models
 from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
+from django.template.response import TemplateResponse
 from django import forms
 
 
@@ -38,6 +39,88 @@ class DefaultListFilter(admin.SimpleListFilter):
             }
 
 
+ADMIN_PAGES = [('Common', ['Subjects',
+                           'Surgeries',
+                           'Breeding pairs',
+                           'Litters',
+                           'Virus injections',
+                           'Water administrations',
+                           'Water restrictions',
+                           'Weighings',
+                           'Subject requests',
+                           ]),
+               ('Data that changes rarely',
+                ['Lines',
+                 'Strains',
+                 'Alleles',
+                 'Sequences',
+                 'Sources',
+                 'Species',
+                 'Other actions',
+                 'Procedure types',
+                 ]),
+               ('Other', ['Sessions',
+                          'Genotype tests',
+                          'Zygosities',
+                          ]),
+               ('IT admin', ['Tokens',
+                             'Groups',
+                             'Users',
+                             ]),
+               ]
+
+
+class Bunch(dict):
+    def __init__(self, *args, **kwargs):
+        super(Bunch, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+
+
+def _get_category_list(app_list):
+    order = ADMIN_PAGES
+    extra_in_common = ['Adverse effects', 'Cull subjects']
+    order_models = flatten([models for app, models in order])
+    models_dict = {str(model['name']): model
+                   for app in app_list
+                   for model in app['models']}
+    model_to_app = {str(model['name']): str(app['name'])
+                    for app in app_list
+                    for model in app['models']}
+    category_list = [Bunch(name=name,
+                           models=[models_dict[m] for m in model_names],
+                           collapsed='' if name == 'Common' else 'collapsed'
+                           )
+                     for name, model_names in order]
+    for model_name, app_name in model_to_app.items():
+        if model_name in order_models:
+            continue
+        if model_name.startswith('Subject') or model_name in extra_in_common:
+            category_list[0].models.append(models_dict[model_name])
+        elif app_name == 'Equipment':
+            category_list[1].models.append(models_dict[model_name])
+        else:
+            category_list[2].models.append(models_dict[model_name])
+    return category_list
+
+
+class MyAdminSite(admin.AdminSite):
+    def index(self, request, extra_context=None):
+        category_list = _get_category_list(self.get_app_list(request))
+        context = dict(
+            self.each_context(request),
+            title=self.index_title,
+            app_list=category_list,
+        )
+        context.update(extra_context or {})
+        request.current_app = self.name
+
+        return TemplateResponse(request, self.index_template or 'admin/index.html', context)
+
+
 class BaseAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
@@ -53,6 +136,14 @@ class BaseAdmin(admin.ModelAdmin):
         if self.fields and 'json' not in self.fields:
             self.fields += ('json',)
         super(BaseAdmin, self).__init__(*args, **kwargs)
+
+    def changelist_view(self, request, extra_context=None):
+        category_list = _get_category_list(admin.site.get_app_list(request))
+        extra_context = extra_context or {}
+        extra_context['mininav'] = [('', '-- jump to --')]
+        extra_context['mininav'] += [(model['admin_url'], model['name'])
+                                     for model in category_list[0].models]
+        return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
 
 class BaseInlineAdmin(admin.TabularInline):
