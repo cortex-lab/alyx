@@ -249,10 +249,16 @@ class GoogleSheetImporter(object):
                 continue
             fields = Bunch()
             fields['name'] = row['NAME']
-            fields['auto_name'] = row['Autoname']
+            fields['auto_name'] = row['Animal name']
             fields['target_phenotype'] = row['LONG NAME']
             fields['description'] = row['BLURB']
             fields['strain'] = [row['strain']] if row['strain'] else None
+            # New fields.
+            fields['genotype_date'] = parse(row.get('G.type date', None))
+            fields['to_be_genotyped'] = True if row.get('To be g.typed', None) else False
+            fields['to_be_culled'] = True if row.get('To be culled', None) else False
+            fields['reduced'] = True if row.get('Reduced', None) else False
+            # JSON.
             fields['json'] = {
                 "stock_no": row['STOCK NO'],
                 "source": row['SOURCE'],
