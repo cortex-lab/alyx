@@ -24,10 +24,10 @@ class SubjectFilter(FilterSet):
 
 class SubjectList(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
+    queryset = SubjectListSerializer.setup_eager_loading(queryset)
     serializer_class = SubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
-
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()

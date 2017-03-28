@@ -64,6 +64,12 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('responsible_user', 'species', 'strain', 'line', 'litter')
+        return queryset
+
     class Meta:
         model = Subject
         fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
