@@ -43,6 +43,7 @@ def flatten(l):
 def get_username(initials):
     return {
         'AL': 'armin',
+        'ALK': 'armin',  # yes??
         'AP': 'andy',
         'CR': 'charu',
         'NS': 'nick',
@@ -193,7 +194,7 @@ class GoogleSheetImporter(object):
 
         # Load the breeding pairs table.
         logger.info("Downloading the breeding pairs table...")
-        self.breeding_pairs_table = sheet_to_table(self._line_doc.worksheet('September 2016'),
+        self.breeding_pairs_table = sheet_to_table(self._line_doc.worksheet('Breeding Pairs'),
                                                    header_line=2, first_line=3)
 
         # Load all subject water sheets into tables.
@@ -315,7 +316,14 @@ class GoogleSheetImporter(object):
             fields['to_be_culled'] = True if row.get('To be culled', None) else False
             fields['reduced'] = True if row.get('Reduced', None) else False
 
-            fields['nickname'] = pad(row['Animal name'].strip())
+            for n in ('Animal name', 'animal name', 'Animal number'):
+                if row.get(n):
+                    fields['nickname'] = pad(row[n].strip())
+                    break
+            # Empty nickname? End of the table.
+            if 'nickname' not in fields:
+                logger.warn("Skip empty subject in %s with DOB %s.", line, row['DOB'])
+                break
             fields['lamis_cage'] = (int(re.sub("[^0-9]", "", row['LAMIS Cage number']))
                                     if row['LAMIS Cage number'] else None)
             fields['line'] = [line_name]
@@ -323,8 +331,13 @@ class GoogleSheetImporter(object):
             fields['litter'] = (line_name, fields['birth_date'], litter_notes)
             fields['genotype_test'] = list(self._get_genotype_test(row))
             # Temporary values used later on.
-            fields['bp_index'] = row.get('BP index', None)
-
+            bp_index = row.get('BP #', None)
+            if bp_index:
+                try:
+                    fields['bp_index'] = int(bp_index)
+                except ValueError:
+                    logger.warn("BP # is not an int: %s for subject %s.",
+                                bp_index, fields['nickname'])
             subjects[fields['nickname']] = fields
         return subjects
 
@@ -370,7 +383,10 @@ class GoogleSheetImporter(object):
 
     def _set_autoname_indices(self, line_tables):
         for line, table in line_tables.items():
-            self.lines[line]['subject_autoname_index'] = int(table[-1].get('n', '') or 0)
+            try:
+                self.lines[line]['subject_autoname_index'] = int(table[-1].get('n', '') or 0)
+            except ValueError:
+                logger.warn("Unable to set subject_autoname_index for %s.", line)
 
     def _get_severity(self, severity_name):
         for s, n in SEVERITY_CHOICES:
@@ -391,7 +407,12 @@ class GoogleSheetImporter(object):
 
             subject['nickname'] = new_name
             subject['actual_severity'] = self._get_severity(row['Actual Severity'])
-            subject['line'] = [self.lines[row['Line']].auto_name] if row['Line'] else None
+            line = self.lines.get(row['Line'], None)
+            if line:
+                subject['line'] = [line.auto_name]
+            else:
+                logger.warn("Line %s does not exist for subject %s in procedure log.",
+                            row['Line'], new_name)
             subject['adverse_effects'] = row['Adverse Effects']
             subject['death_date'] = parse(row['Cull Date'])
             subject['cull_method'] = row['Cull Method']
@@ -419,11 +440,22 @@ class GoogleSheetImporter(object):
                 continue
 
             bp = Bunch()
-            bp['name'] = '%s_BP_%03d' % (line, int(index))
+            try:
+                index = int(index)
+            except ValueError:
+                logger.warn("BP # %s is not an integer in line %s in breeding pairs sheet.",
+                            index, line)
+                continue
+            bp['name'] = '%s_BP_%03d' % (line, index)
             bp['line'] = [line]
             bp['start_date'] = parse(row.get('Date together', None))
             bp['notes'] = row['Notes']
-            self._get_line(line)['breeding_pair_autoname_index'] = index
+            line_obj = self._get_line(line)
+            if line_obj:
+                line_obj['breeding_pair_autoname_index'] = index
+            else:
+                logger.warn("Line %s referenced in BP %s doesn't exist.",
+                            line, bp['name'])
 
             for which_parent in ('Father name', 'Mother 1 name', 'Mother 2 name'):
                 if not row[which_parent]:
@@ -441,8 +473,8 @@ class GoogleSheetImporter(object):
 
                 # Sanity check for sex.
                 if 'sex' in parent and parent['sex'] != sex:
-                    print(("ERROR: sex mismatch for %s between line sheet %s "
-                           "and breeding pair sheet!") % (name, line))
+                    logger.warn("Sex mismatch for %s between line sheet %s "
+                                "and breeding pair sheet.", name, line)
                 parent['sex'] = sex
 
                 # Make sure the parent is in the subjects dictionary.
@@ -461,7 +493,7 @@ class GoogleSheetImporter(object):
             if not bp_index:
                 continue
             line_name = subject['line'][0]
-            bp_name = '%s_BP_%03d' % (line_name, int(bp_index))
+            bp_name = '%s_BP_%03d' % (line_name, bp_index)
             # Skip existing items.
             if bp_name in bp_names:
                 continue
@@ -531,14 +563,22 @@ class GoogleSheetImporter(object):
                 continue
             for row in table:
                 # No date? end of the table.
+                if 'Date' not in row:
+                    logger.warn("Water control sheet %s could not be imported.", n)
+                    break
                 date = row['Date']
                 if not date:
                     break
                 date = parse(date, time=True)
 
-                weight = _parse_float(row['weight (g)'])
-                water = _parse_float(row['Water (ml)'])
-                hydrogel = _parse_float(row['Hydrogel (g)'])
+                try:
+                    weight = _parse_float(row['weight (g)'])
+                    water = _parse_float(row['Water (ml)'])
+                    hydrogel = _parse_float(row['Hydrogel (g)'])
+                except ValueError:
+                    logger.warn("One of the numbers in water admin sheet for %s is not "
+                                "a float.", n)
+                    continue
 
                 # Add weighings.
                 if weight is not None:
