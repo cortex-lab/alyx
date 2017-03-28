@@ -249,16 +249,10 @@ class GoogleSheetImporter(object):
                 continue
             fields = Bunch()
             fields['name'] = row['NAME']
-            fields['auto_name'] = row['Animal name']
+            fields['auto_name'] = row['Autoname']
             fields['target_phenotype'] = row['LONG NAME']
             fields['description'] = row['BLURB']
             fields['strain'] = [row['strain']] if row['strain'] else None
-            # New fields.
-            fields['genotype_date'] = parse(row.get('G.type date', None))
-            fields['to_be_genotyped'] = True if row.get('To be g.typed', None) else False
-            fields['to_be_culled'] = True if row.get('To be culled', None) else False
-            fields['reduced'] = True if row.get('Reduced', None) else False
-            # JSON.
             fields['json'] = {
                 "stock_no": row['STOCK NO'],
                 "source": row['SOURCE'],
@@ -314,7 +308,14 @@ class GoogleSheetImporter(object):
             fields['birth_date'] = parse(row['DOB'])
             fields['death_date'] = parse(row.get('death date', None))
             fields['wean_date'] = parse(row.get('Weaned', None))
-            fields['nickname'] = pad(row['autoname'].strip())
+
+            # New fields.
+            fields['genotype_date'] = parse(row.get('G.type date', None))
+            fields['to_be_genotyped'] = True if row.get('To be g.typed', None) else False
+            fields['to_be_culled'] = True if row.get('To be culled', None) else False
+            fields['reduced'] = True if row.get('Reduced', None) else False
+
+            fields['nickname'] = pad(row['Animal name'].strip())
             fields['lamis_cage'] = (int(re.sub("[^0-9]", "", row['LAMIS Cage number']))
                                     if row['LAMIS Cage number'] else None)
             fields['line'] = [line_name]
@@ -420,19 +421,30 @@ class GoogleSheetImporter(object):
             bp = Bunch()
             bp['name'] = '%s_BP_%03d' % (line, int(index))
             bp['line'] = [line]
+            bp['start_date'] = parse(row.get('Date together', None))
             bp['notes'] = row['Notes']
             self._get_line(line)['breeding_pair_autoname_index'] = index
 
-            for which_parent in ('father', 'mother1', 'mother2'):
+            for which_parent in ('Father name', 'Mother 1 name', 'Mother 2 name'):
                 if not row[which_parent]:
                     continue
+                # Determine parent properties.
                 name = pad(row[which_parent])
+                sex = 'M' if which_parent[0] == 'F' else 'F'
+                wp = {'Father name': 'Father',
+                      'Mother 1 name': 'Mother'}.get(which_parent, '')
+
                 parent = self.subjects.get(name, Bunch(nickname=name))
-                wp = {'father': 'father', 'mother1': 'mother'}.get(which_parent, '')
-                sex = {'father': 'M', 'mother1': 'F', 'mother2': 'F'}[which_parent]
                 parent['birth_date'] = parse(row['%s DOB' % wp]) if wp else None
                 parent['line'] = [line]
+                parent['lamis_cage'] = int(row['LAMIS Cage #']) if row['LAMIS Cage #'] else None
+
+                # Sanity check for sex.
+                if 'sex' in parent and parent['sex'] != sex:
+                    print(("ERROR: sex mismatch for %s between line sheet %s "
+                           "and breeding pair sheet!") % (name, line))
                 parent['sex'] = sex
+
                 # Make sure the parent is in the subjects dictionary.
                 self.subjects[name] = parent
                 bp[which_parent] = [name]
