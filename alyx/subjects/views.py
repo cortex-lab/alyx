@@ -7,15 +7,26 @@ from django_filters.rest_framework import FilterSet
 
 
 class SubjectFilter(FilterSet):
-    alive = django_filters.BooleanFilter(name='death_date', lookup_expr='isnull')
+    alive = django_filters.BooleanFilter(name='alive')
     responsible_user = django_filters.CharFilter(name='responsible_user__username')
     stock = django_filters.BooleanFilter(name='responsible_user', method='filter_stock')
+    water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
 
     def filter_stock(self, queryset, name, value):
         if value == True:
             return queryset.filter(responsible_user__id=5)
         else:
             return queryset.exclude(responsible_user__id=5)
+
+    def filter_water_restricted(self, queryset, name, value):
+        if value == True:
+            return queryset.extra(where=['''
+subjects_subject.id IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
+'''])
+        else:
+            return queryset.extra(where=['''
+subjects_subject.id NOT IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
+'''])
 
     class Meta:
         model = Subject
@@ -28,6 +39,13 @@ class SubjectList(generics.ListCreateAPIView):
     serializer_class = SubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
+
+class WaterRestrictedSubjectList(generics.ListAPIView):
+    queryset = Subject.objects.all().extra(where=['''
+subjects_subject.id IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
+'''])
+    serializer_class = WaterRestrictedSubjectListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()
