@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-DATA_DIR = op.abspath(op.dirname(__file__))
+DATA_DIR = op.abspath(op.join(op.dirname( __file__ ), '../../../', 'data'))
 SEVERITY_CHOICES = (
     (1, 'Sub-threshold'),
     (2, 'Mild'),
