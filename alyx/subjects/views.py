@@ -7,7 +7,7 @@ from django_filters.rest_framework import FilterSet
 
 
 class SubjectFilter(FilterSet):
-    alive = django_filters.BooleanFilter(name='alive')
+    alive = django_filters.BooleanFilter(name='death_date', lookup_expr='isnull')
     responsible_user = django_filters.CharFilter(name='responsible_user__username')
     stock = django_filters.BooleanFilter(name='responsible_user', method='filter_stock')
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
