@@ -21,14 +21,14 @@ class Command(BaseCommand):
             '-D', '--dbname', action='store', dest='dbname', default=None,
             help='Use another database name than defined in settings.py')
         parser.add_argument(
-            '-R', '--router', action='store', dest='router', default='default',
-            help='Use this router-database other than defined in settings.py')
+            '-R', '--read-only-user', action='store', dest='read_only_user', default=None,
+            help='Grant SELECT permissions to this read-only user')
 
     def handle(self, *args, **options):
         if args:
             raise CommandError("reset_db takes no arguments")
 
-        router = options.get('router')
+        router = 'default'
         dbinfo = settings.DATABASES.get(router)
         if dbinfo is None:
             raise CommandError("Unknown database router %s" % router)
@@ -38,6 +38,7 @@ class Command(BaseCommand):
         user = options.get('user') or dbinfo.get('USER') or user
         password = options.get('password') or dbinfo.get('PASSWORD') or password
         owner = options.get('owner') or user
+        read_only_user = options.get('read_only_user') or None
 
         database_name = options.get('dbname') or dbinfo.get('NAME') or database_name
         if database_name == '':
@@ -61,7 +62,7 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
             print("Reset cancelled.")
             return
 
-        conn_params = {'database': 'template1'}
+        conn_params = {'database': database_name}
         if user:
             conn_params['user'] = user
         if password:
@@ -75,20 +76,8 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
         connection.set_isolation_level(0)  # autocommit false
         cursor = connection.cursor()
 
-        # Close sessions gracefully before resetting db.
-        close_sessions_query = """
-            SELECT pg_terminate_backend(pg_stat_activity.pid)
-            FROM pg_stat_activity
-            WHERE pg_stat_activity.datname = '%s';
-        """ % database_name
-        logging.info('Executing... "' + close_sessions_query.strip() + '"')
-        try:
-            cursor.execute(close_sessions_query)
-        except Database.ProgrammingError as e:
-            logging.exception("Error: %s" % str(e))
-
         # Now let's do the dirty work
-        drop_query = "DROP DATABASE \"%s\";" % database_name
+        drop_query = "DROP SCHEMA public CASCADE;"
         logging.info('Executing... "' + drop_query + '"')
         try:
             cursor.execute(drop_query)
@@ -96,18 +85,17 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
             logging.exception("Error: %s" % str(e))
 
         # Recreate and grant perms
-        create_query = "CREATE DATABASE \"%s\"" % database_name
+        create_query = "CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"
         if owner:
-            create_query += " WITH OWNER = \"%s\" " % owner
-        create_query += " ENCODING = 'UTF8'"
+            create_query += "GRANT ALL ON SCHEMA public TO %s; " % owner
 
-        if settings.DEFAULT_TABLESPACE:
-            create_query += ' TABLESPACE = %s;' % settings.DEFAULT_TABLESPACE
-        else:
-            create_query += ';'
+        if read_only_user:
+            create_query += "GRANT USAGE ON SCHEMA public TO %s;" % read_only_user
+            create_query += "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;" % read_only_user
+            create_query += "GRANT SELECT ON ALL TABLES IN SCHEMA public TO %s;" % read_only_user
 
         logging.info('Executing... "' + create_query + '"')
         cursor.execute(create_query)
 
         if verbosity >= 2 or options.get('interactive'):
-        	self.stdout.write(self.style.SUCCESS('Reset successful!'))
+            self.stdout.write(self.style.SUCCESS('Reset successful!'))
