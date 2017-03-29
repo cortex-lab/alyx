@@ -457,17 +457,20 @@ class GoogleSheetImporter(object):
                 logger.warn("Line %s referenced in BP %s doesn't exist.",
                             line, bp['name'])
 
-            for which_parent in ('Father name', 'Mother 1 name', 'Mother 2 name'):
-                if not row[which_parent]:
+            for field, name_col, dob_col, sex in [('father', 'Father name', 'Father DOB', 'M'),
+                                                  ('mother1', 'Mother 1 name', 'Mother DOB', 'F'),
+                                                  ('mother2', 'Mother 2 name', '', 'F'),
+                                                  ]:
+                if not row[name_col]:
                     continue
                 # Determine parent properties.
-                name = pad(row[which_parent])
-                sex = 'M' if which_parent[0] == 'F' else 'F'
-                wp = {'Father name': 'Father',
-                      'Mother 1 name': 'Mother'}.get(which_parent, '')
-
+                name = pad(row[name_col])
+                # Skip subjects with a ?.
+                if '?' in name:
+                    logger.warn("Skipping subject %s in line %s.", name, line)
+                    continue
                 parent = self.subjects.get(name, Bunch(nickname=name))
-                parent['birth_date'] = parse(row['%s DOB' % wp]) if wp else None
+                parent['birth_date'] = parse(row[dob_col]) if dob_col else None
                 parent['line'] = [line]
                 parent['lamis_cage'] = int(row['LAMIS Cage #']) if row['LAMIS Cage #'] else None
 
@@ -479,7 +482,7 @@ class GoogleSheetImporter(object):
 
                 # Make sure the parent is in the subjects dictionary.
                 self.subjects[name] = parent
-                bp[which_parent] = [name]
+                bp[field] = [name]
 
             breeding_pairs[bp['name']] = bp
 
