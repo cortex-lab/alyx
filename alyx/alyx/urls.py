@@ -90,7 +90,7 @@ urlpatterns = [
     url(r'^users$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+) $', user_detail, name='user-detail'),
 
-    url(r'^water-restricted-subjects$', subjects_views.WaterRestrictedSubjectList.as_view(), name="water-restricted-subjects-list"),
+    url(r'^water-restricted-subjects$', subjects_views.WaterRestrictedSubjectList.as_view(), name="water-restricted-subject-list"),
 
     url(r'^admin/', include(admin.site.urls)),
 
