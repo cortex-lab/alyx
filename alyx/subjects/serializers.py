@@ -7,6 +7,18 @@ from actions.serializers import (WeighingListSerializer,
 from django.contrib.auth.models import User
 
 
+class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
+
+    water_requirement_total = serializers.ReadOnlyField()
+    water_requirement_remaining = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Subject
+        fields = ('nickname', 'url', 'water_requirement_total', 'water_requirement_remaining')
+
+        lookup_field = 'nickname'
+        extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
+
 class ZygosityListSerializer(serializers.ModelSerializer):
     ZYGOSITY_TYPES = (
         (0, 'Absent'),
