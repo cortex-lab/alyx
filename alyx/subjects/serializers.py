@@ -64,9 +64,15 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('responsible_user', 'species', 'strain', 'line', 'litter')
+        return queryset
+
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'death_date',
+        fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
                   'species', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
@@ -90,9 +96,9 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes',
-                  'actions_sessions', 'weighings', 'water_administrations', 'genotype',
-                  'water_requirement_total', 'water_requirement_remaining')
+        fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
+                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes', 'actions_sessions',
+                  'weighings', 'water_administrations', 'genotype', 'water_requirement_total',
+                  'water_requirement_remaining')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}

@@ -93,7 +93,7 @@ class WaterAdministrationListSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = WaterAdministration
-        fields = ('date_time', 'water_administered', 'url')
+        fields = ('date_time', 'water_administered', 'hydrogel', 'url')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
 
 
@@ -117,5 +117,5 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
     class Meta:
         model = WaterAdministration
-        fields = ('subject', 'date_time', 'water_administered', 'user', 'url')
+        fields = ('subject', 'date_time', 'water_administered', 'hydrogel', 'user', 'url')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
