@@ -396,7 +396,7 @@ class GoogleSheetImporter(object):
     def _get_surgeries(self, table):
         surgeries = []
         for row in table:
-            old_name = row['transgenic spreadsheet mouse name']
+            old_name = pad(row['transgenic spreadsheet mouse name'])
             new_name = pad(row['Nickname'])
             new_name = new_name if new_name not in (None, '', '-') else old_name
             birth_date = parse(row['Date of Birth'])
