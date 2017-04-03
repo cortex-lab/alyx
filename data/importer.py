@@ -8,6 +8,8 @@ import re
 import sys
 import uuid
 
+from datetime import datetime
+from django.utils import timezone
 from dateutil.parser import parse as parse_
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -418,6 +420,12 @@ class GoogleSheetImporter(object):
             subject['cull_method'] = row['Cull Method']
             subject['protocol_number'] = row['Protocol #']
             subject['responsible_user'] = [get_username(row['Responsible User'])]
+
+            # Save the old nickname.
+            date_time = datetime.now(timezone.utc).isoformat()
+            subject['json'] = {'history': {'nickname': [
+                {'date_time': date_time, 'value': old_name}
+            ]}}
 
             # Add the surgery.
             surgery = Bunch()

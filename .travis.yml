@@ -18,3 +18,4 @@ script:
   - cd alyx
   - make migrate
   - python manage.py test -k
+  - flake8 .
