@@ -143,7 +143,8 @@ class WaterRestriction(BaseAction):
     """
     Another type of action.
     """
-    pass
+    def is_active(self):
+        return self.start_time is not None and self.end_time is None
 
 
 class OtherAction(BaseAction):

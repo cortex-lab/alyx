@@ -129,7 +129,7 @@ class Subject(BaseModel):
     _fields_history = ('nickname', 'responsible_user', 'lamis_cage',)
 
     class Meta:
-        ordering = ['-nickname', '-birth_date']
+        ordering = ['nickname', '-birth_date']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)

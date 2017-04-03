@@ -5,6 +5,9 @@ from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
 from django.template.response import TemplateResponse
 from django import forms
+from django.conf.locale.en import formats as en_formats
+
+en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 
 
 class BaseModel(models.Model):

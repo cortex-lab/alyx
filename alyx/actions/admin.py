@@ -13,6 +13,25 @@ from subjects.models import Subject
 from subjects.admin import get_admin_url
 
 
+class ActiveFilter(DefaultListFilter):
+    title = 'active'
+    parameter_name = 'active'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Active'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(start_time__isnull=False,
+                                   end_time__isnull=True,
+                                   )
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BaseActionForm, self).__init__(*args, **kwargs)
@@ -41,14 +60,6 @@ class BaseActionAdmin(BaseAdmin):
         return form
 
 
-class WaterRestrictionAdmin(BaseActionAdmin):
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'subject':
-            kwargs["queryset"] = Subject.objects.filter(death_date=None,
-                                                        ).order_by('nickname')
-        return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-
-
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
 
@@ -66,9 +77,79 @@ class WaterAdministrationForm(forms.ModelForm):
 
 
 class WaterAdministrationAdmin(BaseActionAdmin):
-    fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
-
     form = WaterAdministrationForm
+
+    fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
+    list_display = ['subject_l', 'water_administered', 'date_time', 'hydrogel']
+    list_display_links = ('water_administered',)
+    readonly_fields = ['subject_l']
+    ordering = ['-date_time', 'subject__nickname']
+    search_fields = ['subject__nickname']
+    list_filter = [('subject', RelatedDropdownFilter)]
+
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
+
+
+class WaterRestrictionAdmin(BaseActionAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'subject':
+            kwargs["queryset"] = Subject.objects.filter(death_date=None,
+                                                        ).order_by('nickname')
+        return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+    list_display = ['subject', 'start_time',
+                    'reference_weighing', 'current_weighing',
+                    'water_requirement_total', 'water_requirement_remaining',
+                    'is_active',
+                    ]
+    list_display_links = ('start_time',)
+    readonly_fields = ['reference_weighing', 'current_weighing',
+                       'water_requirement_total', 'water_requirement_remaining',
+                       'is_active',
+                       ]
+    ordering = ['-start_time', 'subject__nickname']
+    search_fields = ['subject__nickname']
+    list_filter = [('subject', RelatedDropdownFilter),
+                   ActiveFilter,
+                   ]
+
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
+
+    def reference_weighing(self, obj):
+        if not obj.subject:
+            return
+        w = obj.subject.reference_weighing()
+        return w.weight if w else None
+    reference_weighing.short_description = 'ref weighing'
+
+    def current_weighing(self, obj):
+        if not obj.subject:
+            return
+        w = obj.subject.current_weighing()
+        return w.weight if w else None
+    current_weighing.short_description = 'current weighing'
+
+    def water_requirement_total(self, obj):
+        if not obj.subject:
+            return
+        return '%.3f' % obj.subject.water_requirement_total()
+    water_requirement_total.short_description = 'water req tot'
+
+    def water_requirement_remaining(self, obj):
+        if not obj.subject:
+            return
+        return '%.3f' % obj.subject.water_requirement_remaining()
+    water_requirement_remaining.short_description = 'water req rem'
+
+    def is_active(self, obj):
+        return obj.is_active()
+    is_active.boolean = True
 
 
 class WeighingAdmin(BaseActionAdmin):
