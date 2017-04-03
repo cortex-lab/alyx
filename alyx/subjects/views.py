@@ -1,6 +1,8 @@
 
-from .models import *
-from .serializers import *
+from .models import Subject
+from .serializers import (SubjectListSerializer,
+                          SubjectDetailSerializer,
+                          WaterRestrictedSubjectListSerializer)
 from rest_framework import generics, permissions
 import django_filters
 from django_filters.rest_framework import FilterSet
@@ -13,20 +15,24 @@ class SubjectFilter(FilterSet):
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
 
     def filter_stock(self, queryset, name, value):
-        if value == True:
+        if value is True:
             return queryset.filter(responsible_user__id=5)
         else:
             return queryset.exclude(responsible_user__id=5)
 
     def filter_water_restricted(self, queryset, name, value):
-        if value == True:
+        if value is True:
             return queryset.extra(where=['''
-subjects_subject.id IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
-'''])
+                subjects_subject.id IN
+                (SELECT subject_id FROM actions_waterrestriction
+                WHERE end_time IS NULL)
+                '''])
         else:
             return queryset.extra(where=['''
-subjects_subject.id NOT IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
-'''])
+                subjects_subject.id NOT IN
+                (SELECT subject_id FROM actions_waterrestriction
+                WHERE end_time IS NULL)
+                '''])
 
     class Meta:
         model = Subject
@@ -40,12 +46,15 @@ class SubjectList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
 
+
 class WaterRestrictedSubjectList(generics.ListAPIView):
     queryset = Subject.objects.all().extra(where=['''
-subjects_subject.id IN (SELECT subject_id FROM actions_waterrestriction WHERE end_time IS NULL)
-'''])
+        subjects_subject.id IN
+        (SELECT subject_id FROM actions_waterrestriction
+         WHERE end_time IS NULL)'''])
     serializer_class = WaterRestrictedSubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()

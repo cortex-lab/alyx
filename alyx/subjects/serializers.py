@@ -19,6 +19,7 @@ class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerialize
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
+
 class ZygosityListSerializer(serializers.ModelSerializer):
     ZYGOSITY_TYPES = (
         (0, 'Absent'),
@@ -79,7 +80,8 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('responsible_user', 'species', 'strain', 'line', 'litter')
+        queryset = queryset.select_related('responsible_user', 'species', 'strain',
+                                           'line', 'litter')
         return queryset
 
     class Meta:
@@ -108,9 +110,9 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'source', 'line', 'notes', 'actions_sessions',
-                  'weighings', 'water_administrations', 'genotype', 'water_requirement_total',
-                  'water_requirement_remaining')
+        fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
+                  'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
+                  'notes', 'actions_sessions', 'weighings', 'water_administrations',
+                  'genotype', 'water_requirement_total', 'water_requirement_remaining')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
