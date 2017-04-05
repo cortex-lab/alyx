@@ -643,9 +643,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         global DATA_DIR
-        global CI
-
-        CI = self
         DATA_DIR = options.get('data_dir')[0]
 
         if not op.isdir(DATA_DIR):

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
-from subprocess import call
+import subprocess
 import os.path as op
 
 
@@ -49,4 +49,4 @@ class Command(BaseCommand):
         call_command('update_zygosities')
 
         if options.get('production'):
-            call(['service apache2 reload'])
+            subprocess.check_call("sudo service apache2 restart".split())
