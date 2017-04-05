@@ -2,6 +2,7 @@ from collections import OrderedDict
 import json
 import logging
 from operator import itemgetter
+import os
 import os.path as op
 from pickle import load, dump
 import re
@@ -15,12 +16,16 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 
+import django
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+import psycopg2 as Database
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-DATA_DIR = op.abspath(op.join(op.dirname( __file__ ), '../../../', 'data'))
 SEVERITY_CHOICES = (
     (1, 'Sub-threshold'),
     (2, 'Mild'),
@@ -619,24 +624,49 @@ class GoogleSheetImporter(object):
         return administrations
 
 
-def import_data():
-    importer = GoogleSheetImporter()
+class Command(BaseCommand):
+    help = "Imports Google Sheets data into the database"
 
-    make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
-    make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
-    make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
-    make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
-    make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
-    make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
-    make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
-    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
-    make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
-    make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
-    make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
-    make_fixture('actions.weighing', importer.weighings, path='12-weighings')
-    make_fixture('actions.wateradministration', importer.administrations,
-                 path='13-water-administrations')
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
 
+        parser.add_argument('data_dir', nargs=1, type=str)
 
-if __name__ == '__main__':
-    import_data()
+        parser.add_argument(
+        '-R', '--remove-pickle', action='store_true',
+        dest='remove_pickle', default=False,
+        help='Removes and redownloads dumped_google_sheets.pkl')
+
+    def handle(self, *args, **options):
+        global DATA_DIR
+
+        DATA_DIR = options.get('data_dir')[0]
+        if not op.isdir(DATA_DIR):
+            self.stdout.write('Error: %s is not a directory' % DATA_DIR)
+            return
+
+        if options.get('remove_pickle'):
+            try:
+                os.remove(op.join(DATA_DIR, 'dumped_google_sheets.pkl'))
+                self.stdout.write('Removed dumped_google_sheets.pkl')
+            except FileNotFoundError:
+                self.stdout.write('Could not remove dumped_google_sheets.pkl: file does not exist')
+                return
+
+        importer = GoogleSheetImporter()
+
+        make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
+        make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
+        make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
+        make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
+        make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
+        make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
+        make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
+        make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
+        make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
+        make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
+        make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
+        make_fixture('actions.weighing', importer.weighings, path='12-weighings')
+        make_fixture('actions.wateradministration', importer.administrations,
+                     path='13-water-administrations')
+
