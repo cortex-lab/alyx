@@ -1,10 +1,10 @@
-import django
-from django.conf import settings
+# import django
+# from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-import psycopg2 as Database
 from django.core.management import call_command
 from subprocess import call
 import os.path as op
+
 
 class Command(BaseCommand):
     help = "Total reset - delete data, reimport from Google Sheets"

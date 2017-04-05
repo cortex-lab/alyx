@@ -16,11 +16,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 
-import django
-from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.management import call_command
-import psycopg2 as Database
 
 
 logger = logging.getLogger(__name__)
@@ -37,9 +34,11 @@ SEVERITY_CHOICES = (
 MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
 DEFAULT_RESPONSIBLE_USER_ID = 5
 
+
 def warn(*args):
     args += ('\033[0m',)
     print('\033[1;31m', *args)
+
 
 def pad(s):
     if not s:
@@ -348,7 +347,7 @@ class GoogleSheetImporter(object):
                     fields['bp_index'] = int(bp_index)
                 except ValueError:
                     warn("BP # is not an int: %s for subject %s.",
-                                bp_index, fields['nickname'])
+                         bp_index, fields['nickname'])
             subjects[fields['nickname']] = fields
         return subjects
 
@@ -423,7 +422,7 @@ class GoogleSheetImporter(object):
                 subject['line'] = [line.auto_name]
             else:
                 warn("Line %s does not exist for subject %s in procedure log."
-                            % (row['Line'], new_name))
+                     % (row['Line'], new_name))
             subject['adverse_effects'] = row['Adverse Effects']
             subject['death_date'] = parse(row['Cull Date'])
             subject['cull_method'] = row['Cull Method']
@@ -461,7 +460,7 @@ class GoogleSheetImporter(object):
                 index = int(index)
             except ValueError:
                 warn("BP # %s is not an integer in line %s in breeding pairs sheet." %
-                    (index, line))
+                     (index, line))
                 continue
             bp['name'] = '%s_BP_%03d' % (line, index)
             bp['line'] = [line]
@@ -472,7 +471,7 @@ class GoogleSheetImporter(object):
                 line_obj['breeding_pair_autoname_index'] = index
             else:
                 warn("Line %s referenced in BP %s doesn't exist."
-                    % (line, bp['name']))
+                     % (line, bp['name']))
 
             for field, name_col, dob_col, sex in [('father', 'Father name', 'Father DOB', 'M'),
                                                   ('mother1', 'Mother 1 name', 'Mother DOB', 'F'),
@@ -597,7 +596,7 @@ class GoogleSheetImporter(object):
                     hydrogel = _parse_float(row['Hydrogel (g)'])
                 except ValueError:
                     warn("One of the numbers in water admin sheet for %s is not "
-                                "a float." % n)
+                         "a float." % n)
                     continue
 
                 # Add weighings.
@@ -636,10 +635,11 @@ class Command(BaseCommand):
 
         parser.add_argument('data_dir', nargs=1, type=str)
 
-        parser.add_argument(
-        '-R', '--remove-pickle', action='store_true',
-        dest='remove_pickle', default=False,
-        help='Removes and redownloads dumped_google_sheets.pkl')
+        parser.add_argument('-R', '--remove-pickle',
+                            action='store_true',
+                            dest='remove_pickle',
+                            default=False,
+                            help='Removes and redownloads dumped_google_sheets.pkl')
 
     def handle(self, *args, **options):
         global DATA_DIR
@@ -657,7 +657,8 @@ class Command(BaseCommand):
                 os.remove(op.join(DATA_DIR, 'dumped_google_sheets.pkl'))
                 self.stdout.write('Removed dumped_google_sheets.pkl')
             except FileNotFoundError:
-                self.stdout.write(self.style.NOTICE('Could not remove dumped_google_sheets.pkl: file does not exist'))
+                self.stdout.write(self.style.NOTICE(
+                    'Could not remove dumped_google_sheets.pkl: file does not exist'))
 
         importer = GoogleSheetImporter()
 
@@ -668,10 +669,13 @@ class Command(BaseCommand):
         make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
         make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
         make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
-        make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
+        make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name',
+                     path='08-breedingpair')
         make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
-        make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
-        make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
+        make_fixture('subjects.litter', importer.litter_breeding_pairs,
+                     path='10-litter-breedingpair')
+        make_fixture('actions.waterrestriction', importer.restrictions,
+                     path='11-water-restrictions')
         make_fixture('actions.weighing', importer.weighings, path='12-weighings')
         make_fixture('actions.wateradministration', importer.administrations,
                      path='13-water-administrations')
@@ -689,5 +693,3 @@ class Command(BaseCommand):
                     call_command('loaddata', fullpath, verbosity=3, interactive=False)
 
         self.stdout.write(self.style.SUCCESS('Loaded all JSON files from %s' % json_dir))
-
-

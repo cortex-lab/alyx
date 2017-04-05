@@ -3,10 +3,11 @@ adapted from http://www.djangosnippets.org/snippets/828/ by dnordberg
 """
 import logging
 
-import django
+# import django
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 import psycopg2 as Database
+
 
 class Command(BaseCommand):
     help = "Resets the database."
@@ -21,7 +22,7 @@ class Command(BaseCommand):
             '-D', '--dbname', action='store', dest='dbname', default=None,
             help='Use another database name than defined in settings.py')
         parser.add_argument(
-            '-R', '--read-only-user', action='store', dest='read_only_user', default=None,
+            '-R', '--read-only-user', action='store', dest='ro_user', default=None,
             help='Grant SELECT permissions to this read-only user')
 
     def handle(self, *args, **options):
@@ -38,7 +39,7 @@ class Command(BaseCommand):
         user = options.get('user') or dbinfo.get('USER') or user
         password = options.get('password') or dbinfo.get('PASSWORD') or password
         owner = options.get('owner') or user
-        read_only_user = options.get('read_only_user') or None
+        ro_user = options.get('ro_user') or None
 
         database_name = options.get('dbname') or dbinfo.get('NAME') or database_name
         if database_name == '':
@@ -89,10 +90,10 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
         if owner:
             create_query += "GRANT ALL ON SCHEMA public TO %s; " % owner
 
-        if read_only_user:
-            create_query += "GRANT USAGE ON SCHEMA public TO %s;" % read_only_user
-            create_query += "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;" % read_only_user
-            create_query += "GRANT SELECT ON ALL TABLES IN SCHEMA public TO %s;" % read_only_user
+        if ro_user:
+            create_query += "GRANT USAGE ON SCHEMA public TO %s;" % ro_user
+            create_query += "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;" % ro_user
+            create_query += "GRANT SELECT ON ALL TABLES IN SCHEMA public TO %s;" % ro_user
 
         logging.info('Executing... "' + create_query + '"')
         cursor.execute(create_query)

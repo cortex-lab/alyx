@@ -1,6 +1,7 @@
 from django.core.management import BaseCommand
 from subjects.models import ZygosityFinder, Subject
 
+
 class Command(BaseCommand):
     help = "Updates all automatically generated zygosities from genotype tests"
 
