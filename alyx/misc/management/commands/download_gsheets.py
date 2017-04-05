@@ -19,6 +19,7 @@ import pytz
 import django
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.core.management import call_command
 import psycopg2 as Database
 
 
@@ -326,6 +327,7 @@ class GoogleSheetImporter(object):
             for n in ('Animal name', 'animal name', 'Animal number'):
                 if row.get(n):
                     fields['nickname'] = pad(row[n].strip())
+                    print(fields['nickname'])
                     break
             # Empty nickname? End of the table.
             if 'nickname' not in fields:
@@ -669,4 +671,22 @@ class Command(BaseCommand):
         make_fixture('actions.weighing', importer.weighings, path='12-weighings')
         make_fixture('actions.wateradministration', importer.administrations,
                      path='13-water-administrations')
+
+        json_dir = op.join(DATA_DIR, 'json')
+
+        if not os.path.isdir(json_dir):
+            self.stdout.write('Error: %s does not exist: it should contain .json files' % json_dir)
+            return
+
+        call_command('migrate')
+
+
+        for root, dirs, files in os.walk(json_dir):
+            for file in files:
+                if file.endswith('.json'):
+                    fullpath = op.join(json_dir, file)
+                    call_command('loaddata', fullpath, verbosity=3, interactive=False)
+
+        self.stdout.write(self.style.SUCCESS('Loaded all JSON files from %s' % json_dir))
+
 
