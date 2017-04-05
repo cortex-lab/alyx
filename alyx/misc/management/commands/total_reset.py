@@ -23,6 +23,10 @@ class Command(BaseCommand):
             '-R', '--remove-pickle', action='store_true',
             dest='remove_pickle', default=False,
             help='Removes and redownloads dumped_google_sheets.pkl')
+        parser.add_argument(
+            '-M', '--make-migrations', action='store_true',
+            dest='make_migrations', default=False,
+            help='Makes all app migrations before migrating')
 
     def handle(self, *args, **options):
         if args:
@@ -32,6 +36,11 @@ class Command(BaseCommand):
             call_command('reset_db', '-R alyx_ro')
         else:
             call_command('reset_db')
+
+        if options.get('make_migrations'):
+            call_command('makemigrations', 'actions', 'behavior', 'data', 'electrophysiology',
+                         'equipment', 'imaging', 'misc', 'subjects')
+
         call_command('migrate')
 
         if not options.get('remove_pickle'):
