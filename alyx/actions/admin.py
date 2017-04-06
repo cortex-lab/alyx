@@ -44,6 +44,8 @@ class BaseActionForm(forms.ModelForm):
             q = Q(responsible_user=self.current_user, death_date=None)
             if getattr(inst, 'subject', None):
                 q |= Q(pk=inst.subject.pk)
+            if getattr(self, 'last_subject_id', None):
+                q |= Q(pk=self.last_subject_id)
             qs = Subject.objects.filter(q).order_by('nickname')
             self.fields['subject'].queryset = qs
 
@@ -54,15 +56,24 @@ class BaseActionAdmin(BaseAdmin):
 
     form = BaseActionForm
 
+    def _get_last_subject(self, request):
+        return getattr(request, 'session', {}).get('last_subject_id', None)
+
     def get_form(self, request, obj=None, **kwargs):
         form = super(BaseActionAdmin, self).get_form(request, obj, **kwargs)
         form.current_user = request.user
+        form.last_subject_id = self._get_last_subject(request)
         return form
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Logged-in user by default.
         if db_field.name == 'user':
             kwargs['initial'] = request.user
+        if db_field.name == 'subject':
+            subject_id = self._get_last_subject(request)
+            if subject_id:
+                subject = Subject.objects.get(id=subject_id)
+                kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(
             db_field, request, **kwargs
         )
@@ -75,6 +86,12 @@ class BaseActionAdmin(BaseAdmin):
             db_field, request, **kwargs
         )
 
+    def save_model(self, request, obj, form, change):
+        subject = getattr(obj, 'subject', None)
+        if subject:
+            getattr(request, 'session', {})['last_subject_id'] = subject.id.hex
+        super(BaseActionAdmin, self).save_model(request, obj, form, change)
+
 
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
@@ -84,11 +101,12 @@ class WaterAdministrationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(WaterAdministrationForm, self).__init__(*args, **kwargs)
         # Only show subjects that are on water restriction.
-        self.fields['subject'].queryset = Subject.objects.filter(
-            pk__in=[wr.subject.pk
-                    for wr in WaterRestriction.objects.filter(start_time__isnull=False,
-                                                              end_time__isnull=True)],
-        )
+        ids = [wr.subject.pk
+               for wr in WaterRestriction.objects.filter(start_time__isnull=False,
+                                                         end_time__isnull=True)]
+        if getattr(self, 'last_subject_id', None):
+            ids += [self.last_subject_id]
+        self.fields['subject'].queryset = Subject.objects.filter(pk__in=ids)
         self.fields['user'].queryset = User.objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
@@ -113,8 +131,12 @@ class WaterAdministrationAdmin(BaseActionAdmin):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
-            kwargs["queryset"] = Subject.objects.filter(death_date=None,
+            kwargs['queryset'] = Subject.objects.filter(death_date=None,
                                                         ).order_by('nickname')
+            subject_id = self._get_last_subject(request)
+            if subject_id:
+                subject = Subject.objects.get(id=subject_id)
+                kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     list_display = ['subject', 'start_time',
