@@ -90,6 +90,7 @@ class WaterAdministrationForm(forms.ModelForm):
                                                               end_time__isnull=True)],
         )
         self.fields['user'].queryset = User.objects.all().order_by('username')
+        self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
 
 class WaterAdministrationAdmin(BaseActionAdmin):
@@ -168,12 +169,20 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     is_active.boolean = True
 
 
+class WeighingForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(WeighingForm, self).__init__(*args, **kwargs)
+        self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
+
+
 class WeighingAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'weight', 'date_time']
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
     readonly_fields = ['subject_l']
+
+    form = WeighingForm
 
     def subject_l(self, obj):
         url = get_admin_url(obj.subject)
