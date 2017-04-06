@@ -59,6 +59,22 @@ class BaseActionAdmin(BaseAdmin):
         form.current_user = request.user
         return form
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Logged-in user by default.
+        if db_field.name == 'user':
+            kwargs['initial'] = request.user
+        return super(BaseActionAdmin, self).formfield_for_foreignkey(
+            db_field, request, **kwargs
+        )
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        # Logged-in user by default.
+        if db_field.name == 'users':
+            kwargs['initial'] = [request.user]
+        return super(BaseActionAdmin, self).formfield_for_manytomany(
+            db_field, request, **kwargs
+        )
+
 
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
