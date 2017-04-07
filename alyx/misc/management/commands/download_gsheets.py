@@ -684,7 +684,7 @@ class Command(BaseCommand):
             return
 
         for root, dirs, files in os.walk(json_dir):
-            for file in files:
+            for file in sorted(files):
                 if file.endswith('.json'):
                     fullpath = op.join(json_dir, file)
                     call_command('loaddata', fullpath, verbosity=3, interactive=False)
