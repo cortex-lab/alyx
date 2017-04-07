@@ -2,6 +2,7 @@ from collections import OrderedDict
 import json
 import logging
 from operator import itemgetter
+import os
 import os.path as op
 from pickle import load, dump
 import re
@@ -15,12 +16,14 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 
+from django.core.management.base import BaseCommand
+from django.core.management import call_command
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-DATA_DIR = op.abspath(op.dirname(__file__))
 SEVERITY_CHOICES = (
     (1, 'Sub-threshold'),
     (2, 'Mild'),
@@ -30,6 +33,11 @@ SEVERITY_CHOICES = (
 )
 MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
 DEFAULT_RESPONSIBLE_USER_ID = 5
+
+
+def warn(*args):
+    args += ('\033[0m',)
+    print('\033[1;31m', *args)
 
 
 def pad(s):
@@ -109,7 +117,7 @@ class Bunch(dict):
 
 
 def sheet_to_table(wks, header_line=0, first_line=2):
-    logger.info("Downloading %s...", wks)
+    print("Downloading %s..." % wks)
     rows = wks.get_all_values()
     table = []
     headers = rows[header_line]
@@ -178,11 +186,11 @@ class GoogleSheetImporter(object):
         self._water_doc = get_sheet_doc('Water control')
 
         # Load the procedure table.
-        logger.info("Downloading the procedure table...")
+        print("Downloading the procedure table...")
         self.procedure_table = sheet_to_table(self._procedure_doc.worksheet('PROCEDURE LOG'))
 
         # Load the current lines in the unit table.
-        logger.info("Downloading the current lines table...")
+        print("Downloading the current lines table...")
         self.current_lines_table = sheet_to_table(self._line_doc.worksheet('Current lines in the '
                                                                            'unit'))
 
@@ -191,11 +199,11 @@ class GoogleSheetImporter(object):
         self.line_tables = {}
         for sheet in line_sheets:
             n = sheet.title.strip()
-            logger.info("Downloading the %s table..." % n)
+            print("Downloading the %s table..." % n)
             self.line_tables[n] = sheet_to_table(sheet, header_line=2, first_line=3)
 
         # Load the breeding pairs table.
-        logger.info("Downloading the breeding pairs table...")
+        print("Downloading the breeding pairs table...")
         self.breeding_pairs_table = sheet_to_table(self._line_doc.worksheet('Breeding Pairs'),
                                                    header_line=2, first_line=3)
 
@@ -207,7 +215,7 @@ class GoogleSheetImporter(object):
             n = sheet.title.strip()
             if n == '<mouseID>':
                 break
-            logger.info("Downloading the %s table..." % n)
+            print("Downloading the %s table..." % n)
             # Water restrictions.
             wrs = []
             for i in range(4):
@@ -324,7 +332,7 @@ class GoogleSheetImporter(object):
                     break
             # Empty nickname? End of the table.
             if 'nickname' not in fields:
-                logger.warn("Skip empty subject in %s with DOB %s.", line, row['DOB'])
+                warn("Skip empty subject in %s with DOB %s." % (line, row['DOB']))
                 break
             fields['lamis_cage'] = (int(re.sub("[^0-9]", "", row['LAMIS Cage number']))
                                     if row['LAMIS Cage number'] else None)
@@ -338,8 +346,8 @@ class GoogleSheetImporter(object):
                 try:
                     fields['bp_index'] = int(bp_index)
                 except ValueError:
-                    logger.warn("BP # is not an int: %s for subject %s.",
-                                bp_index, fields['nickname'])
+                    warn("BP # is not an int: %s for subject %s.",
+                         bp_index, fields['nickname'])
             subjects[fields['nickname']] = fields
         return subjects
 
@@ -388,7 +396,7 @@ class GoogleSheetImporter(object):
             try:
                 self.lines[line]['subject_autoname_index'] = int(table[-1].get('n', '') or 0)
             except ValueError:
-                logger.warn("Unable to set subject_autoname_index for %s.", line)
+                warn("Unable to set subject_autoname_index for %s." % line)
 
     def _get_severity(self, severity_name):
         for s, n in SEVERITY_CHOICES:
@@ -413,8 +421,8 @@ class GoogleSheetImporter(object):
             if line:
                 subject['line'] = [line.auto_name]
             else:
-                logger.warn("Line %s does not exist for subject %s in procedure log.",
-                            row['Line'], new_name)
+                warn("Line %s does not exist for subject %s in procedure log."
+                     % (row['Line'], new_name))
             subject['adverse_effects'] = row['Adverse Effects']
             subject['death_date'] = parse(row['Cull Date'])
             subject['cull_method'] = row['Cull Method']
@@ -451,8 +459,8 @@ class GoogleSheetImporter(object):
             try:
                 index = int(index)
             except ValueError:
-                logger.warn("BP # %s is not an integer in line %s in breeding pairs sheet.",
-                            index, line)
+                warn("BP # %s is not an integer in line %s in breeding pairs sheet." %
+                     (index, line))
                 continue
             bp['name'] = '%s_BP_%03d' % (line, index)
             bp['line'] = [line]
@@ -462,8 +470,8 @@ class GoogleSheetImporter(object):
             if line_obj:
                 line_obj['breeding_pair_autoname_index'] = index
             else:
-                logger.warn("Line %s referenced in BP %s doesn't exist.",
-                            line, bp['name'])
+                warn("Line %s referenced in BP %s doesn't exist."
+                     % (line, bp['name']))
 
             for field, name_col, dob_col, sex in [('father', 'Father name', 'Father DOB', 'M'),
                                                   ('mother1', 'Mother 1 name', 'Mother DOB', 'F'),
@@ -475,7 +483,7 @@ class GoogleSheetImporter(object):
                 name = pad(row[name_col])
                 # Skip subjects with a ?.
                 if '?' in name:
-                    logger.warn("Skipping subject %s in line %s.", name, line)
+                    warn("Skipping subject %s in line %s." % (name, line))
                     continue
                 parent = self.subjects.get(name, Bunch(nickname=name))
                 parent['birth_date'] = parse(row[dob_col]) if dob_col else None
@@ -484,8 +492,8 @@ class GoogleSheetImporter(object):
 
                 # Sanity check for sex.
                 if 'sex' in parent and parent['sex'] != sex:
-                    logger.warn("Sex mismatch for %s between line sheet %s "
-                                "and breeding pair sheet.", name, line)
+                    warn("Sex mismatch for %s between line sheet %s "
+                         "and breeding pair sheet." % (name, line))
                 parent['sex'] = sex
 
                 # Make sure the parent is in the subjects dictionary.
@@ -575,7 +583,7 @@ class GoogleSheetImporter(object):
             for row in table:
                 # No date? end of the table.
                 if 'Date' not in row:
-                    logger.warn("Water control sheet %s could not be imported.", n)
+                    warn("Water control sheet %s could not be imported." % n)
                     break
                 date = row['Date']
                 if not date:
@@ -587,8 +595,8 @@ class GoogleSheetImporter(object):
                     water = _parse_float(row['Water (ml)'])
                     hydrogel = _parse_float(row['Hydrogel (g)'])
                 except ValueError:
-                    logger.warn("One of the numbers in water admin sheet for %s is not "
-                                "a float.", n)
+                    warn("One of the numbers in water admin sheet for %s is not "
+                         "a float." % n)
                     continue
 
                 # Add weighings.
@@ -619,24 +627,66 @@ class GoogleSheetImporter(object):
         return administrations
 
 
-def import_data():
-    importer = GoogleSheetImporter()
+class Command(BaseCommand):
+    help = "Imports Google Sheets data into the database"
 
-    make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
-    make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
-    make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
-    make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
-    make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
-    make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
-    make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
-    make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name', path='08-breedingpair')
-    make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
-    make_fixture('subjects.litter', importer.litter_breeding_pairs, path='10-litter-breedingpair')
-    make_fixture('actions.waterrestriction', importer.restrictions, path='11-water-restrictions')
-    make_fixture('actions.weighing', importer.weighings, path='12-weighings')
-    make_fixture('actions.wateradministration', importer.administrations,
-                 path='13-water-administrations')
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
 
+        parser.add_argument('data_dir', nargs=1, type=str)
 
-if __name__ == '__main__':
-    import_data()
+        parser.add_argument('-R', '--remove-pickle',
+                            action='store_true',
+                            dest='remove_pickle',
+                            default=False,
+                            help='Removes and redownloads dumped_google_sheets.pkl')
+
+    def handle(self, *args, **options):
+        global DATA_DIR
+        DATA_DIR = options.get('data_dir')[0]
+
+        if not op.isdir(DATA_DIR):
+            self.stdout.write('Error: %s is not a directory' % DATA_DIR)
+            return
+
+        if options.get('remove_pickle'):
+            try:
+                os.remove(op.join(DATA_DIR, 'dumped_google_sheets.pkl'))
+                self.stdout.write('Removed dumped_google_sheets.pkl')
+            except FileNotFoundError:
+                self.stdout.write(self.style.NOTICE(
+                    'Could not remove dumped_google_sheets.pkl: file does not exist'))
+
+        importer = GoogleSheetImporter()
+
+        make_fixture('subjects.allele', importer.alleles, 'informal_name', path='01-allele')
+        make_fixture('subjects.strain', importer.strains, 'descriptive_name', path='02-strain')
+        make_fixture('subjects.sequence', importer.sequences, 'informal_name', path='03-sequence')
+        make_fixture('subjects.line', importer.lines, 'auto_name', path='04-line')
+        make_fixture('subjects.litter', importer.litters, 'descriptive_name', path='05-litter')
+        make_fixture('subjects.subject', importer.subjects, 'nickname', path='06-subject')
+        make_fixture('subjects.genotypetest', importer.genotype_tests, path='07-genotypetest')
+        make_fixture('subjects.breedingpair', importer.breeding_pairs, 'name',
+                     path='08-breedingpair')
+        make_fixture('actions.surgery', importer.surgeries, path='09-surgery')
+        make_fixture('subjects.litter', importer.litter_breeding_pairs,
+                     path='10-litter-breedingpair')
+        make_fixture('actions.waterrestriction', importer.restrictions,
+                     path='11-water-restrictions')
+        make_fixture('actions.weighing', importer.weighings, path='12-weighings')
+        make_fixture('actions.wateradministration', importer.administrations,
+                     path='13-water-administrations')
+
+        json_dir = op.join(DATA_DIR, 'json')
+
+        if not os.path.isdir(json_dir):
+            self.stdout.write('Error: %s does not exist: it should contain .json files' % json_dir)
+            return
+
+        for root, dirs, files in os.walk(json_dir):
+            for file in sorted(files):
+                if file.endswith('.json'):
+                    fullpath = op.join(json_dir, file)
+                    call_command('loaddata', fullpath, verbosity=3, interactive=False)
+
+        self.stdout.write(self.style.SUCCESS('Loaded all JSON files from %s' % json_dir))
