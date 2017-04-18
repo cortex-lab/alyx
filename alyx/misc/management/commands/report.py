@@ -1,7 +1,8 @@
 import logging
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
 
 from alyx.base import alyx_mail
 from actions.models import Surgery, WaterRestriction
@@ -17,7 +18,7 @@ class Command(BaseCommand):
         parser.add_argument('-U', '--users', nargs='*',
                             help='Usernames')
         parser.add_argument('names', nargs='*',
-                            help='List of report names to make')
+                            help='List of reports to make')
 
     def handle(self, *args, **options):
         users = options.get('users')
@@ -27,8 +28,12 @@ class Command(BaseCommand):
             method = getattr(self, 'make_%s' % name, None)
             if method:
                 self.stdout.write("Making report %s." % name)
-                for user in users:
-                    method(user)
+                # Global reports for admins.
+                if name in ('actions',):
+                    method()
+                else:
+                    for user in users:
+                        method(user)
 
     def make_water_restriction(self, user):
         wr = WaterRestriction.objects.filter(start_time__isnull=False,
@@ -61,3 +66,21 @@ class Command(BaseCommand):
         text = "Mice awaiting surgery:\n"
         text += '\n'.join('* %s' % nickname for nickname in surgery_pending)
         alyx_mail(user.email, subject, text)
+
+    def make_actions(self):
+        tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')
+        tbc = Subject.objects.filter(to_be_culled=True).order_by('nickname')
+        tbr = Subject.objects.filter(death_date__isnull=False,
+                                     reduced=False).order_by('nickname')
+        subject = '%d mice awaiting action' % (len(tbg) + len(tbc) + len(tbr))
+
+        text = "%d mice to be genotyped:\n" % len(tbg)
+        text += '\n'.join('* %s' % s.nickname for s in tbg)
+
+        text += "\n\n%d mice to be culled:\n" % len(tbc)
+        text += '\n'.join('* %s' % s.nickname for s in tbc)
+
+        text += "\n\n%d mice to be reduced:\n" % len(tbr)
+        text += '\n'.join('* %s' % s.nickname for s in tbr)
+
+        alyx_mail(settings.SUBJECT_REQUEST_EMAIL_TO, subject, text)
