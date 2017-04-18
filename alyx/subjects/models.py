@@ -15,7 +15,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from .zygosities import ZYGOSITY_RULES
-from alyx.base import BaseModel
+from alyx.base import BaseModel, alyx_mail
 from actions.models import WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
@@ -350,16 +350,8 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
     """Send en email when a subject request is created."""
     if not instance or not kwargs['created']:
         return
-    subject = "[alyx] %s requested: %s" % (instance.user, str(instance))
-    body = ''
-    try:
-        send_mail(subject, body, settings.SUBJECT_REQUEST_EMAIL_FROM,
-                  [settings.SUBJECT_REQUEST_EMAIL_TO],
-                  fail_silently=True,
-                  )
-        logger.debug("Mail sent.")
-    except Exception as e:
-        logger.warn("Mail failed: %s", e)
+    subject = "%s requested: %s" % (instance.user, str(instance))
+    alyx_mail(settings.SUBJECT_REQUEST_EMAIL_TO, subject)
 
 
 @receiver(post_save, sender=Subject)
