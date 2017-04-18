@@ -48,13 +48,15 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 
 def alyx_mail(to, subject, text=''):
+    if not to:
+        return
     try:
         send_mail('[alyx] ' + subject, text,
                   settings.SUBJECT_REQUEST_EMAIL_FROM,
                   [to],
                   fail_silently=True,
                   )
-        logger.debug("Mail sent.")
+        logger.debug("Mail sent to %s.", to)
     except Exception as e:
         logger.warn("Mail failed: %s", e)
 
