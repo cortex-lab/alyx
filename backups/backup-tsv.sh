@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 fi
 output_dir="$root_dir/alyx-backups/$today/"
 mkdir -p $output_dir
-host='rod.cortexlab.net'
+host='localhost'
 user='alyx_ro'
 database='alyx'
 port=5432
