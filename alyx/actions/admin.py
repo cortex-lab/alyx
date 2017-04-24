@@ -191,7 +191,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     is_active.boolean = True
 
 
-class WeighingForm(forms.ModelForm):
+class WeighingForm(BaseActionForm):
     def __init__(self, *args, **kwargs):
         super(WeighingForm, self).__init__(*args, **kwargs)
         self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
