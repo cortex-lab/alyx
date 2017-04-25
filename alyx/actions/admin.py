@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Case, When
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.utils.html import format_html
 
@@ -32,6 +32,12 @@ class ActiveFilter(DefaultListFilter):
             return queryset.all()
 
 
+def _bring_to_front(ids, id):
+    if id in ids:
+        ids.remove(id)
+    return [id] + ids
+
+
 class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BaseActionForm, self).__init__(*args, **kwargs)
@@ -41,13 +47,16 @@ class BaseActionForm(forms.ModelForm):
             self.fields['user'].queryset = User.objects.all().order_by('username')
         if 'subject' in self.fields:
             inst = self.instance
-            q = Q(responsible_user=self.current_user, death_date=None)
+            ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
+                                                        death_date=None).order_by('nickname')]
             if getattr(inst, 'subject', None):
-                q |= Q(pk=inst.subject.pk)
+                ids = _bring_to_front(ids, inst.subject.pk)
             if getattr(self, 'last_subject_id', None):
-                q |= Q(pk=self.last_subject_id)
-            qs = Subject.objects.filter(q).order_by('nickname')
-            self.fields['subject'].queryset = qs
+                ids = _bring_to_front(ids, self.last_subject_id)
+            # These ids first in the list of subjects.
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            self.fields['subject'].queryset = Subject.objects.all().order_by(preserved,
+                                                                             'nickname')
 
 
 class BaseActionAdmin(BaseAdmin):
@@ -106,7 +115,9 @@ class WaterAdministrationForm(forms.ModelForm):
                                                          end_time__isnull=True)]
         if getattr(self, 'last_subject_id', None):
             ids += [self.last_subject_id]
-        self.fields['subject'].queryset = Subject.objects.filter(pk__in=ids)
+        # These ids first in the list of subjects.
+        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+        self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
         self.fields['user'].queryset = User.objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
