@@ -103,6 +103,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
         parser.add_argument('output_dir', nargs=1, type=str)
+        parser.add_argument('-ng', '--no-google', action='store_true')
 
     def handle(self, *args, **options):
         output_dir = op.abspath(options.get('output_dir')[0])
@@ -113,4 +114,5 @@ class Command(BaseCommand):
 
         sql_path = op.abspath(op.join(op.dirname(__file__), 'queries'))
         backup_tsv(sql_path, output_dir)
-        upload_gsheets(output_dir)
+        if not options.get('no_google', None):
+            upload_gsheets(output_dir)
