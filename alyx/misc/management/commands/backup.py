@@ -26,11 +26,6 @@ def get_gc():
     return gc
 
 
-def exec_sql(sql):
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
-
-
 def backup_tsv(sql_dir, output_dir):
     today = datetime.now().strftime("%Y-%m-%d")
     path = op.abspath(op.join(sql_dir, '*.sql'))
@@ -42,10 +37,14 @@ def backup_tsv(sql_dir, output_dir):
         path = op.abspath(op.join(output_dir, today, name + '.tsv'))
         if not os.path.exists(op.dirname(path)):
             os.makedirs(op.dirname(path))
-        logger.info("Dumping %s to %s.", name, path)
-        cmd = ("copy (%s) to '%s' with CSV DELIMITER E'\t' header encoding 'utf-8'" %
-               (sql, path))
-        exec_sql(cmd)
+        cmd = ("copy (%s) to STDOUT with CSV DELIMITER E'\t' header encoding 'utf-8'" %
+               sql)
+        with connection.cursor() as cursor:
+            with open(path, 'w') as f:
+                cursor.copy_expert(cmd, f)
+        with open(path, 'r') as f:
+            size = len(f.read())
+        logger.info("Dumped %s to %s (%d bytes).", name, path, size)
 
 
 def upload_table(doc, path):
