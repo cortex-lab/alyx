@@ -27,14 +27,13 @@ def get_gc():
 
 
 def backup_tsv(sql_dir, output_dir):
-    today = datetime.now().strftime("%Y-%m-%d")
     path = op.abspath(op.join(sql_dir, '*.sql'))
     files = sorted(glob.glob(path))
     for file in files:
         with open(file, 'r') as f:
             sql = f.read()
         name = op.splitext(op.basename(file))[0]
-        path = op.abspath(op.join(output_dir, today, name + '.tsv'))
+        path = op.abspath(op.join(output_dir, name + '.tsv'))
         if not os.path.exists(op.dirname(path)):
             os.makedirs(op.dirname(path))
         cmd = ("copy (%s) to STDOUT with CSV DELIMITER E'\t' header encoding 'utf-8'" %
@@ -82,13 +81,8 @@ def upload_table(doc, path):
 
 def upload_gsheets(output_dir):
     gc = get_gc()
-    last = sorted(os.listdir(output_dir))
-    if not last:
-        logger.warn("There are no backups in %s.", output_dir)
-        return
-    last = last[-1]
-    files = sorted(glob.glob(op.join(output_dir, last, '*.tsv')))
-    logger.info("Found %d files in %s.", len(files), op.join(output_dir, last))
+    files = sorted(glob.glob(op.join(output_dir, output_dir, '*.tsv')))
+    logger.info("Found %d files in %s.", len(files), output_dir)
     doc = gc.open('Alyx Backup')
     for path in files:
         name = op.splitext(op.basename(path))[0]
@@ -107,6 +101,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         output_dir = op.abspath(options.get('output_dir')[0])
+        today = datetime.now().strftime("%Y-%m-%d")
+        output_dir = op.join(output_dir, today)
 
         if not op.isdir(output_dir):
             self.stdout.write('Error: %s is not a directory' % output_dir)
