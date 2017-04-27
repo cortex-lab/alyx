@@ -95,7 +95,7 @@ def upload_gsheets(output_dir):
         name = op.splitext(op.basename(path))[0]
         n = upload_table(doc, path)
         logger.info("%d items uploaded to `%s` sheet of Google Sheet backup document.",
-                     n, name)
+                    n, name)
 
 
 class Command(BaseCommand):
