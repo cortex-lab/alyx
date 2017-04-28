@@ -168,10 +168,21 @@ def get_admin_url(obj):
 
 class SubjectForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        # NOTE: Retrieve the request, passed by ModelAdmin.get_form()
+        self.request = kwargs.pop('request', None)
         super(SubjectForm, self).__init__(*args, **kwargs)
         if self.instance.line:
             self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
         self.fields['responsible_user'].queryset = User.objects.all().order_by('username')
+
+    def clean_responsible_user(self):
+        old_ru = self.instance.responsible_user
+        new_ru = self.cleaned_data['responsible_user']
+        logged = self.request.user
+        if new_ru and old_ru != new_ru:
+            if logged.id != DEFAULT_RESPONSIBLE_USER_ID and old_ru != logged:
+                raise forms.ValidationError("You are not allowed to change the responsible user.")
+        return new_ru
 
 
 class SubjectAdmin(BaseAdmin):
@@ -295,7 +306,17 @@ class SubjectAdmin(BaseAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
-        return super(SubjectAdmin, self).get_form(request, obj, **kwargs)
+
+        # NOTE: make the request available in the form
+        # http://stackoverflow.com/a/9191583/1595060
+        form = super(SubjectAdmin, self).get_form(request, obj, **kwargs)
+
+        class AdminFormWithRequest(form):
+            def __new__(cls, *args, **kwargs):
+                kwargs['request'] = request
+                return form(*args, **kwargs)
+
+        return AdminFormWithRequest
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         user = kwargs['request'].user
