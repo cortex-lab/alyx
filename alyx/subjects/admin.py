@@ -138,6 +138,7 @@ class SurgeryInline(BaseInlineAdmin):
     extra = 1
     fields = ['procedures', 'narrative', 'start_time', 'outcome_type',
               'users', 'location']
+    readonly_fields = fields
     classes = ['collapse']
     show_change_link = True
 
