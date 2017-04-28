@@ -742,6 +742,10 @@ class SubjectRequestUserListFilter(DefaultListFilter):
             return queryset.all()
 
 
+class SubjectInlineNonEditable(SubjectInline):
+    readonly_fields = SubjectInline.fields
+
+
 class SubjectRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SubjectRequestForm, self).__init__(*args, **kwargs)
@@ -757,7 +761,7 @@ class SubjectRequestAdmin(BaseAdmin):
                    SubjectRequestStatusListFilter,
                    ('line', RelatedDropdownFilter),
                    ]
-    inlines = [SubjectInline]
+    inlines = [SubjectInlineNonEditable]
 
     form = SubjectRequestForm
 
