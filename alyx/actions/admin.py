@@ -214,6 +214,8 @@ class WeighingAdmin(BaseActionAdmin):
     ordering = ('-date_time',)
     list_display_links = ('weight',)
     readonly_fields = ['subject_l']
+    search_fields = ['subject__nickname']
+    list_filter = [('subject', RelatedDropdownFilter)]
 
     form = WeighingForm
 
