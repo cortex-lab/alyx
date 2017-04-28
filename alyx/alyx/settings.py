@@ -80,6 +80,10 @@ LOGGING = {
 }
 
 
+if 'TRAVIS' in os.environ:
+    LOGGING['handlers']['file']['filename'] = 'alyx.log'
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
