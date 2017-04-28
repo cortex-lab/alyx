@@ -59,6 +59,11 @@ LOGGING = {
             'maxBytes': 16777216,
             'formatter': 'simple'
         },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
     },
     'loggers': {
         'django': {
@@ -68,7 +73,7 @@ LOGGING = {
         }
     },
     'root': {
-        'handlers': ['file'],
+        'handlers': ['file', 'console'],
         'level': 'DEBUG',
         'propagate': True,
     }
