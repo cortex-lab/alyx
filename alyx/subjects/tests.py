@@ -41,7 +41,8 @@ class ModelAdminTests(TestCase):
         self.ar(r)
 
         # Test the add page.
-        r = ma.add_view(self.request)
+        if ma.has_add_permission(self.request):
+            r = ma.add_view(self.request)
 
         # Get the first subject.
         qs = ma.get_queryset(self.request)
