@@ -13,6 +13,46 @@ from subjects.models import Subject
 from subjects.admin import get_admin_url
 
 
+# Filters
+# ------------------------------------------------------------------------------------------------
+
+class ResponsibleUserListFilter(DefaultListFilter):
+    title = 'responsible user'
+    parameter_name = 'responsible_user'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Me'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(subject__responsible_user=request.user)
+        elif self.value == 'all':
+            return queryset.all()
+
+
+class SubjectAliveListFilter(DefaultListFilter):
+    title = 'alive'
+    parameter_name = 'alive'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Yes'),
+            ('n', 'No'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(subject__death_date=None)
+        if self.value() == 'n':
+            return queryset.exclude(subject__death_date=None)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class ActiveFilter(DefaultListFilter):
     title = 'active'
     parameter_name = 'active'
@@ -37,6 +77,9 @@ def _bring_to_front(ids, id):
         ids.remove(id)
     return [id] + ids
 
+
+# Admin
+# ------------------------------------------------------------------------------------------------
 
 class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -131,7 +174,8 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     readonly_fields = ['subject_l']
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
-    list_filter = [('subject', RelatedDropdownFilter)]
+    list_filter = [ResponsibleUserListFilter,
+                   ('subject', RelatedDropdownFilter)]
 
     def subject_l(self, obj):
         url = get_admin_url(obj.subject)
@@ -162,7 +206,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                        ]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname']
-    list_filter = [('subject', RelatedDropdownFilter),
+    list_filter = [ResponsibleUserListFilter,
+                   ('subject', RelatedDropdownFilter),
                    ActiveFilter,
                    ]
 
@@ -215,7 +260,8 @@ class WeighingAdmin(BaseActionAdmin):
     list_display_links = ('weight',)
     readonly_fields = ['subject_l']
     search_fields = ['subject__nickname']
-    list_filter = [('subject', RelatedDropdownFilter)]
+    list_filter = [ResponsibleUserListFilter,
+                   ('subject', RelatedDropdownFilter)]
 
     form = WeighingForm
 
@@ -223,46 +269,6 @@ class WeighingAdmin(BaseActionAdmin):
         url = get_admin_url(obj.subject)
         return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
     subject_l.short_description = 'subject'
-
-
-# Filters
-# ------------------------------------------------------------------------------------------------
-
-class ResponsibleUserListFilter(DefaultListFilter):
-    title = 'responsible user'
-    parameter_name = 'responsible_user'
-
-    def lookups(self, request, model_admin):
-        return (
-            (None, 'Me'),
-            ('all', 'All'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset.filter(subject__responsible_user=request.user)
-        elif self.value == 'all':
-            return queryset.all()
-
-
-class SubjectAliveListFilter(DefaultListFilter):
-    title = 'alive'
-    parameter_name = 'alive'
-
-    def lookups(self, request, model_admin):
-        return (
-            (None, 'Yes'),
-            ('n', 'No'),
-            ('all', 'All'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset.filter(subject__death_date=None)
-        if self.value() == 'n':
-            return queryset.exclude(subject__death_date=None)
-        elif self.value == 'all':
-            return queryset.all()
 
 
 class SurgeryAdmin(BaseActionAdmin):
