@@ -105,8 +105,14 @@ class BaseActionForm(forms.ModelForm):
 class BaseActionAdmin(BaseAdmin):
     fields = ['subject', 'start_time', 'end_time', 'users',
               'location', 'procedures', 'narrative']
+    readonly_fields = ['subject_l']
 
     form = BaseActionForm
+
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
 
     def _get_last_subject(self, request):
         return getattr(request, 'session', {}).get('last_subject_id', None)
@@ -171,16 +177,10 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
     list_display = ['subject_l', 'water_administered', 'date_time', 'hydrogel']
     list_display_links = ('water_administered',)
-    readonly_fields = ['subject_l']
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter,
                    ('subject', RelatedDropdownFilter)]
-
-    def subject_l(self, obj):
-        url = get_admin_url(obj.subject)
-        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
-    subject_l.short_description = 'subject'
 
 
 class WaterRestrictionAdmin(BaseActionAdmin):
@@ -194,7 +194,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                 kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
-    list_display = ['subject', 'start_time',
+    list_display = ['subject_l', 'start_time',
                     'reference_weighing', 'current_weighing',
                     'water_requirement_total', 'water_requirement_remaining',
                     'is_active',
@@ -210,11 +210,6 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                    ('subject', RelatedDropdownFilter),
                    ActiveFilter,
                    ]
-
-    def subject_l(self, obj):
-        url = get_admin_url(obj.subject)
-        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
-    subject_l.short_description = 'subject'
 
     def reference_weighing(self, obj):
         if not obj.subject:
@@ -258,21 +253,15 @@ class WeighingAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
-    readonly_fields = ['subject_l']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter,
                    ('subject', RelatedDropdownFilter)]
 
     form = WeighingForm
 
-    def subject_l(self, obj):
-        url = get_admin_url(obj.subject)
-        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
-    subject_l.short_description = 'subject'
-
 
 class SurgeryAdmin(BaseActionAdmin):
-    list_display = ['subject', 'date', 'users_l', 'procedures_l', 'narrative']
+    list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
     fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type']
     list_display_links = ['date']
     list_filter = [SubjectAliveListFilter,
