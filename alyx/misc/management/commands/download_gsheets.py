@@ -21,7 +21,6 @@ from django.core.management import call_command
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 SEVERITY_CHOICES = (

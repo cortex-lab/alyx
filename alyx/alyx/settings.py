@@ -42,6 +42,39 @@ SUBJECT_REQUEST_EMAIL_FROM = 'alyx@alyx'
 SUBJECT_REQUEST_EMAIL_TO = 'c.reddy@ucl.ac.uk'
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(asctime)s [%(levelname)s] %(message)s',
+            'datefmt': '%H:%M:%S'
+        }
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '/var/log/alyx.log',
+            'maxBytes': 16777216,
+            'formatter': 'simple'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        }
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'DEBUG',
+        'propagate': True,
+    }
+}
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
