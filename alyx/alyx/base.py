@@ -1,12 +1,17 @@
+import logging
 import uuid
 from polymorphic.models import PolymorphicModel
+
+from django import forms
 from django.db import models
+from django.conf import settings
+from django.conf.locale.en import formats as en_formats
 from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
+from django.core.mail import send_mail
 from django.template.response import TemplateResponse
-from django import forms
-from django.conf.locale.en import formats as en_formats
 
+logger = logging.getLogger(__name__)
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 
 
@@ -40,6 +45,20 @@ class DefaultListFilter(admin.SimpleListFilter):
                 }, []),
                 'display': title,
             }
+
+
+def alyx_mail(to, subject, text=''):
+    if not to:
+        return
+    try:
+        send_mail('[alyx] ' + subject, text,
+                  settings.SUBJECT_REQUEST_EMAIL_FROM,
+                  [to],
+                  fail_silently=True,
+                  )
+        logger.debug("Mail sent to %s.", to)
+    except Exception as e:
+        logger.warn("Mail failed: %s", e)
 
 
 ADMIN_PAGES = [('Common', ['Subjects',

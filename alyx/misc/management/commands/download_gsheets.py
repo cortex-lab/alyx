@@ -51,7 +51,7 @@ def flatten(l):
 def get_username(initials):
     return {
         'AL': 'armin',
-        'ALK': 'armin',  # yes??
+        'ALK': 'armin',
         'AP': 'andy',
         'CR': 'charu',
         'NS': 'nick',
