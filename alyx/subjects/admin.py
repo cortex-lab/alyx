@@ -1,6 +1,7 @@
 from django import forms
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
 from django.utils.html import format_html
 from django.urls import reverse
@@ -845,6 +846,10 @@ class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
 
 
+class MyUserAdmin(UserAdmin):
+    ordering = ['nickname']
+
+
 # Reorganize admin index
 # ------------------------------------------------------------------------------------------------
 
@@ -856,7 +861,7 @@ mysite.index_title = 'Welcome to Alyx'
 
 admin.site = mysite
 
-mysite.register(User)
+mysite.register(User, UserAdmin)
 mysite.register(Group)
 
 mysite.register(Subject, SubjectAdmin)

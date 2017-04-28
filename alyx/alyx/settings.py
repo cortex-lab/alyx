@@ -90,7 +90,7 @@ if 'TRAVIS' in os.environ:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
+ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 
 # Application definition
 
