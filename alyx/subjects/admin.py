@@ -867,6 +867,9 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
                    ]
     list_editable = []
 
+    def has_add_permission(self, request):
+        return False
+
     def get_queryset(self, request):
         return (self.model.objects.
                 exclude(adverse_effects__isnull=True).
