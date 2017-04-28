@@ -6,7 +6,6 @@ import os
 import os.path as op
 from pickle import load, dump
 import re
-import sys
 import uuid
 
 from datetime import datetime
