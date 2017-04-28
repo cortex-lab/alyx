@@ -34,8 +34,6 @@ def backup_tsv(sql_dir, output_dir):
             sql = f.read()
         name = op.splitext(op.basename(file))[0]
         path = op.abspath(op.join(output_dir, name + '.tsv'))
-        if not os.path.exists(op.dirname(path)):
-            os.makedirs(op.dirname(path))
         cmd = ("copy (%s) to STDOUT with CSV DELIMITER E'\t' header encoding 'utf-8'" %
                sql)
         with connection.cursor() as cursor:
@@ -103,6 +101,9 @@ class Command(BaseCommand):
         output_dir = op.abspath(options.get('output_dir')[0])
         today = datetime.now().strftime("%Y-%m-%d")
         output_dir = op.join(output_dir, today)
+
+        if not op.exists(output_dir):
+            os.makedirs(output_dir)
 
         if not op.isdir(output_dir):
             self.stdout.write('Error: %s is not a directory' % output_dir)
