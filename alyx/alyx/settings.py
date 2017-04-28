@@ -86,7 +86,7 @@ LOGGING = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 
 # Application definition
 
