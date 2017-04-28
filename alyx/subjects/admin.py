@@ -180,7 +180,7 @@ class SubjectForm(forms.ModelForm):
         new_ru = self.cleaned_data['responsible_user']
         logged = self.request.user
         if new_ru and old_ru != new_ru:
-            if logged.id != DEFAULT_RESPONSIBLE_USER_ID and old_ru != logged:
+            if logged != old_ru:
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
 
