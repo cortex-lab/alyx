@@ -29,8 +29,6 @@ SEVERITY_CHOICES = (
     (4, 'Severe'),
     (5, 'Non-recovery'),
 )
-MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
-DEFAULT_RESPONSIBLE_USER_ID = 5
 
 
 def warn(*args):
