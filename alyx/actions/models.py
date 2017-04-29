@@ -1,11 +1,19 @@
-from django.contrib.auth.models import User
+from datetime import datetime
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from datetime import datetime
+from django.contrib.auth.models import User
+
+from alyx.base import BaseModel
 from equipment.models import LabLocation, WeighingScale, VirusBatch
 from misc.models import BrainLocation
-from alyx.base import BaseModel
+
+
+class OrderedUser(User):
+    class Meta:
+        proxy = True
+        ordering = ['username']
 
 
 class ProcedureType(BaseModel):
@@ -25,7 +33,7 @@ class Weighing(BaseModel):
     """
     A weighing of a subject.
     """
-    user = models.ForeignKey(User, null=True, blank=True,
+    user = models.ForeignKey(OrderedUser, null=True, blank=True,
                              help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
                                 help_text="The subject which was weighed")
@@ -48,7 +56,7 @@ class WaterAdministration(BaseModel):
     """
     For keeping track of water for subjects not on free water.
     """
-    user = models.ForeignKey(User, null=True, blank=True,
+    user = models.ForeignKey(OrderedUser, null=True, blank=True,
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
                                 related_name='water_administrations',
@@ -69,7 +77,7 @@ class BaseAction(BaseModel):
     surgery; etc. This should always be accessed through one of its subclasses.
     """
 
-    users = models.ManyToManyField(User, blank=True,
+    users = models.ManyToManyField(OrderedUser, blank=True,
                                    help_text="The user(s) involved in this action")
     subject = models.ForeignKey('subjects.Subject',
                                 related_name="%(app_label)s_%(class)ss",

@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
-                     Species, Strain, Subject, SubjectRequest, Zygosity,
+                     Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      DEFAULT_RESPONSIBLE_USER_ID)
 from actions.models import Surgery, Session, OtherAction
 
@@ -850,6 +850,10 @@ class MyUserAdmin(UserAdmin):
     ordering = ['nickname']
 
 
+class StockManagerAdmin(BaseAdmin):
+    fields = ['user']
+
+
 # Reorganize admin index
 # ------------------------------------------------------------------------------------------------
 
@@ -862,6 +866,7 @@ mysite.index_title = 'Welcome to Alyx'
 admin.site = mysite
 
 mysite.register(User, UserAdmin)
+mysite.register(StockManager, StockManagerAdmin)
 mysite.register(Group)
 
 mysite.register(Subject, SubjectAdmin)
