@@ -352,7 +352,8 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
     if not instance or not kwargs['created']:
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
-    alyx_mail(settings.SUBJECT_REQUEST_EMAIL_TO, subject)
+    to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
+    alyx_mail(to, subject)
 
 
 @receiver(post_save, sender=Subject)

@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from alyx.base import alyx_mail
-from actions.models import Surgery, WaterRestriction
+from actions.models import Surgery, WaterRestriction, StockManager
 from subjects.models import Subject
 
 logger = logging.getLogger(__name__)
@@ -83,4 +83,5 @@ class Command(BaseCommand):
         text += "\n\n%d mice to be reduced:\n" % len(tbr)
         text += '\n'.join('* %s' % s.nickname for s in tbr)
 
-        alyx_mail(settings.SUBJECT_REQUEST_EMAIL_TO, subject, text)
+        to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
+        alyx_mail(to, subject, text)
