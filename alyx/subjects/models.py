@@ -16,7 +16,7 @@ from django.utils import timezone
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
-from actions.models import WaterRestriction, Weighing, WaterAdministration
+from actions.models import OrderedUser, WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,8 @@ class Subject(BaseModel):
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     genotype_date = models.DateField(null=True, blank=True)
-    responsible_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+    responsible_user = models.ForeignKey(OrderedUser, null=True, blank=True,
+                                         on_delete=models.SET_NULL,
                                          default=DEFAULT_RESPONSIBLE_USER_ID,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
@@ -314,7 +315,7 @@ class Subject(BaseModel):
 
 
 class SubjectRequest(BaseModel):
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+    user = models.ForeignKey(OrderedUser, null=True, blank=True, on_delete=models.SET_NULL,
                              related_name='subjects_requested',
                              help_text="Who requested this subject.")
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
@@ -351,7 +352,8 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
     if not instance or not kwargs['created']:
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
-    alyx_mail(settings.SUBJECT_REQUEST_EMAIL_TO, subject)
+    to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
+    alyx_mail(to, subject)
 
 
 @receiver(post_save, sender=Subject)
@@ -575,6 +577,16 @@ class Source(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+class StockManager(BaseModel):
+    user = models.OneToOneField(User)
+
+    class Meta:
+        ordering = ['user__username']
+
+    def __str__(self):
+        return self.user.username
 
 
 # Genotypes

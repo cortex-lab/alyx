@@ -8,8 +8,8 @@ from django.urls import reverse
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
-                     Species, Strain, Subject, SubjectRequest, Zygosity,
-                     DEFAULT_RESPONSIBLE_USER_ID)
+                     Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
+                     )
 from actions.models import Surgery, Session, OtherAction
 
 
@@ -46,7 +46,8 @@ class ResponsibleUserListFilter(DefaultListFilter):
         if self.value() is None:
             return queryset.filter(responsible_user=request.user)
         if self.value() == 'stock':
-            return queryset.filter(responsible_user__pk=DEFAULT_RESPONSIBLE_USER_ID)
+            sms = [sm.user for sm in StockManager.objects.all()]
+            return queryset.filter(responsible_user__in=sms)
         elif self.value == 'all':
             return queryset.all()
 
@@ -850,6 +851,10 @@ class MyUserAdmin(UserAdmin):
     ordering = ['nickname']
 
 
+class StockManagerAdmin(BaseAdmin):
+    fields = ['user']
+
+
 # Reorganize admin index
 # ------------------------------------------------------------------------------------------------
 
@@ -862,6 +867,7 @@ mysite.index_title = 'Welcome to Alyx'
 admin.site = mysite
 
 mysite.register(User, UserAdmin)
+mysite.register(StockManager, StockManagerAdmin)
 mysite.register(Group)
 
 mysite.register(Subject, SubjectAdmin)

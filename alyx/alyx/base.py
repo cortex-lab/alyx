@@ -50,13 +50,15 @@ class DefaultListFilter(admin.SimpleListFilter):
 def alyx_mail(to, subject, text=''):
     if not to:
         return
+    if not isinstance(to, (list, tuple)):
+        to = [to]
     try:
         send_mail('[alyx] ' + subject, text,
                   settings.SUBJECT_REQUEST_EMAIL_FROM,
-                  [to],
+                  to,
                   fail_silently=True,
                   )
-        logger.debug("Mail sent to %s.", to)
+        logger.debug("Mail sent to %s.", ', '.join(to))
     except Exception as e:
         logger.warn("Mail failed: %s", e)
 
@@ -88,6 +90,7 @@ ADMIN_PAGES = [('Common', ['Subjects',
                ('IT admin', ['Tokens',
                              'Groups',
                              'Users',
+                             'Stock managers',
                              ]),
                ]
 
