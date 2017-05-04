@@ -953,6 +953,9 @@ class CullMiceAdmin(SubjectAdmin):
                    ]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 
+    def has_add_permission(self, request):
+        return False
+
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')
 create_modeladmin(CullMiceAdmin, model=Subject, name='Cull subject')
