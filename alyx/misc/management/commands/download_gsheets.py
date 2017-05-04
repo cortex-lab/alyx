@@ -461,6 +461,7 @@ class GoogleSheetImporter(object):
             bp['name'] = '%s_BP_%03d' % (line, index)
             bp['line'] = [line]
             bp['start_date'] = parse(row.get('Date together', None))
+            bp['end_date'] = parse(row.get('Date ended', None))
             bp['notes'] = row['Notes']
             line_obj = self._get_line(line)
             if line_obj:
