@@ -143,6 +143,25 @@ class SurgeryInline(BaseInlineAdmin):
     readonly_fields = fields
     classes = ['collapse']
     show_change_link = True
+    can_delete = False
+    verbose_name = "Past surgery"
+    verbose_name_plural = "Past surgeries"
+
+    def has_add_permission(self, request):
+        return False
+
+
+class AddSurgeryInline(SurgeryInline):
+    readonly_fields = ()
+    show_change_link = False
+    verbose_name = "New surgery"
+    verbose_name_plural = "New surgeries"
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_change_permission(self, request):
+        return False
 
 
 class SessionInline(BaseInlineAdmin):
@@ -242,7 +261,8 @@ class SubjectAdmin(BaseAdmin):
                    ]
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, SessionInline, OtherActionInline]
+               SurgeryInline, AddSurgeryInline,
+               SessionInline, OtherActionInline]
 
     def ear_mark_(self, obj):
         return obj.ear_mark
