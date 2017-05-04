@@ -525,6 +525,26 @@ class LitterInline(BaseInlineAdmin):
         return field
 
 
+class BreedingPairFilter(DefaultListFilter):
+    title = 'status'
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Current'),
+            ('p', 'Past'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(start_date__isnull=False, end_date=None)
+        if self.value() == 'p':
+            return queryset.filter(start_date__isnull=False, end_date__isnull=False)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class BreedingPairAdminForm(forms.ModelForm):
     lamis_cage = forms.CharField(required=False)
 
@@ -556,7 +576,8 @@ class BreedingPairAdmin(BaseAdmin):
                     'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage']
-    list_filter = [('line', RelatedDropdownFilter),
+    list_filter = [BreedingPairFilter,
+                   ('line', RelatedDropdownFilter),
                    ]
     inlines = [LitterInline]
 
