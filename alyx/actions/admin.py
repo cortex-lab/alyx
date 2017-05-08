@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.db.models import Case, When
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.utils.html import format_html
@@ -9,7 +8,7 @@ from alyx.base import BaseAdmin, DefaultListFilter
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
-from subjects.models import Subject
+from subjects.models import Subject, OrderedUser
 from subjects.admin import get_admin_url
 
 
@@ -85,9 +84,9 @@ class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BaseActionForm, self).__init__(*args, **kwargs)
         if 'users' in self.fields:
-            self.fields['users'].queryset = User.objects.all().order_by('username')
+            self.fields['users'].queryset = OrderedUser.objects.all().order_by('username')
         if 'user' in self.fields:
-            self.fields['user'].queryset = User.objects.all().order_by('username')
+            self.fields['user'].queryset = OrderedUser.objects.all().order_by('username')
         if 'subject' in self.fields:
             inst = self.instance
             ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
@@ -167,7 +166,7 @@ class WaterAdministrationForm(forms.ModelForm):
         # These ids first in the list of subjects.
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
-        self.fields['user'].queryset = User.objects.all().order_by('username')
+        self.fields['user'].queryset = OrderedUser.objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
 
