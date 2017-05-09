@@ -354,7 +354,7 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
     to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
-    alyx_mail(to, subject)
+    alyx_mail(to, subject, instance.notes)
 
 
 @receiver(post_save, sender=Subject)
