@@ -200,7 +200,9 @@ class SubjectForm(forms.ModelForm):
         old_ru = self.instance.responsible_user
         new_ru = self.cleaned_data['responsible_user']
         logged = self.request.user
-        if new_ru and old_ru != new_ru:
+        # NOTE: skip the test if the instance is being created
+        # such that any user can create a new subject.
+        if not self.instance._state.adding and old_ru and new_ru and old_ru != new_ru:
             if logged != old_ru:
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
