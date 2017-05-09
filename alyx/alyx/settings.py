@@ -38,7 +38,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ALYX-SPECIFIC
 
-SUBJECT_REQUEST_EMAIL_FROM = 'alyx@alyx'
+SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
 
 
 LOGGING = {

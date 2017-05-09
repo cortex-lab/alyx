@@ -52,6 +52,7 @@ def alyx_mail(to, subject, text=''):
         return
     if not isinstance(to, (list, tuple)):
         to = [to]
+    text += '\n\n--\nMessage sent automatically - please do not reply.'
     try:
         send_mail('[alyx] ' + subject, text,
                   settings.SUBJECT_REQUEST_EMAIL_FROM,
