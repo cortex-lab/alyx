@@ -255,8 +255,9 @@ class Subject(BaseModel):
         expected_weight = self.expected_weighing(self.age_weeks())
         if not expected_weight:
             return 0
+        iw = self.implant_weight or 0
         weight = self.current_weighing().weight
-        return 0.05 * weight if weight < 0.8 * expected_weight else 0.04 * weight
+        return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
 
     def water_requirement_remaining(self):
         '''Returns the amount of water the subject still needs, given how much
