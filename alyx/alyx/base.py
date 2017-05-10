@@ -11,6 +11,8 @@ from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
 from django.template.response import TemplateResponse
 
+from reversion.admin import VersionAdmin
+
 logger = logging.getLogger(__name__)
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 
@@ -147,7 +149,7 @@ class MyAdminSite(admin.AdminSite):
         return TemplateResponse(request, self.index_template or 'admin/index.html', context)
 
 
-class BaseAdmin(admin.ModelAdmin):
+class BaseAdmin(VersionAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
