@@ -193,12 +193,14 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                 kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
-    list_display = ['subject_l', 'start_time',
+    list_display = ['subject_l', 'start_time_l',
                     'reference_weighing', 'current_weighing',
-                    'water_requirement_total', 'water_requirement_remaining',
+                    'water_requirement_total',
+                    'water_requirement_today',
+                    'water_requirement_remaining',
                     'is_active',
                     ]
-    list_display_links = ('start_time',)
+    list_display_links = ('start_time_l',)
     readonly_fields = ['reference_weighing', 'current_weighing',
                        'water_requirement_total', 'water_requirement_remaining',
                        'is_active',
@@ -210,31 +212,42 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                    ActiveFilter,
                    ]
 
+    def start_time_l(self, obj):
+        return obj.start_time.date()
+    start_time_l.short_description = 'start time'
+
     def reference_weighing(self, obj):
         if not obj.subject:
             return
         w = obj.subject.reference_weighing()
         return w.weight if w else None
-    reference_weighing.short_description = 'ref weighing'
+    reference_weighing.short_description = 'ref weigh'
 
     def current_weighing(self, obj):
         if not obj.subject:
             return
         w = obj.subject.current_weighing()
         return w.weight if w else None
-    current_weighing.short_description = 'current weighing'
+    current_weighing.short_description = 'cur weigh'
 
     def water_requirement_total(self, obj):
         if not obj.subject:
             return
-        return '%.3f' % obj.subject.water_requirement_total()
-    water_requirement_total.short_description = 'water req tot'
+        return '%.2f' % obj.subject.water_requirement_total()
+    water_requirement_total.short_description = 'wat req tot'
+
+    def water_requirement_today(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % (obj.subject.water_requirement_total() -
+                         obj.subject.water_requirement_remaining())
+    water_requirement_today.short_description = 'wat req tod'
 
     def water_requirement_remaining(self, obj):
         if not obj.subject:
             return
-        return '%.3f' % obj.subject.water_requirement_remaining()
-    water_requirement_remaining.short_description = 'water req rem'
+        return '%.2f' % obj.subject.water_requirement_remaining()
+    water_requirement_remaining.short_description = 'wat req rem'
 
     def is_active(self, obj):
         return obj.is_active()
