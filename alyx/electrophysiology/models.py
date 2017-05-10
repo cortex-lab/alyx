@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Dataset, BaseExperimentalData
+from data.models import Timeseries, Dataset, BaseExperimentalData
 from equipment.models import ExtracellularProbe, Amplifier, DAQ, PipettePuller
 from misc.models import BrainLocation, CoordinateTransformation
 
@@ -25,27 +25,29 @@ class ExtracellularRecording(BaseExperimentalData):
         ('A', 'Acute'),
     )
 
-    raw_data = models.ForeignKey(Dataset, blank=True, null=True,
+    raw_data = models.ForeignKey(Timeseries, blank=True, null=True,
                                  related_name="extracellular_recording_raw",
                                  help_text="Raw electrophysiology recording data in "
                                  "flat binary format")
-    lowpass_data = models.ForeignKey(Dataset, blank=True, null=True,
+    lowpass_data = models.ForeignKey(Timeseries, blank=True, null=True,
                                      related_name="extracellular_recording_lpf",
                                      help_text="Extracellular low-passed data")
-    highpass_data = models.ForeignKey(Dataset, blank=True, null=True,
+    highpass_data = models.ForeignKey(Timeseries, blank=True, null=True,
                                       related_name="extracellular_recording_hpf",
                                       help_text="Extracellular high-passed data")
     filter_info = models.CharField(max_length=255, blank=True,
                                    help_text="Details of hardware corner frequencies, filter "
                                    "type, order. TODO: make this more structured?")
-    start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to session start.")
+    # KDH: not sure why we need start_time at all! it is taken care of by Timeseries fields!
+	#
+	#start_time = models.FloatField(null=True, blank=True,
+    #                               help_text="in seconds relative to session start.")
     #                                  TODO: not DateTimeField? / TimeDifference")
     # the idea is that the session has a single DateTime when it started,
     # then all times are in seconds relative to this. TimeDifference could work also,
     # but why not just float?
-    end_time = models.FloatField(null=True, blank=True,
-                                 help_text="in seconds relative to session start")
+    #end_time = models.FloatField(null=True, blank=True,
+    #                             help_text="in seconds relative to session start")
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
                                       help_text="Whether the recording is chronic or acute",
                                       blank=True)
@@ -101,18 +103,18 @@ class SpikeSorting(BaseExperimentalData):
     spike_times = models.ForeignKey(Dataset, blank=True, null=True,
                                     related_name="spike_sorting_spike_times",
                                     help_text="time of each spike relative to session "
-                                    "start in seconds.")
+                                    "start in universal seconds.")
     # TODO: session or recording start?
     # Session start. Everything should be relative to that.
     cluster_assignments = models.ForeignKey(Dataset, blank=True, null=True,
                                             related_name="spike_sorting_cluster_assignments",
                                             help_text="cluster assignment of each spike")
-    mean_unfiltered_waveform = models.ForeignKey(Dataset, blank=True, null=True,
+    unfiltered_waveforms = models.ForeignKey(Timeseries, blank=True, null=True,
                                                  related_name="spike_sorting_"
                                                  "unfiltered_waveforms",
                                                  help_text="mean unfiltered waveforms of "
                                                  "every spike on every channel")
-    mean_filtered_waveform = models.ForeignKey(Dataset, blank=True, null=True,
+    filtered_waveforms = models.ForeignKey(Timeseries, blank=True, null=True,
                                                related_name="spike_sorting_filtered_waveforms",
                                                help_text="mean filtered waveforms of every spike "
                                                "on every channel")

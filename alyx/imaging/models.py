@@ -6,24 +6,28 @@ from misc.models import CoordinateTransformation
 
 class WidefieldImaging(BaseExperimentalData):
     # we need to talk this through with nick - not sure if he is using
-    # multipel files or just one for multispectral
-    raw_data = models.ForeignKey(Dataset, blank=True, null=True, related_name="widefield_raw",
+    # multiple files or just one for multispectral
+    raw_data = models.ForeignKey(Timeseries, blank=True, null=True, related_name="widefield_raw",
                                  help_text="pointer to nT by nX by nY by nC (colors) binary file")
-    compressed_data = models.ForeignKey('SVDCompressedMovie', null=True, blank=True,
+    compressed_data = models.ForeignKey(SVDCompressedMovie, null=True, blank=True,
                                         related_name="widefield_compressed",
                                         help_text="Link to SVD compressed movie, "
                                         "if compression was run")
-    start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to session start. "
-                                   "TODO: not DateTimeField? / TimeDifference")
+    # KDH: don't see why this is needed
+	#start_time = models.FloatField(null=True, blank=True,
+    #                               help_text="in seconds relative to session start. "
+    #                               "TODO: not DateTimeField? / TimeDifference")
     # again, all relative to session start in seconds.
-    end_time = models.FloatField(null=True, blank=True,
-                                 help_text="Equals start time if single application. "
-                                 "TODO: should this be an offset? Or DateTimeField? "
-                                 "Or TimeDifference?")
-    imaging_indicator = models.CharField(max_length=255, blank=True,
-                                         help_text="<GCaMP6f, GCaMP6m, GCaMP6s, "
-                                         "VSFPb1.2, intrinsic, …>. TODO: normalize!")
+    #end_time = models.FloatField(null=True, blank=True,
+    #                             help_text="Equals start time if single application. "
+    #                             "TODO: should this be an offset? Or DateTimeField? "
+    #                             "Or TimeDifference?")
+	
+	# KDH: not necessary since genotype/virus has this information
+    #imaging_indicator = models.CharField(max_length=255, blank=True,
+    #                                     help_text="<GCaMP6f, GCaMP6m, GCaMP6s, "
+    #                                     "VSFPb1.2, intrinsic, …>. TODO: normalize!")
+	
     preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="e.g. 'computed (F-F0) / F0, "
                                      "estimating F0 as running min'")
@@ -48,22 +52,22 @@ class WidefieldImaging(BaseExperimentalData):
 
 
 class TwoPhotonImaging(BaseExperimentalData):
-    raw_data = models.ForeignKey(Dataset, blank=True, null=True,
+    raw_data = models.ForeignKey(TimeSeries, blank=True, null=True,
                                  related_name="two_photon_raw",
                                  help_text="array of size nT by nX by nY by nZ by nC")
-    compressed_data = models.ForeignKey(Dataset, blank=True, null=True,
+    compressed_data = models.ForeignKey(SVDCompressedMovie, blank=True, null=True,
                                         related_name="two_photon_compressed",
                                         help_text="to Compressed_movie, if compression was run")
-    start_time = models.FloatField(null=True, blank=True,
-                                   help_text="in seconds relative to session start. "
-                                   "TODO: not DateTimeField? / TimeDifference")
-    end_time = models.FloatField(null=True, blank=True,
-                                 help_text="Equals start time if single application. "
-                                 "TODO: should this be an offset? Or DateTimeField? "
-                                 "Or TimeDifference?")
-    imaging_indicator = models.CharField(max_length=255, blank=True,
-                                         help_text="<GCaMP6f, GCaMP6m, GCaMP6s …>. "
-                                         "TODO: normalize!")
+    # start_time = models.FloatField(null=True, blank=True,
+                                   # help_text="in seconds relative to session start. "
+                                   # "TODO: not DateTimeField? / TimeDifference")
+    # end_time = models.FloatField(null=True, blank=True,
+                                 # help_text="Equals start time if single application. "
+                                 # "TODO: should this be an offset? Or DateTimeField? "
+                                 # "Or TimeDifference?")
+    # imaging_indicator = models.CharField(max_length=255, blank=True,
+                                         # help_text="<GCaMP6f, GCaMP6m, GCaMP6s …>. "
+                                         # "TODO: normalize!")
     description = models.CharField(max_length=255, blank=True,
                                    help_text="e.g. 'V1 layers 2-4'")
     image_position = models.ForeignKey(CoordinateTransformation, null=True, blank=True,
@@ -87,8 +91,8 @@ class TwoPhotonImaging(BaseExperimentalData):
 class ROIDetection(BaseExperimentalData):
     masks = models.ForeignKey(Dataset, blank=True, null=True,
                               related_name="roi_detection_masks",
-                              help_text="array of size nROIs by nX by nY")
-    plane = models.IntegerField(null=True, blank=True,
+                              help_text="array of size nROIs by nY by nX")
+    plane = models.ForeignKey(Dataset, null=True, blank=True,
                                 help_text="array saying which plane each roi is found in. "
                                 "TODO: is this an ArrayField? JSON?")
     generating_software = models.CharField(max_length=255, null=True, blank=True,
@@ -100,9 +104,9 @@ class ROIDetection(BaseExperimentalData):
     preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="computed (F-F0) / F0, estimating "
                                      "F0 as running min'")
-    f = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f",
+    f = models.ForeignKey(Timeseries, blank=True, null=True, related_name="roi_detection_f",
                           help_text="array of size nT by nROIs giving raw fluorescence")
-    f0 = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f0",
+    f0 = models.ForeignKey(Timeseries, blank=True, null=True, related_name="roi_detection_f0",
                            help_text="array of size nT by nROIs giving resting fluorescence")
     two_photon_imaging_id = models.ForeignKey('TwoPhotonImaging', null=True, blank=True,
                                               help_text="2P imaging stack.")
@@ -126,9 +130,9 @@ class ROI(BaseExperimentalData):
 class SVDCompressedMovie(BaseExperimentalData):
     compressed_data_U = models.ForeignKey(Dataset, blank=True, null=True,
                                           related_name="svd_movie_u",
-                                          help_text="binary array containing "
+                                          help_text="nSVs*nY*nX binary array giving normalized eigenframes"
                                           "SVD-compression eigenframes")
-    compressed_data_V = models.ForeignKey(Dataset, blank=True, null=True,
+    compressed_data_V = models.ForeignKey(Timeseries, blank=True, null=True,
                                           related_name="svd_movie_v",
-                                          help_text="binary array containing "
+                                          help_text="nSamples*nSVs binary array "
                                           "SVD-compression timecourses")

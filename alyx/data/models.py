@@ -38,11 +38,16 @@ class Dataset(BaseModel):
     """
 	A chunk of data that is stored outside the database, most often a rectangular binary array.
 	There can be multiple FileRecords for one Dataset, if it is stored multiple places,
-	and they can have different types depending on how the file is stored
+	which can have different types depending on how the file is stored
+	
+	Note that by convention, binary arrays are stored as .npy and text arrays as .tsv (tab separated text)
 	"""
     name = models.CharField(max_length=255, blank=True)
 	tag = models.CharField(max_length=255, blank=True, help_text="User-defined tag saying"
 							"what type of file this is (e.g. which program made it)")
+							
+	# KDH: since most Datasets belong to Experimental data types, might this be redundant
+	# with the session link in BaseExperimentalData ?
 	session = models.ForeignKey(Session, null=True, blank=True, help_text="which experimental"
 									"session this dataset is associated with")
 
@@ -69,13 +74,26 @@ class FileRecord(BaseModel):
 class TimeSeries(Dataset):
 	""""
 	A special type of Dataset with associated timestamps, relative to a universal timebase in seconds
-	""""
+	"""
     stamp_times = models.ForeignKey(Dataset, help_text="1d array containing times of each timestamp"
 	stamp_samples = models.ForeignKey(Dataset, help_text="1d array of integers containing samples"
 										" these timestamps correspond to (counting from 0) ")
     
     class Meta:
         verbose_name_plural = 'Time series'
+		
+class SyncPulses(Dataset):
+	"""
+	A special type of dataset that stores synchronization pulses recorded simultaneously on multiple devices
+	This table stores links to D Timeseries (recorded by the devices that shared this sync pulse), and a link to 
+	a single N by D numerical array giving the sample times of the pulses in each of these datasets. 
+	
+	Note that this is the raw data used to create the timestamp info for these TimeSeries objects
+	"""
+	
+	LinkedTimeseries = ArrayField(models.ForeignKey(TimeSeries))
+	PulseTimes = models.ForeignKey(Dataset)
+	
 
 
 class BaseExperimentalData(BaseModel):
