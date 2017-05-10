@@ -283,6 +283,7 @@ class SurgeryAdmin(BaseActionAdmin):
                    ResponsibleUserListFilter,
                    ('subject__line', RelatedDropdownFilter),
                    ]
+    ordering = ['-start_time']
 
     def date(self, obj):
         return obj.start_time.date()
