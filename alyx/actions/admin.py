@@ -96,9 +96,12 @@ class BaseActionForm(forms.ModelForm):
             if getattr(self, 'last_subject_id', None):
                 ids = _bring_to_front(ids, self.last_subject_id)
             # These ids first in the list of subjects.
-            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-            self.fields['subject'].queryset = Subject.objects.all().order_by(preserved,
-                                                                             'nickname')
+            if ids:
+                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+                self.fields['subject'].queryset = Subject.objects.all().order_by(preserved,
+                                                                                 'nickname')
+            else:
+                self.fields['subject'].queryset = Subject.objects.all().order_by('nickname')
 
 
 class BaseActionAdmin(BaseAdmin):
