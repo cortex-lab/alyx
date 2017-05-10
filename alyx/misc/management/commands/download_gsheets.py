@@ -70,12 +70,14 @@ def parse(date_str, time=False):
     date_str = date_str.strip() if date_str is not None else date_str
     if not date_str or date_str == '-':
         return ''
-    ret = parse_(date_str)
+    try:
+        ret = parse_(date_str)
+    except:
+        logger.warn("Could not parse date %s.", date_str)
+        return ''
     if not time:
         return ret.strftime("%Y-%m-%d")
     ret = ret.replace(tzinfo=pytz.UTC)
-    # if not is_aware(ret):
-    #     ret = make_aware(ret, timezone=timezone('Europe/London'))
     return ret.isoformat()
 
 
@@ -306,6 +308,7 @@ class GoogleSheetImporter(object):
 
     def _get_subjects_in_line(self, line, table):
         line_name = self.lines[line].auto_name
+        logger.debug("Importing subjects from line %s.", line_name)
         subjects = {}
         for row in table:
             fields = Bunch()
