@@ -23,7 +23,6 @@ class ModelAdminTests(TestCase):
         self.site = mysite
         self.factory = RequestFactory()
         request = self.factory.get('/')
-        request.user = User.objects.get(pk=5)  # default responsible user
         request.csrf_processing_done = True
         self.request = request
 
@@ -38,15 +37,19 @@ class ModelAdminTests(TestCase):
     def _test_list_change(self, ma):
         # List of subjects.
         r = ma.changelist_view(self.request)
+        logger.debug("User %s, testing list %s.",
+                     self.request.user.username, ma.model.__name__)
         self.ar(r)
 
         # Test the add page.
         if ma.has_add_permission(self.request):
             r = ma.add_view(self.request)
+            logger.debug("User %s, testing add %s.",
+                         self.request.user.username, ma.model.__name__)
+            self.ar(r)
 
         # Get the first subject.
         qs = ma.get_queryset(self.request)
-        logger.debug("Found %d items for %s.", len(qs), qs.model)
         if not len(qs):
             return
         subj = qs[0]
@@ -54,6 +57,8 @@ class ModelAdminTests(TestCase):
         # Test the change page.
         identifier = subj.id.hex if isinstance(subj.id, UUID) else str(subj.id)
         r = ma.change_view(self.request, identifier)
+        logger.debug("User %s, testing change %s %s.",
+                     self.request.user.username, ma.model.__name__, identifier)
         self.ar(r)
 
         # TODO: test saving
@@ -61,4 +66,6 @@ class ModelAdminTests(TestCase):
     def test_model_admins(self):
         names = sorted(self.site._registry, key=attrgetter('__name__'))
         for name in names:
-            self._test_list_change(self.site._registry[name])
+            for pk in (2, 3, 5):  # test with different users
+                self.request.user = User.objects.get(pk=pk)
+                self._test_list_change(self.site._registry[name])
