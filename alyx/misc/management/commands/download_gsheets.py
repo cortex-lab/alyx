@@ -313,7 +313,7 @@ class GoogleSheetImporter(object):
             fields['sex'] = row['Sex']
             fields['notes'] = row['Notes']
             fields['birth_date'] = parse(row['DOB'])
-            fields['death_date'] = parse(row.get('death date', None))
+            fields['death_date'] = parse(row.get('Death date', None))
             fields['wean_date'] = parse(row.get('Weaned', None))
 
             # New fields.
