@@ -60,6 +60,13 @@ class SubjectManager(models.Manager):
         return self.get(nickname=name)
 
 
+def _default_source():
+    s = Source.objects.filter(name=settings.DEFAULT_SOURCE)
+    if s:
+        return s[0]
+    return None
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -97,7 +104,7 @@ class Subject(BaseModel):
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
     source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL,
-                               default=lambda: Source.objects.get(name=settings.DEFAULT_SOURCE))
+                               default=_default_source)
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
