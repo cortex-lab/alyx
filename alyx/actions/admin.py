@@ -163,7 +163,8 @@ class WaterAdministrationForm(forms.ModelForm):
         # Only show subjects that are on water restriction.
         ids = [wr.subject.pk
                for wr in WaterRestriction.objects.filter(start_time__isnull=False,
-                                                         end_time__isnull=True)]
+                                                         end_time__isnull=True).
+               order_by('subject__nickname')]
         if getattr(self, 'last_subject_id', None):
             ids += [self.last_subject_id]
         # These ids first in the list of subjects.
