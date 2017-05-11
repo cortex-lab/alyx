@@ -113,7 +113,7 @@ class Subject(BaseModel):
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     ear_mark = models.CharField(max_length=32, blank=True)
-    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='3')
+    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='1')
     notes = models.TextField(blank=True)
 
     cull_method = models.TextField(blank=True)
