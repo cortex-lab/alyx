@@ -39,6 +39,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ALYX-SPECIFIC
 
 SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
+DEFAULT_SOURCE = 'Cruciform BSU'
+DEFAULT_PROTOCOL = '1'
 
 
 LOGGING = {

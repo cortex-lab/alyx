@@ -96,7 +96,8 @@ class Subject(BaseModel):
                                )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
-    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
+    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL,
+                               default=lambda: Source.objects.get(name=settings.DEFAULT_SOURCE))
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
@@ -113,7 +114,8 @@ class Subject(BaseModel):
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     ear_mark = models.CharField(max_length=32, blank=True)
-    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='1')
+    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
+                                       default=settings.DEFAULT_PROTOCOL)
     notes = models.TextField(blank=True)
 
     cull_method = models.TextField(blank=True)
@@ -571,10 +573,17 @@ class Strain(BaseModel):
         return self.descriptive_name
 
 
+class SourceManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Source(BaseModel):
     """A supplier / source of subjects."""
     name = models.CharField(max_length=255)
     notes = models.TextField(blank=True)
+
+    objects = SourceManager
 
     def __str__(self):
         return self.name
