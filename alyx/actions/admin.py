@@ -155,6 +155,7 @@ class BaseActionAdmin(BaseAdmin):
 
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
+    ordering = ['name']
 
 
 class WaterAdministrationForm(forms.ModelForm):
