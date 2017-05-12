@@ -317,12 +317,12 @@ class GoogleSheetImporter(object):
             fields['notes'] = row['Notes']
             fields['birth_date'] = parse(row['DOB'])
             fields['death_date'] = parse(row.get('Death date', None))
-            fields['wean_date'] = parse(row.get('Weaned', None))
+            fields['wean_date'] = parse(row.get('Wean date', None))
 
             if i == 0:
                 if 'Death date' not in row:
                     warn("No death date in line %s." % line_name)
-                if 'Weaned' not in row:
+                if 'Wean date' not in row:
                     warn("No wean date in line %s." % line_name)
 
             # New fields.
