@@ -310,7 +310,7 @@ class GoogleSheetImporter(object):
         line_name = self.lines[line].auto_name
         logger.debug("Importing subjects from line %s.", line_name)
         subjects = {}
-        for row in table:
+        for i, row in enumerate(table):
             fields = Bunch()
             fields['ear_mark'] = row['Ear mark']
             fields['sex'] = row['Sex']
@@ -318,6 +318,11 @@ class GoogleSheetImporter(object):
             fields['birth_date'] = parse(row['DOB'])
             fields['death_date'] = parse(row.get('Death date', None))
             fields['wean_date'] = parse(row.get('Weaned', None))
+
+            if not fields['death_date']:
+                warn("No death date for row %d in line %s." % (i, line_name))
+            if not fields['wean_date']:
+                warn("No wean date for row %d in line %s." % (i, line_name))
 
             # New fields.
             fields['genotype_date'] = parse(row.get('G.type date', None))
@@ -410,6 +415,10 @@ class GoogleSheetImporter(object):
             new_name = new_name if new_name not in (None, '', '-') else old_name
             birth_date = parse(row['Date of Birth'])
             # Get or create the subject.
+            if old_name not in self.subjects:
+                warn(("Subject %s doesn't exist in the transgenic spreadsheet. "
+                      "The nickname is %s and date of surgery is %s."
+                      ) % (old_name, new_name, row['Date of surgery']))
             self.subjects[new_name] = self.subjects.pop(old_name, Bunch(birth_date=birth_date))
             # Update the subject name.
             subject = self.subjects[new_name]
@@ -448,7 +457,7 @@ class GoogleSheetImporter(object):
 
     def _get_breeding_pairs(self, table):
         breeding_pairs = {}
-        for row in table:
+        for i, row in enumerate(table):
             line = row['line']
             index = row['index'] or 0
             if not line:
@@ -466,6 +475,12 @@ class GoogleSheetImporter(object):
             bp['start_date'] = parse(row.get('Date together', None))
             bp['end_date'] = parse(row.get('Date ended', None))
             bp['notes'] = row['Notes']
+
+            if not bp['start_date']:
+                warn("No start date for row %d in line %s." % (i, line))
+            if not bp['end_date']:
+                warn("No end date for row %d in line %s." % (i, line))
+
             line_obj = self._get_line(line)
             if line_obj:
                 line_obj['breeding_pair_autoname_index'] = index
