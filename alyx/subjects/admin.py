@@ -3,6 +3,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -357,7 +358,7 @@ class SubjectAdmin(BaseAdmin):
                 kwargs["queryset"] = SubjectRequest.objects.filter(line=line,
                                                                    user=request.user,
                                                                    )
-            except IndexError:
+            except (IndexError, ValidationError):
                 pass
         return super(SubjectAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 

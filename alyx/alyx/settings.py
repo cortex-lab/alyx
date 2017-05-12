@@ -98,6 +98,7 @@ ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 INSTALLED_APPS = (
     'dal',
     'dal_select2',
+    'reversion',
     'django_admin_listfilter_dropdown',
     'subjects',
     'django.contrib.admin',
