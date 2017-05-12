@@ -319,10 +319,11 @@ class GoogleSheetImporter(object):
             fields['death_date'] = parse(row.get('Death date', None))
             fields['wean_date'] = parse(row.get('Weaned', None))
 
-            if not fields['death_date']:
-                warn("No death date for row %d in line %s." % (i, line_name))
-            if not fields['wean_date']:
-                warn("No wean date for row %d in line %s." % (i, line_name))
+            if i == 0:
+                if not fields['death_date']:
+                    warn("No death date in line %s." % line_name)
+                if not fields['wean_date']:
+                    warn("No wean date in line %s." % line_name)
 
             # New fields.
             fields['genotype_date'] = parse(row.get('G.type date', None))
@@ -476,10 +477,11 @@ class GoogleSheetImporter(object):
             bp['end_date'] = parse(row.get('Date ended', None))
             bp['notes'] = row['Notes']
 
-            if not bp['start_date']:
-                warn("No start date for row %d in line %s." % (i, line))
-            if not bp['end_date']:
-                warn("No end date for row %d in line %s." % (i, line))
+            if i == 0:
+                if not bp['start_date']:
+                    warn("No start date in line %s." % line)
+                if not bp['end_date']:
+                    warn("No end date in line %s." % line)
 
             line_obj = self._get_line(line)
             if line_obj:
