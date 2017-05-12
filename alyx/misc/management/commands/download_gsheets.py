@@ -320,9 +320,9 @@ class GoogleSheetImporter(object):
             fields['wean_date'] = parse(row.get('Weaned', None))
 
             if i == 0:
-                if not fields['death_date']:
+                if 'Death date' not in row:
                     warn("No death date in line %s." % line_name)
-                if not fields['wean_date']:
+                if 'Weaned' not in row:
                     warn("No wean date in line %s." % line_name)
 
             # New fields.
@@ -353,6 +353,7 @@ class GoogleSheetImporter(object):
                 except ValueError:
                     warn("BP # is not an int: %s for subject %s.",
                          bp_index, fields['nickname'])
+            logger.info("Add subject %s.", fields['nickname'])
             subjects[fields['nickname']] = fields
         return subjects
 
@@ -478,9 +479,9 @@ class GoogleSheetImporter(object):
             bp['notes'] = row['Notes']
 
             if i == 0:
-                if not bp['start_date']:
+                if 'Date together' not in row:
                     warn("No start date in line %s." % line)
-                if not bp['end_date']:
+                if 'Date ended' not in row:
                     warn("No end date in line %s." % line)
 
             line_obj = self._get_line(line)
