@@ -421,6 +421,8 @@ class GoogleSheetImporter(object):
                 warn(("Subject %s doesn't exist in the transgenic spreadsheet. "
                       "The nickname is %s and date of surgery is %s."
                       ) % (old_name, new_name, row['Date of surgery']))
+            else:
+                logger.debug("Rename %s to %s.", old_name, new_name)
             self.subjects[new_name] = self.subjects.pop(old_name, Bunch(birth_date=birth_date))
             # Update the subject name.
             subject = self.subjects[new_name]
