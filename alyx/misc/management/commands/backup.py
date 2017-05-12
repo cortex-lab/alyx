@@ -42,6 +42,7 @@ def backup_tsv(sql_dir, output_dir):
         with open(path, 'r') as f:
             size = len(f.read())
         logger.info("Dumped %s to %s (%d bytes).", name, path, size)
+    print("TSV backup done!")
 
 
 def upload_table(doc, path):
@@ -87,6 +88,7 @@ def upload_gsheets(output_dir):
         n = upload_table(doc, path)
         logger.info("%d items uploaded to `%s` sheet of Google Sheet backup document.",
                     n, name)
+    print("Google upload done!")
 
 
 class Command(BaseCommand):
