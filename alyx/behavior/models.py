@@ -13,10 +13,12 @@ class PupilTracking(BaseExperimentalData):
         ('R', 'Right'),
     )
 
-    x_y_d = models.ForeignKey(TimeSeries, blank=True, null=True, related_name="pupil_tracking_x_y_d",
+    x_y_d = models.ForeignKey(TimeSeries, blank=True, null=True,
+                              related_name="pupil_tracking_x_y_d",
                               help_text="n*3 timeseries giving x and y coordinates "
                               "of center plus diameter")
-    movie = models.ForeignKey(TimeSeries, blank=True, null=True, related_name="pupil_tracking_movie",
+    movie = models.ForeignKey(TimeSeries, blank=True, null=True,
+                              related_name="pupil_tracking_movie",
                               help_text="Link to raw data")
     eye = models.CharField(max_length=1,
                            choices=EYES,
@@ -68,7 +70,8 @@ class EventSeries(BaseExperimentalData):
     """
     event_times = models.ForeignKey(Dataset, blank=True, null=True,
                                     related_name="event_series_event_times",
-                                    help_text="n*1 array of times in seconds (universal timescale)")
+                                    help_text="n*1 array of times in seconds "
+                                    "(universal timescale)")
     type_descriptions_id = models.ForeignKey(Dataset, blank=True, null=True)
     event_types_id = models.ForeignKey(Dataset, blank=True, null=True,
                                        related_name="event_series_event_descriptions",
@@ -97,11 +100,10 @@ class IntervalSeries(BaseExperimentalData):
                                        related_name="interval_series_interval_times",
                                        help_text="n*2 array, with associated array "
                                        "of row labels.")
-    interval_descriptions = models.ForeignKey(Dataset, blank=True, null=True,
-                                              related_name="interval_series_"
-                                              "interval_descriptions",
-                                              help_text="n*1 array listing the type "
-                                              "of each interval")
+    interval_types = models.ForeignKey(Dataset, blank=True, null=True,
+                                       related_name="interval_series_interval_descriptions",
+                                       help_text="n*1 array listing the type of each interval")
+    type_descriptions = models.ForeignKey(Dataset, blank=True, null=True)
     description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "'drifting gratings of different orientations', "

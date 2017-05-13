@@ -1,12 +1,17 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 
 from actions.models import Session
-from alyx.base import BaseModel, BasePolymorphicModel
+from alyx.base import BaseModel
+
 
 ###############################################################################
 # Data repositories (local, server, archive). All information is in JSON and type
 ###############################################################################
+
+class RepositoryType(BaseModel):
+    name = models.CharField(max_length=255)
+
 
 class DataRepository(BaseModel):
     """
@@ -14,9 +19,7 @@ class DataRepository(BaseModel):
     a network file location, or an offline archive tape / Blu-Ray disc / hard-drive.
     """
     name = models.CharField(max_length=255)
-	type = models.CharField(max_length=255, help_text="e.g. web, local_disk, torrent")
-	# KDH: assuming JSON is there from BaseModel
-    # TODO: type introspection for location type. KDH: no idea what this means!
+    repository_type = models.ForeignKey(RepositoryType, null=True, blank=True)
 
     def get_valid_name(session_id=None):
         """TODO: Returns a default filepath for a new session. session_id
@@ -36,20 +39,20 @@ class DataRepository(BaseModel):
 
 class Dataset(BaseModel):
     """
-	A chunk of data that is stored outside the database, most often a rectangular binary array.
-	There can be multiple FileRecords for one Dataset, if it is stored multiple places,
-	which can have different types depending on how the file is stored
-	
-	Note that by convention, binary arrays are stored as .npy and text arrays as .tsv (tab separated text)
-	"""
+    A chunk of data that is stored outside the database, most often a rectangular binary array.
+    There can be multiple FileRecords for one Dataset, if it is stored multiple places,
+    which can have different types depending on how the file is stored
+
+    Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
+    """
     name = models.CharField(max_length=255, blank=True)
-	tag = models.CharField(max_length=255, blank=True, help_text="User-defined tag saying"
-							"what type of file this is (e.g. which program made it)")
-							
-	# KDH: since most Datasets belong to Experimental data types, might this be redundant
-	# with the session link in BaseExperimentalData ?
-	session = models.ForeignKey(Session, null=True, blank=True, help_text="which experimental"
-									"session this dataset is associated with")
+    tag = models.CharField(max_length=255, blank=True, help_text="User-defined tag saying"
+                           "what type of file this is (e.g. which program made it)")
+
+    # KDH: since most Datasets belong to Experimental data types, might this be redundant
+    # with the session link in BaseExperimentalData ?
+    session = models.ForeignKey(Session, null=True, blank=True, help_text="which experimental"
+                                "session this dataset is associated with")
 
     def __str__(self):
         return str(getattr(self, 'name', 'unnamed'))
@@ -57,43 +60,47 @@ class Dataset(BaseModel):
 
 class FileRecord(BaseModel):
     """
-	A single file on disk or tape. Normally specified by a path within an archive. In some 
-	cases (like for a single array split over multiple binary files) more details can be in 
-	the JSON
-	"""
+    A single file on disk or tape. Normally specified by a path within an archive. In some
+    cases (like for a single array split over multiple binary files) more details can be in
+    the JSON
+    """
 
     dataset = models.ForeignKey('Dataset', related_name='file_records')
     path = models.CharField(
         max_length=1000, help_text="path name within repository")
     data_repository = models.ForeignKey('DataRepository')
-	
-    
-	def __str__(self):
+
+    def __str__(self):
         return self.filename
 
+
 class TimeSeries(Dataset):
-	""""
-	A special type of Dataset with associated timestamps, relative to a universal timebase in seconds
-	"""
-    stamp_times = models.ForeignKey(Dataset, help_text="1d array containing times of each timestamp"
-	stamp_samples = models.ForeignKey(Dataset, help_text="1d array of integers containing samples"
-										" these timestamps correspond to (counting from 0) ")
-    
+    """
+    A special type of Dataset with associated timestamps, relative to a universal timebase
+    in seconds
+    """
+    stamp_times = models.ForeignKey(Dataset,
+                                    help_text="1d array containing times of each timestamp")
+    stamp_samples = models.ForeignKey(Dataset,
+                                      help_text="1d array of integers containing samples"
+                                      " these timestamps correspond to (counting from 0) ")
+
     class Meta:
         verbose_name_plural = 'Time series'
-		
+
+
 class SyncPulses(Dataset):
-	"""
-	A special type of dataset that stores synchronization pulses recorded simultaneously on multiple devices
-	This table stores links to D Timeseries (recorded by the devices that shared this sync pulse), and a link to 
-	a single N by D numerical array giving the sample times of the pulses in each of these datasets. 
-	
-	Note that this is the raw data used to create the timestamp info for these TimeSeries objects
-	"""
-	
-	LinkedTimeseries = ArrayField(models.ForeignKey(TimeSeries))
-	PulseTimes = models.ForeignKey(Dataset)
-	
+    """
+    A special type of dataset that stores synchronization pulses recorded simultaneously on
+    multiple devices.
+    This table stores links to D TimeSeries (recorded by the devices that shared this sync
+    pulse), and a link to a single N by D numerical array giving the sample times of the pulses
+    in each of these datasets.
+
+    Note that this is the raw data used to create the timestamp info for these TimeSeries objects
+    """
+    linked_timeseries = ArrayField(models.ForeignKey(TimeSeries, blank=True, null=True))
+    pulse_times = models.ForeignKey(Dataset, blank=True, null=True)
 
 
 class BaseExperimentalData(BaseModel):
