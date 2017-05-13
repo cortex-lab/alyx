@@ -80,8 +80,10 @@ class TimeSeries(Dataset):
     in seconds
     """
     stamp_times = models.ForeignKey(Dataset,
+                                    related_name='related_time_series_times',
                                     help_text="1d array containing times of each timestamp")
     stamp_samples = models.ForeignKey(Dataset,
+                                      related_name='related_time_series_samples',
                                       help_text="1d array of integers containing samples"
                                       " these timestamps correspond to (counting from 0) ")
 
@@ -99,8 +101,13 @@ class SyncPulses(Dataset):
 
     Note that this is the raw data used to create the timestamp info for these TimeSeries objects
     """
-    linked_timeseries = ArrayField(models.ForeignKey(TimeSeries, blank=True, null=True))
-    pulse_times = models.ForeignKey(Dataset, blank=True, null=True)
+
+    # CR: this is not supported
+    # linked_timeseries = ArrayField(models.ForeignKey(TimeSeries, blank=True, null=True,
+    #                                                  related_name='related_sync_pulses'))
+
+    pulse_times = models.ForeignKey(Dataset, blank=True, null=True,
+                                    related_name='related_sync_pulses_times')
 
 
 class BaseExperimentalData(BaseModel):
