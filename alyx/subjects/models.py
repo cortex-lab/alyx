@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -377,17 +376,24 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
     # Only continue if there's an email.
     if not instance.responsible_user.email:
         return
-    subject = ("[alyx] Subject %s was assigned to you for request %s" %
+    subject = ("Subject %s was assigned to you for request %s" %
                (instance.nickname, str(instance.request)))
-    body = ''
-    try:
-        send_mail(subject, body, settings.SUBJECT_REQUEST_EMAIL_FROM,
-                  [instance.responsible_user.email],
-                  fail_silently=True,
-                  )
-        logger.debug("Mail sent.")
-    except Exception as e:
-        logger.warn("Mail failed: %s", e)
+    alyx_mail(instance.responsible_user.email, subject)
+
+
+@receiver(post_save, sender=Subject)
+def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
+    """Send en email when a subject's responsible user changes."""
+    if not instance:
+        return
+    # Only continue if the request has changed.
+    if instance.responsible_user != instance._original_responsible_user:
+        return
+    # Only continue if there's an email.
+    if not instance.responsible_user.email:
+        return
+    subject = "Subject %s was assigned to you" % instance.nickname
+    alyx_mail(instance.responsible_user.email, subject)
 
 
 # Other

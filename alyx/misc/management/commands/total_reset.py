@@ -52,6 +52,7 @@ class Command(BaseCommand):
             call_command('download_gsheets', options.get('data_dir'), '-R')
 
         call_command('update_zygosities')
+        call_command('set_user_permissions')
 
         if options.get('production'):
             subprocess.check_call("sudo service apache2 restart".split())
