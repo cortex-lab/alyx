@@ -387,7 +387,7 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     if not instance:
         return
     # Only continue if the request has changed.
-    if instance.responsible_user != instance._original_responsible_user:
+    if instance.responsible_user == instance._original_responsible_user:
         return
     # Only continue if there's an email.
     if not instance.responsible_user.email:
