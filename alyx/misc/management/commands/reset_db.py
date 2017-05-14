@@ -86,7 +86,7 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
 
         args = ('set_db_permissions',)
         if options.get('ro_user'):
-            args += ('-R',)
+            args += ('-R', options.get('ro_user'))
         if options.get('dbname'):
             args += ('-D', options.get('dbname'))
         call_command(*args)
