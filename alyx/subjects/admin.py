@@ -578,7 +578,7 @@ class BreedingPairAdmin(BaseAdmin):
     list_display = ['name', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date',
-              'father', 'mother1', 'mother2', 'lamis_cage']
+              'father', 'mother1', 'mother2', 'lamis_cage', 'notes']
     list_filter = [BreedingPairFilter,
                    ('line', RelatedDropdownFilter),
                    ]
