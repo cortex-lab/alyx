@@ -42,6 +42,7 @@ SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
 DEFAULT_SOURCE = 'Cruciform BSU'
 DEFAULT_PROTOCOL = '1'
 SUPERUSERS = ('charu', 'nick', 'max', 'cyrille')
+STOCK_MANAGERS = ('charu',)
 
 
 LOGGING = {

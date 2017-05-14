@@ -5,6 +5,8 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group, Permission
 from django.core.management.base import BaseCommand
 
+from subjects.models import StockManager
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
@@ -39,5 +41,8 @@ class Command(BaseCommand):
             user.groups.add(group)
             # Set super users for a few select users.
             user.is_superuser = user.username in settings.SUPERUSERS
+            # Create the stock managers.
+            if user.username in settings.STOCK_MANAGERS:
+                StockManager(user=user).save()
             user.save()
         self.stdout.write("%d users have been successfully updated." % len(users))
