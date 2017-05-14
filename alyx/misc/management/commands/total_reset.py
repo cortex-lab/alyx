@@ -41,6 +41,11 @@ class Command(BaseCommand):
 
         call_command('migrate')
 
+        if options.get('production'):
+            call_command('set_db_permissions', '-R alyx_ro')
+        else:
+            call_command('set_db_permissions')
+
         if not options.get('remove_pickle'):
             call_command('download_gsheets', options.get('data_dir'))
         else:
