@@ -119,6 +119,13 @@ class VirusInjection(BaseAction):
                                       "iontophoresis or pressure")
 
 
+def _default_surgery_location():
+    s = LabLocation.objects.filter(name='Surgery Room')
+    if s:
+        return s[0]
+    return None
+
+
 class Surgery(BaseAction):
     """
     Surgery performed on a subject.
@@ -132,6 +139,10 @@ class Surgery(BaseAction):
                                     choices=OUTCOME_TYPES,
                                     blank=True,
                                     )
+    location = models.ForeignKey(LabLocation, null=True, blank=True,
+                                 default=_default_surgery_location,
+                                 help_text="The physical location at which the surgery was "
+                                 "performed")
 
     class Meta:
         verbose_name_plural = "surgeries"
