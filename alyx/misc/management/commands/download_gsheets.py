@@ -479,6 +479,12 @@ class GoogleSheetImporter(object):
             bp['start_date'] = parse(row.get('Date together', None))
             bp['end_date'] = parse(row.get('Date ended', None))
             bp['notes'] = row['Notes']
+            bp['json'] = {
+                'father_genotype': row.get('Father Genotype', None),
+                'mother_genotype': row.get('Mother Genotype', None),
+                'animal_number_male': row.get('Animal # male', None),
+                'animal_number_female': row.get('Animal # female', None),
+            }
 
             if i == 0:
                 if 'Date together' not in row:
