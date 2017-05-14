@@ -139,7 +139,7 @@ class GenotypeTestInline(BaseInlineAdmin):
 class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
-    fields = ['procedures', 'narrative', 'start_time', 'outcome_type',
+    fields = ['procedures', 'narrative', 'start_time', 'end_time', 'outcome_type',
               'users', 'location']
     readonly_fields = fields
     classes = ['collapse']
