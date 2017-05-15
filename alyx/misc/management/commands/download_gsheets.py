@@ -532,22 +532,21 @@ class GoogleSheetImporter(object):
 
     def _get_litter_breeding_pairs(self):
         litter_bps = []
-        bp_names = set()
+        litter_names = set()
         for subject in self.subjects.values():
             bp_index = subject.pop('bp_index', None)
             if not bp_index:
                 continue
             line_name = subject['line'][0]
             bp_name = '%s_BP_%03d' % (line_name, bp_index)
-            # Skip existing items.
-            if bp_name in bp_names:
-                continue
-            # assert bp_name in self.breeding_pairs
             litter = subject['litter'][0]
+            # Skip existing items.
+            if litter in litter_names:
+                continue
             item = self.litters[litter].copy()
             item['breeding_pair'] = [bp_name]
             litter_bps.append(item)
-            bp_names.add(bp_name)
+            litter_names.add(litter)
         return litter_bps
 
     def _get_genotype_tests(self):
