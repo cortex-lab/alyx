@@ -5,3 +5,17 @@
     {{ block.super }} /
     <a href="https://github.com/cortex-lab/alyx/issues">{% trans 'Report a problem' %}</a>
 {% endblock %}
+
+{% block extrastyle %}
+<!-- CHANGE HEADER COLOR ON ALYX-DEV -->
+{% if request.META.HTTP_HOST == "alyx-dev.cortexlab.net" %}
+<style>
+div#header {
+    background-color: #E46A60;
+}
+div.breadcrumbs {
+    background-color: #FF9D95;
+}
+</style>
+{% endif %}
+{% endblock %}
