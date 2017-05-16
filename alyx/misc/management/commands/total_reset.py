@@ -1,7 +1,10 @@
+import os.path as op
+import subprocess
+import sys
+
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
-import subprocess
-import os.path as op
 
 
 class Command(BaseCommand):
@@ -27,6 +30,9 @@ class Command(BaseCommand):
             help='Makes all app migrations before migrating')
 
     def handle(self, *args, **options):
+        if settings.DEBUG is False:
+            sys.stdout.write("This command is disabled in production.\n")
+            return
         if args:
             raise CommandError("total_reset takes no arguments")
 
