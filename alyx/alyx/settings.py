@@ -93,6 +93,18 @@ if 'TRAVIS' in os.environ:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Production settings:
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    X_FRAME_OPTIONS = 'DENY'
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 30
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 
 # Application definition
