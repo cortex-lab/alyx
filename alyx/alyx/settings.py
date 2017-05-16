@@ -51,7 +51,7 @@ LOGGING = {
     'formatters': {
         'simple': {
             'format': '%(asctime)s [%(levelname)s] %(message)s',
-            'datefmt': '%H:%M:%S'
+            'datefmt': '%d/%m %H:%M:%S'
         }
     },
     'handlers': {
