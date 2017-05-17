@@ -70,12 +70,14 @@ def parse(date_str, time=False):
     date_str = date_str.strip() if date_str is not None else date_str
     if not date_str or date_str == '-':
         return ''
-    ret = parse_(date_str)
+    try:
+        ret = parse_(date_str)
+    except:
+        logger.warn("Could not parse date %s.", date_str)
+        return ''
     if not time:
         return ret.strftime("%Y-%m-%d")
     ret = ret.replace(tzinfo=pytz.UTC)
-    # if not is_aware(ret):
-    #     ret = make_aware(ret, timezone=timezone('Europe/London'))
     return ret.isoformat()
 
 
@@ -306,15 +308,22 @@ class GoogleSheetImporter(object):
 
     def _get_subjects_in_line(self, line, table):
         line_name = self.lines[line].auto_name
+        logger.debug("Importing subjects from line %s.", line_name)
         subjects = {}
-        for row in table:
+        for i, row in enumerate(table):
             fields = Bunch()
             fields['ear_mark'] = row['Ear mark']
             fields['sex'] = row['Sex']
             fields['notes'] = row['Notes']
             fields['birth_date'] = parse(row['DOB'])
-            fields['death_date'] = parse(row.get('death date', None))
-            fields['wean_date'] = parse(row.get('Weaned', None))
+            fields['death_date'] = parse(row.get('Death date', None))
+            fields['wean_date'] = parse(row.get('Wean date', None))
+
+            if i == 0:
+                if 'Death date' not in row:
+                    warn("No death date in line %s." % line_name)
+                if 'Wean date' not in row:
+                    warn("No wean date in line %s." % line_name)
 
             # New fields.
             fields['genotype_date'] = parse(row.get('G.type date', None))
@@ -344,6 +353,7 @@ class GoogleSheetImporter(object):
                 except ValueError:
                     warn("BP # is not an int: %s for subject %s.",
                          bp_index, fields['nickname'])
+            logger.info("Add subject %s.", fields['nickname'])
             subjects[fields['nickname']] = fields
         return subjects
 
@@ -407,6 +417,12 @@ class GoogleSheetImporter(object):
             new_name = new_name if new_name not in (None, '', '-') else old_name
             birth_date = parse(row['Date of Birth'])
             # Get or create the subject.
+            if old_name not in self.subjects:
+                warn(("Subject %s doesn't exist in the transgenic spreadsheet. "
+                      "The nickname is %s and date of surgery is %s."
+                      ) % (old_name, new_name, row['Date of surgery']))
+            else:
+                logger.debug("Rename %s to %s.", old_name, new_name)
             self.subjects[new_name] = self.subjects.pop(old_name, Bunch(birth_date=birth_date))
             # Update the subject name.
             subject = self.subjects[new_name]
@@ -445,7 +461,7 @@ class GoogleSheetImporter(object):
 
     def _get_breeding_pairs(self, table):
         breeding_pairs = {}
-        for row in table:
+        for i, row in enumerate(table):
             line = row['line']
             index = row['index'] or 0
             if not line:
@@ -463,6 +479,19 @@ class GoogleSheetImporter(object):
             bp['start_date'] = parse(row.get('Date together', None))
             bp['end_date'] = parse(row.get('Date ended', None))
             bp['notes'] = row['Notes']
+            bp['json'] = {
+                'father_genotype': row.get('Father Genotype', None),
+                'mother_genotype': row.get('Mother Genotype', None),
+                'animal_number_male': row.get('Animal # male', None),
+                'animal_number_female': row.get('Animal # female', None),
+            }
+
+            if i == 0:
+                if 'Date together' not in row:
+                    warn("No start date in line %s." % line)
+                if 'Date ended' not in row:
+                    warn("No end date in line %s." % line)
+
             line_obj = self._get_line(line)
             if line_obj:
                 line_obj['breeding_pair_autoname_index'] = index
@@ -503,22 +532,21 @@ class GoogleSheetImporter(object):
 
     def _get_litter_breeding_pairs(self):
         litter_bps = []
-        bp_names = set()
+        litter_names = set()
         for subject in self.subjects.values():
             bp_index = subject.pop('bp_index', None)
             if not bp_index:
                 continue
             line_name = subject['line'][0]
             bp_name = '%s_BP_%03d' % (line_name, bp_index)
-            # Skip existing items.
-            if bp_name in bp_names:
-                continue
-            # assert bp_name in self.breeding_pairs
             litter = subject['litter'][0]
+            # Skip existing items.
+            if litter in litter_names:
+                continue
             item = self.litters[litter].copy()
             item['breeding_pair'] = [bp_name]
             litter_bps.append(item)
-            bp_names.add(bp_name)
+            litter_names.add(litter)
         return litter_bps
 
     def _get_genotype_tests(self):

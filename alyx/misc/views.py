@@ -9,7 +9,8 @@ from .serializers import UserSerializer
 
 @api_view(['GET'])
 def api_root(request, format=None):
-    """
+    """**[==========> CLICK HERE TO GO TO THE ADMIN INTERFACE <==========](/admin)**
+
     Welcome to Alyx's API! At the moment, there is read-only support for
     unauthenticated user lists, and authenticated read-write subject metadata
     and weighings. This should be reasonably self-documented; standard REST options

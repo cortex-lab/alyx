@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -60,6 +59,13 @@ class SubjectManager(models.Manager):
         return self.get(nickname=name)
 
 
+def _default_source():
+    s = Source.objects.filter(name=settings.DEFAULT_SOURCE)
+    if s:
+        return s[0]
+    return None
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -96,7 +102,8 @@ class Subject(BaseModel):
                                )
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
-    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
+    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL,
+                               default=_default_source)
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
@@ -113,7 +120,8 @@ class Subject(BaseModel):
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
     ear_mark = models.CharField(max_length=32, blank=True)
-    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS, default='3')
+    protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
+                                       default=settings.DEFAULT_PROTOCOL)
     notes = models.TextField(blank=True)
 
     cull_method = models.TextField(blank=True)
@@ -368,17 +376,24 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
     # Only continue if there's an email.
     if not instance.responsible_user.email:
         return
-    subject = ("[alyx] Subject %s was assigned to you for request %s" %
+    subject = ("Subject %s was assigned to you for request %s" %
                (instance.nickname, str(instance.request)))
-    body = ''
-    try:
-        send_mail(subject, body, settings.SUBJECT_REQUEST_EMAIL_FROM,
-                  [instance.responsible_user.email],
-                  fail_silently=True,
-                  )
-        logger.debug("Mail sent.")
-    except Exception as e:
-        logger.warn("Mail failed: %s", e)
+    alyx_mail(instance.responsible_user.email, subject)
+
+
+@receiver(post_save, sender=Subject)
+def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
+    """Send en email when a subject's responsible user changes."""
+    if not instance:
+        return
+    # Only continue if the request has changed.
+    if instance.responsible_user == instance._original_responsible_user:
+        return
+    # Only continue if there's an email.
+    if not instance.responsible_user.email:
+        return
+    subject = "Subject %s was assigned to you" % instance.nickname
+    alyx_mail(instance.responsible_user.email, subject)
 
 
 # Other
@@ -571,10 +586,17 @@ class Strain(BaseModel):
         return self.descriptive_name
 
 
+class SourceManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Source(BaseModel):
     """A supplier / source of subjects."""
     name = models.CharField(max_length=255)
     notes = models.TextField(blank=True)
+
+    objects = SourceManager
 
     def __str__(self):
         return self.name

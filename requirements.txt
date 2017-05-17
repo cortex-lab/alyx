@@ -4,10 +4,12 @@ django-polymorphic
 djangorestframework
 django-autocomplete-light
 django-filter
+django-reversion
 flake8
 git+http://github.com/mrts/django-admin-list-filter-dropdown.git
 git+https://github.com/burnash/gspread.git
 git+https://github.com/google/oauth2client.git
+markdown
 matplotlib
 python-dateutil
 pytz

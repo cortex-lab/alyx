@@ -41,12 +41,18 @@ class Command(BaseCommand):
 
         call_command('migrate')
 
+        if options.get('production'):
+            call_command('set_db_permissions', '-R alyx_ro')
+        else:
+            call_command('set_db_permissions')
+
         if not options.get('remove_pickle'):
             call_command('download_gsheets', options.get('data_dir'))
         else:
             call_command('download_gsheets', options.get('data_dir'), '-R')
 
         call_command('update_zygosities')
+        call_command('set_user_permissions')
 
         if options.get('production'):
             subprocess.check_call("sudo service apache2 restart".split())

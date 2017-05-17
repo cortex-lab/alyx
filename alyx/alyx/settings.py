@@ -39,6 +39,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # ALYX-SPECIFIC
 
 SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
+DEFAULT_SOURCE = 'Cruciform BSU'
+DEFAULT_PROTOCOL = '1'
+SUPERUSERS = ('charu', 'nick', 'max', 'cyrille')
+STOCK_MANAGERS = ('charu',)
 
 
 LOGGING = {
@@ -96,6 +100,7 @@ ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 INSTALLED_APPS = (
     'dal',
     'dal_select2',
+    'reversion',
     'django_admin_listfilter_dropdown',
     'subjects',
     'django.contrib.admin',

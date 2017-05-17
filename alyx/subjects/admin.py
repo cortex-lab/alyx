@@ -3,6 +3,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -138,7 +139,7 @@ class GenotypeTestInline(BaseInlineAdmin):
 class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
-    fields = ['procedures', 'narrative', 'start_time', 'outcome_type',
+    fields = ['procedures', 'narrative', 'start_time', 'end_time', 'outcome_type',
               'users', 'location']
     readonly_fields = fields
     classes = ['collapse']
@@ -357,7 +358,7 @@ class SubjectAdmin(BaseAdmin):
                 kwargs["queryset"] = SubjectRequest.objects.filter(line=line,
                                                                    user=request.user,
                                                                    )
-            except IndexError:
+            except (IndexError, ValidationError):
                 pass
         return super(SubjectAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -577,7 +578,7 @@ class BreedingPairAdmin(BaseAdmin):
     list_display = ['name', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date',
-              'father', 'mother1', 'mother2', 'lamis_cage']
+              'father', 'mother1', 'mother2', 'lamis_cage', 'notes']
     list_filter = [BreedingPairFilter,
                    ('line', RelatedDropdownFilter),
                    ]
