@@ -206,7 +206,9 @@ class SubjectForm(forms.ModelForm):
         # NOTE: skip the test if the instance is being created
         # such that any user can create a new subject.
         if not self.instance._state.adding and old_ru and new_ru and old_ru != new_ru:
-            if logged != old_ru:
+            if (not logged.is_superuser and
+                    not StockManager.objects.filter(user=logged) and
+                    logged != old_ru):
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
 
@@ -379,7 +381,6 @@ class SubjectAdmin(BaseAdmin):
             if isinstance(instance, Litter):
                 instance.line = line
             instance.save()
-        formset.instance.save()
         formset.save_m2m()
 
 

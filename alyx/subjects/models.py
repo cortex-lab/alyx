@@ -392,6 +392,11 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     # Only continue if there's an email.
     if not instance.responsible_user.email:
         return
+    logger.info("Subject %s was assigned from %s to %s.",
+                instance,
+                instance.responsible_user,
+                instance._original_responsible_user,
+                )
     subject = "Subject %s was assigned to you" % instance.nickname
     alyx_mail(instance.responsible_user.email, subject)
 
