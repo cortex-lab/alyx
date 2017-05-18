@@ -2,7 +2,7 @@ import io
 
 from django.http import HttpResponse
 from subjects.models import Subject
-from actions.models import Weighing
+from actions.models import Weighing, WaterRestriction
 from subjects.water import expected_weighing
 
 
@@ -63,6 +63,12 @@ def weighing_plot(request, subject_id=None):
                [w.weight * .8 for w in weighings])
 
     if weighings:
+        start, end = eweighings[0].date_time, eweighings[-1].date_time
+
+        # Delimit water restriction periods.
+        for wr in WaterRestriction.objects.filter(subject=subj).order_by('start_time'):
+            ax.axvspan(wr.start_time or start, wr.end_time or end, color='k', alpha=.05)
+
         xlim = weighings[0].date_time, weighings[-1].date_time
         ylim = min(weights) - 1, max(weights) + 1
 
