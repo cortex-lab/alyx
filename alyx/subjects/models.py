@@ -1,7 +1,5 @@
-import csv
 from datetime import datetime
 import logging
-import os.path as op
 import urllib
 
 from django.conf import settings
