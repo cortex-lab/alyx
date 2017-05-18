@@ -3,6 +3,7 @@ import io
 from django.http import HttpResponse
 from subjects.models import Subject
 from actions.models import Weighing
+from subjects.water import expected_weighing
 
 
 class Bunch(dict):
@@ -54,7 +55,7 @@ def weighing_plot(request, subject_id=None):
     weighings = [w for w in Weighing.objects.filter(subject=subj, date_time__isnull=False)
                                             .order_by('date_time')]
     eweighings = [Bunch(date_time=w.date_time,
-                        weight=subj.expected_weighing(subj.to_weeks(w.date_time)))
+                        weight=expected_weighing(subj, w.date_time))
                   for w in weighings]
 
     weights = ([w.weight for w in weighings] +
