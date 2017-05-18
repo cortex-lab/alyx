@@ -10,6 +10,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      )
 from subjects.models import Subject, OrderedUser
 from subjects.admin import get_admin_url
+from subjects import water
 
 
 # Filters
@@ -224,34 +225,34 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     def reference_weighing(self, obj):
         if not obj.subject:
             return
-        w = obj.subject.reference_weighing()
+        w = water.reference_weighing(obj.subject)
         return w.weight if w else None
     reference_weighing.short_description = 'ref weigh'
 
     def current_weighing(self, obj):
         if not obj.subject:
             return
-        w = obj.subject.current_weighing()
+        w = water.current_weighing(obj.subject)
         return w.weight if w else None
     current_weighing.short_description = 'cur weigh'
 
     def water_requirement_total(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % obj.subject.water_requirement_total()
+        return '%.2f' % water.water_requirement_total(obj.subject)
     water_requirement_total.short_description = 'wat req tot'
 
     def water_requirement_today(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % (obj.subject.water_requirement_total() -
-                         obj.subject.water_requirement_remaining())
+        return '%.2f' % (water.water_requirement_total(obj.subject) -
+                         water.water_requirement_remaining(obj.subject))
     water_requirement_today.short_description = 'wat req tod'
 
     def water_requirement_remaining(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % obj.subject.water_requirement_remaining()
+        return '%.2f' % water.water_requirement_remaining(obj.subject)
     water_requirement_remaining.short_description = 'wat req rem'
 
     def is_active(self, obj):
