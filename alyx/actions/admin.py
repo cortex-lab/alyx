@@ -115,6 +115,7 @@ class BaseActionAdmin(BaseAdmin):
         url = get_admin_url(obj.subject)
         return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
     subject_l.short_description = 'subject'
+    subject_l.admin_order_field = 'subject__nickname'
 
     def _get_last_subject(self, request):
         return getattr(request, 'session', {}).get('last_subject_id', None)
