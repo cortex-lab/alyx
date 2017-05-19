@@ -14,7 +14,7 @@ from django.utils import timezone
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
 from actions.models import OrderedUser
-from .water import last_water_restriction, today
+from actions.water import last_water_restriction, today
 
 logger = logging.getLogger(__name__)
 

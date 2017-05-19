@@ -14,7 +14,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      )
 from actions.models import Surgery, Session, OtherAction
-from . import water
+from actions import water
 
 
 # Utility functions

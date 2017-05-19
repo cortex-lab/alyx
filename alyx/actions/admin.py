@@ -10,7 +10,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      )
 from subjects.models import Subject, OrderedUser
 from subjects.admin import get_admin_url
-from subjects import water
+from . import water
 
 
 # Filters

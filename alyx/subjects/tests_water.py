@@ -9,7 +9,7 @@ from django.test.client import RequestFactory
 
 from .admin import mysite
 from actions.models import WaterAdministration
-from .water import today, water_requirement_total, water_requirement_remaining
+from actions.water import today, water_requirement_total, water_requirement_remaining
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

@@ -1,11 +1,11 @@
 import csv
+import functools
 import logging
-# from datetime import datetime
 import os.path as op
 
 from django.db import models
 from django.utils import timezone
-from actions.models import WaterRestriction, Weighing, WaterAdministration
+from .models import WaterRestriction, Weighing, WaterAdministration
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,9 @@ def today():
     return timezone.now()
 
 
-def expected_weighing_mean_std(sex, age_w):
+# Keep the tables in memory instead of reloading the CSV files.
+@functools.lru_cache(maxsize=None)
+def _get_table(sex):
     sex = 'male' if sex == 'M' else 'female'
     path = op.join(op.dirname(__file__),
                    'static/ref_weighings_%s.csv' % sex)
@@ -22,6 +24,11 @@ def expected_weighing_mean_std(sex, age_w):
         reader = csv.reader(f)
         d = {int(age): (float(m), float(s))
              for age, m, s in list(reader)}
+    return d
+
+
+def expected_weighing_mean_std(sex, age_w):
+    d = _get_table(sex)
     age_min, age_max = min(d), max(d)
     if age_w < age_min:
         return d[age_min]
