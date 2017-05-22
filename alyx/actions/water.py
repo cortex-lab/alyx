@@ -70,8 +70,8 @@ def current_weighing(subject, date=None):
             order_by('-date_time').first())
 
 
-def weight_zscore(subject, date=None):
-    rw = reference_weighing(subject, date=date)
+def weight_zscore(subject, date=None, rw=None):
+    rw = rw or reference_weighing(subject, date=date)
     if not rw:
         return 0
     iw = subject.implant_weight or 0
@@ -84,14 +84,15 @@ def weight_zscore(subject, date=None):
     return (weight - iw - mrw) / srw
 
 
-def expected_weighing(subject, date=None):
-    rw = reference_weighing(subject)
+def expected_weighing(subject, date=None, rw=None):
+    date = date or today()
+    rw = rw or reference_weighing(subject, date=date)
     if not rw:
         return 0
     iw = subject.implant_weight or 0
-    age = to_weeks(subject.birth_date, date or today())
+    age = to_weeks(subject.birth_date, date)
     mrw, srw = expected_weighing_mean_std(subject.sex, age)
-    subj_zscore = weight_zscore(subject)
+    subj_zscore = weight_zscore(subject, date=date, rw=rw)
     return (srw * subj_zscore) + mrw + iw
 
 

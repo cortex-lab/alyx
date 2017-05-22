@@ -65,7 +65,7 @@ def weighing_plot(request, subject_id=None):
 
     # Limits.
     start, end = weighings[0].date_time, weighings[-1].date_time
-    ylim = (min(w.weight for w in weighings) - 1, max(w.weight for w in weighings) + 1)
+    ylim = (min(w.weight for w in weighings) - 3, max(w.weight for w in weighings) + 3)
 
     # Periods.
     wrs = WaterRestriction.objects.filter(subject=subj).order_by('start_time')
