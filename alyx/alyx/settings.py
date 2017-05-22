@@ -50,8 +50,16 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'simple': {
-            'format': '%(asctime)s [%(levelname)s] %(message)s',
-            'datefmt': '%d/%m %H:%M:%S'
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(log_color)s%(asctime)s [%(levelname)s] %(message)s',
+            'datefmt': '%d/%m %H:%M:%S',
+            'log_colors': {
+                'DEBUG': 'cyan',
+                'INFO': 'white',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'bold_red',
+            },
         }
     },
     'handlers': {
