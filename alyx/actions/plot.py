@@ -47,10 +47,6 @@ def weighing_plot(request, subject_id=None):
     import matplotlib.dates as mpld
     f, ax = plt.subplots(1, 1, figsize=(8, 3))
 
-    # Axes.
-    ax.xaxis.set_major_locator(mpld.AutoDateLocator())
-    ax.xaxis.set_major_formatter(mpld.DateFormatter('%d/%m/%y'))
-
     # Get data.
     subj = Subject.objects.get(pk=subject_id)
     weighings = list(Weighing.objects.filter(subject=subj,
@@ -62,6 +58,10 @@ def weighing_plot(request, subject_id=None):
         f.savefig(buf, format='png')
         buf.seek(0)
         return HttpResponse(buf.read(), content_type="image/png")
+
+    # Axes.
+    ax.xaxis.set_major_locator(mpld.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mpld.DateFormatter('%d/%m/%y'))
 
     # Limits.
     start, end = weighings[0].date_time, weighings[-1].date_time
