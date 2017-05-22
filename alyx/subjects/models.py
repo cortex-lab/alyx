@@ -147,6 +147,7 @@ class Subject(BaseModel):
         self._original_nickname = self.nickname
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
+        self._original_death_date = self.death_date
         try:
             self._original_responsible_user = self.responsible_user
         except ObjectDoesNotExist:
@@ -306,6 +307,14 @@ class Subject(BaseModel):
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not self._original_genotype_date:
             self.to_be_genotyped = False
+        # When a subject dies.
+        if self.death_date and not self._original_death_date:
+            # Close all water restrictions without an end date.
+            for wr in WaterRestriction.objects.filter(subject=self,
+                                                      start_time__isnull=False,
+                                                      end_time__isnull=True):
+                wr.end_time = self.death_date
+                wr.save()
         # Update subject request.
         if (self.responsible_user and
                 self.responsible_user != self._original_responsible_user and
