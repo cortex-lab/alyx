@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     'reversion',
     'django_admin_listfilter_dropdown',
     'subjects',
+    'django_filters',
     'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.auth',
