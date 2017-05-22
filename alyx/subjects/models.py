@@ -684,6 +684,9 @@ class ZygosityFinder(object):
             # Get or create the zygosity.
             if zygosity:
                 zygosity = zygosity[0]
+                if z != zygosity.zygosity:
+                    logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
+                                subject, zygosity, symbol)
                 zygosity.zygosity = z
             else:
                 zygosity = Zygosity(subject=subject,
@@ -701,6 +704,10 @@ class ZygosityFinder(object):
         for allele in alleles_in_line:
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
+            if not z:
+                continue
+            logger.debug("Zygosity %s: %s %s from tests %s.",
+                         subject, allele, z, ', '.join(str(_) for _ in tests))
             self._create_zygosity(subject, allele, z)
 
     def _get_parents_alleles(self, subject, allele):
@@ -716,8 +723,7 @@ class ZygosityFinder(object):
                     out[which_parent] = z.symbol()
         return out['mother'], out['father']
 
-    def _zygosity_from_parents(self, subject, allele):
-        zm, zf = self._get_parents_alleles(subject, allele)
+    def _zygosity_from_parents(self, zm, zf):
         if zm == '+/+' and zf == '+/+':
             return '+/+'
         elif zm and zf and '+/+' in (zm, zf):
@@ -743,7 +749,15 @@ class ZygosityFinder(object):
         alleles_f = self._existing_alleles(father)
         alleles = set(alleles_m).union(set(alleles_f))
         for allele in alleles:
-            z = self._zygosity_from_parents(subject, allele)
+            zm, zf = self._get_parents_alleles(subject, allele)
+            z = self._zygosity_from_parents(zm, zf)
+            if not z:
+                continue
+            logger.debug("Zygosity %s: %s %s from parents %s (%s) and %s (%s).",
+                         subject, allele, z,
+                         mother, zm,
+                         father, zf,
+                         )
             self._create_zygosity(subject, allele, z)
 
 
