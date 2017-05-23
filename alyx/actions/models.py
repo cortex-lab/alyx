@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -37,8 +35,7 @@ class Weighing(BaseModel):
                              help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
                                 help_text="The subject which was weighed")
-    date_time = models.DateTimeField(
-        null=True, blank=True, default=datetime.now)
+    date_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
     weight = models.FloatField(validators=[MinValueValidator(limit_value=0)],
                                help_text="Weight in grams")
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
@@ -62,7 +59,7 @@ class WaterAdministration(BaseModel):
                                 related_name='water_administrations',
                                 help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
-                                     default=datetime.now)
+                                     default=timezone.now)
     water_administered = models.FloatField(validators=[MinValueValidator(limit_value=0)],
                                            help_text="Water administered, in millilitres")
     hydrogel = models.NullBooleanField()
