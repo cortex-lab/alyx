@@ -2,7 +2,7 @@ import io
 
 from django.http import HttpResponse
 from subjects.models import Subject
-from actions.models import Weighing
+from actions.models import Weighing, WaterRestriction
 
 
 class Bunch(dict):
@@ -11,24 +11,22 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-def _plot_weighings(ax, weighings, coeff=1., *args, **kwargs):
+def _plot_weighings(ax, weighings, *args, coeff=1., expected=False, **kwargs):
     if not weighings:
         return
-    x, y = zip(*((w.date_time, w.weight * coeff) for w in weighings))
+    x, y = zip(*((w.date_time, (w.expected() if expected else w.weight) * coeff)
+                 for w in weighings))
     ax.plot(x, y, *args, **kwargs)
 
 
-def _plot_bands(ax, weighings, eweighings, y0, y1):
+def _plot_bands(ax, weighings, y0, y1):
     import numpy as np
     x = [w.date_time.date() for w in weighings]
     n = len(x)
     for threshold, fc in [(.8, '#FFE3D3'), (.7, '#FFC3C0')]:
-        where = [w.weight < ew.weight * threshold for w, ew in zip(weighings, eweighings)]
+        where = [w.weight < w.expected() * threshold for w in weighings]
         ax.fill_between(x, y0 * np.ones(n), y1 * np.ones(n), where=where,
-                        interpolate=False,
-                        lw=0,
-                        facecolor=fc,
-                        )
+                        interpolate=False, lw=0, facecolor=fc)
         for i in np.nonzero(where)[0]:
             ax.axvline(x[i], lw=10, color=fc)
 
@@ -51,35 +49,55 @@ def weighing_plot(request, subject_id=None):
 
     # Get data.
     subj = Subject.objects.get(pk=subject_id)
-    weighings = [w for w in Weighing.objects.filter(subject=subj, date_time__isnull=False)
-                                            .order_by('date_time')]
-    eweighings = [Bunch(date_time=w.date_time,
-                        weight=subj.expected_weighing(subj.to_weeks(w.date_time)))
-                  for w in weighings]
+    weighings = list(Weighing.objects.filter(subject=subj,
+                                             date_time__isnull=False).order_by('date_time'))
 
-    weights = ([w.weight for w in weighings] +
-               [w.weight * .7 for w in eweighings] +
-               [w.weight * .8 for w in weighings])
+    # Empty data: skip.
+    if not weighings:
+        buf = io.BytesIO()
+        f.savefig(buf, format='png')
+        buf.seek(0)
+        return HttpResponse(buf.read(), content_type="image/png")
 
-    if weighings:
-        xlim = weighings[0].date_time, weighings[-1].date_time
-        ylim = min(weights) - 1, max(weights) + 1
+    # Axes.
+    ax.xaxis.set_major_locator(mpld.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mpld.DateFormatter('%d/%m/%y'))
 
-        # Axes.
-        ax.xaxis.set_major_locator(mpld.AutoDateLocator())
-        ax.xaxis.set_major_formatter(mpld.DateFormatter('%d/%m/%y'))
+    # Limits.
+    start, end = weighings[0].date_time, weighings[-1].date_time
+    ylim = (min(w.weight for w in weighings) - 3, max(w.weight for w in weighings) + 3)
+
+    # Periods.
+    wrs = WaterRestriction.objects.filter(subject=subj).order_by('start_time')
+    periods = [(wr.start_time or start, wr.end_time or end) for wr in wrs]
+
+    # Delimit water restriction periods.
+    for a, b in periods:
+        ax.axvspan(a, b, color='k', alpha=.05)
+        ws = [w for w in weighings if (a <= w.date_time <= b)]
 
         # Bands.
-        _plot_bands(ax, weighings, eweighings, *ylim)
+        _plot_bands(ax, ws, *ylim)
 
         # Weighing curves.
-        _plot_weighings(ax, eweighings, coeff=.8, lw=2, color='#FF7F37')
-        _plot_weighings(ax, eweighings, coeff=.7, lw=2, color='#FF4137')
-        _plot_weighings(ax, weighings, lw=2, color='k')
+        _plot_weighings(ax, ws, coeff=.8, expected=True, lw=2, color='#FF7F37')
+        _plot_weighings(ax, ws, coeff=.7, expected=True, lw=2, color='#FF4137')
+        _plot_weighings(ax, ws, lw=2, color='k')
 
-        plt.xlim(*xlim)
-        plt.ylim(*ylim)
+    # Consider periods without water restriction.
+    flat_periods = [item for sublist in periods for item in sublist]
+    flat_periods.insert(0, start)
+    flat_periods.append(end)
+    ifp = iter(flat_periods)
+    for a, b in zip(ifp, ifp):
+        if a == b:
+            continue
+        ws = [w for w in weighings if (a < w.date_time < b)]
+        _plot_weighings(ax, ws, 'ok')
 
+    # Axes and legends.
+    plt.xlim(start, end)
+    plt.ylim(*ylim)
     ax.set_title("Weighings for %s" % subj.nickname)
     plt.xlabel('Date')
     plt.ylabel('Weight (g)')

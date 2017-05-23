@@ -43,6 +43,11 @@ class Weighing(BaseModel):
                                        help_text="The scale record that was used "
                                        "to weigh the subject")
 
+    def expected(self):
+        """Expected weighing."""
+        from .water import expected_weighing
+        return expected_weighing(self.subject, self.date_time)
+
     def __str__(self):
         return '%s at %s (%.1f g)' % (str(self.subject),
                                       str(self.date_time),

@@ -2,6 +2,7 @@
 .DS_Store
 *~
 *!
+alyx-backups
 alyx/alyx/settings_secret.py
 docs/_build
 docs/_templates

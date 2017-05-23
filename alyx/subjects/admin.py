@@ -14,6 +14,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      )
 from actions.models import Surgery, Session, OtherAction
+from actions import water
 
 
 # Utility functions
@@ -226,7 +227,7 @@ class SubjectAdmin(BaseAdmin):
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
                       'classes': ('collapse',),
                       }),
-        ('WEIGHINGS/WATER', {'fields': ('water_restriction_date',
+        ('WEIGHINGS/WATER', {'fields': ('last_water_restriction',
                                         'reference_weighing_f',
                                         'current_weighing_f',
                                         'weight_zscore_f',
@@ -250,7 +251,7 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__username']
     readonly_fields = ('age_days', 'zygosities',
                        'breeding_pair_l', 'litter_l', 'line_l',
-                       'water_restriction_date',
+                       'last_water_restriction',
                        'reference_weighing_f',
                        'current_weighing_f',
                        'weight_zscore_f',
@@ -306,26 +307,26 @@ class SubjectAdmin(BaseAdmin):
         return '; '.join(map(str, genotype))
 
     def reference_weighing_f(self, obj):
-        res = obj.reference_weighing()
+        res = water.reference_weighing(obj)
         return '%.2f' % res.weight if res else '0'
     reference_weighing_f.short_description = 'reference weighing'
 
     def current_weighing_f(self, obj):
-        res = obj.current_weighing()
+        res = water.current_weighing(obj)
         return '%.2f' % res.weight if res else '0'
     current_weighing_f.short_description = 'current weighing'
 
     def weight_zscore_f(self, obj):
-        res = obj.weight_zscore()
+        res = water.weight_zscore(obj)
         return '%.2f' % res if res else '0'
     weight_zscore_f.short_description = 'weight z-score'
 
     def water_requirement_total_f(self, obj):
-        return '%.2f' % obj.water_requirement_total()
+        return '%.2f' % water.water_requirement_total(obj)
     water_requirement_total_f.short_description = 'water requirement total'
 
     def water_requirement_remaining_f(self, obj):
-        return '%.2f' % obj.water_requirement_remaining()
+        return '%.2f' % water.water_requirement_remaining(obj)
     water_requirement_remaining_f.short_description = 'water requirement remaining'
 
     def weighing_plot(self, obj):

@@ -1,7 +1,5 @@
-import csv
 from datetime import datetime
 import logging
-import os.path as op
 import urllib
 
 from django.conf import settings
@@ -15,7 +13,8 @@ from django.utils import timezone
 
 from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
-from actions.models import OrderedUser, WaterRestriction, Weighing, WaterAdministration
+from actions.models import OrderedUser
+from actions.water import last_water_restriction, today
 
 logger = logging.getLogger(__name__)
 
@@ -185,106 +184,8 @@ class Subject(BaseModel):
         if self.litter:
             return self.litter.breeding_pair.father
 
-    def water_restriction_date(self):
-        restriction = WaterRestriction.objects.filter(subject__id=self.id,
-                                                      end_time__isnull=True,
-                                                      )
-        restriction = restriction.order_by('-start_time')
-        if not restriction:
-            return
-        return restriction[0].start_time
-
-    def reference_weighing(self):
-        wr_date = self.water_restriction_date()
-        if not wr_date:
-            return None
-        weighings = Weighing.objects.filter(subject__id=self.id,
-                                            date_time__lte=wr_date)
-        weighings = weighings.order_by('-date_time')
-        if not weighings:
-            return None
-        return weighings[0]
-
-    def current_weighing(self):
-        weighings = Weighing.objects.filter(subject__id=self.id)
-        weighings = weighings.order_by('-date_time')
-        if not weighings:
-            return None
-        return weighings[0]
-
-    def expected_weighing_mean_std(self, age_w):
-        sex = 'male' if self.sex == 'M' else 'female'
-        path = op.join(op.dirname(__file__),
-                       'static/ref_weighings_%s.csv' % sex)
-        with open(path, 'r') as f:
-            reader = csv.reader(f)
-            d = {int(age): (float(m), float(s))
-                 for age, m, s in list(reader)}
-        age_min, age_max = min(d), max(d)
-        if age_w < age_min:
-            return d[age_min]
-        elif age_w > age_max:
-            return d[age_max]
-        else:
-            return d[age_w]
-
-    def to_weeks(self, datetime):
-        if not datetime:
-            return 0
-        return (datetime.date() - self.birth_date).days // 7
-
-    def weight_zscore(self):
-        rw = self.reference_weighing()
-        if not rw:
-            return 0
-        iw = self.implant_weight or 0
-        start_age = self.to_weeks(rw.date_time)
-        start_mrw, start_srw = self.expected_weighing_mean_std(start_age)
-        start_weight = rw.weight
-        return (start_weight - iw - start_mrw) / start_srw
-
-    def expected_weighing(self, age):
-        rw = self.reference_weighing()
-        if not rw:
-            return 0
-        iw = self.implant_weight or 0
-        mrw, srw = self.expected_weighing_mean_std(age)
-        subj_zscore = self.weight_zscore()
-        return (srw * subj_zscore) + mrw + iw
-
-    def water_requirement_total(self):
-        '''Returns the amount of water the subject needs today in total'''
-        if not self.water_restriction_date():
-            return 0
-
-        if not self.birth_date:
-            logger.warn("Subject %s has no birth date!", self)
-            return 0
-        # returns the amount of water the subject needs today in total
-        expected_weight = self.expected_weighing(self.age_weeks())
-        if not expected_weight:
-            return 0
-        iw = self.implant_weight or 0
-        weight = self.current_weighing().weight
-        return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
-
-    def water_requirement_remaining(self):
-        '''Returns the amount of water the subject still needs, given how much
-        it got already today'''
-
-        if not self.water_restriction_date():
-            return 0
-
-        req_total = self.water_requirement_total()
-
-        today = timezone.now()
-        water_today = WaterAdministration.objects.filter(subject__id=self.id,
-                                                         date_time__date=today)
-
-        # extract the amounts of all water_today, sum them, subtract from
-        # req_total
-        water_today = water_today.aggregate(models.Sum('water_administered'))
-        return req_total - (water_today['water_administered__sum'] or 0)
+    def last_water_restriction(self):
+        return last_water_restriction(self, today())
 
     def zygosity_strings(self):
         return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
