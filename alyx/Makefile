@@ -15,8 +15,7 @@ rmmigrations: clean
 	rm */migrations/0*.py
 
 migrate:
-	python manage.py migrate
-	python manage.py makemigrations actions behavior data electrophysiology equipment imaging misc subjects
+	python manage.py makemigrations equipment misc subjects actions data imaging behavior electrophysiology
 	python manage.py migrate
 
 test:
