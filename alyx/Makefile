@@ -12,7 +12,7 @@ clean-pyc:
 clean: clean-pyc
 
 rmmigrations: clean
-	rm */migrations/*.py
+	rm */migrations/0*.py
 
 migrate:
 	python manage.py migrate

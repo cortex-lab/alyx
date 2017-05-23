@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Dataset, BaseExperimentalData
+from data.models import Dataset, TimeSeries, BaseExperimentalData
 from equipment.models import Appliance
 from misc.models import BrainLocation
 
@@ -13,10 +13,12 @@ class PupilTracking(BaseExperimentalData):
         ('R', 'Right'),
     )
 
-    x_y_d = models.ForeignKey(Dataset, blank=True, null=True, related_name="pupil_tracking_x_y_d",
-                              help_text="3*n timeseries giving x and y coordinates "
+    x_y_d = models.ForeignKey(TimeSeries, blank=True, null=True,
+                              related_name="pupil_tracking_x_y_d",
+                              help_text="n*3 timeseries giving x and y coordinates "
                               "of center plus diameter")
-    movie = models.ForeignKey(Dataset, blank=True, null=True, related_name="pupil_tracking_movie",
+    movie = models.ForeignKey(TimeSeries, blank=True, null=True,
+                              related_name="pupil_tracking_movie",
                               help_text="Link to raw data")
     eye = models.CharField(max_length=1,
                            choices=EYES,
@@ -40,11 +42,11 @@ class HeadTracking(BaseExperimentalData):
     """
     Describes the results of a head tracking algorithm.
     """
-    x_y_theta = models.ForeignKey(Dataset, blank=True, null=True,
+    x_y_theta = models.ForeignKey(TimeSeries, blank=True, null=True,
                                   related_name="head_tracking_x_y_d",
                                   help_text="3*n timeseries giving x and y coordinates "
                                   "of head plus angle")
-    movie = models.ForeignKey(Dataset, blank=True, null=True,
+    movie = models.ForeignKey(TimeSeries, blank=True, null=True,
                               related_name="head_tracking_movie",
                               help_text="Link to raw data")
     description = models.TextField(blank=True,
@@ -68,7 +70,8 @@ class EventSeries(BaseExperimentalData):
     """
     event_times = models.ForeignKey(Dataset, blank=True, null=True,
                                     related_name="event_series_event_times",
-                                    help_text="n*1 array of times in seconds")
+                                    help_text="n*1 array of times in seconds "
+                                    "(universal timescale)")
     type_descriptions_id = models.ForeignKey(Dataset, blank=True, null=True)
     event_types_id = models.ForeignKey(Dataset, blank=True, null=True,
                                        related_name="event_series_event_descriptions",
@@ -97,11 +100,10 @@ class IntervalSeries(BaseExperimentalData):
                                        related_name="interval_series_interval_times",
                                        help_text="n*2 array, with associated array "
                                        "of row labels.")
-    interval_descriptions = models.ForeignKey(Dataset, blank=True, null=True,
-                                              related_name="interval_series_"
-                                              "interval_descriptions",
-                                              help_text="n*1 array listing the type "
-                                              "of each interval")
+    interval_types = models.ForeignKey(Dataset, blank=True, null=True,
+                                       related_name="interval_series_interval_descriptions",
+                                       help_text="n*1 array listing the type of each interval")
+    type_descriptions = models.ForeignKey(Dataset, blank=True, null=True)
     description = models.TextField(blank=True,
                                    help_text="misc. narrative e.g. "
                                    "'drifting gratings of different orientations', "

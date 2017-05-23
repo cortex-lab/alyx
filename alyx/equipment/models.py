@@ -1,8 +1,8 @@
-from django.db import models
-from alyx.base import BaseModel, BasePolymorphicModel
-
 from django.contrib.postgres.fields import JSONField
+from django.db import models
 from django.utils import timezone
+
+from alyx.base import BaseModel, BasePolymorphicModel
 
 
 class LabLocation(BaseModel):

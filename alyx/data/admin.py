@@ -1,62 +1,49 @@
 from django.contrib import admin
-from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
-from .models import (DataRepository, LocalDataRepository, NetworkDataRepository,
-                     ArchiveDataRepository, PhysicalArchive, FileRecord,
-                     Dataset, Timestamp, TimeSeries)
+from .models import (DataRepository, DataRepositoryType, FileRecord, Dataset, DatasetType,
+                     Timescale, TimeSeries)
 from alyx.base import BaseAdmin
 
 
-class DataRepositoryChildAdmin(PolymorphicChildModelAdmin):
-    base_model = DataRepository
-
-
-class LocalDataRepositoryAdmin(DataRepositoryChildAdmin):
-    base_model = LocalDataRepository
-
-
-class NetworkDataRepositoryAdmin(DataRepositoryChildAdmin):
-    base_model = LocalDataRepository
-
-
-class ArchiveDataRepositoryAdmin(DataRepositoryChildAdmin):
-    base_model = LocalDataRepository
-
-
-class DataRepositoryParentAdmin(PolymorphicParentModelAdmin):
-    base_model = DataRepository
-    child_models = (
-        (LocalDataRepository, LocalDataRepositoryAdmin),
-        (NetworkDataRepository, NetworkDataRepositoryAdmin),
-        (ArchiveDataRepository, ArchiveDataRepositoryAdmin)
-    )
-    polymorphic_list = True
-    list_display = ('name', 'polymorphic_ctype')
-    pk_regex = '([\w-]+)'
-
-
-class PhysicalArchiveAdmin(BaseAdmin):
-    fields = ['location']
-
-
-class FileRecordAdmin(BaseAdmin):
-    fields = ['dataset', 'filename']
-
-
-class DatasetAdmin(BaseAdmin):
+class DataRepositoryTypeAdmin(BaseAdmin):
     fields = ['name']
 
 
-class TimestampAdmin(BaseAdmin):
-    fields = ['name', 'timebase_name', 'regularly_sampled', 'sample_rate', 'first_sample_time']
+class DataRepositoryAdmin(BaseAdmin):
+    fields = ['name', 'repository_type', 'path']
 
 
-class TimeSeriesAdmin(BaseAdmin):
-    fields = ['file', 'column_names', 'description', 'timestamps', 'session']
+class FileRecordAdmin(BaseAdmin):
+    fields = ['data_repository', 'relative_path', 'dataset']
 
 
-admin.site.register(DataRepository, DataRepositoryParentAdmin)
-admin.site.register(PhysicalArchive, PhysicalArchiveAdmin)
+class DatasetTypeAdmin(BaseAdmin):
+    fields = ['name']
+
+
+class BaseExperimentalDataAdmin(BaseAdmin):
+    def __init__(self, *args, **kwargs):
+        for field in ('session', 'created_by', 'created_date'):
+            if self.fields and field not in self.fields:
+                self.fields += (field,)
+        super(BaseAdmin, self).__init__(*args, **kwargs)
+
+
+class DatasetAdmin(BaseExperimentalDataAdmin):
+    fields = ['name', 'dataset_type', 'md5']
+
+
+class TimescaleAdmin(BaseExperimentalDataAdmin):
+    fields = ['name', 'nominal_start', 'nominal_time_unit', 'final']
+
+
+class TimeSeriesAdmin(BaseExperimentalDataAdmin):
+    fields = ['data', 'timestamps', 'timescale']
+
+
+admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
+admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
+admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
-admin.site.register(Timestamp, TimestampAdmin)
+admin.site.register(Timescale, TimescaleAdmin)
 admin.site.register(TimeSeries, TimeSeriesAdmin)
