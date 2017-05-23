@@ -1,8 +1,8 @@
-from django.db import models
-from datetime import datetime
-from alyx.base import BaseModel, BasePolymorphicModel
-
 from django.contrib.postgres.fields import JSONField
+from django.db import models
+from django.utils import timezone
+
+from alyx.base import BaseModel, BasePolymorphicModel
 
 
 class LabLocation(BaseModel):
@@ -73,7 +73,7 @@ class VirusBatch(BaseModel):
     description = models.CharField(max_length=255, blank=True)
     virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
                                      help_text="Who supplied the virus")
-    date_time_made = models.DateTimeField(null=True, blank=True, default=datetime.now)
+    date_time_made = models.DateTimeField(null=True, blank=True, default=timezone.now)
     nominal_titer = models.FloatField(null=True, blank=True, help_text="TODO: What unit?")
     # let's ask Charu about what unit.
 
