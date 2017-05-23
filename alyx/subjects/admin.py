@@ -1,9 +1,11 @@
 from django import forms
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
+from django.db.models import Case, When
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -204,7 +206,9 @@ class SubjectForm(forms.ModelForm):
         # NOTE: skip the test if the instance is being created
         # such that any user can create a new subject.
         if not self.instance._state.adding and old_ru and new_ru and old_ru != new_ru:
-            if logged != old_ru:
+            if (not logged.is_superuser and
+                    not StockManager.objects.filter(user=logged) and
+                    logged != old_ru):
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
 
@@ -377,7 +381,6 @@ class SubjectAdmin(BaseAdmin):
             if isinstance(instance, Litter):
                 instance.line = line
             instance.save()
-        formset.instance.save()
         formset.save_m2m()
 
 
@@ -548,15 +551,32 @@ class BreedingPairFilter(DefaultListFilter):
             return queryset.all()
 
 
+def _bp_subjects(line, sex):
+    sm = settings.STOCK_MANAGERS
+    qs = Subject.objects.filter(line=line, sex=sex,
+                                responsible_user__username__in=sm).order_by('nickname')
+    ids = [item.id for item in qs]
+    qs = Subject.objects.filter(responsible_user__username__in=sm,
+                                sex=sex)
+    if ids:
+        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+        qs = qs.order_by(preserved, 'nickname')
+    else:
+        qs = qs.order_by('nickname')
+    return qs
+
+
 class BreedingPairAdminForm(forms.ModelForm):
     lamis_cage = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
         for w in ('father', 'mother1', 'mother2'):
+            sex = 'M' if w == 'father' else 'F'
             p = getattr(self.instance, w, None)
             if p and p.lamis_cage:
                 self.fields['lamis_cage'].initial = p.lamis_cage
+            self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
     def save(self, commit=True):
         lamis_cage = self.cleaned_data.get('lamis_cage')
@@ -719,6 +739,17 @@ class BreedingPairInline(BaseInlineAdmin):
     model = BreedingPair
     fields = ('line', 'name', 'father', 'mother1', 'mother2')
     extra = 1
+
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(BreedingPairInline, self).formfield_for_foreignkey(db_field,
+                                                                         request, **kwargs)
+        obj = self._parent_instance
+        if obj is None:
+            return field
+        if db_field.name in ('father', 'mother1', 'mother2'):
+            sex = 'M' if db_field.name == 'father' else 'F'
+            field.queryset = _bp_subjects(obj, sex)
+        return field
 
 
 class LineAdmin(BaseAdmin):

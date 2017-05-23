@@ -1,6 +1,7 @@
 import logging
-import uuid
+import os.path as op
 from polymorphic.models import PolymorphicModel
+import uuid
 
 from django import forms
 from django.db import models
@@ -9,12 +10,17 @@ from django.conf.locale.en import formats as en_formats
 from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
+from django.core.management import call_command
 from django.template.response import TemplateResponse
 
 from reversion.admin import VersionAdmin
+from rest_framework.test import APITestCase
+
 
 logger = logging.getLogger(__name__)
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
+
+DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 
 class BaseModel(models.Model):
@@ -184,3 +190,13 @@ class BaseInlineAdmin(admin.TabularInline):
                            'cols': 30})},
         models.CharField: {'widget': forms.TextInput(attrs={'size': 16})},
     }
+
+
+class BaseTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command('loaddata', op.join(DATA_DIR, 'all_dumped_anon.json.gz'), verbosity=1)
+
+    def ar(self, r, code=200):
+        r.render()
+        self.assertTrue(r.status_code == code)

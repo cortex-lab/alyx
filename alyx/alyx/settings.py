@@ -50,8 +50,16 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'simple': {
-            'format': '%(asctime)s [%(levelname)s] %(message)s',
-            'datefmt': '%H:%M:%S'
+            '()': 'colorlog.ColoredFormatter',
+            'format': '%(log_color)s%(asctime)s [%(levelname)s] %(message)s',
+            'datefmt': '%d/%m %H:%M:%S',
+            'log_colors': {
+                'DEBUG': 'cyan',
+                'INFO': 'white',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'bold_red',
+            },
         }
     },
     'handlers': {
@@ -93,6 +101,18 @@ if 'TRAVIS' in os.environ:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Production settings:
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    X_FRAME_OPTIONS = 'DENY'
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 30
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 
 # Application definition
@@ -103,6 +123,7 @@ INSTALLED_APPS = (
     'reversion',
     'django_admin_listfilter_dropdown',
     'subjects',
+    'django_filters',
     'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.auth',
@@ -157,7 +178,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
-    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',)
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    # 'PAGE_SIZE': 50
 }
 
 # Internationalization

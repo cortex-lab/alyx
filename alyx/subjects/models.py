@@ -147,6 +147,7 @@ class Subject(BaseModel):
         self._original_nickname = self.nickname
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
+        self._original_death_date = self.death_date
         try:
             self._original_responsible_user = self.responsible_user
         except ObjectDoesNotExist:
@@ -306,6 +307,14 @@ class Subject(BaseModel):
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not self._original_genotype_date:
             self.to_be_genotyped = False
+        # When a subject dies.
+        if self.death_date and not self._original_death_date:
+            # Close all water restrictions without an end date.
+            for wr in WaterRestriction.objects.filter(subject=self,
+                                                      start_time__isnull=False,
+                                                      end_time__isnull=True):
+                wr.end_time = self.death_date
+                wr.save()
         # Update subject request.
         if (self.responsible_user and
                 self.responsible_user != self._original_responsible_user and
@@ -392,6 +401,11 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     # Only continue if there's an email.
     if not instance.responsible_user.email:
         return
+    logger.info("Subject %s was assigned from %s to %s.",
+                instance,
+                instance.responsible_user,
+                instance._original_responsible_user,
+                )
     subject = "Subject %s was assigned to you" % instance.nickname
     alyx_mail(instance.responsible_user.email, subject)
 
@@ -670,6 +684,9 @@ class ZygosityFinder(object):
             # Get or create the zygosity.
             if zygosity:
                 zygosity = zygosity[0]
+                if z != zygosity.zygosity:
+                    logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
+                                subject, zygosity, symbol)
                 zygosity.zygosity = z
             else:
                 zygosity = Zygosity(subject=subject,
@@ -687,6 +704,10 @@ class ZygosityFinder(object):
         for allele in alleles_in_line:
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
+            if not z:
+                continue
+            logger.debug("Zygosity %s: %s %s from tests %s.",
+                         subject, allele, z, ', '.join(str(_) for _ in tests))
             self._create_zygosity(subject, allele, z)
 
     def _get_parents_alleles(self, subject, allele):
@@ -702,8 +723,7 @@ class ZygosityFinder(object):
                     out[which_parent] = z.symbol()
         return out['mother'], out['father']
 
-    def _zygosity_from_parents(self, subject, allele):
-        zm, zf = self._get_parents_alleles(subject, allele)
+    def _zygosity_from_parents(self, zm, zf):
         if zm == '+/+' and zf == '+/+':
             return '+/+'
         elif zm and zf and '+/+' in (zm, zf):
@@ -729,7 +749,15 @@ class ZygosityFinder(object):
         alleles_f = self._existing_alleles(father)
         alleles = set(alleles_m).union(set(alleles_f))
         for allele in alleles:
-            z = self._zygosity_from_parents(subject, allele)
+            zm, zf = self._get_parents_alleles(subject, allele)
+            z = self._zygosity_from_parents(zm, zf)
+            if not z:
+                continue
+            logger.debug("Zygosity %s: %s %s from parents %s (%s) and %s (%s).",
+                         subject, allele, z,
+                         mother, zm,
+                         father, zf,
+                         )
             self._create_zygosity(subject, allele, z)
 
 
