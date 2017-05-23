@@ -1,6 +1,14 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
+
 from alyx.base import BaseModel
+
+
+class OrderedUser(User):
+    class Meta:
+        proxy = True
+        ordering = ['username']
 
 
 class BrainLocation(BaseModel):

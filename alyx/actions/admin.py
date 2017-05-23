@@ -8,7 +8,8 @@ from alyx.base import BaseAdmin, DefaultListFilter
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
-from subjects.models import Subject, OrderedUser
+from misc.models import OrderedUser
+from subjects.models import Subject
 from subjects.admin import get_admin_url
 from . import water
 

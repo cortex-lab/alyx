@@ -1,17 +1,10 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
 
 from alyx.base import BaseModel
 from equipment.models import LabLocation, WeighingScale, VirusBatch
-from misc.models import BrainLocation
-
-
-class OrderedUser(User):
-    class Meta:
-        proxy = True
-        ordering = ['username']
+from misc.models import BrainLocation, OrderedUser
 
 
 class ProcedureType(BaseModel):
