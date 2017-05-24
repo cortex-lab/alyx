@@ -165,6 +165,8 @@ class BaseAdmin(VersionAdmin):
                            'cols': 50})},
     }
     list_per_page = 50
+    save_on_top = True
+    show_full_result_count = False
 
     def __init__(self, *args, **kwargs):
         if self.fields and 'json' not in self.fields:
