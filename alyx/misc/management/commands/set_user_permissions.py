@@ -43,6 +43,6 @@ class Command(BaseCommand):
             user.is_superuser = user.username in settings.SUPERUSERS
             # Create the stock managers.
             if user.username in settings.STOCK_MANAGERS:
-                StockManager(user=user).save()
+                StockManager.objects.get_or_create(user=user)[0].save()
             user.save()
         self.stdout.write("%d users have been successfully updated." % len(users))
