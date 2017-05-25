@@ -135,7 +135,7 @@ class Subject(BaseModel):
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user', 'lamis_cage',)
+    _fields_history = ('nickname', 'responsible_user', 'lamis_cage', 'reduced')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
