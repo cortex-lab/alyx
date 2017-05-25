@@ -866,7 +866,7 @@ class SubjectRequestAdmin(BaseAdmin):
     form = SubjectRequestForm
 
     def remaining_count(self, obj):
-        return '%d/%d' % ((obj.count or 0) - (obj.remaining() or 0), obj.count)
+        return '%d/%d' % ((obj.count or 0) - (obj.remaining() or 0), obj.count or 0)
     remaining_count.short_description = 'count'
 
     def is_closed(self, obj):
