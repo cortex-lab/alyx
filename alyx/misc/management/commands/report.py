@@ -125,7 +125,7 @@ class Command(BaseCommand):
         today = timezone.now()
         yesterday = today - timedelta(days=1)
         logs = LogEntry.objects.filter(user=user,
-                                       # action_time__date=yesterday,
+                                       action_time__date=yesterday,
                                        ).order_by('action_time')
         return 'Your actions yesterday:\n\n' + '\n'.join('* ' + str(l) for l in logs)
 
