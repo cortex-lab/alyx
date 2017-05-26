@@ -582,7 +582,7 @@ class ZygosityFinder(object):
     def _get_allele(self, name):
         return Allele.objects.get_or_create(informal_name=name)[0]
 
-    def _create_zygosity(self, subject, allele_name, symbol):
+    def _create_zygosity(self, subject, allele_name, symbol, ignore_conflict=True):
         if symbol is not None:
             zygosity = Zygosity.objects.filter(subject=subject,
                                                allele=self._get_allele(allele_name),
@@ -592,8 +592,13 @@ class ZygosityFinder(object):
             if zygosity:
                 zygosity = zygosity[0]
                 if z != zygosity.zygosity:
-                    logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
-                                subject, zygosity, symbol)
+                    if ignore_conflict:
+                        logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
+                                    subject, zygosity, symbol)
+                    else:
+                        logger.warn("Zygosity mismatch for %s: was %s, would have been set "
+                                    "to %s but aborting now.", subject, zygosity, symbol)
+                        return
                 zygosity.zygosity = z
             else:
                 zygosity = Zygosity(subject=subject,
@@ -665,7 +670,8 @@ class ZygosityFinder(object):
                          mother, zm,
                          father, zf,
                          )
-            self._create_zygosity(subject, allele, z)
+            # If there is a conflict when setting a litter, we don't update the zygosities.
+            self._create_zygosity(subject, allele, z, ignore_conflict=False)
 
 
 class AlleleManager(models.Manager):
