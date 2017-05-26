@@ -131,11 +131,12 @@ class Subject(BaseModel):
     to_be_genotyped = models.BooleanField(default=False)
     to_be_culled = models.BooleanField(default=False)
     reduced = models.BooleanField(default=False)
+    reduced_date = models.DateField(null=True, blank=True)
 
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user', 'lamis_cage', 'reduced')
+    _fields_history = ('nickname', 'responsible_user', 'lamis_cage')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
@@ -148,6 +149,7 @@ class Subject(BaseModel):
         self._original_litter = self.litter
         self._original_genotype_date = self.genotype_date
         self._original_death_date = self.death_date
+        self._original_reduced = self.reduced
         try:
             self._original_responsible_user = self.responsible_user
         except ObjectDoesNotExist:
@@ -217,6 +219,9 @@ class Subject(BaseModel):
                                                       end_time__isnull=True):
                 wr.end_time = self.death_date
                 wr.save()
+        # Save the reduced date.
+        if self.reduced and self.reduced != self._original_reduced:
+            self.reduced_date = timezone.now().date()
         # Update subject request.
         if (self.responsible_user and
                 self.responsible_user != self._original_responsible_user and
