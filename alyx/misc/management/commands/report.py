@@ -99,6 +99,9 @@ class Command(BaseCommand):
         self._send(user.email, subject, text)
 
     def make_surgery(self, user):
+        # Skip surgeries on stock managers.
+        if StockManager.objects.filter(user=user):
+            return
         surgery_done = set([surgery.subject.nickname for surgery in
                             Surgery.objects.filter(subject__responsible_user=user)])
         subjects_user = set([subject.nickname for subject in
