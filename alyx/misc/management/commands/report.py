@@ -5,6 +5,7 @@ import logging
 from operator import itemgetter
 from textwrap import dedent
 
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -119,6 +120,14 @@ class Command(BaseCommand):
         text = "Mice awaiting surgery:\n"
         text += '\n'.join('* %s' % nickname for nickname in surgery_pending)
         return text
+
+    def make_past_changes(self, user):
+        today = timezone.now()
+        yesterday = today - timedelta(days=1)
+        logs = LogEntry.objects.filter(user=user,
+                                       # action_time__date=yesterday,
+                                       ).order_by('action_time')
+        return 'Your actions yesterday:\n\n' + '\n'.join('* ' + str(l) for l in logs)
 
     def make_todo(self):
         tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')
