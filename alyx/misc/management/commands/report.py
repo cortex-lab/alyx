@@ -1,6 +1,8 @@
 from datetime import timedelta
 import inspect
+from itertools import groupby
 import logging
+from operator import itemgetter
 from textwrap import dedent
 
 from django.contrib.auth.models import User
@@ -29,6 +31,11 @@ class Command(BaseCommand):
                             help="Show report without sending an email")
 
     def handle(self, *args, **options):
+        for user, texts in groupby(self._generate_email(*args, **options), itemgetter(0)):
+            subject = 'Report on %s' % timezone.now().strftime("%Y-%m-%d")
+            self._send(user.email, subject, '\n\n'.join(t or '' for u, t in texts))
+
+    def _generate_email(self, *args, **options):
         if options.get('list'):
             methods = inspect.getmembers(self, predicate=inspect.ismethod)
             names = sorted([m[0][5:] for m in methods if m[0].startswith('make_')])
@@ -40,20 +47,24 @@ class Command(BaseCommand):
                  if users else User.objects.all())
         for name in options.get('names'):
             method = getattr(self, 'make_%s' % name, None)
-            if method:
-                self.stdout.write("Making report %s." % name)
-                # Global reports for admins.
-                if name in ('actions',):
-                    method()
-                else:
-                    for user in users:
-                        method(user)
+            if not method:
+                continue
+            logger.debug("Making report %s." % name)
+            # First case: per-user report.
+            if 'user' in inspect.getargspec(method)[0]:
+                for user in users:
+                    yield user, method(user)
+            # Second case: global report to send to several users.
+            else:
+                text = method()
+                for user in users:
+                    yield user, text
 
     def _send(self, to, subject, text=''):
-        self.stdout.write('"[alyx] %s" sent to %s.\n\n' % (subject, to))
+        self.stdout.write('"%s" to be sent to <%s>.\n\n' % (subject, to))
         self.stdout.write(text)
         self.stdout.write("\n\n")
-        if self.do_send:
+        if to and self.do_send:
             alyx_mail(to, subject, text)
 
     def make_water_restriction(self, user):
@@ -63,10 +74,6 @@ class Command(BaseCommand):
                                              ).order_by('subject__nickname')
         if not wr:
             return
-        if not user.email:
-            logger.warn("Skipping user %s because there is no email.", user.username)
-            return
-        subject = '%d mice on water restriction' % len(wr)
         text = "Mice on water restriction:\n"
         # Hench since 2017-04-20. Weight yesterday 27.2g (expected 30.0g, 90.7%).
         # Yesterday given 1.02mL (min 0.96mL, excess 0.06mL). Today requires 0.97mL.
@@ -96,7 +103,7 @@ class Command(BaseCommand):
                  Today requires {wr:.1f}mL.
                  '''  # noqa
             text += dedent(s)
-        self._send(user.email, subject, text)
+        return text
 
     def make_surgery(self, user):
         # Skip surgeries on stock managers.
@@ -109,20 +116,16 @@ class Command(BaseCommand):
         surgery_pending = sorted(subjects_user - surgery_done)
         if not surgery_pending:
             return
-        if not user.email:
-            logger.warn("Skipping user %s because there is no email.", user.username)
-            return
-        subject = '%d mice awaiting surgery' % len(surgery_pending)
         text = "Mice awaiting surgery:\n"
         text += '\n'.join('* %s' % nickname for nickname in surgery_pending)
-        self._send(user.email, subject, text)
+        return text
 
-    def make_actions(self):
+    def make_todo(self):
         tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')
-        tbc = Subject.objects.filter(to_be_culled=True).order_by('nickname')
+        tbc = Subject.objects.filter(death_date__isnull=True,
+                                     to_be_culled=True).order_by('nickname')
         tbr = Subject.objects.filter(death_date__isnull=False,
                                      reduced=False).order_by('nickname')
-        subject = '%d mice awaiting action' % (len(tbg) + len(tbc) + len(tbr))
 
         text = "%d mice to be genotyped:\n" % len(tbg)
         text += '\n'.join('* %s' % s.nickname for s in tbg)
@@ -133,5 +136,4 @@ class Command(BaseCommand):
         text += "\n\n%d mice to be reduced:\n" % len(tbr)
         text += '\n'.join('* %s' % s.nickname for s in tbr)
 
-        to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
-        self._send(to, subject, text)
+        return text
