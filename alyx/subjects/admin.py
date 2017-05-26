@@ -596,7 +596,7 @@ class BreedingPairAdminForm(forms.ModelForm):
 
 class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
-    list_display = ['name', 'line_l', 'start_date', 'end_date',
+    list_display = ['name', 'lamis_cage', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage', 'notes']
@@ -604,6 +604,9 @@ class BreedingPairAdmin(BaseAdmin):
                    ('line', RelatedDropdownFilter),
                    ]
     inlines = [LitterInline]
+
+    def lamis_cage(self, obj):
+        return obj.father.lamis_cage if obj.father else None
 
     def line_l(self, obj):
         url = get_admin_url(obj.line)
