@@ -1022,7 +1022,8 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date',
-                    'ear_mark', 'line', 'lamis_cage', 'responsible_user',
+                    'ear_mark', 'line', 'zygosities',
+                    'lamis_cage', 'responsible_user',
                     'death_date', 'to_be_culled', 'reduced',
                     ]
     ordering = ['-birth_date', '-nickname']
