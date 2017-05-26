@@ -201,6 +201,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                 kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
+    fields = ['subject', 'start_time', 'end_time', 'users', 'narrative']
     list_display = ['subject_l', 'start_time_l',
                     'reference_weighing', 'current_weighing',
                     'water_requirement_total',
