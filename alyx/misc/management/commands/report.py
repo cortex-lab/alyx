@@ -1,11 +1,15 @@
+from datetime import timedelta
 import inspect
 import logging
+from textwrap import dedent
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from alyx.base import alyx_mail
-from actions.models import Surgery, WaterRestriction
+from actions.models import Surgery, Weighing, WaterRestriction, WaterAdministration
+from actions import water
 from subjects.models import Subject, StockManager
 
 logger = logging.getLogger(__name__)
@@ -64,8 +68,34 @@ class Command(BaseCommand):
             return
         subject = '%d mice on water restriction' % len(wr)
         text = "Mice on water restriction:\n"
-        text += '\n'.join('* %s since %s' % (w.subject.nickname, w.start_time.date())
-                          for w in wr)
+        # Hench since 2017-04-20. Weight yesterday 27.2g (expected 30.0g, 90.7%).
+        # Yesterday given 1.02mL (min 0.96mL, excess 0.06mL). Today requires 0.97mL.
+        for w in wr:
+            sn = w.subject.nickname
+            sd = w.start_time.date()
+            today = timezone.now()
+            yesterday = today - timedelta(days=1)
+            # Weight yesterday.
+            wy = Weighing.objects.filter(subject=w.subject, date_time__date__lte=yesterday)
+            wy = wy.order_by('date_time').first()
+            wy = getattr(wy, 'weight', 0)
+            # Expected weight yesterday.
+            wye = water.expected_weighing(w.subject, date=yesterday)
+            wyep = 100. * wy / wye
+            way = WaterAdministration.objects.filter(subject=w.subject,
+                                                     date_time__date__lte=yesterday)
+            way = way.order_by('date_time').first()
+            way = getattr(way, 'water_administered', 0)
+            waym = water.water_requirement_total(w.subject, date=yesterday)
+            waye = way - waym
+            wr = water.water_requirement_total(w.subject)
+            s = f'''
+                 * {sn} since {sd}.
+                 Weight yesterday {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
+                 Yesterday given {way:.1f}mL (min {waym:.1f}mL, excess {waye:.1f}mL).
+                 Today requires {wr:.1f}mL.
+                 '''  # noqa
+            text += dedent(s)
         self._send(user.email, subject, text)
 
     def make_surgery(self, user):
