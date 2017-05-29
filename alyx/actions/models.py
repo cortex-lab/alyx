@@ -118,7 +118,7 @@ class VirusInjection(BaseAction):
 def _default_surgery_location():
     s = LabLocation.objects.filter(name='Surgery Room')
     if s:
-        return s[0]
+        return s[0].pk
     return None
 
 
