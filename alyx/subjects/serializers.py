@@ -5,11 +5,13 @@ from actions.serializers import (WeighingListSerializer,
                                  SessionListSerializer,
                                  )
 from django.contrib.auth.models import User
+from actions import water
 
 
 class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
     water_requirement_total = serializers.ReadOnlyField()
+    days_since_joined = serializers.SerializerMethodField()
     water_requirement_remaining = serializers.ReadOnlyField()
 
     class Meta:
@@ -98,8 +100,14 @@ class SubjectDetailSerializer(SubjectListSerializer):
     actions_sessions = SessionListSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
-    water_requirement_total = serializers.ReadOnlyField()
-    water_requirement_remaining = serializers.ReadOnlyField()
+    water_requirement_total = serializers.SerializerMethodField()
+    water_requirement_remaining = serializers.SerializerMethodField()
+
+    def get_water_requirement_total(self, obj):
+        return water.water_requirement_total(obj)
+
+    def get_water_requirement_remaining(self, obj):
+        return water.water_requirement_remaining(obj)
 
     source = serializers.SlugRelatedField(
         read_only=False,
