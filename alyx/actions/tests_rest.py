@@ -17,9 +17,9 @@ class APIActionsTests(BaseTests):
         response = self.client.post(url, data)
         self.ar(response, 201)
         d = response.data
-        assert d['date_time']
-        assert d['subject'] == self.subject.nickname
-        assert d['weight'] == 12.3
+        self.assertTrue(d['date_time'])
+        self.assertEqual(d['subject'], self.subject.nickname)
+        self.assertEqual(d['weight'], 12.3)
 
     def test_create_water_administration(self):
         url = reverse('water-administration-create')
@@ -27,6 +27,21 @@ class APIActionsTests(BaseTests):
         response = self.client.post(url, data)
         self.ar(response, 201)
         d = response.data
-        assert d['date_time']
-        assert d['subject'] == self.subject.nickname
-        assert d['water_administered'] == 1.23
+        self.assertTrue(d['date_time'])
+        self.assertEqual(d['subject'], self.subject.nickname)
+        self.assertEqual(d['water_administered'], 1.23)
+
+    def test_list_water_administration(self):
+        url = reverse('water-administration-create')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data[0]
+        self.assertTrue(set(('date_time', 'url', 'subject', 'user',
+                             'water_administered', 'hydrogel')) <= set(d))
+
+    def test_list_weighing(self):
+        url = reverse('weighing-create')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data[0]
+        self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
