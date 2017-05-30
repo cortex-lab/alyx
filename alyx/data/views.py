@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions, viewsets
-from .models import Dataset, FileRecord
+from .models import Dataset, FileRecord, DataRepository
 from electrophysiology.models import ExtracellularRecording
 
 from .serializers import (DatasetSerializer,
+                          DataRepositoryDetailSerializer,
                           FileRecordSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
@@ -17,6 +18,13 @@ class DatasetViewSet(viewsets.ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+
+class DataRepositoryDetail(generics.RetrieveAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = DataRepositoryDetailSerializer
+    queryset = DataRepository.objects.all()
+    lookup_field = 'name'
 
 
 class FileRecordViewSet(viewsets.ModelViewSet):

@@ -24,6 +24,7 @@ def api_root(request, format=None):
                                                  request=request, format=format),
         'sessions-url': reverse('session-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
+        'data-repository': reverse('data-repository', request=request, format=format),
         'weighings-url': reverse('weighing-create', request=request, format=format),
         'water-administrations-url': reverse('water-administration-create',
                                              request=request, format=format),

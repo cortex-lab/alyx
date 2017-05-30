@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Dataset, FileRecord
+from .models import Dataset, FileRecord, DataRepository, DataRepositoryType
 from actions.models import Session
 from electrophysiology.models import ExtracellularRecording
 
@@ -22,6 +22,24 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('__all__')
+
+
+class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
+
+    repository_type = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=DataRepositoryType.objects.all(),
+        allow_null=True,
+        required=False)
+
+    class Meta:
+        model = DataRepository
+        extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
+        extra_kwargs = {
+            'url': {'lookup_field': 'name'},
+        }
+        fields = ('name', 'path', 'repository_type')
 
 
 class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
