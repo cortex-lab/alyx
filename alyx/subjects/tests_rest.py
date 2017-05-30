@@ -61,10 +61,10 @@ class APISubjectsTests(BaseTests):
         self.assertTrue('water_administrations' in d)
         self.assertTrue(d['water_administrations'])
         wa = set(d['water_administrations'][0])
-        assert set(('date_time', 'water_administered', 'hydrogel', 'url')) <= wa
+        self.assertTrue(set(('date_time', 'water_administered', 'hydrogel', 'url')) <= wa)
 
     def test_subject_weighing(self):
-        subject = WaterAdministration.objects.first().subject
+        subject = Weighing.objects.first().subject
         url = reverse('subject-detail', kwargs={'nickname': subject.nickname})
         response = self.client.get(url)
         self.ar(response)
@@ -73,4 +73,13 @@ class APISubjectsTests(BaseTests):
         self.assertTrue('weighings' in d)
         self.assertTrue(d['weighings'])
         w = set(d['weighings'][0])
-        assert set(('date_time', 'weight', 'url')) <= w
+        self.assertTrue(set(('date_time', 'weight', 'url')) <= w)
+
+    def test_subject_restricted(self):
+        url = reverse('water-restricted-subject-list')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data
+
+        self.assertTrue(set(('nickname', 'water_requirement_total',
+                             'water_requirement_remaining')) <= set(d[0]))

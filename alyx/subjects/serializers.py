@@ -10,9 +10,15 @@ from actions import water
 
 class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
-    water_requirement_total = serializers.ReadOnlyField()
-    days_since_joined = serializers.SerializerMethodField()
-    water_requirement_remaining = serializers.ReadOnlyField()
+    water_requirement_total = serializers.SerializerMethodField()
+    water_requirement_remaining = serializers.SerializerMethodField()
+    # days_since_joined = serializers.SerializerMethodField()
+
+    def get_water_requirement_total(self, obj):
+        return water.water_requirement_total(obj)
+
+    def get_water_requirement_remaining(self, obj):
+        return water.water_requirement_remaining(obj)
 
     class Meta:
         model = Subject
