@@ -4,6 +4,7 @@ from electrophysiology.models import ExtracellularRecording
 
 from .serializers import (DatasetSerializer,
                           DataRepositoryDetailSerializer,
+                          DatasetFileRecordDetailSerializer,
                           FileRecordSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
@@ -25,6 +26,12 @@ class DataRepositoryDetail(generics.RetrieveAPIView):
     serializer_class = DataRepositoryDetailSerializer
     queryset = DataRepository.objects.all()
     lookup_field = 'name'
+
+
+class DatasetFileRecordDetail(generics.CreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = DatasetFileRecordDetailSerializer
+    queryset = FileRecord.objects.all()
 
 
 class FileRecordViewSet(viewsets.ModelViewSet):

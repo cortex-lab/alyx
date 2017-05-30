@@ -89,10 +89,11 @@ urlpatterns = [
 
     # data repository name => absolute path of the data repository name
     url(r'^data-repository/(?P<name>[-_\w].+)$', data_views.DataRepositoryDetail.as_view(),
-        name="datarepository-detail"),
+        name="data-repository-detail"),
 
     # data repository name, created_date, relative path to file => create a Dataset and FileRecord
-    # url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name=""),
+    url(r'^dataset-filerecord$', data_views.DatasetFileRecordDetail.as_view(),
+        name="dataset-filerecord-detail"),
 
     url(r'^users$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+) $', user_detail, name='user-detail'),
