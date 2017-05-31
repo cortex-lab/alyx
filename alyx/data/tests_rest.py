@@ -29,7 +29,8 @@ class APIDataTests(BaseTests):
         self.ar(r)
         self.assertEqual(r.data[0]['name'], 'dst')
 
-    def test_dataset(self):
+    def test_dataset_filerecord(self):
+        # Create a dataset.
         data = {'name': 'mydataset',
                 'dataset_type': 'dst',
                 }
@@ -38,7 +39,24 @@ class APIDataTests(BaseTests):
 
         r = self.client.get(reverse('dataset-list'))
         self.ar(r)
+        self.assertTrue(r.data[0]['url'] is not None)
+        self.assertTrue(r.data[0]['created_date'] is not None)
         self.assertEqual(r.data[0]['name'], 'mydataset')
         self.assertEqual(r.data[0]['dataset_type'], 'dst')
         self.assertEqual(r.data[0]['created_by'], 'test')
-        self.assertTrue(r.data[0]['created_date'] is not None)
+
+        # Create a file record.
+        dataset = r.data[0]['url']
+        data = {'dataset': dataset,
+                'data_repository': 'dr',
+                'relative_path': 'path/to/file',
+                }
+        r = self.client.post(reverse('filerecord-list'), data)
+        self.ar(r, 201)
+
+        r = self.client.get(reverse('filerecord-list'))
+        self.ar(r)
+        self.assertTrue(r.data[0]['url'] is not None)
+        self.assertEqual(r.data[0]['dataset'], dataset)
+        self.assertEqual(r.data[0]['data_repository'], 'dr')
+        self.assertEqual(r.data[0]['relative_path'], 'path/to/file')
