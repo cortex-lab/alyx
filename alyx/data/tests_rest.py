@@ -40,6 +40,8 @@ class APIDataTests(BaseTests):
         r = self.client.get(reverse('dataset-list'))
         self.ar(r)
         self.assertTrue(r.data[0]['url'] is not None)
+        # Test using the returned URL.
+        self.assertEqual(self.client.get(r.data[0]['url']).data['name'], 'mydataset')
         self.assertTrue(r.data[0]['created_date'] is not None)
         self.assertEqual(r.data[0]['name'], 'mydataset')
         self.assertEqual(r.data[0]['dataset_type'], 'dst')
@@ -57,6 +59,8 @@ class APIDataTests(BaseTests):
         r = self.client.get(reverse('filerecord-list'))
         self.ar(r)
         self.assertTrue(r.data[0]['url'] is not None)
+        # Test using the returned URL.
+        self.assertEqual(self.client.get(r.data[0]['url']).data['relative_path'], 'path/to/file')
         self.assertEqual(r.data[0]['dataset'], dataset)
         self.assertEqual(r.data[0]['data_repository'], 'dr')
         self.assertEqual(r.data[0]['relative_path'], 'path/to/file')
