@@ -20,19 +20,23 @@ def api_root(request, format=None):
     return Response({
         'users-url': reverse('user-list', request=request, format=format),
         'subjects-url': reverse('subject-list', request=request, format=format),
+
         'water-restricted-subjects-url': reverse('water-restricted-subject-list',
                                                  request=request, format=format),
         'sessions-url': reverse('session-list', request=request, format=format),
+
+        'datarepositorytype-url': reverse('datarepositorytype-list', request=request,
+                                          format=format),
+        'datarepository-url': reverse('datarepository-list', request=request, format=format),
+
+        'dataset-types-url': reverse('datasettype-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
-        'dataset-filerecord-url': reverse('dataset-filerecord-detail',
-                                          request=request, format=format),
-        'data-repository-url': reverse('data-repository-detail', request=request, format=format,
-                                       kwargs={'name': None}),
+        'files-url': reverse('filerecord-list', request=request, format=format),
+
         'weighings-url': reverse('weighing-create', request=request, format=format),
         'water-administrations-url': reverse('water-administration-create',
                                              request=request, format=format),
         'exp-metadata-url': reverse('exp-metadata-list', request=request, format=format),
-        'files-url': reverse('filerecord-list', request=request, format=format)
     })
 
 

@@ -46,10 +46,10 @@ class FileRecord(BaseModel):
     the JSON
     """
     dataset = models.ForeignKey('Dataset', related_name=_related_string('dataset'))
+    data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
     relative_path = models.CharField(
         max_length=1000, blank=True,
         help_text="path name within repository")
-    data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
 
     def __str__(self):
         return self.filename

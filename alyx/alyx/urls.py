@@ -34,6 +34,43 @@ dataset_detail = data_views.DatasetViewSet.as_view({
     'delete': 'destroy'
 })
 
+
+datasettype_list = data_views.DatasetTypeViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+datasettype_detail = data_views.DatasetTypeViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
+datarepository_list = data_views.DataRepositoryViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+datarepository_detail = data_views.DataRepositoryViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
+datarepositorytype_list = data_views.DataRepositoryTypeViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+datarepositorytype_detail = data_views.DataRepositoryTypeViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
 filerecord_list = data_views.FileRecordViewSet.as_view({
     'get': 'list',
     'post': 'create'
@@ -44,6 +81,7 @@ filerecord_detail = data_views.FileRecordViewSet.as_view({
     'patch': 'partial_update',
     'delete': 'destroy'
 })
+
 
 user_list = misc_views.UserViewSet.as_view({
     'get': 'list'
@@ -81,19 +119,24 @@ urlpatterns = [
     url(r'^exp-metadata/(?P<pk>[-_\w].+)$', data_views.ExpMetadataDetail.as_view(),
         name="exp-metadata-detail"),
 
+
+    url(r'^data-repository-type$', datarepositorytype_list, name="datarepositorytype-list"),
+    url(r'^data-repository-type/(?P<name>[-_\w].+)$', datarepositorytype_detail,
+        name="datarepositorytype-detail"),
+
+    url(r'^data-repository$', datarepository_list, name="datarepository-list"),
+    url(r'^data-repository/(?P<name>[-_\w].+)$', datarepository_detail,
+        name="datarepository-detail"),
+
+    url(r'^dataset-types$', datasettype_list, name="datasettype-list"),
+    url(r'^dataset-types/(?P<name>[-_\w].+)$', datasettype_detail, name="datasettype-detail"),
+
     url(r'^datasets$', dataset_list, name="dataset-list"),
     url(r'^datasets/(?P<pk>[-_\w].+)$', dataset_detail, name="dataset-detail"),
 
     url(r'^files$', filerecord_list, name="filerecord-list"),
     url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name="filerecord-detail"),
 
-    # data repository name => absolute path of the data repository name
-    url(r'^data-repository/(?P<name>[-_\w].+)$', data_views.DataRepositoryDetail.as_view(),
-        name="data-repository-detail"),
-
-    # data repository name, created_date, relative path to file => create a Dataset and FileRecord
-    url(r'^dataset-filerecord$', data_views.DatasetFileRecordDetail.as_view(),
-        name="dataset-filerecord-detail"),
 
     url(r'^users$', user_list, name='user-list'),
     url(r'^users/(?P<username>[-_\w].+) $', user_detail, name='user-detail'),
