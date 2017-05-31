@@ -21,6 +21,7 @@ from subjects import views as subjects_views
 from actions import views as actions_views
 from data import views as data_views
 from misc import views as misc_views
+from .views import raw_views
 
 
 dataset_list = data_views.DatasetViewSet.as_view({
@@ -105,5 +106,7 @@ urlpatterns = [
 
     url(r'^admin-subjects/', include('subjects.urls')),
     url(r'^admin-actions/', include('actions.urls')),
+
+    url(r'^raw-sql/', raw_views),
 
 ]
