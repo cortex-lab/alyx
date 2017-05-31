@@ -38,6 +38,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
         queryset=User.objects.all(),
+        default=serializers.CurrentUserDefault(),
     )
 
     dataset_type = serializers.SlugRelatedField(
@@ -46,7 +47,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     )
 
     session = serializers.HyperlinkedRelatedField(
-        read_only=False, view_name="session-detail",
+        read_only=False, required=False, view_name="session-detail",
         queryset=Session.objects.all(),
     )
 
