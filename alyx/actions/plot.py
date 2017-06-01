@@ -97,7 +97,7 @@ def weighing_plot(request, subject_id=None):
 
     # Axes and legends.
     plt.xlim(start, end)
-    plt.ylim(*ylim)
+    # plt.ylim(*ylim)
     ax.set_title("Weighings for %s" % subj.nickname)
     plt.xlabel('Date')
     plt.ylabel('Weight (g)')
