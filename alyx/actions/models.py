@@ -95,6 +95,14 @@ class BaseAction(BaseModel):
         return (str(self.subject) + " at " +
                 str(getattr(self, 'start_time', 'no time')))
 
+    def save(self, *args, **kwargs):
+        if (not self.users.all() and
+                not self.location and
+                not self.procedures.all() and
+                not self.narrative):
+            raise RuntimeError("Cannot create an empty base action.")
+        return super(BaseAction, self).save(*args, **kwargs)
+
     class Meta:
         abstract = True
 
