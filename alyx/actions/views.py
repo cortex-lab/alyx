@@ -1,3 +1,4 @@
+from collections import defaultdict
 import itertools
 from operator import itemgetter
 
@@ -7,6 +8,8 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from subjects.models import Subject
+from . import water
 from .models import Session, WaterAdministration, Weighing
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
@@ -132,23 +135,36 @@ class WaterRequirement(APIView):
         assert nickname
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
+        subject = Subject.objects.get(nickname=nickname)
         ws = Weighing.objects.filter(subject__nickname=nickname,
                                      date_time__date__gte=start_date,
                                      date_time__date__lte=end_date,
-                                     ).order_by('date_time')
+                                     )
         was = WaterAdministration.objects.filter(subject__nickname=nickname,
                                                  date_time__date__gte=start_date,
                                                  date_time__date__lte=end_date,
-                                                 ).order_by('date_time')
+                                                 ).order_by('date_time', 'hydrogel')
         wl = [{'date': w.date_time.date(),
-               'measured_weight': w.weight or None,
-               'expected_weight': w.expected() or None,
+               'weight_measured': w.weight or None,
                } for w in ws]
         was = [{'date': wa.date_time.date(),
                 'hydrogel': wa.hydrogel,
-                'water_given': wa.water_administered or None,
-                'water_expected': wa.expected() or None,
+                'administered': wa.water_administered or None,
                 } for wa in was]
-        records = _merge_lists_dicts(wl, was, 'date')
+        was_out = {}
+        # Group by date and hydrogel and make the sum of the water administered.
+        for wa in was:
+            date = wa['date']
+            if date not in was_out:
+                was_out[date] = defaultdict(float)
+            h = wa['hydrogel']
+            name = 'hydrogel_given' if h else 'water_given'
+            was_out[date][name] += wa['administered']
+            was_out[date]['date'] = date
+        was_out = [was_out[d] for d in sorted(was_out.keys())]
+        for wa in was_out:
+            wa['water_expected'] = water.water_requirement_total(subject, wa['date'])
+            wa['weight_expected'] = water.expected_weighing(subject, wa['date'])
+        records = _merge_lists_dicts(wl, was_out, 'date')
         data = {'subject': nickname, 'records': records}
         return Response(data)

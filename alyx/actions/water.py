@@ -1,4 +1,5 @@
 import csv
+import datetime
 import functools
 import logging
 import os.path as op
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def today():
-    return timezone.now()
+    return timezone.now().date()
 
 
 # Keep the tables in memory instead of reloading the CSV files.
@@ -41,14 +42,16 @@ def expected_weighing_mean_std(sex, age_w):
 def to_weeks(birth_date, dt):
     if not dt:
         return 0
-    return (dt.date() - birth_date).days // 7
+    if isinstance(dt, datetime.datetime):
+        dt = dt.date()
+    return (dt - birth_date).days // 7
 
 
 def last_water_restriction(subject, date=None):
     """Start of the last ongoing water restriction before specified date."""
     restriction = WaterRestriction.objects.filter(subject=subject,
                                                   end_time__isnull=True,
-                                                  start_time__lte=date or today(),
+                                                  start_time__date__lte=date or today(),
                                                   )
     restriction = restriction.order_by('-start_time').first()
     if not restriction:
@@ -62,11 +65,11 @@ def reference_weighing(subject, date=None):
     if not wr_date:
         return None
     return Weighing.objects.filter(subject=subject,
-                                   date_time__lte=wr_date).order_by('-date_time').first()
+                                   date_time__date__lte=wr_date).order_by('-date_time').first()
 
 
 def current_weighing(subject, date=None):
-    return (Weighing.objects.filter(subject=subject, date_time__lte=date or today()).
+    return (Weighing.objects.filter(subject=subject, date_time__date__lte=date or today()).
             order_by('-date_time').first())
 
 
@@ -85,6 +88,8 @@ def weight_zscore(subject, date=None, rw=None):
 
 
 def expected_weighing(subject, date=None, rw=None):
+    if isinstance(date, datetime.datetime):
+        date = date.date()
     date = date or today()
     rw = rw or reference_weighing(subject, date=date)
     if not rw:
