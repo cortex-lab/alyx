@@ -44,6 +44,7 @@ DEFAULT_PROTOCOL = '1'
 SUPERUSERS = ('charu', 'nick', 'max', 'cyrille')
 STOCK_MANAGERS = ('charu',)
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 LOGGING = {
     'version': 1,
