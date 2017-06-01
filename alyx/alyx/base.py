@@ -6,7 +6,6 @@ import uuid
 from django import forms
 from django.db import models
 from django.conf import settings
-from django.conf.locale.en import formats as en_formats
 from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
@@ -18,7 +17,6 @@ from rest_framework.test import APITestCase
 
 
 logger = logging.getLogger(__name__)
-en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 

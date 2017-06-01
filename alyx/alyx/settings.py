@@ -19,6 +19,10 @@ except ImportError:
     # to keep Django happy...
     from .settings_secret_template import *  # noqa
 
+from django.conf.locale.en import formats as en_formats
+en_formats.DATETIME_FORMAT = "d/m/Y H:i"
+DATE_INPUT_FORMATS = ('%d/%m/%Y',)
+
 
 if 'TRAVIS' in os.environ:
     DATABASES = {
@@ -188,13 +192,10 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'GB'
 
-USE_I18N = True
-
-USE_L10N = True
-
+USE_I18N = False
+USE_L10N = False
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
