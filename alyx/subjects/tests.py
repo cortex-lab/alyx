@@ -3,6 +3,7 @@ from operator import attrgetter
 import os.path as op
 import sys
 from uuid import UUID
+import warnings
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -18,13 +19,37 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 
 
-class ModelAdminTests(TestCase):
+class MyTestsMeta(type):
+    """Metaclass to generate one test per model dynamically."""
+    def __new__(cls, name, bases, attrs):
+        classes = sorted(mysite._registry, key=attrgetter('__name__'))
+        for my_class in classes:
+            name = my_class.__name__
+            attrs['test_%s' % name] = cls.gen(my_class)
+        return super(MyTestsMeta, cls).__new__(cls, name, bases, attrs)
+
+    @classmethod
+    def gen(cls, my_class):
+        # Return a testcase that tests ``x``.
+        def fn(self):
+            self._test_class(my_class)
+        return fn
+
+
+class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
     def setUp(self):
+        # Fail on warning.
+        warnings.simplefilter("error")
+
         self.site = mysite
         self.factory = RequestFactory()
         request = self.factory.get('/')
         request.csrf_processing_done = True
         self.request = request
+        self.users = [User.objects.get(pk=pk) for pk in (2, 3, 5)]
+
+    def tearDown(self):
+        warnings.simplefilter('default')
 
     @classmethod
     def setUpTestData(cls):
@@ -32,7 +57,7 @@ class ModelAdminTests(TestCase):
 
     def ar(self, r):
         r.render()
-        self.assertTrue(r.status_code == 200)
+        self.assertEqual(r.status_code, 200)
 
     def _test_list_change(self, ma):
         # List of subjects.
@@ -63,9 +88,7 @@ class ModelAdminTests(TestCase):
 
         # TODO: test saving
 
-    def test_model_admins(self):
-        names = sorted(self.site._registry, key=attrgetter('__name__'))
-        for name in names:
-            for pk in (2, 3, 5):  # test with different users
-                self.request.user = User.objects.get(pk=pk)
-                self._test_list_change(self.site._registry[name])
+    def _test_class(self, cls):
+        for user in self.users:  # test with different users
+            self.request.user = user
+            self._test_list_change(self.site._registry[cls])
