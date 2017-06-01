@@ -18,6 +18,7 @@ def _dump_all(path):
                  '-e', 'contenttypes',
                  '-e', 'auth.permission',
                  '-e', 'admin.logentry',
+                 '-e', 'reversion.version',
                  '--indent', '1', '-o', path)
 
 
