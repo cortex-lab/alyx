@@ -63,6 +63,10 @@ class WaterAdministration(BaseModel):
                                            help_text="Water administered, in millilitres")
     hydrogel = models.NullBooleanField()
 
+    def expected(self):
+        from .water import water_requirement_total
+        return water_requirement_total(self.subject, date=self.date_time)
+
     def __str__(self):
         return str(self.subject) + " at " + str(self.date_time)
 

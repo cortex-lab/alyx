@@ -44,6 +44,7 @@ def to_weeks(birth_date, dt):
     return (dt.date() - birth_date).days // 7
 
 
+@functools.lru_cache()
 def last_water_restriction(subject, date=None):
     """Start of the last ongoing water restriction before specified date."""
     restriction = WaterRestriction.objects.filter(subject=subject,
@@ -56,6 +57,7 @@ def last_water_restriction(subject, date=None):
     return restriction.start_time
 
 
+@functools.lru_cache()
 def reference_weighing(subject, date=None):
     """Last weighing before the last ongoing water restriction."""
     wr_date = last_water_restriction(subject, date=date)
@@ -65,6 +67,7 @@ def reference_weighing(subject, date=None):
                                    date_time__lte=wr_date).order_by('-date_time').first()
 
 
+@functools.lru_cache()
 def current_weighing(subject, date=None):
     return (Weighing.objects.filter(subject=subject, date_time__lte=date or today()).
             order_by('-date_time').first())
@@ -84,6 +87,7 @@ def weight_zscore(subject, date=None, rw=None):
     return (weight - iw - mrw) / srw
 
 
+@functools.lru_cache()
 def expected_weighing(subject, date=None, rw=None):
     date = date or today()
     rw = rw or reference_weighing(subject, date=date)
@@ -96,6 +100,7 @@ def expected_weighing(subject, date=None, rw=None):
     return (srw * subj_zscore) + mrw + iw
 
 
+@functools.lru_cache()
 def water_requirement_total(subject, date=None):
     """Returns the amount of water the subject needs today in total"""
     if not last_water_restriction(subject, date=date):
@@ -112,6 +117,7 @@ def water_requirement_total(subject, date=None):
     return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
 
 
+@functools.lru_cache()
 def water_requirement_remaining(subject, date=None):
     """Returns the amount of water the subject still needs, given how much it got already today"""
     if not last_water_restriction(subject, date=date):

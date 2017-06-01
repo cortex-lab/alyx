@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils.timezone import now
 
 from alyx.base import BaseTests
 from subjects.models import Subject
@@ -45,3 +46,20 @@ class APIActionsTests(BaseTests):
         self.ar(response)
         d = response.data[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
+
+    def test_water_requirement(self):
+        # Create water administered and weighing.
+        self.client.post(reverse('water-administration-create'),
+                         {'subject': self.subject, 'water_administered': 1.23})
+        self.client.post(reverse('weighing-create'),
+                         {'subject': self.subject, 'weight': 12.3})
+
+        url = reverse('water-requirement', kwargs={'nickname': self.subject.nickname})
+
+        date = now().date()
+        response = self.client.get(url + '?start_date=%s&end_date=%s' % (date, date))
+        self.ar(response)
+        d = response.data
+        self.assertEqual(d['subject'], self.subject.nickname)
+        self.assertTrue(set(('date', 'measured_weight', 'expected_weight', 'hydrogel',
+                             'water_given', 'water_expected')) <= set(d['records'][0]))

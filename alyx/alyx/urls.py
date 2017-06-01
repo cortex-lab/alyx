@@ -144,6 +144,9 @@ urlpatterns = [
     url(r'^water-restricted-subjects$', subjects_views.WaterRestrictedSubjectList.as_view(),
         name="water-restricted-subject-list"),
 
+    url(r'^water-requirement/(?P<nickname>[-._~\w]+)$', actions_views.WaterRequirement.as_view(),
+        name='water-requirement'),
+
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^admin-subjects/', include('subjects.urls')),

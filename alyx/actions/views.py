@@ -1,4 +1,11 @@
+import itertools
+from operator import itemgetter
+
+import django_filters
+from django_filters.rest_framework import FilterSet
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Session, WaterAdministration, Weighing
 from .serializers import (SessionListSerializer,
@@ -8,9 +15,6 @@ from .serializers import (SessionListSerializer,
                           WeighingListSerializer,
                           WeighingDetailSerializer,
                           )
-
-import django_filters
-from django_filters.rest_framework import FilterSet
 
 
 class SessionFilter(FilterSet):
@@ -108,3 +112,43 @@ class WaterAdministrationAPIDetail(generics.RetrieveDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
+
+
+def _merge_lists_dicts(la, lb, key):
+    lst = sorted(itertools.chain(la, lb), key=itemgetter(key))
+    out = []
+    for k, v in itertools.groupby(lst, key=itemgetter(key)):
+        d = {}
+        for dct in v:
+            d.update(dct)
+        out.append(d)
+    return out
+
+
+class WaterRequirement(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None, nickname=None):
+        assert nickname
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+        ws = Weighing.objects.filter(subject__nickname=nickname,
+                                     date_time__date__gte=start_date,
+                                     date_time__date__lte=end_date,
+                                     ).order_by('date_time')
+        was = WaterAdministration.objects.filter(subject__nickname=nickname,
+                                                 date_time__date__gte=start_date,
+                                                 date_time__date__lte=end_date,
+                                                 ).order_by('date_time')
+        wl = [{'date': w.date_time.date(),
+               'measured_weight': w.weight or None,
+               'expected_weight': w.expected() or None,
+               } for w in ws]
+        was = [{'date': wa.date_time.date(),
+                'hydrogel': wa.hydrogel,
+                'water_given': wa.water_administered or None,
+                'water_expected': wa.expected() or None,
+                } for wa in was]
+        records = _merge_lists_dicts(wl, was, 'date')
+        data = {'subject': nickname, 'records': records}
+        return Response(data)
