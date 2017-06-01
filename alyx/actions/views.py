@@ -162,9 +162,13 @@ class WaterRequirement(APIView):
             was_out[date][name] += wa['administered']
             was_out[date]['date'] = date
         was_out = [was_out[d] for d in sorted(was_out.keys())]
-        for wa in was_out:
-            wa['water_expected'] = water.water_requirement_total(subject, wa['date'])
-            wa['weight_expected'] = water.expected_weighing(subject, wa['date'])
         records = _merge_lists_dicts(wl, was_out, 'date')
+        for r in records:
+            r['water_expected'] = water.water_requirement_total(subject, r['date'])
+            r['weight_expected'] = water.expected_weighing(subject, r['date'])
+            if 'water_given' not in r:
+                r['water_given'] = 0.
+            if 'hydrogel_given' not in r:
+                r['hydrogel_given'] = 0.
         data = {'subject': nickname, 'records': records}
         return Response(data)

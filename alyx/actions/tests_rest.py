@@ -61,5 +61,5 @@ class APIActionsTests(BaseTests):
         self.ar(response)
         d = response.data
         self.assertEqual(d['subject'], self.subject.nickname)
-        self.assertTrue(set(('date', 'measured_weight', 'expected_weight', 'hydrogel',
-                             'water_given', 'water_expected')) <= set(d['records'][0]))
+        self.assertTrue(set(('date', 'weight_measured', 'weight_expected', 'water_expected',
+                             'water_given', 'hydrogel_given',)) <= set(d['records'][0]))
