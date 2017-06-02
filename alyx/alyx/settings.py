@@ -96,7 +96,7 @@ LOGGING = {
 }
 
 
-if 'TRAVIS' in os.environ:
+if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
     LOGGING['handlers']['file']['filename'] = 'alyx.log'
 
 
