@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework.authtoken import views as av
+from rest_framework.documentation import include_docs_urls
 
 from subjects import views as subjects_views
 from actions import views as actions_views
@@ -94,6 +95,8 @@ admin.site.site_header = 'Alyx'
 
 urlpatterns = [
     url(r'^$', misc_views.api_root),
+    url(r'^docs/', include_docs_urls(title='Alyx REST API documentation')),
+
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token', av.obtain_auth_token),
 

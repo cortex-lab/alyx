@@ -78,7 +78,7 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ExtracellularRecording
-        fields = ('classname', 'json', 'start_time', 'end_time', 'session', 'url')
+        fields = ('classname', 'json', 'nominal_start_time', 'nominal_end_time', 'session', 'url')
         extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}
 
 
