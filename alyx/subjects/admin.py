@@ -1023,7 +1023,7 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'birth_date',
+    list_display = ['nickname', 'birth_date', 'sex_f',
                     'ear_mark', 'line', 'zygosities',
                     'lamis_cage', 'responsible_user',
                     'death_date', 'to_be_culled', 'reduced',
@@ -1034,6 +1034,10 @@ class CullMiceAdmin(SubjectAdmin):
                    ('line', RelatedDropdownFilter),
                    ]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
+
+    def sex_f(self, obj):
+        return obj.sex[0] if obj.sex else ''
+    sex_f.short_description = 'sex'
 
     def has_add_permission(self, request):
         return False
