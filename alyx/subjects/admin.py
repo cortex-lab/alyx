@@ -268,7 +268,7 @@ class SubjectAdmin(BaseAdmin):
                        'weighing_plot',
                        )
     ordering = ['-birth_date', '-nickname']
-    list_editable = ['responsible_user']
+    list_editable = []
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ZygosityFilter,
@@ -379,6 +379,14 @@ class SubjectAdmin(BaseAdmin):
             field.queryset = field.queryset.filter(is_active=True)
 
         return field
+
+    def changelist_view(self, request, extra_context=None):
+        """Restrict ability to change responsible user on the subjects list view."""
+        if request.user.is_superuser or StockManager.objects.filter(user=request.user):
+            self.list_editable = ['responsible_user']
+        else:
+            self.list_editable = []
+        return super(SubjectAdmin, self).changelist_view(request, extra_context)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -960,7 +968,15 @@ class SequenceAdmin(BaseAdmin):
 
 
 class MyUserAdmin(UserAdmin):
-    ordering = ['nickname']
+    ordering = ['username']
+    list_display = ['username', 'email', 'first_name', 'last_name',
+                    'groups_l',
+                    'is_staff', 'is_superuser',
+                    ]
+
+    def groups_l(self, obj):
+        return ', '.join(map(str, obj.groups.all()))
+    groups_l.short_description = 'groups'
 
 
 class StockManagerAdmin(BaseAdmin):
@@ -978,7 +994,7 @@ mysite.index_title = 'Welcome to Alyx'
 
 admin.site = mysite
 
-mysite.register(User, UserAdmin)
+mysite.register(User, MyUserAdmin)
 mysite.register(StockManager, StockManagerAdmin)
 mysite.register(Group)
 
