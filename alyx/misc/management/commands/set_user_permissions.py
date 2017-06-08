@@ -30,6 +30,12 @@ class Command(BaseCommand):
         group.permissions.add(Permission.objects.get(codename='delete_waterrestriction'))
         group.permissions.add(Permission.objects.get(codename='delete_weighing'))
         group.permissions.add(Permission.objects.get(codename='delete_subjectrequest'))
+
+        # Exclude some permissions.
+        for m in ('user', 'ordereduser', 'group', 'permission'):
+            group.permissions.remove(Permission.objects.get(codename='add_%s' % m))
+            group.permissions.remove(Permission.objects.get(codename='change_%s' % m))
+
         group.save()
         self.stdout.write("%d permissions have been set on group %s." %
                           (len(group.permissions.all()), group))
