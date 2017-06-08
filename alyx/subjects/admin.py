@@ -122,6 +122,12 @@ class TodoFilter(DefaultListFilter):
             return queryset.filter(death_date__isnull=False, reduced=False)
 
 
+class LineDropdownFilter(RelatedDropdownFilter):
+    def field_choices(self, field, request, model_admin):
+        """Only show active lines in dropdown filters."""
+        return field.get_choices(include_blank=False, limit_choices_to={'is_active': True})
+
+
 # Subject
 # ------------------------------------------------------------------------------------------------
 
@@ -267,7 +273,7 @@ class SubjectAdmin(BaseAdmin):
                    ResponsibleUserListFilter,
                    ZygosityFilter,
                    TodoFilter,
-                   ('line', RelatedDropdownFilter),
+                   ('line', LineDropdownFilter),
                    ]
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
@@ -367,7 +373,12 @@ class SubjectAdmin(BaseAdmin):
                                                                    )
             except (IndexError, ValidationError):
                 pass
-        return super(SubjectAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+        field = super(SubjectAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'line':
+            field.queryset = field.queryset.filter(is_active=True)
+
+        return field
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -603,7 +614,7 @@ class BreedingPairAdmin(BaseAdmin):
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage', 'notes']
     list_filter = [BreedingPairFilter,
-                   ('line', RelatedDropdownFilter),
+                   ('line', LineDropdownFilter),
                    ]
     inlines = [LitterInline]
 
@@ -682,7 +693,7 @@ class LitterAdmin(BaseAdmin):
               'breeding_pair', 'birth_date',
               'notes',
               ]
-    list_filter = [('line', RelatedDropdownFilter),
+    list_filter = [('line', LineDropdownFilter),
                    ]
     form = LitterForm
 
@@ -758,14 +769,34 @@ class BreedingPairInline(BaseInlineAdmin):
         return field
 
 
+class LineFilter(DefaultListFilter):
+    title = 'active lines'
+    parameter_name = 'is_active'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Active'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(is_active=True)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'target_phenotype', 'strain', 'species', 'description',
+    fields = ['name', 'auto_name', 'target_phenotype', 'is_active',
+              'strain', 'species', 'description',
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
               ]
-    list_display = ['name', 'auto_name', 'target_phenotype', 'strain']
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'is_active']
     ordering = ['auto_name']
+    list_filter = [LineFilter]
+    list_editable = ['is_active']
 
     inlines = [SubjectRequestInline, SubjectInline, SequencesInline, BreedingPairInline]
 
@@ -864,7 +895,7 @@ class SubjectRequestAdmin(BaseAdmin):
     readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
     list_filter = [SubjectRequestUserListFilter,
                    SubjectRequestStatusListFilter,
-                   ('line', RelatedDropdownFilter),
+                   ('line', LineDropdownFilter),
                    ]
     inlines = [SubjectInlineNonEditable]
 
@@ -1031,7 +1062,7 @@ class CullMiceAdmin(SubjectAdmin):
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
-                   ('line', RelatedDropdownFilter),
+                   ('line', LineDropdownFilter),
                    ]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 

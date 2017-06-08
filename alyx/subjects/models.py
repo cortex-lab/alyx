@@ -417,6 +417,7 @@ class Line(BaseModel):
     subject_autoname_index = models.IntegerField(default=0)
     breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
 
     objects = LineManager()
 
