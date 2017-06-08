@@ -123,7 +123,7 @@ def _get_category_list(app_list):
                     for app in app_list
                     for model in app['models']}
     category_list = [Bunch(name=name,
-                           models=[models_dict[m] for m in model_names],
+                           models=[models_dict[m] for m in model_names if m in models_dict],
                            collapsed='' if name == 'Common' else 'collapsed'
                            )
                      for name, model_names in order]
