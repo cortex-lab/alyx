@@ -97,12 +97,13 @@ class Command(BaseCommand):
             waym = water.water_requirement_total(w.subject, date=yesterday)
             waye = way - waym
             wr = water.water_requirement_total(w.subject)
-            s = f'''
-                 * {sn} since {sd}.
-                 Weight yesterday {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
-                 Yesterday given {way:.1f}mL (min {waym:.1f}mL, excess {waye:.1f}mL).
-                 Today requires {wr:.1f}mL.
-                 '''  # noqa
+            s = '''
+                * {sn} since {sd}.
+                Weight yesterday {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
+                Yesterday given {way:.1f}mL (min {waym:.1f}mL, excess {waye:.1f}mL).
+                Today requires {wr:.1f}mL.
+                '''.format(sn=sn, sd=sd, wy=wy, wye=wye, wyep=wyep,
+                           way=way, waym=waym, waye=waye, wr=wr)  # noqa
             text += dedent(s)
         return text
 
