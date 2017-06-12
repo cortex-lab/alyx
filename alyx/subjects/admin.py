@@ -469,14 +469,14 @@ class SubjectInlineForm(forms.ModelForm):
 class SubjectInline(BaseInlineAdmin):
     model = Subject
     extra = 1
-    fields = ('nickname', 'birth_date', 'wean_date', 'genotype_date', 'to_be_genotyped',
+    fields = ('nickname', 'birth_date', 'alive', 'wean_date', 'genotype_date', 'to_be_genotyped',
               'age_weeks', 'sex', 'line',
               'litter', 'lamis_cage',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
               'ear_mark', 'notes')
-    readonly_fields = ('age_weeks',
+    readonly_fields = ('age_weeks', 'alive',
                        'sequence0', 'sequence1', 'sequence2',
                        )
     list_editable = ('lamis_cage',)
@@ -512,6 +512,10 @@ class SubjectInline(BaseInlineAdmin):
             sequences = line.sequences.all()
             if i < len(sequences):
                 return sequences[i]
+
+    def alive(self, obj):
+        return obj.alive()
+    alive.boolean = True
 
     def sequence0(self, obj):
         return self._get_sequence(obj, 0)
