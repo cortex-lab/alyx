@@ -111,27 +111,32 @@ class Command(BaseCommand):
             sn = w.subject.nickname
             sd = w.start_time.date()
             today = timezone.now()
-            yesterday = today - timedelta(days=1)
+            yesterday = (today - timedelta(days=1)).date()
             # Weight yesterday.
             wy = Weighing.objects.filter(subject=w.subject, date_time__date__lte=yesterday)
-            wy = wy.order_by('date_time').first()
+            wy = wy.order_by('-date_time').first()
+            # Last date with weighing, might be yesterday or earlier.
+            last_date = wy.date_time.date()
+            # Number of days ago.
+            n = (today.date() - last_date).days
             wy = getattr(wy, 'weight', 0)
             # Expected weight yesterday.
-            wye = water.expected_weighing(w.subject, date=yesterday)
+            wye = water.expected_weighing(w.subject, date=last_date)
             wyep = 100. * wy / wye
             way = WaterAdministration.objects.filter(subject=w.subject,
-                                                     date_time__date__lte=yesterday)
-            way = way.order_by('date_time').first()
+                                                     date_time__date__lte=last_date)
+            way = way.order_by('-date_time').first()
             way = getattr(way, 'water_administered', 0)
-            waym = water.water_requirement_total(w.subject, date=yesterday)
+            waym = water.water_requirement_total(w.subject, date=last_date)
             waye = way - waym
             wr = water.water_requirement_total(w.subject)
             s = '''
                 * {sn} since {sd}.
-                Weight yesterday {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
-                Yesterday given {way:.1f}mL (min {waym:.1f}mL, excess {waye:.1f}mL).
-                Today requires {wr:.1f}mL.
+                Weight {n} day(s) ago: {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
+                Given {way:.2f}mL (min {waym:.2f}mL, excess {waye:.2f}mL).
+                Today requires {wr:.2f}mL.
                 '''.format(sn=sn, sd=sd, wy=wy, wye=wye, wyep=wyep,
+                           n=n,
                            way=way, waym=waym, waye=waye, wr=wr)  # noqa
             text += dedent(s)
         return text
