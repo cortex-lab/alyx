@@ -39,8 +39,8 @@ def _repr_log_entry(l):
         # l.content_type,
 
         # NOTE: use this when debugging repr (the repr string is directly saved in the LogEntry)
-        str(l.get_edited_object()),
-        # l.object_repr,
+        # str(l.get_edited_object()),
+        l.object_repr,
 
         changed,
     )
@@ -157,7 +157,7 @@ class Command(BaseCommand):
 
     def make_past_changes(self, user):
         today = timezone.now()
-        yesterday = today - timedelta(days=1)
+        yesterday = (today - timedelta(days=1)).date()
         logs = LogEntry.objects.filter(user=user,
                                        action_time__date=yesterday,
                                        ).order_by('action_time')
