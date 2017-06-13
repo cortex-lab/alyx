@@ -125,8 +125,7 @@ class Command(BaseCommand):
             wyep = 100. * wy / wye
             way = WaterAdministration.objects.filter(subject=w.subject,
                                                      date_time__date__lte=last_date)
-            way = way.order_by('-date_time').first()
-            way = getattr(way, 'water_administered', 0)
+            way = sum(w.water_administered or 0 for w in way)
             waym = water.water_requirement_total(w.subject, date=last_date)
             waye = way - waym
             wr = water.water_requirement_total(w.subject)
