@@ -1,6 +1,7 @@
 from datetime import timedelta
 import inspect
 from itertools import groupby
+import json
 import logging
 from operator import itemgetter
 from textwrap import dedent
@@ -16,6 +17,34 @@ from actions import water
 from subjects.models import Subject, StockManager
 
 logger = logging.getLogger(__name__)
+
+
+def _repr_log_entry(l):
+    if l.is_addition():
+        action = 'Added'
+    elif l.is_change():
+        action = 'Changed'
+    elif l.is_deletion():
+        action = 'Deleted'
+    changed = json.loads(l.change_message)
+    if changed and changed[0].get('changed', {}):
+        changed = ('(%s)' %
+                   (', '.join(changed[0].get('changed', {}).get('fields', {}))))
+    else:
+        changed = ''
+    s = '%02d:%02d - %s <%s> %s' % (
+        l.action_time.hour,
+        l.action_time.minute,
+        action,
+        # l.content_type,
+
+        # NOTE: use this when debugging repr (the repr string is directly saved in the LogEntry)
+        str(l.get_edited_object()),
+        # l.object_repr,
+
+        changed,
+    )
+    return s
 
 
 class Command(BaseCommand):
@@ -128,7 +157,7 @@ class Command(BaseCommand):
         logs = LogEntry.objects.filter(user=user,
                                        action_time__date=yesterday,
                                        ).order_by('action_time')
-        return 'Your actions yesterday:\n\n' + '\n'.join('* ' + str(l) for l in logs)
+        return 'Your actions yesterday:\n\n' + '\n'.join('* ' + _repr_log_entry(l) for l in logs)
 
     def make_todo(self):
         tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')

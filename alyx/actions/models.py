@@ -42,10 +42,9 @@ class Weighing(BaseModel):
         return expected_weighing(self.subject, self.date_time)
 
     def __str__(self):
-        return '%s at %s (%.1f g)' % (str(self.subject),
-                                      str(self.date_time),
-                                      self.weight,
-                                      )
+        return 'Weighing %.2f g for %s' % (self.weight,
+                                           str(self.subject),
+                                           )
 
 
 class WaterAdministration(BaseModel):
@@ -68,7 +67,9 @@ class WaterAdministration(BaseModel):
         return water_requirement_total(self.subject, date=self.date_time)
 
     def __str__(self):
-        return str(self.subject) + " at " + str(self.date_time)
+        return 'Water %.2fg for %s' % (self.water_administered,
+                                       str(self.subject),
+                                       )
 
 
 class BaseAction(BaseModel):
@@ -92,8 +93,7 @@ class BaseAction(BaseModel):
     end_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return (str(self.subject) + " at " +
-                str(getattr(self, 'start_time', 'no time')))
+        return '%s for %s' % (self.__class__.__name__, self.subject)
 
     def save(self, *args, **kwargs):
         if (not self.users.all() and
