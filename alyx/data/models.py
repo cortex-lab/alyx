@@ -10,7 +10,10 @@ from alyx.base import BaseModel
 # ------------------------------------------------------------------------------------------------
 
 class DataRepositoryType(BaseModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return "<DataRepositoryType '%s'>" % self.name
 
 
 class DataRepository(BaseModel):
@@ -27,7 +30,7 @@ class DataRepository(BaseModel):
         help_text="absolute path to the repository")
 
     def __str__(self):
-        return self.name
+        return "<DataRepository '%s'>" % self.name
 
     class Meta:
         verbose_name_plural = "data repositories"
@@ -52,7 +55,7 @@ class FileRecord(BaseModel):
         help_text="path name within repository")
 
     def __str__(self):
-        return self.filename
+        return "<FileRecord '%s'>" % self.filename
 
 
 # Datasets
@@ -87,7 +90,11 @@ class DatasetType(BaseModel):
     E.g. "Neuropixels raw data" "eye camera movie", etc.
     """
 
-    name = models.CharField(max_length=255, blank=True, help_text="description of data type")
+    name = models.CharField(max_length=255, unique=True,
+                            blank=True, help_text="description of data type")
+
+    def __str__(self):
+        return "<DatasetType %s>" % self.name
 
 
 class Dataset(BaseExperimentalData):
