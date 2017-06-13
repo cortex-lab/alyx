@@ -382,10 +382,11 @@ class SubjectAdmin(BaseAdmin):
 
     def changelist_view(self, request, extra_context=None):
         """Restrict ability to change responsible user on the subjects list view."""
-        if request.user.is_superuser or StockManager.objects.filter(user=request.user):
-            self.list_editable = ['responsible_user']
-        else:
-            self.list_editable = []
+        if self.__class__.__name__ == 'SubjectAdmin':
+            if request.user.is_superuser or StockManager.objects.filter(user=request.user):
+                self.list_editable = ['responsible_user']
+            else:
+                self.list_editable = []
         return super(SubjectAdmin, self).changelist_view(request, extra_context)
 
     def save_formset(self, request, form, formset, change):
