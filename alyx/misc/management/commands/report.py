@@ -124,7 +124,7 @@ class Command(BaseCommand):
             wye = water.expected_weighing(w.subject, date=last_date)
             wyep = 100. * wy / wye
             way = WaterAdministration.objects.filter(subject=w.subject,
-                                                     date_time__date__lte=last_date)
+                                                     date_time__date=last_date)
             way = sum(w.water_administered or 0 for w in way)
             waym = water.water_requirement_total(w.subject, date=last_date)
             waye = way - waym
