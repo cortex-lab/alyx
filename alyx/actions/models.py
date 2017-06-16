@@ -96,7 +96,7 @@ class BaseAction(BaseModel):
         return '%s for %s' % (self.__class__.__name__, self.subject)
 
     def save(self, *args, **kwargs):
-        if (not self.users.all() and
+        if (len(self.users.all()) == 0 and
                 not self.location and
                 not self.procedures.all() and
                 not self.narrative):
