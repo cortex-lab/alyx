@@ -26,7 +26,7 @@ def _repr_log_entry(l):
         action = 'Changed'
     elif l.is_deletion():
         action = 'Deleted'
-    changed = json.loads(l.change_message)
+    changed = json.loads(l.change_message or '[]')
     if changed and changed[0].get('changed', {}):
         changed = ('(%s)' %
                    (', '.join(changed[0].get('changed', {}).get('fields', {}))))

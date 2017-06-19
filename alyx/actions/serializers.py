@@ -1,9 +1,25 @@
 from rest_framework import serializers
+from django.contrib.admin.models import LogEntry, ADDITION
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+
 from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
-from equipment.models import LabLocation
-from django.contrib.auth.models import User
 from data.serializers import ExpMetadataSummarySerializer
+from equipment.models import LabLocation
+
+
+def _log_entry(instance, user):
+    if instance.pk:
+        LogEntry.objects.log_action(
+            user_id=user.pk,
+            content_type_id=ContentType.objects.get_for_model(instance).pk,
+            object_id=instance.pk,
+            object_repr=str(instance),
+            action_flag=ADDITION,
+            change_message=[{'added': {}}],
+        )
+    return instance
 
 
 class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
@@ -81,7 +97,10 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
     )
 
     def create(self, validated_data):
-        return Weighing.objects.create(**validated_data)
+        user = self.context['request'].user
+        instance = Weighing.objects.create(**validated_data)
+        _log_entry(instance, user)
+        return instance
 
     class Meta:
         model = Weighing
@@ -113,7 +132,10 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
     )
 
     def create(self, validated_data):
-        return WaterAdministration.objects.create(**validated_data)
+        user = self.context['request'].user
+        instance = WaterAdministration.objects.create(**validated_data)
+        _log_entry(instance, user)
+        return instance
 
     class Meta:
         model = WaterAdministration
