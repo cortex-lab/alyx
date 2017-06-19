@@ -46,9 +46,6 @@ def _anonymize(path):
                     'actions.surgery',
                     'subjects.zygosity',
                     'subjects.genotypetest',
-                    'subjects.breedingpair',
-                    'subjects.line',
-                    'subjects.litter',
                     )
 
     counter = defaultdict(int)
