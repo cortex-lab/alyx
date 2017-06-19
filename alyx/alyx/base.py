@@ -161,6 +161,7 @@ class BaseAdmin(VersionAdmin):
         JSONField: {'widget': forms.Textarea(
                     attrs={'rows': 5,
                            'cols': 50})},
+        models.UUIDField: {'widget': forms.TextInput(attrs={'size': 32})},
     }
     list_per_page = 50
     save_on_top = True
