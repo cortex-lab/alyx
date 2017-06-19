@@ -13,3 +13,5 @@ experimental
 *.asv
 *.json
 *.pkl
+*.patch
+*.sql
