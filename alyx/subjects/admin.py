@@ -269,8 +269,8 @@ class SubjectAdmin(BaseAdmin):
                        )
     ordering = ['-birth_date', '-nickname']
     list_editable = []
-    list_filter = [SubjectAliveListFilter,
-                   ResponsibleUserListFilter,
+    list_filter = [ResponsibleUserListFilter,
+                   SubjectAliveListFilter,
                    ZygosityFilter,
                    TodoFilter,
                    ('line', LineDropdownFilter),
