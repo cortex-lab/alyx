@@ -12,5 +12,4 @@ bin
 experimental
 *.asv
 *.json
-migrations
 *.pkl
