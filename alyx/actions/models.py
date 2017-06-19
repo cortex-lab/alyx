@@ -95,14 +95,6 @@ class BaseAction(BaseModel):
     def __str__(self):
         return '%s for %s' % (self.__class__.__name__, self.subject)
 
-    def save(self, *args, **kwargs):
-        if (len(self.users.all()) == 0 and
-                not self.location and
-                not self.procedures.all() and
-                not self.narrative):
-            raise RuntimeError("Cannot create an empty base action.")
-        return super(BaseAction, self).save(*args, **kwargs)
-
     class Meta:
         abstract = True
 
