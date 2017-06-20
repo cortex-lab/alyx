@@ -61,7 +61,9 @@ class Command(BaseCommand):
                             help="Show report without sending an email")
 
     def handle(self, *args, **options):
-        for user, texts in groupby(self._generate_email(*args, **options), itemgetter(0)):
+        tuples = list(self._generate_email(*args, **options))
+        tuples = sorted(tuples, key=lambda k: k[0].username)
+        for user, texts in groupby(tuples, itemgetter(0)):
             subject = 'Report on %s' % timezone.now().strftime("%Y-%m-%d")
             self._send(user.email, subject, '\n\n'.join(t or '' for u, t in texts))
 
