@@ -61,6 +61,8 @@ class Command(BaseCommand):
                             help="Show report without sending an email")
 
     def handle(self, *args, **options):
+        # Sort the list of pairs (user, text) by user to collate all emails for every user.
+        # This is because groupby() requires the items to be already sorted.
         tuples = list(self._generate_email(*args, **options))
         tuples = sorted(tuples, key=lambda k: k[0].username)
         for user, texts in groupby(tuples, itemgetter(0)):
@@ -96,8 +98,11 @@ class Command(BaseCommand):
         self.stdout.write('"%s" to be sent to <%s>.\n\n' % (subject, to))
         self.stdout.write(text)
         self.stdout.write("\n\n")
-        if to and self.do_send:
+        # NOTE: if there is no '*', it means the email is empty, so we don't send it.
+        if to and self.do_send and '*' in text:
             alyx_mail(to, subject, text)
+        elif self.do_send and '*' not in text:
+            logger.debug("NOT sending an empty email.")
 
     def make_water_restriction(self, user):
         wr = WaterRestriction.objects.filter(start_time__isnull=False,
