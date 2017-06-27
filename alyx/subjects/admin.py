@@ -15,6 +15,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      )
 from actions.models import Surgery, Session, OtherAction
 from actions import water
+from misc.admin import NoteInline
 
 
 # Utility functions
@@ -228,7 +229,7 @@ class SubjectAdmin(BaseAdmin):
                                 'death_date', 'to_be_culled',
                                 'reduced', 'reduced_date',
                                 'ear_mark',
-                                'protocol_number', 'notes', 'json')}),
+                                'protocol_number', 'description', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter', 'lamis_cage',),
                      'classes': ('collapse',),
                      }),
@@ -251,7 +252,7 @@ class SubjectAdmin(BaseAdmin):
     list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
                     'breeding_pair_l', 'line_l', 'litter_l',
                     'genotype_l', 'zygosities',
-                    'alive', 'responsible_user', 'notes'
+                    'alive', 'responsible_user', 'description'
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
@@ -278,7 +279,9 @@ class SubjectAdmin(BaseAdmin):
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, AddSurgeryInline,
-               SessionInline, OtherActionInline]
+               SessionInline, OtherActionInline,
+               NoteInline,
+               ]
 
     def ear_mark_(self, obj):
         return obj.ear_mark
@@ -476,7 +479,7 @@ class SubjectInline(BaseInlineAdmin):
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
-              'ear_mark', 'notes')
+              'ear_mark', 'description')
     readonly_fields = ('age_weeks', 'alive',
                        'sequence0', 'sequence1', 'sequence2',
                        )
@@ -542,7 +545,7 @@ class SubjectInline(BaseInlineAdmin):
 
 class LitterInline(BaseInlineAdmin):
     model = Litter
-    fields = ['descriptive_name', 'breeding_pair', 'birth_date', 'notes']
+    fields = ['descriptive_name', 'breeding_pair', 'birth_date', 'description']
     extra = 1
     show_change_link = True
 
@@ -625,7 +628,7 @@ class BreedingPairAdmin(BaseAdmin):
     list_display = ['name', 'lamis_cage', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
     fields = ['name', 'line', 'start_date', 'end_date',
-              'father', 'mother1', 'mother2', 'lamis_cage', 'notes']
+              'father', 'mother1', 'mother2', 'lamis_cage', 'description']
     list_filter = [BreedingPairFilter,
                    ('line', LineDropdownFilter),
                    ]
@@ -704,7 +707,7 @@ class LitterAdmin(BaseAdmin):
     list_display = ['descriptive_name', 'breeding_pair', 'birth_date']
     fields = ['line', 'descriptive_name',
               'breeding_pair', 'birth_date',
-              'notes',
+              'description',
               ]
     list_filter = [('line', LineDropdownFilter),
                    ]
@@ -755,7 +758,7 @@ class LitterAdmin(BaseAdmin):
 class SubjectRequestInline(BaseInlineAdmin):
     model = SubjectRequest
     extra = 1
-    fields = ['count', 'due_date', 'status', 'notes']
+    fields = ['count', 'due_date', 'status', 'description']
     readonly_fields = ['status']
 
 
@@ -902,7 +905,7 @@ class SubjectRequestForm(forms.ModelForm):
 
 
 class SubjectRequestAdmin(BaseAdmin):
-    fields = ['line', 'count', 'date_time', 'due_date', 'notes', 'user',
+    fields = ['line', 'count', 'date_time', 'due_date', 'description', 'user',
               'subjects_l', 'remaining', 'status']
     list_display = ['line', 'user', 'remaining_count', 'date_time', 'due_date', 'is_closed']
     readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
@@ -965,7 +968,7 @@ class AlleleAdmin(BaseAdmin):
 
 
 class SourceAdmin(BaseAdmin):
-    fields = ['name', 'notes']
+    fields = ['name', 'description']
 
 
 class SequenceAdmin(BaseAdmin):

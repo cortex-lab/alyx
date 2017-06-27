@@ -16,6 +16,9 @@ before_script:
   - psql -c "CREATE DATABASE travisci;" -U postgres
 script:
   - cd alyx
-  - make migrate
-  - python manage.py test -k
+  - rm -r */migrations/0*
+  - python manage.py migrate
+  - python manage.py makemigrations
+  - python manage.py migrate
+  - python manage.py test
   - flake8 .

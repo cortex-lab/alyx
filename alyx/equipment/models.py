@@ -24,7 +24,7 @@ class Supplier(BasePolymorphicModel):
     This is a base class, to be accessed by subclasses
     """
     name = models.CharField(max_length=255, help_text="i.e. 'NeuroNexus'")
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
@@ -100,7 +100,7 @@ class Appliance(BasePolymorphicModel):
     equipment_model = models.ForeignKey('EquipmentModel')
     serial = models.CharField(max_length=255, blank=True,
                               help_text="The serial number of the appliance.")
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     descriptive_name = models.CharField(max_length=255, blank=True)
 

@@ -18,7 +18,8 @@ def _dump_all(path):
                  '-e', 'contenttypes',
                  '-e', 'auth.permission',
                  '-e', 'admin.logentry',
-                 '-e', 'reversion.version',
+                 '-e', 'authtoken',
+                 '-e', 'reversion',
                  '--indent', '1', '-o', path)
 
 
@@ -41,6 +42,8 @@ def _anonymize(path):
     N_MAX = 50
     LIMIT_MODELS = ('actions.wateradministration',
                     'actions.weighing',
+                    'actions.session',
+                    'actions.surgery',
                     'subjects.zygosity',
                     'subjects.genotypetest',
                     )
@@ -63,6 +66,8 @@ def _anonymize(path):
             # Remote notes and description.
             if field in ('notes', 'description'):
                 item['fields'][field] = '-'
+            if field == 'user_permissions':
+                item['fields'][field] = []
         # Increment model counter.
         counter[item['model']] += 1
         data_out.append(item)
