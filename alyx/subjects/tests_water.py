@@ -31,8 +31,10 @@ class ModelAdminTests(TestCase):
         subj = wa.subject
 
         wrt = water_requirement_total(subj)
+        self.assertTrue(wrt > 0)
 
         wrt2 = water_requirement_total(subj, date=today())
+        self.assertTrue(wrt2 > 0)
 
         date = today() - timedelta(days=10)
         self.assertTrue(water_requirement_total(subj, date=date) >= 0)
