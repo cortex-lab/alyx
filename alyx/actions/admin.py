@@ -306,6 +306,8 @@ class SurgeryAdmin(BaseActionAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
+    list_display = ['subject_l', 'start_time', 'end_time', 'location']
+    list_display_links = ['start_time']
     inlines = [NoteInline]
 
 
