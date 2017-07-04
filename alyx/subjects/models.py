@@ -122,7 +122,7 @@ class Subject(BaseModel):
     ear_mark = models.CharField(max_length=32, blank=True)
     protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
                                        default=settings.DEFAULT_PROTOCOL)
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     cull_method = models.TextField(blank=True)
     adverse_effects = models.TextField(blank=True)
@@ -247,7 +247,7 @@ class SubjectRequest(BaseModel):
     count = models.IntegerField(null=True, blank=True)
     date_time = models.DateField(default=timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-date_time']
@@ -278,7 +278,7 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
     to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
-    alyx_mail(to, subject, instance.notes)
+    alyx_mail(to, subject, instance.description)
 
 
 @receiver(post_save, sender=Subject)
@@ -335,7 +335,7 @@ class Litter(BaseModel):
     breeding_pair = models.ForeignKey('BreedingPair', null=True, blank=True,
                                       on_delete=models.SET_NULL,
                                       )
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     birth_date = models.DateField(null=True, blank=True)
 
     objects = LitterManager()
@@ -380,7 +380,7 @@ class BreedingPair(BaseModel):
                                 on_delete=models.SET_NULL,
                                 limit_choices_to={'sex': 'F'},
                                 related_name="mother2")
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     objects = BreedingPairManager()
 
@@ -516,7 +516,7 @@ class SourceManager(models.Manager):
 class Source(BaseModel):
     """A supplier / source of subjects."""
     name = models.CharField(max_length=255)
-    notes = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     objects = SourceManager
 
