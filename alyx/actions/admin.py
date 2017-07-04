@@ -8,6 +8,7 @@ from alyx.base import BaseAdmin, DefaultListFilter
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
+from misc.admin import NoteInline
 from misc.models import OrderedUser
 from subjects.models import Subject
 from subjects.admin import get_admin_url
@@ -304,12 +305,16 @@ class SurgeryAdmin(BaseActionAdmin):
     procedures_l.short_description = 'procedures'
 
 
+class SessionAdmin(BaseActionAdmin):
+    inlines = [NoteInline]
+
+
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
 admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 
-admin.site.register(Session, BaseActionAdmin)
+admin.site.register(Session, SessionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
