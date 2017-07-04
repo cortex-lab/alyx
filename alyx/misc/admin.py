@@ -26,6 +26,7 @@ class NoteInline(GenericTabularInline):
     model = Note
     extra = 1
     fields = ('user', 'date_time', 'text')
+    classes = ['collapse']
 
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(

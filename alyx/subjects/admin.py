@@ -15,6 +15,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      )
 from actions.models import Surgery, Session, OtherAction
 from actions import water
+from misc.admin import NoteInline
 
 
 # Utility functions
@@ -278,7 +279,9 @@ class SubjectAdmin(BaseAdmin):
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, AddSurgeryInline,
-               SessionInline, OtherActionInline]
+               SessionInline, OtherActionInline,
+               NoteInline,
+               ]
 
     def ear_mark_(self, obj):
         return obj.ear_mark
