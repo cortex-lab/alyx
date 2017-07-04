@@ -17,6 +17,8 @@ class CoordinateTransformationAdmin(BaseAdmin):
 
 
 class NoteAdmin(BaseAdmin):
+    list_display = ['user', 'date_time', 'content_object', 'text']
+    list_display_links = ['date_time']
     fields = ['user', 'date_time', 'text', 'content_type', 'object_id']
 
 
