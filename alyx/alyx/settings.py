@@ -123,6 +123,7 @@ ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
 # Application definition
 
 INSTALLED_APPS = (
+    'test_without_migrations',
     'dal',
     'dal_select2',
     'reversion',

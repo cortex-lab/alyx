@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.utils import timezone
 
 from alyx.base import BaseModel
 
@@ -9,6 +12,17 @@ class OrderedUser(User):
     class Meta:
         proxy = True
         ordering = ['username']
+
+
+class Note(BaseModel):
+    user = models.ForeignKey(OrderedUser)
+    date_time = models.DateTimeField(default=timezone.now)
+    text = models.TextField(blank=True)
+
+    # Generic foreign key to arbitrary model instances.
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey()
 
 
 class BrainLocation(BaseModel):

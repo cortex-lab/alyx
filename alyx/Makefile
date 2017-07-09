@@ -19,5 +19,5 @@ migrate:
 	python manage.py migrate
 
 test:
-	python manage.py test -k
+	python manage.py test -k -n
 	flake8

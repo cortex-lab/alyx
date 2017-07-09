@@ -95,7 +95,8 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'line', 'notes', 'genotype', 'alive')
+                  'species', 'sex', 'litter', 'strain', 'line', 'description',
+                  'genotype', 'alive')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -126,7 +127,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
         model = Subject
         fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
                   'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
-                  'notes', 'actions_sessions', 'weighings', 'water_administrations',
+                  'description', 'actions_sessions', 'weighings', 'water_administrations',
                   'genotype', 'water_requirement_total', 'water_requirement_remaining')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}

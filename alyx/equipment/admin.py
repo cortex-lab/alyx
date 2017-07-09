@@ -50,7 +50,7 @@ class LabLocationAdmin(BaseAdmin):
 
 
 class EquipmentManufacturerAdmin(BaseAdmin):
-    fields = ['name', 'notes']
+    fields = ['name', 'description']
 
 
 class EquipmentModelAdmin(BaseAdmin):
