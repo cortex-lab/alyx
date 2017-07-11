@@ -1,6 +1,6 @@
 SELECT subjects_breedingpair.id,
 subjects_breedingpair.name,
-subjects_breedingpair.notes,
+subjects_breedingpair.description,
 subjects_breedingpair.start_date,
 subjects_breedingpair.end_date,
 f.nickname AS father_name,

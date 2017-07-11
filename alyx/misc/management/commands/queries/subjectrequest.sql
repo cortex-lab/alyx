@@ -3,7 +3,7 @@ subjects_subjectrequest.json,
 subjects_subjectrequest.count,
 subjects_subjectrequest.date_time,
 subjects_subjectrequest.due_date,
-subjects_subjectrequest.notes,
+subjects_subjectrequest.description,
 subjects_line.name AS line_name,
 auth_user.username AS username
 FROM subjects_subjectrequest

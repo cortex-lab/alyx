@@ -1,6 +1,6 @@
 SELECT subjects_litter.id,
 subjects_litter.descriptive_name,
-subjects_litter.notes,
+subjects_litter.description,
 subjects_litter.birth_date,
 subjects_breedingpair.name AS breeding_pair,
 subjects_line.name AS line,
