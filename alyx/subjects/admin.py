@@ -77,6 +77,33 @@ class SubjectAliveListFilter(DefaultListFilter):
             return queryset.all()
 
 
+class BreederListFilter(DefaultListFilter):
+    title = 'breeder'
+    parameter_name = 'breeder'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            (None, 'No'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value == 'all':
+            return queryset.all()
+        bp = BreedingPair.objects.filter(start_date__isnull=False,
+                                         end_date__isnull=True,
+                                         )
+        f = bp.filter(father__isnull=False).values_list('father', flat=True)
+        m1 = bp.filter(mother1__isnull=False).values_list('mother1', flat=True)
+        m2 = bp.filter(mother2__isnull=False).values_list('mother2', flat=True)
+        subjects = f.union(m1, m2)
+        if self.value() is None:
+            return queryset.exclude(pk__in=subjects)
+        elif self.value() == 'yes':
+            return queryset.filter(pk__in=subjects)
+
+
 class ZygosityFilter(DefaultListFilter):
     title = 'zygosity'
     parameter_name = 'zygosity'
@@ -272,6 +299,7 @@ class SubjectAdmin(BaseAdmin):
     list_editable = []
     list_filter = [ResponsibleUserListFilter,
                    SubjectAliveListFilter,
+                   BreederListFilter,
                    ZygosityFilter,
                    TodoFilter,
                    ('line', LineDropdownFilter),
