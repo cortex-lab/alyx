@@ -156,10 +156,26 @@ class Surgery(BaseAction):
 
 class Session(BaseAction):
     """
-    An session or training session performed on a subject.
+    A recording or training session performed on a subject. There is normally only one of these per 
+	day, for example corresponding to a  period of uninterrupted head fixation.
     """
     pass
 
+class Experiment(BaseModel):
+    """
+    A subset of a Session, for example corresponding to a period of time in which the same neurons were 
+    recorded, or a particular set of stimuli were presented. Each Experiment can have a parent
+    Experiment, allowing a hierarchical organization if desired.
+    """
+
+    # NOTE: the proper normalized relational way to do it would be for exactly one of session or 
+    # parent_experiment be NULL, and to find each Experiment's root Session by following the tree of parents.  An 
+    # alternative is to always have the parent_session point to the root and have parent_experiment be NULL only for 
+    # top-level experiments. 
+    session = models.ForeignKey(Session, null=True, blank=True,
+                                 help_text="The session to which this experiment belongs")
+    parent_experiment = models.ForeignKey(Experiment, null=True, blank=True,
+                                 help_text="Hierarchical parent to this experiment")
 
 class WaterRestriction(BaseAction):
     """

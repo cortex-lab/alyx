@@ -30,22 +30,6 @@ class Supplier(BasePolymorphicModel):
         return self.name
 
 
-class EquipmentManufacturer(Supplier):
-    # maybe this could be a subclass of a more general supplier field?
-    """
-    An equipment manufacturer, i.e. "NeuroNexus"
-    """
-    pass
-
-
-class VirusSource(Supplier):
-    # maybe this could be a subclass of a more general supplier field?
-    """
-    An equipment manufacturer, i.e. "NeuroNexus"
-    """
-    pass
-
-
 class EquipmentModel(BaseModel):
     """
     An equipment model. i.e. "BrainScanner 4X"
@@ -150,14 +134,3 @@ class DAQ(Appliance):
     """
     pass
 
-
-class ExtracellularProbe(Appliance):
-    """
-    An extracellular probe used in extracellular electrophysiology.
-    """
-    prb = JSONField(null=True, blank=True,
-                    help_text="A JSON string describing the probe connectivity and geometry. "
-                              "For details, see "
-                              "https://github.com/klusta-team/kwiklib/wiki/Kwik-format#prb")
-    # does this mean a pointer to a .prb file on disk, or a copy of it in the database?
-    # (I guess the latter)
