@@ -34,7 +34,7 @@ class EquipmentModel(BaseModel):
     An equipment model. i.e. "BrainScanner 4X"
     """
     manufacturer = models.ForeignKey(
-        'EquipmentManufacturer', null=True, blank=True)
+        Supplier, null=True, blank=True)
     model_name = models.CharField(
         max_length=255, help_text="e.g. 'BrainScanner 4X'")
     description = models.CharField(max_length=255, blank=True)
@@ -54,7 +54,7 @@ class VirusBatch(BaseModel):
     virus_type = models.CharField(max_length=255, blank=True,
                                   help_text="UPenn ID or equivalent")
     description = models.CharField(max_length=255, blank=True)
-    virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
+    virus_source = models.ForeignKey(Supplier, null=True, blank=True,
                                      help_text="Who supplied the virus")
     date_time_made = models.DateTimeField(
         null=True, blank=True, default=timezone.now)

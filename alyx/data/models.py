@@ -52,7 +52,6 @@ class DataRepository(BaseModel):
 # Datasets
 # ------------------------------------------------------------------------------------------------
 
-
 class DatasetType(BaseModel):
     """
     A descriptor to accompany a dataset, saying what sort of information is contained in it
@@ -97,7 +96,7 @@ class BaseExperimentalData(BaseModel):
         help_text="e.g. 'ChoiceWorld 0.8.3'")
 
     provenance_directory = models.ForeignKey(
-        'Dataset', blank=True, null=True,
+        'data.Dataset', blank=True, null=True,
         related_name=_related_string('provenance'),
         help_text="link to directory containing intermediate results")
 
@@ -131,7 +130,7 @@ class FileRecord(BaseModel):
     A single file on disk or tape. Normally specified by a path within an archive. If required,
     more details can be in the JSON
     """
-    dataset = models.ForeignKey('Dataset', related_name=_related_string('dataset'))
+    dataset = models.ForeignKey(Dataset, related_name=_related_string('dataset'))
     data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
     relative_path = models.CharField(
         max_length=1000, blank=True,
@@ -156,7 +155,7 @@ class DataCollection(BaseExperimentalData):
         help_text="description of the data in this collection (e.g. cluster information)")
 
     data = models.ManyToManyField(
-        Dataset, blank=True, null=True,
+        Dataset, blank=True,
         related_name=_related_string('data'),
         help_text="Datasets, each of which  should have their own descriptions and DatasetTypes")
 
@@ -247,7 +246,7 @@ class EventSeries(DataCollection):
         help_text="which timescale this is on")
 
     times = models.ForeignKey(
-        'Dataset', blank=True, null=True,
+        Dataset, blank=True, null=True,
         related_name=_related_string('event_times'),
         help_text="n*1 array of times on specified timescale")
 

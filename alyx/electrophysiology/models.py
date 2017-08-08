@@ -186,12 +186,16 @@ class SpikeSorting(EventSeries):
 
     """
 
-    extracellular_recording = models.ForeignKey(ExtracellularRecording)
+    extracellular_recording = models.ForeignKey(ExtracellularRecording,
+                                                related_name='spike_sorting_recording')
 
-    spikes = models.ForeignKey(EventSeries, help_text="EventSeries giving spike times "
+    spikes = models.ForeignKey(EventSeries,
+                               related_name='spike_sorting_spikes',
+                               help_text="EventSeries giving spike times "
                                "plus clusters and any other info per spike")
 
     cluster_data = models.ForeignKey(DataCollection, blank=True, null=True,
+                                     related_name='spike_sorting_cluster_data',
                                      help_text="DataCollection of files giving info on clusters: "
                                      "mean waveforms, qualities, etc.")
 
