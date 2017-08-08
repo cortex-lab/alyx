@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
@@ -57,8 +56,10 @@ class VirusBatch(BaseModel):
     description = models.CharField(max_length=255, blank=True)
     virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
                                      help_text="Who supplied the virus")
-    date_time_made = models.DateTimeField(null=True, blank=True, default=timezone.now)
-    nominal_titer = models.FloatField(null=True, blank=True, help_text="TODO: What unit?")
+    date_time_made = models.DateTimeField(
+        null=True, blank=True, default=timezone.now)
+    nominal_titer = models.FloatField(
+        null=True, blank=True, help_text="TODO: What unit?")
     # let's ask Charu about what unit.
 
     class Meta:
@@ -133,4 +134,3 @@ class DAQ(Appliance):
     A DAQ for extracellular electrophysiology.
     """
     pass
-

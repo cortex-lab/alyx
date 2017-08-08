@@ -89,7 +89,8 @@ class BaseAction(BaseModel):
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(blank=True)
-    start_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    start_time = models.DateTimeField(
+        null=True, blank=True, default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -156,31 +157,34 @@ class Surgery(BaseAction):
 
 class Session(BaseAction):
     """
-    A recording or training session performed on a subject. There is normally only one of these per 
-	day, for example corresponding to a  period of uninterrupted head fixation.
+    A recording or training session performed on a subject. There is normally only one of
+    these per day, for example corresponding to a  period of uninterrupted head fixation.
     """
     pass
 
+
 class Experiment(BaseModel):
     """
-    A subset of a Session, for example corresponding to a period of time in which the same neurons were 
-    recorded, or a particular set of stimuli were presented. Each Experiment can have a parent
-    Experiment, allowing a hierarchical organization if desired.
+    A subset of a Session, for example corresponding to a period of time in which the same
+    neurons were recorded, or a particular set of stimuli were presented. Each Experiment can
+    have a parent Experiment, allowing a hierarchical organization if desired.
     """
 
-    # NOTE: the proper normalized relational way to do it would be for exactly one of session or 
-    # parent_experiment be NULL, and to find each Experiment's root Session by following the tree of parents.  An 
-    # alternative is to always have the parent_session point to the root and have parent_experiment be NULL only for 
-    # top-level experiments. 
+    # NOTE: the proper normalized relational way to do it would be for exactly one of session or
+    # parent_experiment be NULL, and to find each Experiment's root Session by following the
+    # tree of parents. An alternative is to always have the parent_session point to the root and
+    # have parent_experiment be NULL only for top-level experiments.
     session = models.ForeignKey(Session, null=True, blank=True,
-                                 help_text="The session to which this experiment belongs")
-    parent_experiment = models.ForeignKey(Experiment, null=True, blank=True,
-                                 help_text="Hierarchical parent to this experiment")
+                                help_text="The session to which this experiment belongs")
+    parent_experiment = models.ForeignKey('Experiment', null=True, blank=True,
+                                          help_text="Hierarchical parent to this experiment")
+
 
 class WaterRestriction(BaseAction):
     """
     Another type of action.
     """
+
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 

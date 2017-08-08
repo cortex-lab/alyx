@@ -1,7 +1,8 @@
 from django.db import models
-from data.models import TimeSeries, Dataset, BaseExperimentalData
-from equipment.models import ExtracellularProbe, Amplifier, DAQ, PipettePuller
-from misc.models import BrainLocation, CoordinateTransformation
+from data.models import TimeSeries, Dataset, BaseExperimentalData, EventSeries, DataCollection
+from equipment.models import Amplifier, DAQ, PipettePuller, Supplier
+from misc.models import BrainLocation
+from alyx.base import BaseModel
 
 
 class ProbeInsertion(BaseModel):
@@ -10,33 +11,34 @@ class ProbeInsertion(BaseModel):
     """
 
     entry_point_rl = models.FloatField(null=True, blank=True,
-                                        help_text="mediolateral position of probe entry point "
-                                        "relative to midline (microns). Positive means right")
+                                       help_text="mediolateral position of probe entry point "
+                                       "relative to midline (microns). Positive means right")
 
     entry_point_ap = models.FloatField(null=True, blank=True,
-                                        help_text="anteroposterior position of probe entry point "
-                                        "relative to bregma (microns). Positive means anterior")
+                                       help_text="anteroposterior position of probe entry point "
+                                       "relative to bregma (microns). Positive means anterior")
 
     vertical_angle = models.FloatField(null=True, blank=True,
-                                        help_text="vertical angle of probe (degrees). Zero means "
-                                        "horizontal. Positive means pointing down.")
+                                       help_text="vertical angle of probe (degrees). Zero means "
+                                       "horizontal. Positive means pointing down.")
 
     horizontal_angle = models.FloatField(null=True, blank=True,
-                                        help_text="horizontal angle of probe (degrees), after vertical "
-                                        "rotation. Zero means anterior. Positive means counterclockwise "
-                                        "(i.e. left).")
+                                         help_text="horizontal angle of probe (degrees), "
+                                         "after vertical rotation. Zero means anterior. "
+                                         "Positive means counterclockwise (i.e. left).")
 
     axial_angle = models.FloatField(null=True, blank=True,
-                                        help_text="axial angle of probe (degrees). Zero means that without "
-                                        " vertical and horizontal rotations, the probe contacts would be "
-                                        " pointint up. Positive means counterclockwise.")
+                                    help_text="axial angle of probe (degrees). Zero means that "
+                                    "without vertical and horizontal rotations, the probe "
+                                    "contacts would be pointint up. Positive means "
+                                    "counterclockwise.")
 
     distance_advanced = models.FloatField(null=True, blank=True,
-                                        help_text="How far the probe was moved forward from its entry point. "
-                                        "(microns).")
+                                          help_text="How far the probe was moved forward from "
+                                          "its entry point. (microns).")
 
-    probe_model = models.ForeignKey(ProbeModel, blank=True, null=True,
-                                        help_text="model of probe used")
+    probe_model = models.ForeignKey('ProbeModel', blank=True, null=True,
+                                    help_text="model of probe used")
 
 
 class ProbeModel(BaseModel):
@@ -46,18 +48,21 @@ class ProbeModel(BaseModel):
 
     probe_manufacturer = models.ForeignKey(Supplier, blank=True, null=True)
 
-    probe_model = models.CharField(max_length=255, help_text="manufacturer's part number e.g. A4x8-5mm-100-200-177")
+    probe_model = models.CharField(
+        max_length=255, help_text="manufacturer's part number e.g. A4x8-5mm-100-200-177")
 
-    description: models.CharField(max_length=255, null=True, blank=True,
-                                help_text= "optional informal description e.g. 'Michigan 4x4 tetrode'; "
-                                "'Neuropixels phase 2 option 1'")
+    description = models.CharField(max_length=255, null=True, blank=True,
+                                   help_text="optional informal description e.g. "
+                                   "'Michigan 4x4 tetrode'; 'Neuropixels phase 2 option 1'")
 
-    site_positions: ForeignKey(Dataset, blank=True, null=True,
-                                help_text= "numerical array of size nSites x 2 giving locations of each contact site "
-                                "in local coordinates. Probe tip is at the origin.")
+    site_positions = models.ForeignKey(
+        Dataset, blank=True, null=True,
+        help_text="numerical array of size nSites x 2 giving locations "
+                  "of each contact site  in local coordinates. Probe tip is at "
+                  "the origin.")
 
 
-class BaseBrainLocation(BaseModel)
+class BaseBrainLocation(BaseModel):
     """
     Abstract base class for brain location. Never used directly.
 
@@ -65,47 +70,51 @@ class BaseBrainLocation(BaseModel)
     This is usually figured out using histology, so should override what you might
     compute from ProbeInsertion.
     """
-    ccf_ap = models.FloatField(help_text="Allen CCF antero-posterior coordinate (microns)")
-    ccf_dv = models.FloatField(help_text="Allen CCF dorso-ventral coordinate (microns)")
-    ccf_lr = models.FloatField(help_text="Allen CCF left-right coordinate (microns)")
+    ccf_ap = models.FloatField(
+        help_text="Allen CCF antero-posterior coordinate (microns)")
+    ccf_dv = models.FloatField(
+        help_text="Allen CCF dorso-ventral coordinate (microns)")
+    ccf_lr = models.FloatField(
+        help_text="Allen CCF left-right coordinate (microns)")
 
     allen_ontology = models.CharField(max_length=255, blank=True,
-                                        help_text="Manually curated site location. Use "
-                                        " Allen's acronyms to represent the appropriate "
-                                        "hierarchical level, e.g. SS, SSp, or SSp6a")
+                                      help_text="Manually curated site location. Use "
+                                      " Allen's acronyms to represent the appropriate "
+                                      "hierarchical level, e.g. SS, SSp, or SSp6a")
 
 
-class RecordingSite(BaseBrainLocation)
+class RecordingSite(BaseBrainLocation):
     """
     Contains estimated anatomical location of each recording site in each probe insertion.
     This is usually figured out using histology, so should override what you might
     compute from ProbeInsertion. Location a
     """
 
-    probe_insertion = models.ForeignKey(ProbeInsertion, help_text="id of probe insertion")
+    probe_insertion = models.ForeignKey(
+        ProbeInsertion, help_text="id of probe insertion")
 
     site_no = models.IntegerField(help_text="which site on the probe")
 
 
 class ChannelMapping(BaseModel):
     """
-    Junction table linking ExtracellularRecording and ProbeInsertion, telling you which channels of which probes
-    were on which channels of which recordings. There is one entry per channel
+    Junction table linking ExtracellularRecording and ProbeInsertion, telling you which channels
+    of which probes were on which channels of which recordings. There is one entry per channel
     """
 
-    extracellular_recording = models.ForeignKey(ExtracellularRecording,
-        help_text="id of extracellular recording")
+    extracellular_recording = models.ForeignKey('ExtracellularRecording',
+                                                help_text="id of extracellular recording")
 
     channel_no = models.IntegerField(help_text="channel number in raw recording file "
-        "(counting from 0)")
+                                     "(counting from 0)")
 
     probe_insertion = models.ForeignKey(ProbeInsertion, null=True,
                                         help_text="which probe insertion was recorded on "
                                         "that channel. NULL if channel not used")
 
     site_no = models.IntegerField(null=True,
-        help_text="probe site number for that channel "
-                                        "(NULL if channel not used or dead)")
+                                  help_text="probe site number for that channel "
+                                  "(NULL if channel not used or dead)")
 
 
 class ExtracellularRecording(TimeSeries):
@@ -128,8 +137,8 @@ class ExtracellularRecording(TimeSeries):
     )
 
     lfp = models.ForeignKey(TimeSeries, blank=True, null=True,
-                                     related_name="extracellular_recording_lfp",
-                                     help_text="lfp: low-pass filtered and downsampled")
+                            related_name="extracellular_recording_lfp",
+                            help_text="lfp: low-pass filtered and downsampled")
 
     impedances = models.ForeignKey(Dataset, blank=True, null=True,
                                    related_name="extracellular_impedances",
@@ -137,9 +146,9 @@ class ExtracellularRecording(TimeSeries):
                                    "each channel (ohms).")
 
     gains = models.ForeignKey(Dataset, blank=True, null=True,
-                                   related_name="extracellular_gains",
-                                   help_text="dataset containing gain of each channel "
-                                   " samples/microvolt")
+                              related_name="extracellular_gains",
+                              help_text="dataset containing gain of each channel "
+                              " samples/microvolt")
 
     filter_info = models.CharField(max_length=255, blank=True,
                                    help_text="Details of hardware corner frequencies, filter "
@@ -180,11 +189,11 @@ class SpikeSorting(EventSeries):
     extracellular_recording = models.ForeignKey(ExtracellularRecording)
 
     spikes = models.ForeignKey(EventSeries, help_text="EventSeries giving spike times "
-                                    "plus clusters and any other info per spike")
+                               "plus clusters and any other info per spike")
 
     cluster_data = models.ForeignKey(DataCollection, blank=True, null=True,
-                                    help_text="DataCollection of files giving info on clusters: "
-                                    "mean waveforms, qualities, etc.")
+                                     help_text="DataCollection of files giving info on clusters: "
+                                     "mean waveforms, qualities, etc.")
 
 
 class SpikeSortedUnit(BaseBrainLocation):

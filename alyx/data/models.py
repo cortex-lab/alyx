@@ -6,6 +6,10 @@ from actions.models import Session, Experiment
 from alyx.base import BaseModel
 
 
+def _related_string(field):
+    return "%(app_label)s_%(class)s_" + field + "_related"
+
+
 # Data repositories
 # ------------------------------------------------------------------------------------------------
 
@@ -32,7 +36,8 @@ class DataRepository(BaseModel):
     """
 
     name = models.CharField(max_length=255)
-    repository_type = models.ForeignKey(DataRepositoryType, null=True, blank=True)
+    repository_type = models.ForeignKey(
+        DataRepositoryType, null=True, blank=True)
     path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
@@ -92,7 +97,7 @@ class BaseExperimentalData(BaseModel):
         help_text="e.g. 'ChoiceWorld 0.8.3'")
 
     provenance_directory = models.ForeignKey(
-        Dataset, blank=True, null=True,
+        'Dataset', blank=True, null=True,
         related_name=_related_string('provenance'),
         help_text="link to directory containing intermediate results")
 
@@ -109,7 +114,8 @@ class Dataset(BaseExperimentalData):
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
     """
     name = models.CharField(max_length=255, blank=True)
-    md5 = models.UUIDField(blank=True, null=True, help_text="MD5 hash of the data buffer")
+    md5 = models.UUIDField(blank=True, null=True,
+                           help_text="MD5 hash of the data buffer")
 
     dataset_type = models.ForeignKey(DatasetType, null=True, blank=True)
 
@@ -119,9 +125,6 @@ class Dataset(BaseExperimentalData):
 
 # Files
 # ------------------------------------------------------------------------------------------------
-
-_related_string = lambda field: "%(app_label)s_%(class)s_" + field + "_related"
-
 
 class FileRecord(BaseModel):
     """
@@ -208,18 +211,21 @@ class Timescale(BaseModel):
 class TimeSeries(DataCollection):
     """
     A collection of Datasets that were all sampled together, associated with a single set of
-    timestamps, relative to specified timescale. This is a DataCollection together with a timescale ID
-    and a timestamps file.
+    timestamps, relative to specified timescale. This is a DataCollection together with a
+    timescale ID and a timestamps file.
 
-    In principle, you could store multiple TimeSeries with the same data but different  Timescales.
-    To avoid confusing data users, however, this is not recommended - only registerd the final timescale
-    into the database, and don't register intermediate timescales unless there is a good reason to.
+    In principle, you could store multiple TimeSeries with the same data but different
+    Timescales.
+    To avoid confusing data users, however, this is not recommended - only register the final
+    timescale into the database, and don't register intermediate timescales unless there is a
+    good reason to.
     """
 
     timestamps = models.ForeignKey(
         Dataset, blank=True, null=True,
         related_name=_related_string('timestamps'),
-        help_text="N*2 array containing sample numbers and their timestamps on associated timescale")
+        help_text="N*2 array containing sample numbers and their timestamps "
+        "on associated timescale")
 
     timescale = models.ForeignKey(
         Timescale, blank=True, null=True,
@@ -236,13 +242,12 @@ class EventSeries(DataCollection):
     file and a timestamp ID.
     """
 
-
     timescale = models.ForeignKey(
         Timescale, blank=True, null=True,
         help_text="which timescale this is on")
 
     times = models.ForeignKey(
-        Dataset, blank=True, null=True,
+        'Dataset', blank=True, null=True,
         related_name=_related_string('event_times'),
         help_text="n*1 array of times on specified timescale")
 
