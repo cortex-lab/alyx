@@ -32,7 +32,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5']
 
 
-class TimescaleAdmin(BaseExperimentalDataAdmin):
+class TimescaleAdmin(BaseAdmin):
     fields = ['name', 'nominal_start', 'nominal_time_unit', 'final']
 
 
