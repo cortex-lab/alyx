@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-from actions.models import Session
+from actions.models import Session, Experiment
 from alyx.base import BaseModel
 
 
@@ -11,7 +11,7 @@ from alyx.base import BaseModel
 
 class DataRepositoryType(BaseModel):
     """
-    A type of data repository, e.g. local SAMBA file server; web archive; LTO tape 
+    A type of data repository, e.g. local SAMBA file server; web archive; LTO tape
     """
     name = models.CharField(max_length=255, unique=True)
 
@@ -19,7 +19,7 @@ class DataRepositoryType(BaseModel):
         return "<DataRepositoryType '%s'>" % self.name
 
 
-class DataRepository(BaseModel):     
+class DataRepository(BaseModel):
     """
     A data repository e.g. a particular local drive, specific cloud storage
     location, or a specific tape.
@@ -28,7 +28,7 @@ class DataRepository(BaseModel):
     file://myserver.mylab.net/Data/ALF/; for web
     https://www.neurocloud.edu/Data/). Additional information about the
     repository can stored in JSON  in a type-specific manner (e.g. which
-    cardboard box to find a tape in) 
+    cardboard box to find a tape in)
     """
 
     name = models.CharField(max_length=255)
@@ -59,6 +59,7 @@ class DatasetType(BaseModel):
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
+
 
 class BaseExperimentalData(BaseModel):
     """
@@ -98,10 +99,11 @@ class BaseExperimentalData(BaseModel):
     class Meta:
         abstract = True
 
+
 class Dataset(BaseExperimentalData):
     """
     A chunk of data that is stored outside the database, most often a rectangular binary array.
-    There can be multiple FileRecords for one Dataset, which will be different physical files, 
+    There can be multiple FileRecords for one Dataset, which will be different physical files,
     all containing identical data, with the same MD5.
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
@@ -139,9 +141,9 @@ class FileRecord(BaseModel):
 # Data collections and time series
 # ------------------------------------------------------------------------------------------------
 
-    class DataCollection(BaseExperimentalData):
+class DataCollection(BaseExperimentalData):
     """
-    A collection of datasets that all describe different aspects of the same objects. For example, 
+    A collection of datasets that all describe different aspects of the same objects. For example,
     the filtered and unfiltered waveforms of a set of spike clusters. Each file in the collection
     must have the same number of rows (or the same leading dimension for higher-dim arrays). The
     timeseries classes will inherit from this.
@@ -173,7 +175,7 @@ class Timescale(BaseModel):
     timeseries of the appropriate kind.
 
     A timescale is always associated with a session, and can also optionally be associated with a
-    series or experiment. 
+    series or experiment.
     """
 
     name = models.CharField(
@@ -205,7 +207,7 @@ class Timescale(BaseModel):
 
 class TimeSeries(DataCollection):
     """
-    A collection of Datasets that were all sampled together, associated with a single set of 
+    A collection of Datasets that were all sampled together, associated with a single set of
     timestamps, relative to specified timescale. This is a DataCollection together with a timescale ID
     and a timestamps file.
 

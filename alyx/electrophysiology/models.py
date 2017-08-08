@@ -3,17 +3,16 @@ from data.models import TimeSeries, Dataset, BaseExperimentalData
 from equipment.models import ExtracellularProbe, Amplifier, DAQ, PipettePuller
 from misc.models import BrainLocation, CoordinateTransformation
 
-#test
 
 class ProbeInsertion(BaseModel):
     """
-    Contains info about the geometry and probe model of a single probe insertion. 
+    Contains info about the geometry and probe model of a single probe insertion.
     """
 
     entry_point_rl = models.FloatField(null=True, blank=True,
                                         help_text="mediolateral position of probe entry point "
                                         "relative to midline (microns). Positive means right")
-    
+
     entry_point_ap = models.FloatField(null=True, blank=True,
                                         help_text="anteroposterior position of probe entry point "
                                         "relative to bregma (microns). Positive means anterior")
@@ -39,20 +38,21 @@ class ProbeInsertion(BaseModel):
     probe_model = models.ForeignKey(ProbeModel, blank=True, null=True,
                                         help_text="model of probe used")
 
+
 class ProbeModel(BaseModel):
     """
     Metadata describing each probe model
     """
 
-    probe_manufacturer = models.ForeignKey(Supplier, blank=True, null=True) 
+    probe_manufacturer = models.ForeignKey(Supplier, blank=True, null=True)
 
     probe_model = models.CharField(max_length=255, help_text="manufacturer's part number e.g. A4x8-5mm-100-200-177")
-    
-    description: models.CharField(max_length=255, null=True, blank=True, 
+
+    description: models.CharField(max_length=255, null=True, blank=True,
                                 help_text= "optional informal description e.g. 'Michigan 4x4 tetrode'; "
                                 "'Neuropixels phase 2 option 1'")
 
-    site_positions: ForeignKey(Dataset, blank=True, null=True, 
+    site_positions: ForeignKey(Dataset, blank=True, null=True,
                                 help_text= "numerical array of size nSites x 2 giving locations of each contact site "
                                 "in local coordinates. Probe tip is at the origin.")
 
@@ -63,7 +63,7 @@ class BaseBrainLocation(BaseModel)
 
     Contains curated anatomical location in Allen CCG with an acronym.
     This is usually figured out using histology, so should override what you might
-    compute from ProbeInsertion. 
+    compute from ProbeInsertion.
     """
     ccf_ap = models.FloatField(help_text="Allen CCF antero-posterior coordinate (microns)")
     ccf_dv = models.FloatField(help_text="Allen CCF dorso-ventral coordinate (microns)")
@@ -73,6 +73,7 @@ class BaseBrainLocation(BaseModel)
                                         help_text="Manually curated site location. Use "
                                         " Allen's acronyms to represent the appropriate "
                                         "hierarchical level, e.g. SS, SSp, or SSp6a")
+
 
 class RecordingSite(BaseBrainLocation)
     """
@@ -84,28 +85,33 @@ class RecordingSite(BaseBrainLocation)
     probe_insertion = models.ForeignKey(ProbeInsertion, help_text="id of probe insertion")
 
     site_no = models.IntegerField(help_text="which site on the probe")
-    
+
 
 class ChannelMapping(BaseModel):
     """
-    Junction table linking ExtracellularRecording and ProbeInsertion, telling you which channels of which probes 
+    Junction table linking ExtracellularRecording and ProbeInsertion, telling you which channels of which probes
     were on which channels of which recordings. There is one entry per channel
     """
 
-    extracellular_recording = models.ForeignKey(ExtracellularRecording, help_text="id of extracellular recording")
+    extracellular_recording = models.ForeignKey(ExtracellularRecording,
+        help_text="id of extracellular recording")
 
-    channel_no = models.IntegerField(help_text="channel number in raw recording file (counting from 0)")
+    channel_no = models.IntegerField(help_text="channel number in raw recording file "
+        "(counting from 0)")
 
-    probe_insertion = models.ForeignKey(ProbeInsertion, null=True, help_text="which probe insertion was recorded on "
+    probe_insertion = models.ForeignKey(ProbeInsertion, null=True,
+                                        help_text="which probe insertion was recorded on "
                                         "that channel. NULL if channel not used")
 
-    site_no = models.IntegerField(null=True, help_text="probe site number for that channel "
+    site_no = models.IntegerField(null=True,
+        help_text="probe site number for that channel "
                                         "(NULL if channel not used or dead)")
+
 
 class ExtracellularRecording(TimeSeries):
     """
     Superclass of TimeSeries to describe raw data when you make an electrophys recording.
-    There should a Dataset of DatasetType "ephys.raw" corresponding to this. 
+    There should a Dataset of DatasetType "ephys.raw" corresponding to this.
 
     You can also link to a lfp timeseries, that contains low-pass data at a lower sample rate
     with the same channel mapping
@@ -138,7 +144,7 @@ class ExtracellularRecording(TimeSeries):
     filter_info = models.CharField(max_length=255, blank=True,
                                    help_text="Details of hardware corner frequencies, filter "
                                    "type, order.")
-   
+
     recording_type = models.CharField(max_length=1, choices=RECORDING_TYPES,
                                       help_text="Whether the recording is chronic or acute",
                                       blank=True)
@@ -155,6 +161,7 @@ class ExtracellularRecording(TimeSeries):
     daq_description = models.ForeignKey(DAQ, blank=True, null=True,
                                         help_text="The DAQ used.")
 
+
 class SpikeSorting(EventSeries):
     """
     An entry in the `spike_sorting` table contains the output of a single spike sorting run
@@ -165,17 +172,17 @@ class SpikeSorting(EventSeries):
 
     Note that the database only describes the final spike sorting results, not
     intermediate steps such as feature vectors, to allow flexibility if algorithms change later.
-    However, like models derived from BaseExperimentalData, it does contain a provenance_directory 
+    However, like models derived from BaseExperimentalData, it does contain a provenance_directory
     that can contain these intermediate steps, in a non-standardized format.
 
     """
 
     extracellular_recording = models.ForeignKey(ExtracellularRecording)
-    
+
     spikes = models.ForeignKey(EventSeries, help_text="EventSeries giving spike times "
                                     "plus clusters and any other info per spike")
 
-    cluster_data = models.ForeignKey(DataCollection, blank=True, null=True, 
+    cluster_data = models.ForeignKey(DataCollection, blank=True, null=True,
                                     help_text="DataCollection of files giving info on clusters: "
                                     "mean waveforms, qualities, etc.")
 
@@ -183,7 +190,7 @@ class SpikeSorting(EventSeries):
 class SpikeSortedUnit(BaseBrainLocation):
     """
     This is going to be the biggest table, containing anatomical and other information
-    on every unit resulting from spike sorting. (There is a separate table for 
+    on every unit resulting from spike sorting. (There is a separate table for
     units resulting from 2-photon).
     """
     CLUSTER_GROUPS = (
@@ -210,27 +217,27 @@ class SpikeSortedUnit(BaseBrainLocation):
     trough_to_peak_width = models.FloatField(null=True, blank=True,
                                              help_text="ms, computed from unfiltered "
                                              "mean spike waveform.")
-    
+
     half_width = models.FloatField(null=True, blank=True,
                                    help_text="ms, half width of negative peak in "
                                    "unfiltered spike waveform.")
-    
+
     trough_to_peak_amplitude = models.FloatField(null=True, blank=True,
                                                  help_text="µV, from filtered spike waveform.")
-    
+
     refractory_violation_rate = models.FloatField(null=True, blank=True,
                                                   help_text="fraction of spikes "
                                                   "occurring < 2ms. ")
-    
+
     isolation_distance = models.FloatField(null=True, blank=True,
                                            help_text="A measure of isolation quality")
-    
+
     l_ratio = models.FloatField(null=True, blank=True,
                                 help_text="A measure of isolation quality")
-    
+
     mean_firing_rate = models.FloatField(null=True, blank=True,
                                          help_text="spikes/s")
-    
+
     # human decisions:
     cluster_group = models.CharField(max_length=1, choices=CLUSTER_GROUPS,
                                      help_text="Human decision on cluster group")
@@ -240,6 +247,7 @@ class SpikeSortedUnit(BaseBrainLocation):
                                             help_text="e.g. 'Short latency' (only if applicable)")
     putative_cell_type = models.CharField(max_length=255, blank=True,
                                           help_text="e.g. 'Sst interneuron', 'PT cell'. ")
+
 
 class IntracellularRecording(BaseExperimentalData):
     """
