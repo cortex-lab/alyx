@@ -10,6 +10,9 @@ class ProbeInsertion(BaseModel):
     Contains info about the geometry and probe model of a single probe insertion.
     """
 
+    extracellular_recording = models.ForeignKey('ExtracellularRecording',
+                                                help_text="id of extracellular recording")
+
     entry_point_rl = models.FloatField(null=True, blank=True,
                                        help_text="mediolateral position of probe entry point "
                                        "relative to midline (microns). Positive means right")
@@ -40,6 +43,12 @@ class ProbeInsertion(BaseModel):
     probe_model = models.ForeignKey('ProbeModel', blank=True, null=True,
                                     help_text="model of probe used")
 
+    channel_mapping = models.ForeignKey(
+      Dataset, blank=True, null=True,
+        help_text="numerical array of size nSites x 1 giving the row of the raw data file "
+                  "for each contact site. You will have one of these files per probe, "
+                  "including if you record multiple probes through the same amplifier. "
+                  "Sites that were not recorded should have NaN or -1.")
 
 class ProbeModel(BaseModel):
     """
@@ -96,27 +105,6 @@ class RecordingSite(BaseBrainLocation):
     site_no = models.IntegerField(help_text="which site on the probe")
 
 
-class ChannelMapping(BaseModel):
-    """
-    Junction table linking ExtracellularRecording and ProbeInsertion, telling you which channels
-    of which probes were on which channels of which recordings. There is one entry per channel
-    """
-
-    extracellular_recording = models.ForeignKey('ExtracellularRecording',
-                                                help_text="id of extracellular recording")
-
-    channel_no = models.IntegerField(help_text="channel number in raw recording file "
-                                     "(counting from 0)")
-
-    probe_insertion = models.ForeignKey(ProbeInsertion, null=True,
-                                        help_text="which probe insertion was recorded on "
-                                        "that channel. NULL if channel not used")
-
-    site_no = models.IntegerField(null=True,
-                                  help_text="probe site number for that channel "
-                                  "(NULL if channel not used or dead)")
-
-
 class ExtracellularRecording(TimeSeries):
     """
     Superclass of TimeSeries to describe raw data when you make an electrophys recording.
@@ -148,7 +136,7 @@ class ExtracellularRecording(TimeSeries):
     gains = models.ForeignKey(Dataset, blank=True, null=True,
                               related_name="extracellular_gains",
                               help_text="dataset containing gain of each channel "
-                              " samples/microvolt")
+                              " microvolts/bit")
 
     filter_info = models.CharField(max_length=255, blank=True,
                                    help_text="Details of hardware corner frequencies, filter "
@@ -177,27 +165,22 @@ class SpikeSorting(EventSeries):
     of an extracellular recording. There will usually be only one of these per recording,
     but there could be several if you want to store multiple alternative clusterings.
 
-    The event series should have an associated info Dataset of DatasetType spikes.clusters
+    This inherits from EventSeries, so is stored in the same format. As well as the spike times
+    there should be an associated Dataset containing cluster IDs of each spike. Optionally, you
+    can also have other datasets with implementation-specific information such as feature vectors
+    but these are not standardized. Like all models derived from BaseExperimentalData, it also 
+    contain a provenance_directory that can contain these intermediate steps, in a non-standardized format.
 
-    Note that the database only describes the final spike sorting results, not
-    intermediate steps such as feature vectors, to allow flexibility if algorithms change later.
-    However, like models derived from BaseExperimentalData, it does contain a provenance_directory
-    that can contain these intermediate steps, in a non-standardized format.
-
+    Sometimes people do sortings per probe, sometimes per recording. The probe_insertion field should be 
+    null if it is a sorting for the whole recording. NOTE: to be strictly relational, if the probe_insertion 
+    is not null, the extracellular_recording ought to be. 
     """
 
     extracellular_recording = models.ForeignKey(ExtracellularRecording,
                                                 related_name='spike_sorting_recording')
 
-    spikes = models.ForeignKey(EventSeries,
-                               related_name='spike_sorting_spikes',
-                               help_text="EventSeries giving spike times "
-                               "plus clusters and any other info per spike")
-
-    cluster_data = models.ForeignKey(DataCollection, blank=True, null=True,
-                                     related_name='spike_sorting_cluster_data',
-                                     help_text="DataCollection of files giving info on clusters: "
-                                     "mean waveforms, qualities, etc.")
+    probe_insertion = models.ForeignKey(ExtracellularRecording,
+                                                related_name='spike_sorting_probe')
 
 
 class SpikeSortedUnit(BaseBrainLocation):
@@ -209,7 +192,8 @@ class SpikeSortedUnit(BaseBrainLocation):
     CLUSTER_GROUPS = (
         ('0', 'Noise'),
         ('1', 'Multi-unit activity'),
-        ('2', 'Single-unit activity')
+        ('2', 'Single-unit activity'),
+        ('3', 'Unsorted')
     )
 
     WIDTH_CLASSES = (

@@ -69,18 +69,13 @@ class BaseExperimentalData(BaseModel):
     """
     Abstract base class for all data acquisition models. Never used directly.
 
-    Contains an Session link, to provide information about who did the experiment etc. and
-    also optionally an Experiment link to assign it to a subcomponent of that Session
+    Contains an Session link, to provide information about who did the experiment etc. Note that
+    sessions can be organized hierarchically, and this can point to any level of the hierarchy
     """
     session = models.ForeignKey(
         Session, blank=True, null=True,
         related_name=_related_string('session'),
         help_text="The Session to which this data belongs")
-
-    experiment = models.ForeignKey(
-        Experiment, blank=True, null=True,
-        related_name=_related_string('session'),
-        help_text="The Experiment to which this data belongs")
 
     created_by = models.ForeignKey(
         User, blank=True, null=True,
