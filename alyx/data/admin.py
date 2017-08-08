@@ -22,7 +22,7 @@ class DatasetTypeAdmin(BaseAdmin):
 
 class BaseExperimentalDataAdmin(BaseAdmin):
     def __init__(self, *args, **kwargs):
-        for field in ('session', 'created_by', 'created_date'):
+        for field in ('session', 'created_by', 'created_datetime'):
             if self.fields and field not in self.fields:
                 self.fields += (field,)
         super(BaseAdmin, self).__init__(*args, **kwargs)
