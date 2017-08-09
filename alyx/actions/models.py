@@ -161,11 +161,12 @@ class Session(BaseAction):
     A recording or training session performed on a subject. There is normally only one of
     these per day, for example corresponding to a  period of uninterrupted head fixation.
 
-    Note that you can organize sessions hierarchically by assigning a parent Session.
+    Note that you can organize sessions hierarchically by assigning a parent_session.
     Sub-sessions could for example corresponding to periods of time in which the same
-    neurons were recorded, or a particular set of stimuli were presented. 
+    neurons were recorded, or a particular set of stimuli were presented. Top-level sessions
+    should have parent_session set to null.
 
-    If the fields of a subsession are null, they should inherited from the parent.
+    If the fields (e.g. users) of a subsession are null, they should inherited from the parent.
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                           help_text="Hierarchical parent to this session")
