@@ -14,13 +14,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='channelmapping',
-            name='extracellular_recording',
-        ),
-        migrations.RemoveField(
-            model_name='channelmapping',
-            name='probe_insertion',
+        # migrations.RemoveField(
+        #     model_name='channelmapping',
+        #     name='extracellular_recording',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='channelmapping',
+        #     name='probe_insertion',
+        # ),
+        migrations.DeleteModel(
+            name='ChannelMapping',
         ),
         migrations.RemoveField(
             model_name='intracellularrecording',
@@ -60,8 +63,5 @@ class Migration(migrations.Migration):
             model_name='spikesortedunit',
             name='cluster_group',
             field=models.CharField(choices=[('0', 'Noise'), ('1', 'Multi-unit activity'), ('2', 'Single-unit activity'), ('3', 'Unsorted')], help_text='Human decision on cluster group', max_length=1),
-        ),
-        migrations.DeleteModel(
-            name='ChannelMapping',
         ),
     ]

@@ -17,20 +17,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='experiment',
-            name='parent_experiment',
-        ),
-        migrations.RemoveField(
-            model_name='experiment',
-            name='session',
+        # migrations.RemoveField(
+        #     model_name='experiment',
+        #     name='parent_experiment',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='experiment',
+        #     name='session',
+        # ),
+        migrations.DeleteModel(
+            name='Experiment',
         ),
         migrations.AddField(
             model_name='session',
             name='parent_session',
             field=models.ForeignKey(blank=True, help_text='Hierarchical parent to this session', null=True, on_delete=django.db.models.deletion.CASCADE, to='actions.Session'),
-        ),
-        migrations.DeleteModel(
-            name='Experiment',
         ),
     ]
