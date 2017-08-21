@@ -155,7 +155,7 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT. 
+# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT.
 class Session(BaseAction):
     """
     A recording or training session performed on a subject. There is normally only one of
@@ -163,12 +163,12 @@ class Session(BaseAction):
 
     Note that you can organize sessions hierarchically by assigning a parent Session.
     Sub-sessions could for example corresponding to periods of time in which the same
-    neurons were recorded, or a particular set of stimuli were presented. 
+    neurons were recorded, or a particular set of stimuli were presented.
 
     If the fields of a subsession are null, they should inherited from the parent.
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
-                                          help_text="Hierarchical parent to this session")
+                                       help_text="Hierarchical parent to this session")
 
 
 class WaterRestriction(BaseAction):
