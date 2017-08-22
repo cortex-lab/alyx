@@ -42,7 +42,7 @@ class WaterHistoryListView(ListView):
 
     def get_queryset(self):
         """
-        date, weight, 80% weight, weight percentile, water, hydrogel, total, min water, excess
+        date, weight, 80% weight, weight percentage, water, hydrogel, total, min water, excess
         """
         subject = Subject.objects.get(pk=self.kwargs['subject_id'])
         weighings = Weighing.objects.filter(subject=subject,
@@ -70,16 +70,17 @@ class WaterHistoryListView(ListView):
             rw = water.reference_weighing(subject, date=date)
             b.required = water.water_requirement_total(subject, date=date)
             b.weight = weighings.get(date, 0.)
-            b.percentile = water.weight_percentile(subject, date, b.weight) * 100
-            if b.weight == 0.:
-                b.weight = None
-            if b.percentile == 0:
-                b.percentile = None
-            b.expected_80 = .8 * water.expected_weighing(subject, date=date, rw=rw)
+            b.expected = water.expected_weighing(subject, date=date, rw=rw)
+            b.expected_80 = .8 * b.expected
+            b.percentage = b.weight / b.expected * 100
             b.water = was[False].get(date, 0.)
             b.hydrogel = was[True].get(date, 0.)
             b.total = b.water + b.hydrogel
             b.excess = b.total - b.required
+            if b.weight == 0.:
+                b.weight = None
+            if b.percentage == 0.:
+                b.percentage = None
             out.append(b)
         return out
 

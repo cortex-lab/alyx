@@ -107,16 +107,6 @@ def phy(x):
     return (1.0 + erf(x / sqrt(2.0))) / 2.0
 
 
-def weight_percentile(subject, date, weight):
-    if weight == 0:
-        return 0
-    age = to_weeks(subject.birth_date, date)
-    mrw, srw = expected_weighing_mean_std(subject.sex, age)
-    iw = subject.implant_weight or 0
-    z = (weight - iw - mrw) / srw
-    return phy(z)
-
-
 def water_requirement_total(subject, date=None):
     """Returns the amount of water the subject needs today in total"""
     if not last_water_restriction(subject, date=date):

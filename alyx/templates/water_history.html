@@ -9,7 +9,7 @@
         <th>date</th>
         <th>weight</th>
         <th>80% weight</th>
-        <th>weight percentile</th>
+        <th>weight pct</th>
         <th>water</th>
         <th>hydrogel</th>
         <th>total</th>
@@ -23,7 +23,7 @@
         <td>{{ obj.date | date }}</td>
         <td>{{ obj.weight | floatformat:1 }}</td>
         <td>{{ obj.expected_80 | floatformat:1 }}</td>
-        <td>{{ obj.percentile | floatformat:1 }}</td>
+        <td>{{ obj.percentage | floatformat:1 }}</td>
         <td>{{ obj.water | floatformat:2 }}</td>
         <td>{{ obj.hydrogel | floatformat:2 }}</td>
         <td>{{ obj.total | floatformat:2 }}</td>
