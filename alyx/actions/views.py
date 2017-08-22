@@ -1,13 +1,18 @@
 from collections import defaultdict
+from datetime import timedelta
 import itertools
 from operator import itemgetter
 
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
+from django.views.generic.list import ListView
 import django_filters
 from django_filters.rest_framework import FilterSet
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from alyx.base import Bunch
 from subjects.models import Subject
 from . import water
 from .models import Session, WaterAdministration, Weighing
@@ -18,6 +23,65 @@ from .serializers import (SessionListSerializer,
                           WeighingListSerializer,
                           WeighingDetailSerializer,
                           )
+
+
+def date_range(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield (start_date + timedelta(n)).date()
+
+
+class WaterHistoryListView(ListView):
+    template_name = 'water_history.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(WaterHistoryListView, self).get_context_data(**kwargs)
+        subject = Subject.objects.get(pk=self.kwargs['subject_id'])
+        context['title'] = 'Water history of %s' % subject.nickname
+        context['site_header'] = 'Alyx'
+        return context
+
+    def get_queryset(self):
+        """
+        date, weight, 80% weight, weight percentile, water, hydrogel, total, min water, excess
+        """
+        subject = Subject.objects.get(pk=self.kwargs['subject_id'])
+        weighings = Weighing.objects.filter(subject=subject,
+                                            date_time__isnull=False).order_by('date_time')
+        if not weighings:
+            return []
+        weighings = list(weighings)
+        start, end = weighings[0].date_time, weighings[-1].date_time
+        weighings = {w.date_time.date(): w.weight for w in weighings}
+
+        # Sum all water administrations for any given day.
+        was = {boo: WaterAdministration.objects.filter(subject=subject, hydrogel=boo).
+               annotate(date=TruncDate('date_time')).values('date').
+               annotate(sum=Sum('water_administered')).order_by('date')
+               for boo in (False, True)
+               }
+        # Do it for hydrogel and no hydrogel.
+        for boo in (False, True):
+            was[boo] = {w['date']: w['sum'] for w in was[boo]}
+
+        out = []
+        for date in list(date_range(start, end))[::-1]:
+            b = Bunch()
+            b.date = date
+            rw = water.reference_weighing(subject, date=date)
+            b.required = water.water_requirement_total(subject, date=date)
+            b.weight = weighings.get(date, 0.)
+            b.percentile = water.weight_percentile(subject, date, b.weight) * 100
+            if b.weight == 0.:
+                b.weight = None
+            if b.percentile == 0:
+                b.percentile = None
+            b.expected_80 = .8 * water.expected_weighing(subject, date=date, rw=rw)
+            b.water = was[False].get(date, 0.)
+            b.hydrogel = was[True].get(date, 0.)
+            b.total = b.water + b.hydrogel
+            b.excess = b.total - b.required
+            out.append(b)
+        return out
 
 
 class SessionFilter(FilterSet):

@@ -2,6 +2,7 @@ import csv
 import datetime
 import functools
 import logging
+from math import erf, sqrt
 import os.path as op
 
 from django.db import models
@@ -99,6 +100,21 @@ def expected_weighing(subject, date=None, rw=None):
     mrw, srw = expected_weighing_mean_std(subject.sex, age)
     subj_zscore = weight_zscore(subject, date=date, rw=rw)
     return (srw * subj_zscore) + mrw + iw
+
+
+def phy(x):
+    'Cumulative distribution function for the standard normal distribution'
+    return (1.0 + erf(x / sqrt(2.0))) / 2.0
+
+
+def weight_percentile(subject, date, weight):
+    if weight == 0:
+        return 0
+    age = to_weeks(subject.birth_date, date)
+    mrw, srw = expected_weighing_mean_std(subject.sex, age)
+    iw = subject.implant_weight or 0
+    z = (weight - iw - mrw) / srw
+    return phy(z)
 
 
 def water_requirement_total(subject, date=None):
