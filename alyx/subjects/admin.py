@@ -370,7 +370,9 @@ class SubjectAdmin(BaseAdmin):
 
     def weighing_plot(self, obj):
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
-        return format_html('<img src="{url}" />', url=url)
+        url_h = reverse('water-history', kwargs={'subject_id': obj.id})
+        return format_html('<img src="{url}" /><br /><a href="{url_h}">Water history</a>',
+                           url=url, url_h=url_h)
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
