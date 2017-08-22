@@ -411,6 +411,7 @@ class Line(BaseModel):
     target_phenotype = models.CharField(max_length=1023)
     auto_name = models.CharField(max_length=255, unique=True)
     sequences = models.ManyToManyField('Sequence')
+    lamis_strain_number = models.IntegerField(null=True, blank=True)
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=MOUSE_SPECIES_ID)

@@ -832,12 +832,13 @@ class LineFilter(DefaultListFilter):
 
 class LineAdmin(BaseAdmin):
     fields = ['name', 'auto_name', 'target_phenotype', 'is_active',
-              'strain', 'species', 'description',
+              'strain', 'species', 'description', 'lamis_strain_number',
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
               ]
-    list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'is_active']
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'lamis_strain_number',
+                    'is_active']
     ordering = ['auto_name']
     list_filter = [LineFilter]
     list_editable = ['is_active']
