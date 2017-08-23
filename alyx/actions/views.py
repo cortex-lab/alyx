@@ -72,7 +72,7 @@ class WaterHistoryListView(ListView):
             b.weight = weighings.get(date, 0.)
             b.expected = water.expected_weighing(subject, date=date, rw=rw)
             b.expected_80 = .8 * b.expected
-            b.percentage = b.weight / b.expected * 100
+            b.percentage = b.weight / b.expected * 100 if b.expected else None
             b.water = was[False].get(date, 0.)
             b.hydrogel = was[True].get(date, 0.)
             b.total = b.water + b.hydrogel
