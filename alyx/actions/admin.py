@@ -224,8 +224,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                    ]
 
     def subject_w(self, obj):
-        url = reverse('water-history', kwargs={'subject_id': obj.id})
-        return format_html('<a href="{url}">{name}</a>', url=url, name=obj.nickname)
+        url = reverse('water-history', kwargs={'subject_id': obj.subject.id})
+        return format_html('<a href="{url}">{name}</a>', url=url, name=obj.subject.nickname)
     subject_w.short_description = 'subject'
 
     def start_time_l(self, obj):
