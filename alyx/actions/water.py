@@ -51,7 +51,6 @@ def to_weeks(birth_date, dt):
 def last_water_restriction(subject, date=None):
     """Start of the last ongoing water restriction before specified date."""
     restriction = WaterRestriction.objects.filter(subject=subject,
-                                                  end_time__isnull=True,
                                                   start_time__date__lte=date or today(),
                                                   )
     restriction = restriction.order_by('-start_time').first()
