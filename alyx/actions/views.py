@@ -5,7 +5,9 @@ from operator import itemgetter
 
 from django.db.models import Sum
 from django.db.models.functions import TruncDate
+from django.urls import reverse
 from django.views.generic.list import ListView
+
 import django_filters
 from django_filters.rest_framework import FilterSet
 from rest_framework import generics, permissions
@@ -38,6 +40,8 @@ class WaterHistoryListView(ListView):
         subject = Subject.objects.get(pk=self.kwargs['subject_id'])
         context['title'] = 'Water history of %s' % subject.nickname
         context['site_header'] = 'Alyx'
+        url = reverse('weighing-plot', kwargs={'subject_id': subject.id})
+        context['plot_url'] = url
         return context
 
     def get_queryset(self):
