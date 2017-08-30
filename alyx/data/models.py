@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
-from actions.models import Session, Experiment
+from actions.models import Session
 from alyx.base import BaseModel
 
 

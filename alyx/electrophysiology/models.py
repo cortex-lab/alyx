@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import TimeSeries, Dataset, BaseExperimentalData, EventSeries, DataCollection
+from data.models import TimeSeries, Dataset, BaseExperimentalData, EventSeries
 from equipment.models import Amplifier, DAQ, PipettePuller, Supplier
 from misc.models import BrainLocation
 from alyx.base import BaseModel
@@ -44,11 +44,12 @@ class ProbeInsertion(BaseModel):
                                     help_text="model of probe used")
 
     channel_mapping = models.ForeignKey(
-      Dataset, blank=True, null=True,
+        Dataset, blank=True, null=True,
         help_text="numerical array of size nSites x 1 giving the row of the raw data file "
                   "for each contact site. You will have one of these files per probe, "
                   "including if you record multiple probes through the same amplifier. "
                   "Sites that were not recorded should have NaN or -1.")
+
 
 class ProbeModel(BaseModel):
     """
@@ -168,19 +169,20 @@ class SpikeSorting(EventSeries):
     This inherits from EventSeries, so is stored in the same format. As well as the spike times
     there should be an associated Dataset containing cluster IDs of each spike. Optionally, you
     can also have other datasets with implementation-specific information such as feature vectors
-    but these are not standardized. Like all models derived from BaseExperimentalData, it also 
-    contain a provenance_directory that can contain these intermediate steps, in a non-standardized format.
+    but these are not standardized. Like all models derived from BaseExperimentalData, it also
+    contain a provenance_directory that can contain these intermediate steps, in a
+    non-standardized format.
 
-    Sometimes people do sortings per probe, sometimes per recording. The probe_insertion field should be 
-    null if it is a sorting for the whole recording. NOTE: to be strictly relational, if the probe_insertion 
-    is not null, the extracellular_recording ought to be. 
+    Sometimes people do sortings per probe, sometimes per recording. The probe_insertion field
+    should be null if it is a sorting for the whole recording. NOTE: to be strictly relational,
+    if the probe_insertion is not null, the extracellular_recording ought to be.
     """
 
     extracellular_recording = models.ForeignKey(ExtracellularRecording,
                                                 related_name='spike_sorting_recording')
 
     probe_insertion = models.ForeignKey(ExtracellularRecording,
-                                                related_name='spike_sorting_probe')
+                                        related_name='spike_sorting_probe')
 
 
 class SpikeSortedUnit(BaseBrainLocation):

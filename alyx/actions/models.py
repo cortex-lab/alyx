@@ -155,7 +155,7 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT. 
+# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT.
 class Session(BaseAction):
     """
     A recording or training session performed on a subject. There is normally only one of
@@ -169,7 +169,12 @@ class Session(BaseAction):
     If the fields (e.g. users) of a subsession are null, they should inherited from the parent.
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
-                                          help_text="Hierarchical parent to this session")
+                                       help_text="Hierarchical parent to this session")
+	type = models.CharField(max_length=255, null=True, blank=True, 
+								help_text="User-defined session type (e.g. Base, Experiment)")
+	number = models.IntegerField(null=True, blank=True, 
+								help_text="Optional session number for this level"))
+
 
 
 class WaterRestriction(BaseAction):
