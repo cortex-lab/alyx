@@ -170,11 +170,10 @@ class Session(BaseAction):
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        help_text="Hierarchical parent to this session")
-	type = models.CharField(max_length=255, null=True, blank=True, 
-								help_text="User-defined session type (e.g. Base, Experiment)")
-	number = models.IntegerField(null=True, blank=True, 
-								help_text="Optional session number for this level"))
-
+    type = models.CharField(max_length=255, null=True, blank=True,
+                            help_text="User-defined session type (e.g. Base, Experiment)")
+    number = models.IntegerField(null=True, blank=True,
+                                 help_text="Optional session number for this level")
 
 
 class WaterRestriction(BaseAction):
