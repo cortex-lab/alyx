@@ -228,7 +228,7 @@ class WaterRequirement(APIView):
                 was_out[date] = defaultdict(float)
             h = wa['hydrogel']
             name = 'hydrogel_given' if h else 'water_given'
-            was_out[date][name] += wa['administered']
+            was_out[date][name] += (wa['administered'] or 0.)
             was_out[date]['date'] = date
         was_out = [was_out[d] for d in sorted(was_out.keys())]
         records = _merge_lists_dicts(wl, was_out, 'date')
