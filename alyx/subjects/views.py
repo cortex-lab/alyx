@@ -1,11 +1,11 @@
+from rest_framework import generics, permissions
+import django_filters
+from django_filters.rest_framework import FilterSet
 
 from .models import Subject
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
                           WaterRestrictedSubjectListSerializer)
-from rest_framework import generics, permissions
-import django_filters
-from django_filters.rest_framework import FilterSet
 
 
 class SubjectFilter(FilterSet):

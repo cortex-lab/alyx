@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models import Case, When
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django.urls import reverse
 from django.utils.html import format_html
 
 from alyx.base import BaseAdmin, DefaultListFilter
@@ -203,7 +204,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     fields = ['subject', 'start_time', 'end_time', 'users', 'narrative']
-    list_display = ['subject_l', 'start_time_l',
+    list_display = ['subject_w', 'start_time_l',
                     'reference_weighing', 'current_weighing',
                     'water_requirement_total',
                     'water_requirement_today',
@@ -221,6 +222,11 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                    ('subject', RelatedDropdownFilter),
                    ActiveFilter,
                    ]
+
+    def subject_w(self, obj):
+        url = reverse('water-history', kwargs={'subject_id': obj.subject.id})
+        return format_html('<a href="{url}">{name}</a>', url=url, name=obj.subject.nickname)
+    subject_w.short_description = 'subject'
 
     def start_time_l(self, obj):
         return obj.start_time.date()

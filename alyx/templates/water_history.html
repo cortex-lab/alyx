@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+{% block content %}
+<table>
+<thead>
+    <tr>
+        <th>date</th>
+        <th>weight</th>
+        <th>80% weight</th>
+        <th>weight pct</th>
+        <th>water</th>
+        <th>hydrogel</th>
+        <th>total</th>
+        <th>min water</th>
+        <th>excess</th>
+    </tr>
+</thead>
+<tbody>
+{% for obj in object_list %}
+    <tr>
+        <td>{{ obj.date | date }}</td>
+        <td>{{ obj.weight | floatformat:1 }}</td>
+        <td>{{ obj.expected_80 | floatformat:1 }}</td>
+        <td>{{ obj.percentage | floatformat:1 }}</td>
+        <td>{{ obj.water | floatformat:2 }}</td>
+        <td>{{ obj.hydrogel | floatformat:2 }}</td>
+        <td>{{ obj.total | floatformat:2 }}</td>
+        <td>{{ obj.required | floatformat:2 }}</td>
+        <td>{{ obj.excess | floatformat:2 }}</td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div>
+<img src="{{ plot_url }}" />
+</div>
+
+{% endblock %}
