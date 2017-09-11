@@ -79,6 +79,18 @@ ADMIN_PAGES = [('Common', ['Subjects',
                            'Weighings',
                            'Subject requests',
                            ]),
+               ('Data files',
+                ['Data repository types',
+                 'Data repositories',
+                 'Dataset types',
+                 'Datasets',
+                 'File records',
+                 'Data collections',
+                 'Timescales',
+                 'Time series',
+                 'Event series',
+                 'Interval series',
+                 ]),
                ('Data that changes rarely',
                 ['Lines',
                  'Strains',
@@ -86,7 +98,6 @@ ADMIN_PAGES = [('Common', ['Subjects',
                  'Sequences',
                  'Sources',
                  'Species',
-                 'Virus injections',
                  'Other actions',
                  'Procedure types',
                  ]),
@@ -132,10 +143,8 @@ def _get_category_list(app_list):
             continue
         if model_name.startswith('Subject') or model_name in extra_in_common:
             category_list[0].models.append(models_dict[model_name])
-        elif app_name == 'Equipment':
-            category_list[1].models.append(models_dict[model_name])
         else:
-            category_list[2].models.append(models_dict[model_name])
+            category_list[3].models.append(models_dict[model_name])
     return category_list
 
 

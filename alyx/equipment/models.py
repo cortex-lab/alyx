@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
@@ -30,28 +29,12 @@ class Supplier(BasePolymorphicModel):
         return self.name
 
 
-class EquipmentManufacturer(Supplier):
-    # maybe this could be a subclass of a more general supplier field?
-    """
-    An equipment manufacturer, i.e. "NeuroNexus"
-    """
-    pass
-
-
-class VirusSource(Supplier):
-    # maybe this could be a subclass of a more general supplier field?
-    """
-    An equipment manufacturer, i.e. "NeuroNexus"
-    """
-    pass
-
-
 class EquipmentModel(BaseModel):
     """
     An equipment model. i.e. "BrainScanner 4X"
     """
     manufacturer = models.ForeignKey(
-        'EquipmentManufacturer', null=True, blank=True)
+        Supplier, null=True, blank=True)
     model_name = models.CharField(
         max_length=255, help_text="e.g. 'BrainScanner 4X'")
     description = models.CharField(max_length=255, blank=True)
@@ -71,10 +54,12 @@ class VirusBatch(BaseModel):
     virus_type = models.CharField(max_length=255, blank=True,
                                   help_text="UPenn ID or equivalent")
     description = models.CharField(max_length=255, blank=True)
-    virus_source = models.ForeignKey('VirusSource', null=True, blank=True,
+    virus_source = models.ForeignKey(Supplier, null=True, blank=True,
                                      help_text="Who supplied the virus")
-    date_time_made = models.DateTimeField(null=True, blank=True, default=timezone.now)
-    nominal_titer = models.FloatField(null=True, blank=True, help_text="TODO: What unit?")
+    date_time_made = models.DateTimeField(
+        null=True, blank=True, default=timezone.now)
+    nominal_titer = models.FloatField(
+        null=True, blank=True, help_text="TODO: What unit?")
     # let's ask Charu about what unit.
 
     class Meta:
@@ -149,15 +134,3 @@ class DAQ(Appliance):
     A DAQ for extracellular electrophysiology.
     """
     pass
-
-
-class ExtracellularProbe(Appliance):
-    """
-    An extracellular probe used in extracellular electrophysiology.
-    """
-    prb = JSONField(null=True, blank=True,
-                    help_text="A JSON string describing the probe connectivity and geometry. "
-                              "For details, see "
-                              "https://github.com/klusta-team/kwiklib/wiki/Kwik-format#prb")
-    # does this mean a pointer to a .prb file on disk, or a copy of it in the database?
-    # (I guess the latter)

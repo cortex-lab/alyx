@@ -61,6 +61,7 @@ class SessionListSerializer(BaseActionSerializer):
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures',
+                  'type', 'number', 'parent_session',
                   'narrative', 'start_time', 'end_time', 'url')
 
 

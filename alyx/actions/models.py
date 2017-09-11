@@ -89,7 +89,8 @@ class BaseAction(BaseModel):
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(blank=True)
-    start_time = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    start_time = models.DateTimeField(
+        null=True, blank=True, default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -154,17 +155,32 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
+# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT.
 class Session(BaseAction):
     """
-    An session or training session performed on a subject.
+    A recording or training session performed on a subject. There is normally only one of
+    these per day, for example corresponding to a  period of uninterrupted head fixation.
+
+    Note that you can organize sessions hierarchically by assigning a parent_session.
+    Sub-sessions could for example corresponding to periods of time in which the same
+    neurons were recorded, or a particular set of stimuli were presented. Top-level sessions
+    should have parent_session set to null.
+
+    If the fields (e.g. users) of a subsession are null, they should inherited from the parent.
     """
-    pass
+    parent_session = models.ForeignKey('Session', null=True, blank=True,
+                                       help_text="Hierarchical parent to this session")
+    type = models.CharField(max_length=255, null=True, blank=True,
+                            help_text="User-defined session type (e.g. Base, Experiment)")
+    number = models.IntegerField(null=True, blank=True,
+                                 help_text="Optional session number for this level")
 
 
 class WaterRestriction(BaseAction):
     """
-    Another type of action.
+    Water restriction.
     """
+
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 

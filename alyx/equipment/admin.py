@@ -1,7 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
-from .models import (Appliance, WeighingScale, Amplifier, PipettePuller, DAQ, ExtracellularProbe,
-                     VirusBatch, LabLocation, EquipmentManufacturer, EquipmentModel
+from .models import (Appliance, WeighingScale, Amplifier, PipettePuller, DAQ,
+                     VirusBatch, LabLocation, EquipmentModel
                      )
 from alyx.base import BaseAdmin
 
@@ -26,16 +26,11 @@ class DAQAdmin(ApplianceChildAdmin):
     base_model = DAQ
 
 
-class ExtracellularProbeAdmin(ApplianceChildAdmin):
-    base_model = ExtracellularProbe
-
-
 class ApplianceParentAdmin(PolymorphicParentModelAdmin):
     base_model = Appliance
     child_models = (
         (WeighingScale, WeighingScaleAdmin),
         (Amplifier, AmplifierAdmin),
-        (ExtracellularProbe, ExtracellularProbeAdmin),
         (PipettePuller, PipettePullerAdmin),
         (DAQ, DAQAdmin)
     )
@@ -64,6 +59,5 @@ class VirusBatchAdmin(BaseAdmin):
 admin.site.register(Appliance, ApplianceParentAdmin)
 
 admin.site.register(LabLocation, LabLocationAdmin)
-admin.site.register(EquipmentManufacturer, EquipmentManufacturerAdmin)
 admin.site.register(EquipmentModel, EquipmentModelAdmin)
 admin.site.register(VirusBatch, VirusBatchAdmin)

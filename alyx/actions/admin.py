@@ -315,6 +315,7 @@ class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'end_time', 'location']
     list_display_links = ['start_time']
     inlines = [NoteInline]
+    fields = BaseActionAdmin.fields + ['type', 'number', 'parent_session']
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
