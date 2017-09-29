@@ -28,7 +28,7 @@ class DataRepository(BaseModel):
     A data repository e.g. a particular local drive, specific cloud storage
     location, or a specific tape.
 
-    Stores an absolute path to the repository rootas a URI (e.g. for SMB
+    Stores an absolute path to the repository root as a URI (e.g. for SMB
     file://myserver.mylab.net/Data/ALF/; for web
     https://www.neurocloud.edu/Data/). Additional information about the
     repository can stored in JSON  in a type-specific manner (e.g. which
@@ -249,7 +249,7 @@ class EventSeries(DataCollection):
         verbose_name_plural = 'Event series'
 
 
-class IntervalSeries(BaseExperimentalData):
+class IntervalSeries(DataCollection):
     """
     Links to a file containing a set of event times, and other files with further information,
     such as behavioral events or sensory stimuli. This is a DataCollection together with a times
