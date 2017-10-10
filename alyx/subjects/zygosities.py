@@ -47,8 +47,8 @@ ZYGOSITY_RULES = (
                          ('-eGFP', '-/-'))),
 
     ('RCLcg', 'Ai95-G6f', (('eGFP,WT', '+/-'),
-                         ('eGFP,-WT', '+/+'),
-                         ('-eGFP', '-/-'))),    
+                           ('eGFP,-WT', '+/+'),
+                           ('-eGFP', '-/-'))),
 
     ('Rasgrf', 'Rasgrf-Cre', (('Rasgrf Cre,Rasgrf WT', '+/-'),
                               ('Rasgrf Cre,-Rasgrf WT', '+/+'),
