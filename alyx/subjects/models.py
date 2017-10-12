@@ -639,11 +639,11 @@ class ZygosityFinder(object):
     def _zygosity_from_parents(self, zm, zf):
         if zm == '+/+' and zf == '+/+':
             return '+/+'
-        elif '+/+' in (zm, zf) and '-/-' in (zm, zf):
+        elif '+/+' in (zm, zf) and ('-/-' in (zm, zf) or None in (zm, zf)):
             return '+/-'
         elif '+/+' in (zm, zf):
             return '+'
-        elif zm == '-/-' and zf == '-/-':
+        elif (zm == '-/-' or zm == None) and (zf == '-/-' or zf == None):
             return '-/-'
         else:
             return None
