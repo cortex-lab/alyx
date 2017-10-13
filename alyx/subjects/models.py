@@ -663,7 +663,7 @@ class ZygosityFinder(object):
             (None, '-/-'): '-/-',
             (None, '+'): None,
             (None, None): '-/-',
-            }.get((zm, zf), None)
+        }.get((zm, zf), None)
 
     def genotype_from_litter(self, subject):
         if not subject.litter:
