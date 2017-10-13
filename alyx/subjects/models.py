@@ -637,16 +637,33 @@ class ZygosityFinder(object):
         return out['mother'], out['father']
 
     def _zygosity_from_parents(self, zm, zf):
-        if zm == '+/+' and zf == '+/+':
-            return '+/+'
-        elif '+/+' in (zm, zf) and ('-/-' in (zm, zf) or None in (zm, zf)):
-            return '+/-'
-        elif '+/+' in (zm, zf):
-            return '+'
-        elif (zm == '-/-' or zm == None) and (zf == '-/-' or zf == None):
-            return '-/-'
-        else:
-            return None
+        return {
+            ('+/+', '+/+'): '+/+',
+            ('+/+', '+/-'): '+',
+            ('+/+', '-/-'): '+/-',
+            ('+/+', '+'): '+',
+            ('+/+', None): '+/-',
+            ('+/-', '+/+'): '+',
+            ('+/-', '+/-'): None,
+            ('+/-', '-/-'): None,
+            ('+/-', '+'): None,
+            ('+/-', None): None,
+            ('-/-', '+/+'): '+/-',
+            ('-/-', '+/-'): None,
+            ('-/-', '-/-'): '-/-',
+            ('-/-', '+'): None,
+            ('-/-', None): '-/-',
+            ('+', '+/+'): '+',
+            ('+', '+/-'): None,
+            ('+', '-/-'): None,
+            ('+', '+'): None,
+            ('+', None): None,
+            (None, '+/+'): '+/-',
+            (None, '+/-'): None,
+            (None, '-/-'): '-/-',
+            (None, '+'): None,
+            (None, None): '-/-',
+            }.get((zm, zf), None)
 
     def genotype_from_litter(self, subject):
         if not subject.litter:
