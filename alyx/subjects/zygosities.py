@@ -12,10 +12,10 @@ ZYGOSITY_RULES = (
                               ('-Cre', '-/-'))),
 
     ('RCLcg.Vg', 'Ai95-G6f', (('GFP', '+/-'),
-                            ('-GFP', '-/-'))),
+                              ('-GFP', '-/-'))),
 
     ('RCLcg.Vg', 'Vglut1-Cre', (('Cre', '+/-'),
-                              ('-Cre', '-/-'))),
+                                ('-Cre', '-/-'))),
 
     ('Ai78.CtTa', 'Camk2a-tTa', (('tTA', '+/-'),
                                  ('-tTA', '-/-'))),
