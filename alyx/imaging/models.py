@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Dataset, BaseExperimentalData, Dataset
+from data.models import Dataset, BaseExperimentalData
 from equipment.models import LightSource
 from misc.models import CoordinateTransformation
 

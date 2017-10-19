@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Dataset, Dataset, BaseExperimentalData
+from data.models import Dataset, BaseExperimentalData
 from equipment.models import Amplifier, DAQ, PipettePuller, Supplier
 from misc.models import BrainLocation
 from alyx.base import BaseModel
