@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (DataRepository, DataRepositoryType, FileRecord, Dataset, DatasetType,
-                     Timescale, TimeSeries)
+                     Timescale)
 from alyx.base import BaseAdmin
 
 
@@ -36,14 +36,9 @@ class TimescaleAdmin(BaseAdmin):
     fields = ['name', 'nominal_start', 'nominal_time_unit', 'final']
 
 
-class TimeSeriesAdmin(BaseExperimentalDataAdmin):
-    fields = ['data', 'timestamps', 'timescale']
-
-
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Timescale, TimescaleAdmin)
-admin.site.register(TimeSeries, TimeSeriesAdmin)

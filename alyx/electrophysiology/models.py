@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import TimeSeries, Dataset, BaseExperimentalData, EventSeries
+from data.models import Dataset, Dataset, BaseExperimentalData
 from equipment.models import Amplifier, DAQ, PipettePuller, Supplier
 from misc.models import BrainLocation
 from alyx.base import BaseModel
@@ -44,7 +44,7 @@ class ProbeInsertion(BaseModel):
                                     help_text="model of probe used")
 
     channel_mapping = models.ForeignKey(
-        Dataset, blank=True, null=True,
+        Dataset, blank=True, null=True, related_name='probe_insertion_channel_mapping',
         help_text="numerical array of size nSites x 1 giving the row of the raw data file "
                   "for each contact site. You will have one of these files per probe, "
                   "including if you record multiple probes through the same amplifier. "
@@ -106,9 +106,9 @@ class RecordingSite(BaseBrainLocation):
     site_no = models.IntegerField(help_text="which site on the probe")
 
 
-class ExtracellularRecording(TimeSeries):
+class ExtracellularRecording(Dataset):
     """
-    Superclass of TimeSeries to describe raw data when you make an electrophys recording.
+    Superclass of Dataset to describe raw data when you make an electrophys recording.
     There should a Dataset of DatasetType "ephys.raw" corresponding to this.
 
     You can also link to a lfp timeseries, that contains low-pass data at a lower sample rate
@@ -125,7 +125,7 @@ class ExtracellularRecording(TimeSeries):
         ('A', 'Acute'),
     )
 
-    lfp = models.ForeignKey(TimeSeries, blank=True, null=True,
+    lfp = models.ForeignKey(Dataset, blank=True, null=True,
                             related_name="extracellular_recording_lfp",
                             help_text="lfp: low-pass filtered and downsampled")
 
@@ -160,13 +160,13 @@ class ExtracellularRecording(TimeSeries):
                                         help_text="The DAQ used.")
 
 
-class SpikeSorting(EventSeries):
+class SpikeSorting(Dataset):
     """
     An entry in the `spike_sorting` table contains the output of a single spike sorting run
     of an extracellular recording. There will usually be only one of these per recording,
     but there could be several if you want to store multiple alternative clusterings.
 
-    This inherits from EventSeries, so is stored in the same format. As well as the spike times
+    This inherits from Dataset, so is stored in the same format. As well as the spike times
     there should be an associated Dataset containing cluster IDs of each spike. Optionally, you
     can also have other datasets with implementation-specific information such as feature vectors
     but these are not standardized. Like all models derived from BaseExperimentalData, it also

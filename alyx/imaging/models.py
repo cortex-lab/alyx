@@ -1,5 +1,5 @@
 from django.db import models
-from data.models import Dataset, BaseExperimentalData, TimeSeries
+from data.models import Dataset, BaseExperimentalData, Dataset
 from equipment.models import LightSource
 from misc.models import CoordinateTransformation
 
@@ -10,7 +10,7 @@ class SVDCompressedMovie(BaseExperimentalData):
                                           help_text="nSVs*nY*nX binary array giving normalized "
                                           "eigenframes"
                                           "SVD-compression eigenframes")
-    compressed_data_V = models.ForeignKey(TimeSeries, blank=True, null=True,
+    compressed_data_V = models.ForeignKey(Dataset, blank=True, null=True,
                                           related_name="svd_movie_v",
                                           help_text="nSamples*nSVs binary array "
                                           "SVD-compression timecourses")
@@ -19,7 +19,7 @@ class SVDCompressedMovie(BaseExperimentalData):
 class WidefieldImaging(BaseExperimentalData):
     # we need to talk this through with nick - not sure if he is using
     # multiple files or just one for multispectral
-    raw_data = models.ForeignKey(TimeSeries, blank=True, null=True, related_name="widefield_raw",
+    raw_data = models.ForeignKey(Dataset, blank=True, null=True, related_name="widefield_raw",
                                  help_text="pointer to nT by nX by nY by nC (colors) binary file")
     compressed_data = models.ForeignKey(SVDCompressedMovie, null=True, blank=True,
                                         related_name="widefield_compressed",
@@ -64,7 +64,7 @@ class WidefieldImaging(BaseExperimentalData):
 
 
 class TwoPhotonImaging(BaseExperimentalData):
-    raw_data = models.ForeignKey(TimeSeries, blank=True, null=True,
+    raw_data = models.ForeignKey(Dataset, blank=True, null=True,
                                  related_name="two_photon_raw",
                                  help_text="array of size nT by nX by nY by nZ by nC")
     compressed_data = models.ForeignKey(SVDCompressedMovie, blank=True, null=True,
@@ -100,9 +100,9 @@ class ROIDetection(BaseExperimentalData):
     preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="computed (F-F0) / F0, estimating "
                                      "F0 as running min'")
-    f = models.ForeignKey(TimeSeries, blank=True, null=True, related_name="roi_detection_f",
+    f = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f",
                           help_text="array of size nT by nROIs giving raw fluorescence")
-    f0 = models.ForeignKey(TimeSeries, blank=True, null=True, related_name="roi_detection_f0",
+    f0 = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f0",
                            help_text="array of size nT by nROIs giving resting fluorescence")
     two_photon_imaging_id = models.ForeignKey('TwoPhotonImaging', null=True, blank=True,
                                               help_text="2P imaging stack.")

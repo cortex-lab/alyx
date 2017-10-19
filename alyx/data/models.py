@@ -54,35 +54,38 @@ class DataRepository(BaseModel):
 
 class DataFormat(BaseModel):
     """
-    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is 
-    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera 
+    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is
+    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
 
+    name = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="short identifying nickname, e..g 'npy'.")
 
-    name = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="short identifying nickname, e..g 'npy'.")    
+    description = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Human-readable description of the file format e.g. 'npy-formatted square "
+        "numerical array'.")
 
-    description = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="Human-readable description of the file format e.g."
-                            " 'npy-formatted square numerical array'.")
+    alf_filename = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
 
-    alf_filename = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="string (with wildcards) identifying these files, e.g. "
-                            "'*.*.npy'.")    
+    matlab_loader_function = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Name of MATLAB loader function'.")
 
-    matlab_loader_function = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="Name of MATLAB loader function'.")
-
-    python_loader_function = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="Name of Python loader function'.")
+    python_loader_function = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Name of Python loader function'.")
 
 
 class DatasetType(BaseModel):
     """
-    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is 
-    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera 
+    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is
+    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
@@ -90,19 +93,18 @@ class DatasetType(BaseModel):
     name = models.CharField(max_length=255, unique=True,
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
-    description = models.CharField(max_length=1023, unique=True,
-                            blank=True, help_text="Human-readable description of data type."
-                            " Should say what is in the file, and how to read it. For"
-                            " DataCollections, it should list what Datasets are expected in"
-                            " the collection. E.g. 'Files related to spike events, including "
-                            "spikes.times.npy, spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy'")
+    description = models.CharField(
+        max_length=1023, unique=True, blank=True,
+        help_text="Human-readable description of data type. Should say what is in the file, and "
+        "how to read it. For DataCollections, it should list what Datasets are expected in the "
+        "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
+        "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
-    alf_filename = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="File name pattern (with wildcards) for this file in ALF "
-                            "naming convention. E.g. 'spikes.times.*' or '*.timestamps.*', or "
-                            "'spikes.*.*' for a DataCollection, which would include all files starting"
-                            " with the word 'spikes'.")
-
+    alf_filename = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
+        "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
+        "would include all files starting with the word 'spikes'.")
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
@@ -150,7 +152,7 @@ class Dataset(BaseExperimentalData):
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
 
-    Also note that a Datasets can be hierarchically organized, in which case the parent Datasets 
+    Also note that a Datasets can be hierarchically organized, in which case the parent Datasets
     won't have files directly associated with them.
     """
     name = models.CharField(max_length=255, blank=True)
@@ -162,13 +164,12 @@ class Dataset(BaseExperimentalData):
 
     data_format = models.ForeignKey(DataFormat, null=True, blank=True)
 
-    parent_dataset = models.ForeignKey(Dataset, null=True, blank=True, 
-        help_text="hierachical parent of this Dataset. ")
+    parent_dataset = models.ForeignKey(
+        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.")
 
-    timescale = models.ForeignKey(Timescale, null=True, blank=True, 
+    timescale = models.ForeignKey(
+        'data.Timescale', null=True, blank=True,
         help_text="Associated time scale (for time series datasets only).")
-
-    
 
     def __str__(self):
         return "<Dataset '%s'>" % self.name
@@ -190,8 +191,6 @@ class FileRecord(BaseModel):
 
     def __str__(self):
         return "<FileRecord '%s'>" % self.relative_path
-
-
 
 
 class Timescale(BaseModel):
@@ -236,4 +235,3 @@ class Timescale(BaseModel):
 
     class Meta:
         verbose_name_plural = 'Time scales'
-
