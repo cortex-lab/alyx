@@ -6,13 +6,6 @@ from actions.models import Session
 from electrophysiology.models import ExtracellularRecording
 
 
-class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = DatasetType
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
-
-
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DataRepositoryType
@@ -35,6 +28,20 @@ class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
 
 
+class DataFormatSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DataFormat
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'data-format-detail', 'lookup_field': 'name'}}
+
+
+class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DatasetType
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
+
+
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
@@ -45,6 +52,21 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     dataset_type = serializers.SlugRelatedField(
         read_only=False, slug_field='name',
         queryset=DatasetType.objects.all(),
+    )
+
+    data_format = serializers.SlugRelatedField(
+        read_only=False, slug_field='name',
+        queryset=DataFormat.objects.all(),
+    )
+
+    parent_dataset = serializers.HyperlinkedRelatedField(
+        read_only=False, required=False, view_name="dataset-detail",
+        queryset=Dataset.objects.all(),
+    )
+
+    timescale = serializers.HyperlinkedRelatedField(
+        read_only=False, required=False, view_name="timescale-detail",
+        queryset=Timescale.objects.all(),
     )
 
     session = serializers.HyperlinkedRelatedField(
@@ -74,6 +96,13 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FileRecord
         fields = ('__all__')
+
+
+class TimescaleSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Timescale
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'timescale-detail', 'lookup_field': 'name'}}
 
 
 class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):

@@ -24,23 +24,11 @@ from data import views as data_views
 from misc import views as misc_views
 
 
-dataset_list = data_views.DatasetViewSet.as_view({
+datarepositorytype_list = data_views.DataRepositoryTypeViewSet.as_view({
     'get': 'list',
     'post': 'create'
 })
-dataset_detail = data_views.DatasetViewSet.as_view({
-    'get': 'retrieve',
-    'put': 'update',
-    'patch': 'partial_update',
-    'delete': 'destroy'
-})
-
-
-datasettype_list = data_views.DatasetTypeViewSet.as_view({
-    'get': 'list',
-    'post': 'create'
-})
-datasettype_detail = data_views.DatasetTypeViewSet.as_view({
+datarepositorytype_detail = data_views.DataRepositoryTypeViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
@@ -60,11 +48,35 @@ datarepository_detail = data_views.DataRepositoryViewSet.as_view({
 })
 
 
-datarepositorytype_list = data_views.DataRepositoryTypeViewSet.as_view({
+datasettype_list = data_views.DatasetTypeViewSet.as_view({
     'get': 'list',
     'post': 'create'
 })
-datarepositorytype_detail = data_views.DataRepositoryTypeViewSet.as_view({
+datasettype_detail = data_views.DatasetTypeViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
+data_format_list = data_views.DataFormatViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+data_format_detail = data_views.DataFormatViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
+dataset_list = data_views.DatasetViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+dataset_detail = data_views.DatasetViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
@@ -77,6 +89,18 @@ filerecord_list = data_views.FileRecordViewSet.as_view({
     'post': 'create'
 })
 filerecord_detail = data_views.FileRecordViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
+timescale_list = data_views.TimescaleViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+timescale_detail = data_views.TimescaleViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
@@ -131,6 +155,9 @@ urlpatterns = [
     url(r'^data-repository/(?P<name>[-_\w].+)$', datarepository_detail,
         name="datarepository-detail"),
 
+    url(r'^data-formats$', data_format_list, name="data-format-list"),
+    url(r'^data-formats/(?P<name>[-_\w].+)$', data_format_detail, name="data-format-detail"),
+
     url(r'^dataset-types$', datasettype_list, name="datasettype-list"),
     url(r'^dataset-types/(?P<name>[-_\w].+)$', datasettype_detail, name="datasettype-detail"),
 
@@ -139,6 +166,9 @@ urlpatterns = [
 
     url(r'^files$', filerecord_list, name="filerecord-list"),
     url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name="filerecord-detail"),
+
+    url(r'^timescales$', timescale_list, name="timescale-list"),
+    url(r'^timescales/(?P<pk>[-_\w].+)$', timescale_detail, name="timescale-detail"),
 
 
     url(r'^users$', user_list, name='user-list'),
