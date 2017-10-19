@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import (DataRepository, DataRepositoryType, FileRecord, Dataset, DatasetType,
-                     Timescale)
+from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
+                     Dataset, FileRecord, Timescale)
 from alyx.base import BaseAdmin
 
 
@@ -12,12 +12,13 @@ class DataRepositoryAdmin(BaseAdmin):
     fields = ['name', 'repository_type', 'path']
 
 
-class FileRecordAdmin(BaseAdmin):
-    fields = ['data_repository', 'relative_path', 'dataset']
+class DataFormatAdmin(BaseAdmin):
+    fields = ['name', 'description', 'alf_filename',
+              'matlab_loader_function', 'python_loader_function']
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ['name']
+    fields = ['name', 'description', 'alf_filename']
 
 
 class BaseExperimentalDataAdmin(BaseAdmin):
@@ -32,13 +33,18 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5']
 
 
+class FileRecordAdmin(BaseAdmin):
+    fields = ['data_repository', 'relative_path', 'dataset']
+
+
 class TimescaleAdmin(BaseAdmin):
     fields = ['name', 'nominal_start', 'nominal_time_unit', 'final']
 
 
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
-admin.site.register(FileRecord, FileRecordAdmin)
+admin.site.register(DataFormat, DataFormatAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
+admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Timescale, TimescaleAdmin)

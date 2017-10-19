@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions, viewsets
-from .models import Dataset, DataRepositoryType, DatasetType, FileRecord, DataRepository
+from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
+                     Dataset, FileRecord, Timescale)
 from electrophysiology.models import ExtracellularRecording
 
 from .serializers import (DatasetSerializer,
