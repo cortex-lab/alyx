@@ -155,8 +155,8 @@ urlpatterns = [
     url(r'^data-repository/(?P<name>[-_\w].+)$', datarepository_detail,
         name="datarepository-detail"),
 
-    url(r'^data-formats$', data_format_list, name="data-format-list"),
-    url(r'^data-formats/(?P<name>[-_\w].+)$', data_format_detail, name="data-format-detail"),
+    url(r'^data-formats$', data_format_list, name="dataformat-list"),
+    url(r'^data-formats/(?P<name>[-_\w].+)$', data_format_detail, name="dataformat-detail"),
 
     url(r'^dataset-types$', datasettype_list, name="datasettype-list"),
     url(r'^dataset-types/(?P<name>[-_\w].+)$', datasettype_detail, name="datasettype-detail"),

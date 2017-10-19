@@ -32,7 +32,7 @@ class DataFormatSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DataFormat
         fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'data-format-detail', 'lookup_field': 'name'}}
+        extra_kwargs = {'url': {'view_name': 'dataformat-detail', 'lookup_field': 'name'}}
 
 
 class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):

@@ -29,7 +29,7 @@ def api_root(request, format=None):
                                           format=format),
         'datarepository-url': reverse('datarepository-list', request=request, format=format),
 
-        'data-format-url': reverse('data-format-list', request=request, format=format),
+        'dataformat-url': reverse('dataformat-list', request=request, format=format),
         'dataset-types-url': reverse('datasettype-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'files-url': reverse('filerecord-list', request=request, format=format),

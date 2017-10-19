@@ -13,6 +13,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
         self.client.post(reverse('datarepository-list'), {'name': 'dr'})
         self.client.post(reverse('datasettype-list'), {'name': 'dst'})
+        self.client.post(reverse('dataformat-list'), {'name': 'df'})
 
     def test_datarepositorytype_list(self):
         r = self.client.get(reverse('datarepositorytype-list'))
@@ -29,10 +30,16 @@ class APIDataTests(BaseTests):
         self.ar(r)
         self.assertEqual(r.data[0]['name'], 'dst')
 
+    def test_dataformat_list(self):
+        r = self.client.get(reverse('dataformat-list'))
+        self.ar(r)
+        self.assertEqual(r.data[0]['name'], 'df')
+
     def test_dataset_filerecord(self):
         # Create a dataset.
         data = {'name': 'mydataset',
                 'dataset_type': 'dst',
+                'data_format': 'df',
                 }
         r = self.client.post(reverse('dataset-list'), data)
         self.ar(r, 201)
