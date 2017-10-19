@@ -81,6 +81,12 @@ class DataFormat(BaseModel):
         max_length=255, unique=True, blank=True,
         help_text="Name of Python loader function'.")
 
+    class Meta:
+        verbose_name_plural = "data formats"
+
+    def __str__(self):
+        return "<DataFormat '%s'>" % self.name
+
 
 class DatasetType(BaseModel):
     """
@@ -94,14 +100,14 @@ class DatasetType(BaseModel):
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
     description = models.CharField(
-        max_length=1023, unique=True, blank=True,
+        max_length=1023, blank=True,
         help_text="Human-readable description of data type. Should say what is in the file, and "
         "how to read it. For DataCollections, it should list what Datasets are expected in the "
         "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
     alf_filename = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, unique=True, blank=True, null=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
         "would include all files starting with the word 'spikes'.")
