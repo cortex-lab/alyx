@@ -774,7 +774,8 @@ class LitterAdmin(BaseAdmin):
             instance.breeding_pair = bp
             instance.line = obj.line
             instance.birth_date = obj.birth_date
-            instance.responsible_user = user
+            if instance.responsible_user is None:
+                instance.responsible_user = user
             # Copy some fields from the mother to the subject.
             for field in to_copy:
                 setattr(instance, field, getattr(father, field, None))
