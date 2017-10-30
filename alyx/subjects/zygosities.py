@@ -11,8 +11,8 @@ ZYGOSITY_RULES = (
     ('RCL.Vg', 'Vglut1-Cre', (('Cre', '+/-'),
                               ('-Cre', '-/-'))),
 
-    ('RCLcg.Vg', 'Ai95-G6f', (('GFP', '+/-'),
-                              ('-GFP', '-/-'))),
+    ('RCLcg.Vg', 'Ai95-G6f', (('eGFP', '+/-'),
+                              ('-eGFP', '-/-'))),
 
     ('RCLcg.Vg', 'Vglut1-Cre', (('Cre', '+/-'),
                                 ('-Cre', '-/-'))),
