@@ -49,6 +49,25 @@ class DataRepository(BaseModel):
         verbose_name_plural = "data repositories"
 
 
+# Project
+# ------------------------------------------------------------------------------------------------
+
+class Project(BaseModel):
+    name = models.CharField(
+        max_length=255, unique=True, blank=True, help_text="Project name")
+
+    description = models.CharField(
+        max_length=1023, blank=True, help_text="Description of the project")
+
+    repositories = models.ManyToManyField(
+        DataRepository, blank=True, null=True,
+        help_text="Related DataRepository instances.")
+
+    users = models.ManyToManyField(
+        User, blank=True, null=True,
+        help_text="Persons associated to the project.")
+
+
 # Datasets
 # ------------------------------------------------------------------------------------------------
 
