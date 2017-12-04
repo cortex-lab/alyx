@@ -147,6 +147,33 @@ class Command(BaseCommand):
             text += dedent(s)
         return text
 
+    def make_mouse_weight(self):
+        wr = WaterRestriction.objects.filter(start_time__isnull=False,
+                                             end_time__isnull=True,
+                                             )
+        subject_ids = [_[0] for _ in wr.values_list('subject').distinct()]
+        text = ''
+        for subject_id in subject_ids:
+            weighings = Weighing.objects.filter(subject_id=subject_id).order_by('-date_time')
+            if not weighings:
+                continue
+            w = weighings.first()
+            expected = w.expected()
+            if w.weight < (expected * .75):
+                subject = Subject.objects.get(pk=subject_id)
+                text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
+                         'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
+                             subject=subject,
+                             user=subject.responsible_user,
+                             email=subject.responsible_user.email,
+                             weight=w.weight,
+                             expected=expected,
+                             percentage=(100 * w.weight / expected),
+                             date=w.date_time,
+                )
+        text = 'Mice under the 75% weight limit:\n\n' + text
+        return text
+
     def make_surgery(self, user):
         # Skip surgeries on stock managers.
         if StockManager.objects.filter(user=user):
