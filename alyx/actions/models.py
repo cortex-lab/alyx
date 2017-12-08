@@ -165,7 +165,8 @@ class Project(BaseModel):
 
     repositories = models.ManyToManyField(
         'data.DataRepository', blank=True,
-        help_text="Related DataRepository instances.")
+        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
+        "automatically copied to all repositories assigned to its project.")
 
     users = models.ManyToManyField(
         User, blank=True,
