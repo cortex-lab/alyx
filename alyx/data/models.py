@@ -194,6 +194,8 @@ class FileRecord(BaseModel):
     relative_path = models.CharField(
         max_length=1000, blank=True,
         help_text="path name within repository")
+    exists = models.BooleanField(
+        default=False, help_text="Whether the file exists in the data repository", )
 
     def __str__(self):
         return "<FileRecord '%s'>" % self.relative_path
