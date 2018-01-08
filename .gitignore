@@ -15,3 +15,5 @@ experimental
 *.pkl
 *.patch
 *.sql
+*.html.py
+notes.txt
