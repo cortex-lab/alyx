@@ -41,6 +41,8 @@ class DataRepository(BaseModel):
     path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
+    globus_endpoint_id = models.UUIDField(
+        blank=True, null=True, help_text=" UUID of the globus endpoint")
 
     def __str__(self):
         return "<DataRepository '%s'>" % self.name

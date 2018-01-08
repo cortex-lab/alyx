@@ -10,7 +10,7 @@ class DataRepositoryTypeAdmin(BaseAdmin):
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ['name', 'repository_type', 'path']
+    fields = ['name', 'repository_type', 'globus_endpoint_id', 'path']
     list_display = fields[:-1]
 
 
