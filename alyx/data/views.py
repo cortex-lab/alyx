@@ -74,7 +74,7 @@ class FileRecordViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = FileRecordSerializer
     queryset = FileRecord.objects.all()
-    filter_fields = ('exists',)
+    filter_fields = ('exists', 'dataset')
 
 
 class TimescaleViewSet(viewsets.ModelViewSet):
