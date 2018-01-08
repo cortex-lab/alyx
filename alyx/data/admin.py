@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale)
-from alyx.base import BaseAdmin
+from alyx.base import BaseAdmin, BaseInlineAdmin
 
 
 class DataRepositoryTypeAdmin(BaseAdmin):
@@ -33,9 +33,16 @@ class BaseExperimentalDataAdmin(BaseAdmin):
         super(BaseAdmin, self).__init__(*args, **kwargs)
 
 
+class FileRecordInline(BaseInlineAdmin):
+    model = FileRecord
+    extra = 1
+    fields = ('data_repository', 'relative_path', 'exists', 'json')
+
+
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5']
     list_display = fields[:-1] + ['session']
+    inlines = [FileRecordInline]
 
 
 class FileRecordAdmin(BaseAdmin):
