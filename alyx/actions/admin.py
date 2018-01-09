@@ -74,6 +74,23 @@ class ActiveFilter(DefaultListFilter):
             return queryset.all()
 
 
+class CreatedByListFilter(DefaultListFilter):
+    title = 'users'
+    parameter_name = 'users'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Me'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(users=request.user)
+        elif self.value == 'all':
+            return queryset.all()
+
+
 def _bring_to_front(ids, id):
     if id in ids:
         ids.remove(id)
@@ -306,10 +323,14 @@ class SurgeryAdmin(BaseActionAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'end_time', 'location']
+    list_display = ['subject_l', 'start_time', 'end_time', 'location', 'users_list']
     list_display_links = ['start_time']
     inlines = [NoteInline]
     fields = BaseActionAdmin.fields + ['type', 'number', 'parent_session']
+    list_filter = [CreatedByListFilter]
+
+    def users_list(self, obj):
+        return ', '.join(map(str, obj.users.all()))
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)

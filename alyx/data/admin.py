@@ -1,7 +1,24 @@
 from django.contrib import admin
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale)
-from alyx.base import BaseAdmin, BaseInlineAdmin
+from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
+
+
+class CreatedByListFilter(DefaultListFilter):
+    title = 'created by'
+    parameter_name = 'created_by'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Me'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(created_by=request.user)
+        elif self.value == 'all':
+            return queryset.all()
 
 
 class DataRepositoryTypeAdmin(BaseAdmin):
@@ -41,8 +58,11 @@ class FileRecordInline(BaseInlineAdmin):
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5']
-    list_display = fields[:-1] + ['session']
+    list_display = ['name', 'dataset_type', 'session', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]
+    list_filter = [CreatedByListFilter,
+                   ]
+    search_fields = ('created_by__username', 'name')
 
 
 class FileRecordAdmin(BaseAdmin):
