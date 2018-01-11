@@ -1,15 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Dataset, DatasetType, FileRecord, DataRepository, DataRepositoryType
+from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
+                     Dataset, FileRecord, Timescale)
 from actions.models import Session
 from electrophysiology.models import ExtracellularRecording
-
-
-class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = DatasetType
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
 
 
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -30,8 +24,22 @@ class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = DataRepository
-        fields = ('name', 'path', 'repository_type')
+        fields = ('name', 'path', 'repository_type', 'globus_endpoint_id')
         extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
+
+
+class DataFormatSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DataFormat
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'dataformat-detail', 'lookup_field': 'name'}}
+
+
+class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DatasetType
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
 
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
@@ -44,6 +52,21 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     dataset_type = serializers.SlugRelatedField(
         read_only=False, slug_field='name',
         queryset=DatasetType.objects.all(),
+    )
+
+    data_format = serializers.SlugRelatedField(
+        read_only=False, slug_field='name',
+        queryset=DataFormat.objects.all(),
+    )
+
+    parent_dataset = serializers.HyperlinkedRelatedField(
+        read_only=False, required=False, view_name="dataset-detail",
+        queryset=Dataset.objects.all(),
+    )
+
+    timescale = serializers.HyperlinkedRelatedField(
+        read_only=False, required=False, view_name="timescale-detail",
+        queryset=Timescale.objects.all(),
     )
 
     session = serializers.HyperlinkedRelatedField(
@@ -59,6 +82,14 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('__all__')
+        extra_fields = ['data_filerecord_dataset_related']
+
+    def get_field_names(self, declared_fields, info):
+        expanded_fields = super(DatasetSerializer, self).get_field_names(declared_fields, info)
+        if getattr(self.Meta, 'extra_fields', None):
+            return expanded_fields + self.Meta.extra_fields
+        else:
+            return expanded_fields
 
 
 class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
@@ -73,6 +104,13 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FileRecord
         fields = ('__all__')
+
+
+class TimescaleSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Timescale
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'timescale-detail', 'lookup_field': 'name'}}
 
 
 class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):

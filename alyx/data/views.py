@@ -1,22 +1,23 @@
 from rest_framework import generics, permissions, viewsets
-from .models import Dataset, DataRepositoryType, DatasetType, FileRecord, DataRepository
+from .models import (DataRepositoryType,
+                     DataRepository,
+                     DataFormat,
+                     DatasetType,
+                     Dataset,
+                     FileRecord,
+                     Timescale,
+                     )
 from electrophysiology.models import ExtracellularRecording
-
-from .serializers import (DatasetSerializer,
-                          DataRepositoryTypeSerializer,
-                          DatasetTypeSerializer,
+from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositoryDetailSerializer,
+                          DataFormatSerializer,
+                          DatasetTypeSerializer,
+                          DatasetSerializer,
                           FileRecordSerializer,
+                          TimescaleSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
                           )
-
-
-class DataRepositoryViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = DataRepositoryDetailSerializer
-    queryset = DataRepository.objects.all()
-    lookup_field = 'name'
 
 
 class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
@@ -26,6 +27,24 @@ class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
     """
     queryset = DataRepositoryType.objects.all()
     serializer_class = DataRepositoryTypeSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+class DataRepositoryViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = DataRepositoryDetailSerializer
+    queryset = DataRepository.objects.all()
+    lookup_field = 'name'
+
+
+class DataFormatViewSet(viewsets.ModelViewSet):
+    """
+    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
+    This API will probably change.
+    """
+    queryset = DataFormat.objects.all()
+    serializer_class = DataFormatSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
@@ -55,6 +74,13 @@ class FileRecordViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = FileRecordSerializer
     queryset = FileRecord.objects.all()
+    filter_fields = ('exists', 'dataset')
+
+
+class TimescaleViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimescaleSerializer
+    queryset = Timescale.objects.all()
 
 
 class ExpMetadataList(generics.ListCreateAPIView):

@@ -28,7 +28,7 @@ class DataRepository(BaseModel):
     A data repository e.g. a particular local drive, specific cloud storage
     location, or a specific tape.
 
-    Stores an absolute path to the repository rootas a URI (e.g. for SMB
+    Stores an absolute path to the repository root as a URI (e.g. for SMB
     file://myserver.mylab.net/Data/ALF/; for web
     https://www.neurocloud.edu/Data/). Additional information about the
     repository can stored in JSON  in a type-specific manner (e.g. which
@@ -41,6 +41,8 @@ class DataRepository(BaseModel):
     path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
+    globus_endpoint_id = models.UUIDField(
+        blank=True, null=True, help_text=" UUID of the globus endpoint")
 
     def __str__(self):
         return "<DataRepository '%s'>" % self.name
@@ -52,14 +54,65 @@ class DataRepository(BaseModel):
 # Datasets
 # ------------------------------------------------------------------------------------------------
 
+class DataFormat(BaseModel):
+    """
+    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is
+    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera
+    movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
+    (for individual files) or the first word of the alf names (for DataCollections)
+    """
+
+    name = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="short identifying nickname, e..g 'npy'.")
+
+    description = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Human-readable description of the file format e.g. 'npy-formatted square "
+        "numerical array'.")
+
+    alf_filename = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
+
+    matlab_loader_function = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Name of MATLAB loader function'.")
+
+    python_loader_function = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Name of Python loader function'.")
+
+    class Meta:
+        verbose_name_plural = "data formats"
+
+    def __str__(self):
+        return "<DataFormat '%s'>" % self.name
+
+
 class DatasetType(BaseModel):
     """
-    A descriptor to accompany a dataset, saying what sort of information is contained in it
-    E.g. "Neuropixels raw data" "eye camera movie", etc.
+    A descriptor to accompany a Dataset or DataCollection, saying what sort of information is
+    contained in it. E.g. "Neuropixels raw data, formatted as flat binary file" "eye camera
+    movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
+    (for individual files) or the first word of the alf names (for DataCollections)
     """
 
     name = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="description of data type")
+                            blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
+
+    description = models.CharField(
+        max_length=1023, blank=True,
+        help_text="Human-readable description of data type. Should say what is in the file, and "
+        "how to read it. For DataCollections, it should list what Datasets are expected in the "
+        "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
+        "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
+
+    alf_filename = models.CharField(
+        max_length=255, unique=True, blank=True, null=True,
+        help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
+        "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
+        "would include all files starting with the word 'spikes'.")
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
@@ -106,12 +159,25 @@ class Dataset(BaseExperimentalData):
     all containing identical data, with the same MD5.
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
+
+    Also note that a Datasets can be hierarchically organized, in which case the parent Datasets
+    won't have files directly associated with them.
     """
     name = models.CharField(max_length=255, blank=True)
+
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 
     dataset_type = models.ForeignKey(DatasetType, null=True, blank=True)
+
+    data_format = models.ForeignKey(DataFormat, null=True, blank=True)
+
+    parent_dataset = models.ForeignKey(
+        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.")
+
+    timescale = models.ForeignKey(
+        'data.Timescale', null=True, blank=True,
+        help_text="Associated time scale (for time series datasets only).")
 
     def __str__(self):
         return "<Dataset '%s'>" % self.name
@@ -130,32 +196,11 @@ class FileRecord(BaseModel):
     relative_path = models.CharField(
         max_length=1000, blank=True,
         help_text="path name within repository")
+    exists = models.BooleanField(
+        default=False, help_text="Whether the file exists in the data repository", )
 
     def __str__(self):
         return "<FileRecord '%s'>" % self.relative_path
-
-
-# Data collections and time series
-# ------------------------------------------------------------------------------------------------
-
-class DataCollection(BaseExperimentalData):
-    """
-    A collection of datasets that all describe different aspects of the same objects. For example,
-    the filtered and unfiltered waveforms of a set of spike clusters. Each file in the collection
-    must have the same number of rows (or the same leading dimension for higher-dim arrays). The
-    timeseries classes will inherit from this.
-    """
-    name = models.CharField(
-        max_length=255, blank=True,
-        help_text="description of the data in this collection (e.g. cluster information)")
-
-    data = models.ManyToManyField(
-        Dataset, blank=True,
-        related_name=_related_string('data'),
-        help_text="Datasets, each of which  should have their own descriptions and DatasetTypes")
-
-    def __str__(self):
-        return "<DataCollection '%s'>" % self.name
 
 
 class Timescale(BaseModel):
@@ -200,69 +245,3 @@ class Timescale(BaseModel):
 
     class Meta:
         verbose_name_plural = 'Time scales'
-
-
-class TimeSeries(DataCollection):
-    """
-    A collection of Datasets that were all sampled together, associated with a single set of
-    timestamps, relative to specified timescale. This is a DataCollection together with a
-    timescale ID and a timestamps file.
-
-    In principle, you could store multiple TimeSeries with the same data but different
-    Timescales.
-    To avoid confusing data users, however, this is not recommended - only register the final
-    timescale into the database, and don't register intermediate timescales unless there is a
-    good reason to.
-    """
-
-    timestamps = models.ForeignKey(
-        Dataset, blank=True, null=True,
-        related_name=_related_string('timestamps'),
-        help_text="N*2 array containing sample numbers and their timestamps "
-        "on associated timescale")
-
-    timescale = models.ForeignKey(
-        Timescale, blank=True, null=True,
-        help_text="which timescale this is on")
-
-    class Meta:
-        verbose_name_plural = 'Time series'
-
-
-class EventSeries(DataCollection):
-    """
-    Links to a file containing a set of event times, and other files with further information,
-    such as behavioral events or sensory stimuli. This is a DataCollection together with a times
-    file and a timestamp ID.
-    """
-
-    timescale = models.ForeignKey(
-        Timescale, blank=True, null=True,
-        help_text="which timescale this is on")
-
-    times = models.ForeignKey(
-        Dataset, blank=True, null=True,
-        related_name=_related_string('event_times'),
-        help_text="n*1 array of times on specified timescale")
-
-    class Meta:
-        verbose_name_plural = 'Event series'
-
-
-class IntervalSeries(BaseExperimentalData):
-    """
-    Links to a file containing a set of event times, and other files with further information,
-    such as behavioral events or sensory stimuli. This is a DataCollection together with a times
-    file and a timestamp ID.
-    """
-    timescale = models.ForeignKey(
-        Timescale, blank=True, null=True,
-        help_text="which timescale this is on")
-
-    intervals = models.ForeignKey(
-        Dataset, blank=True, null=True,
-        related_name=_related_string('interval_times'),
-        help_text="n*2 array of start and end times")
-
-    class Meta:
-        verbose_name_plural = 'Interval series'
