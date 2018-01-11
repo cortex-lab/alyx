@@ -326,7 +326,7 @@ class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'end_time', 'location', 'users_list']
     list_display_links = ['start_time']
     inlines = [NoteInline]
-    fields = BaseActionAdmin.fields + ['type', 'number', 'parent_session']
+    fields = BaseActionAdmin.fields + ['type', 'number']
     list_filter = [CreatedByListFilter]
 
     def users_list(self, obj):
