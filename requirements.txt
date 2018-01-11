@@ -7,7 +7,7 @@ django-autocomplete-light
 django-filter
 django-reversion
 django-test-without-migrations
-rangefilter
+django-admin-rangefilter
 flake8
 colorlog
 git+http://github.com/mrts/django-admin-list-filter-dropdown.git
