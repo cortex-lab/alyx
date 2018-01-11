@@ -1,9 +1,9 @@
-from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
 from actions.models import Session
 from alyx.base import BaseModel
+from misc.models import OrderedUser
 
 
 def _related_string(field):
@@ -131,7 +131,7 @@ class BaseExperimentalData(BaseModel):
         help_text="The Session to which this data belongs")
 
     created_by = models.ForeignKey(
-        User, blank=True, null=True,
+        OrderedUser, blank=True, null=True,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
 

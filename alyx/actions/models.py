@@ -169,7 +169,7 @@ class Project(BaseModel):
         "automatically copied to all repositories assigned to its project.")
 
     users = models.ManyToManyField(
-        User, blank=True,
+        OrderedUser, blank=True,
         help_text="Persons associated to the project.")
 
 
