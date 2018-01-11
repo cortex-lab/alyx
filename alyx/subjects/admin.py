@@ -9,7 +9,7 @@ from django.db.models import Case, When
 from django.utils.html import format_html
 from django.urls import reverse
 
-from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite)
+from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      )
@@ -216,13 +216,6 @@ class OtherActionInline(BaseInlineAdmin):
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
     classes = ['collapse']
-
-
-def get_admin_url(obj):
-    if not obj:
-        return '#'
-    info = (obj._meta.app_label, obj._meta.model_name)
-    return reverse('admin:%s_%s_change' % info, args=(obj.pk,))
 
 
 class SubjectForm(forms.ModelForm):
