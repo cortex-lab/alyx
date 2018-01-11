@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -188,7 +187,7 @@ class Session(BaseAction):
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        help_text="Hierarchical parent to this session")
-    project = models.ManyToManyField(
+    projects = models.ManyToManyField(
         Project, blank=True,
         help_text='Project associated to this session')
     type = models.CharField(max_length=255, null=True, blank=True,
