@@ -11,6 +11,7 @@ from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.template.response import TemplateResponse
+from django.urls import reverse
 
 from reversion.admin import VersionAdmin
 from rest_framework.test import APITestCase
@@ -147,6 +148,13 @@ def _get_category_list(app_list):
         else:
             category_list[3].models.append(models_dict[model_name])
     return category_list
+
+
+def get_admin_url(obj):
+    if not obj:
+        return '#'
+    info = (obj._meta.app_label, obj._meta.model_name)
+    return reverse('admin:%s_%s_change' % info, args=(obj.pk,))
 
 
 class MyAdminSite(admin.AdminSite):
