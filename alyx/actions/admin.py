@@ -1,18 +1,19 @@
 from django import forms
 from django.contrib import admin
 from django.db.models import Case, When
-from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.urls import reverse
 from django.utils.html import format_html
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from rangefilter.filter import DateRangeFilter
 
-from alyx.base import BaseAdmin, DefaultListFilter
+from alyx.base import BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
+from data.models import Dataset
 from misc.admin import NoteInline
 from misc.models import OrderedUser
 from subjects.models import Subject
-from subjects.admin import get_admin_url
 from . import water
 
 
@@ -328,15 +329,30 @@ class SurgeryAdmin(BaseActionAdmin):
     procedures_l.short_description = 'procedures'
 
 
+class DatasetInline(BaseInlineAdmin):
+    model = Dataset
+    extra = 1
+    fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+
+
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'end_time', 'location', 'users_list']
+    list_display = ['subject_l', 'start_time', 'project_list', 'location', 'user_list']
     list_display_links = ['start_time']
     inlines = [NoteInline]
     fields = BaseActionAdmin.fields + ['type', 'number']
-    list_filter = [CreatedByListFilter]
+    list_filter = [('users', RelatedDropdownFilter),
+                   ('start_time', DateRangeFilter),
+                   ('projects', RelatedDropdownFilter),
+                   ]
+    search_fields = ('subject__nickname',)
+    ordering = ('-start_time',)
+    inlines = [DatasetInline]
 
-    def users_list(self, obj):
+    def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
+
+    def project_list(self, obj):
+        return ', '.join(map(str, obj.projects.all()))
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)

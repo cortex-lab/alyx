@@ -1,7 +1,11 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from rangefilter.filter import DateRangeFilter
+
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale)
-from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter
+from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
 class CreatedByListFilter(DefaultListFilter):
@@ -22,13 +26,13 @@ class CreatedByListFilter(DefaultListFilter):
 
 
 class DataRepositoryTypeAdmin(BaseAdmin):
-    fields = ['name']
-    list_display = fields[:-1]
+    fields = ('name', 'json')
+    list_display = ('name',)
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ['name', 'repository_type', 'globus_endpoint_id', 'path']
-    list_display = fields[:-1]
+    fields = ('name', 'repository_type', 'globus_endpoint_id', 'path')
+    list_display = fields
 
 
 class DataFormatAdmin(BaseAdmin):
@@ -38,8 +42,8 @@ class DataFormatAdmin(BaseAdmin):
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ['name', 'description', 'alf_filename']
-    list_display = fields[:-1]
+    fields = ('name', 'description', 'alf_filename')
+    list_display = fields
 
 
 class BaseExperimentalDataAdmin(BaseAdmin):
@@ -57,22 +61,30 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'md5']
+    fields = ['name', 'dataset_type', 'md5', 'session_ro']
+    readonly_fields = ['session_ro']
     list_display = ['name', 'dataset_type', 'session', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]
-    list_filter = [CreatedByListFilter,
+    list_filter = [('created_by', RelatedDropdownFilter),
+                   ('created_datetime', DateRangeFilter),
                    ]
-    search_fields = ('created_by__username', 'name')
+    search_fields = ('created_by__username', 'name', 'session__subject__nickname')
+    ordering = ('-created_datetime',)
+
+    def session_ro(self, obj):
+        url = get_admin_url(obj.session)
+        return format_html('<a href="{url}">{name}</a>', url=url, name=obj.session)
+    session_ro.short_description = 'session'
 
 
 class FileRecordAdmin(BaseAdmin):
-    fields = ['data_repository', 'relative_path', 'dataset']
-    list_display = fields[:-1]
+    fields = ('data_repository', 'relative_path', 'dataset')
+    list_display = fields
 
 
 class TimescaleAdmin(BaseAdmin):
-    fields = ['name', 'nominal_start', 'nominal_time_unit', 'final']
-    list_display = fields[:-1]
+    fields = ('name', 'nominal_start', 'nominal_time_unit', 'final')
+    list_display = fields
 
 
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
