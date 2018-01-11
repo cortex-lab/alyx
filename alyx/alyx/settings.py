@@ -128,6 +128,7 @@ INSTALLED_APPS = (
     'dal_select2',
     'reversion',
     'django_admin_listfilter_dropdown',
+    'rangefilter',
     'subjects',
     'django_filters',
     'django.contrib.admin',
