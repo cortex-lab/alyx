@@ -57,7 +57,7 @@ class BaseExperimentalDataAdmin(BaseAdmin):
 class FileRecordInline(BaseInlineAdmin):
     model = FileRecord
     extra = 1
-    fields = ('data_repository', 'relative_path', 'exists', 'json')
+    fields = ('data_repository', 'relative_path', 'exists')
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
