@@ -54,10 +54,10 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=DatasetType.objects.all(),
     )
 
-    # data_format = serializers.SlugRelatedField(
-    #     read_only=False, slug_field='name',
-    #     queryset=DataFormat.objects.all(),
-    # )
+    data_format = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name',
+        queryset=DataFormat.objects.all(),
+    )
 
     parent_dataset = serializers.HyperlinkedRelatedField(
         read_only=False, required=False, view_name="dataset-detail",
@@ -82,14 +82,6 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('__all__')
-        # extra_fields = ['data_filerecord_dataset_related']
-
-    # def get_field_names(self, declared_fields, info):
-    #     expanded_fields = super(DatasetSerializer, self).get_field_names(declared_fields, info)
-    #     if getattr(self.Meta, 'extra_fields', None):
-    #         return expanded_fields + self.Meta.extra_fields
-    #     else:
-    #         return expanded_fields
 
 
 class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
