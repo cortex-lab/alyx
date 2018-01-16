@@ -122,6 +122,8 @@ class Command(BaseCommand):
             # Weight yesterday.
             wy = Weighing.objects.filter(subject=w.subject, date_time__date__lte=yesterday)
             wy = wy.order_by('-date_time').first()
+            if wy is None:
+                continue
             # Last date with weighing, might be yesterday or earlier.
             last_date = wy.date_time.date()
             # Number of days ago.
