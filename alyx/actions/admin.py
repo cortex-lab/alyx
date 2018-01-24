@@ -210,6 +210,22 @@ class WaterAdministrationAdmin(BaseActionAdmin):
                    ('subject', RelatedDropdownFilter)]
 
 
+class WaterRestrictionForm(forms.ModelForm):
+    implant_weight = forms.FloatField()
+
+    def save(self, commit=True):
+        implant_weight = self.cleaned_data.get('implant_weight', None)
+        subject = self.cleaned_data.get('subject', None)
+        if implant_weight:
+            subject.implant_weight = implant_weight
+            subject.save()
+        return super(WaterRestrictionForm, self).save(commit=commit)
+
+    class Meta:
+        model = WaterRestriction
+        fields = '__all__'
+
+
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
@@ -221,7 +237,15 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                 kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
-    fields = ['subject', 'start_time', 'end_time', 'users', 'narrative']
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(WaterRestrictionAdmin, self).get_form(request, obj, **kwargs)
+        iw = getattr(getattr(obj, 'subject', None), 'implant_weight', None)
+        form.base_fields['implant_weight'].initial = iw
+        return form
+
+    form = WaterRestrictionForm
+
+    fields = ['subject', 'implant_weight', 'start_time', 'end_time', 'users', 'narrative']
     list_display = ['subject_w', 'start_time_l',
                     'reference_weighing', 'current_weighing',
                     'water_requirement_total',
