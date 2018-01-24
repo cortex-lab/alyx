@@ -1,7 +1,7 @@
 django==1.11
 coreapi
 psycopg2
-django-polymorphic
+django-polymorphic==1.3
 djangorestframework
 django-autocomplete-light
 django-filter
