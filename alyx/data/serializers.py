@@ -42,6 +42,31 @@ class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
 
 
+class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
+    dataset = serializers.HyperlinkedRelatedField(
+        read_only=False, view_name="dataset-detail",
+        queryset=Dataset.objects.all())
+
+    data_repository = serializers.SlugRelatedField(
+        read_only=False, slug_field='name',
+        queryset=DataRepository.objects.all())
+
+    class Meta:
+        model = FileRecord
+        fields = ('__all__')
+
+
+class DatasetFileRecordsSerializer(serializers.ModelSerializer):
+    data_repository_path = serializers.SerializerMethodField()
+
+    def get_data_repository_path(self, obj):
+        return obj.data_repository.path
+
+    class Meta:
+        model = FileRecord
+        fields = ('id', 'data_repository_path', 'relative_path')
+
+
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
@@ -74,28 +99,22 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Session.objects.all(),
     )
 
-    md5 = serializers.UUIDField(format='hex_verbose',
-                                allow_null=True,
-                                required=False,
-                                )
+    md5 = serializers.UUIDField(
+        format='hex_verbose', allow_null=True, required=False,
+    )
+
+    experiment_number = serializers.SerializerMethodField()
+
+    file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
+
+    def get_experiment_number(self, obj):
+        return obj.session.number if obj and obj.session else None
 
     class Meta:
         model = Dataset
-        fields = ('__all__')
-
-
-class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
-    dataset = serializers.HyperlinkedRelatedField(
-        read_only=False, view_name="dataset-detail",
-        queryset=Dataset.objects.all())
-
-    data_repository = serializers.SlugRelatedField(
-        read_only=False, slug_field='name',
-        queryset=DataRepository.objects.all())
-
-    class Meta:
-        model = FileRecord
-        fields = ('__all__')
+        fields = ('url', 'name', 'created_by', 'created_datetime',
+                  'dataset_type', 'data_format', 'parent_dataset',
+                  'timescale', 'session', 'md5', 'experiment_number', 'file_records')
 
 
 class TimescaleSerializer(serializers.HyperlinkedModelSerializer):

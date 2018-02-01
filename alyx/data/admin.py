@@ -62,8 +62,8 @@ class FileRecordInline(BaseInlineAdmin):
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5', 'session_ro']
-    readonly_fields = ['session_ro']
-    list_display = ['name', 'dataset_type', 'session', 'created_by', 'created_datetime']
+    readonly_fields = ['name_', 'session_ro']
+    list_display = ['name_', 'dataset_type', 'session', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
@@ -72,6 +72,9 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     search_fields = ('created_by__username', 'name', 'session__subject__nickname',
                      'dataset_type__name', 'dataset_type__alf_filename')
     ordering = ('-created_datetime',)
+
+    def name_(self, obj):
+        return obj.name or '<unnamed>'
 
     def session_ro(self, obj):
         url = get_admin_url(obj.session)

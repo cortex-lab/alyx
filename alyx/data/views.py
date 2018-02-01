@@ -1,4 +1,7 @@
 from rest_framework import generics, permissions, viewsets
+import django_filters
+from django_filters.rest_framework import FilterSet
+
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
@@ -60,6 +63,18 @@ class DatasetTypeViewSet(viewsets.ModelViewSet):
     lookup_field = 'name'
 
 
+class DatasetFilter(FilterSet):
+    subject = django_filters.CharFilter(name='session__subject__nickname')
+    date = django_filters.CharFilter(name='created_datetime__date')
+    created_by = django_filters.CharFilter(name='created_by__username')
+    dataset_type = django_filters.CharFilter(name='dataset_type__name')
+    experiment_number = django_filters.CharFilter(name='session__number')
+
+    class Meta:
+        model = Dataset
+        exclude = ['json']
+
+
 class DatasetViewSet(viewsets.ModelViewSet):
     """
     You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
@@ -68,6 +83,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_class = DatasetFilter
 
 
 class FileRecordViewSet(viewsets.ModelViewSet):

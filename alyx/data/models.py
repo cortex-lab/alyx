@@ -191,7 +191,7 @@ class FileRecord(BaseModel):
     A single file on disk or tape. Normally specified by a path within an archive. If required,
     more details can be in the JSON
     """
-    dataset = models.ForeignKey(Dataset, related_name=_related_string('dataset'))
+    dataset = models.ForeignKey(Dataset, related_name='file_records')
     data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
     relative_path = models.CharField(
         max_length=1000, blank=True,
