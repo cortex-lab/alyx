@@ -63,7 +63,7 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('id', 'url', 'dataset', 'data_repository', 'relative_path', 'exists')
+        fields = ('__all__')
 
 
 class DatasetFileRecordsSerializer(serializers.ModelSerializer):
@@ -74,7 +74,7 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('id', 'data_repository_path', 'relative_path', 'exists')
+        fields = ('id', 'data_repository_path', 'relative_path')
 
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
