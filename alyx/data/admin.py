@@ -42,8 +42,13 @@ class DataFormatAdmin(BaseAdmin):
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ('name', 'description', 'alf_filename')
+    fields = ('name', 'description', 'alf_filename', 'created_by')
     list_display = fields
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by and 'created_by' not in form.changed_data:
+            obj.created_by = request.user
+        super(DatasetTypeAdmin, self).save_model(request, obj, form, change)
 
 
 class BaseExperimentalDataAdmin(BaseAdmin):

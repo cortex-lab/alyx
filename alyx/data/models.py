@@ -101,6 +101,11 @@ class DatasetType(BaseModel):
     name = models.CharField(max_length=255, unique=True,
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
+    created_by = models.ForeignKey(
+        OrderedUser, blank=True, null=True,
+        related_name=_related_string('created_by'),
+        help_text="The creator of the data.")
+
     description = models.CharField(
         max_length=1023, blank=True,
         help_text="Human-readable description of data type. Should say what is in the file, and "

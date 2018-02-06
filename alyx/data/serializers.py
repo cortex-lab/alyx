@@ -36,6 +36,15 @@ class DataFormatSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
+    created_by = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='username',
+        queryset=User.objects.all(),
+        allow_null=True,
+        required=False,
+        default=serializers.CurrentUserDefault(),
+    )
+
     class Meta:
         model = DatasetType
         fields = ('__all__')
