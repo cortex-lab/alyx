@@ -42,7 +42,10 @@ class DataRepository(BaseModel):
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
     globus_endpoint_id = models.UUIDField(
-        blank=True, null=True, help_text=" UUID of the globus endpoint")
+        blank=True, null=True, help_text="UUID of the globus endpoint")
+    globus_is_personal = models.NullBooleanField(
+        blank=True, help_text="whether the Globus endpoint is personal or not. "
+        "By default, Globus cannot transfer a file between two personal endpoints.")
 
     def __str__(self):
         return "<DataRepository '%s'>" % self.name
