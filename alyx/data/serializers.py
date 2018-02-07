@@ -24,7 +24,7 @@ class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = DataRepository
-        fields = ('name', 'path', 'repository_type', 'globus_endpoint_id')
+        fields = ('name', 'path', 'repository_type', 'globus_endpoint_id', 'globus_is_personal')
         extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
 
 
@@ -62,7 +62,7 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('__all__')
+        fields = ('id', 'url', 'dataset', 'data_repository', 'relative_path', 'exists')
 
 
 class DatasetFileRecordsSerializer(serializers.ModelSerializer):
@@ -73,7 +73,7 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('id', 'data_repository_path', 'relative_path')
+        fields = ('id', 'data_repository_path', 'relative_path', 'exists')
 
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
