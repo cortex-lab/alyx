@@ -28,7 +28,7 @@ class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
 
 
-class DataFormatSerializer(serializers.HyperlinkedModelSerializer):
+class DataFormatSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFormat
         fields = ('__all__')
