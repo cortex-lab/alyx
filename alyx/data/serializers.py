@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale)
 from actions.models import Session
+from subjects.models import Subject
 from electrophysiology.models import ExtracellularRecording
 
 
@@ -116,14 +117,64 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
+    # If session is not provided, use subject, start_time, number
+    subject = serializers.SlugRelatedField(
+        write_only=True, required=False, slug_field='nickname',
+        queryset=Subject.objects.all(),
+    )
+
+    date = serializers.DateField(required=False)
+
+    number = serializers.IntegerField(required=False)
+
     def get_experiment_number(self, obj):
         return obj.session.number if obj and obj.session else None
+
+    def create(self, validated_data):
+        if validated_data.get('session', None):
+            return super(DatasetSerializer, self).create(validated_data)
+
+        # Find or create an appropriate session for the dataset.
+        subject = validated_data.pop('subject', None)
+        date = validated_data.pop('date', None)
+        if not subject or not date:
+            return super(DatasetSerializer, self).create(validated_data)
+
+        # Only get or create the appropriate session if at least the subject and
+        # date are provided.
+        number = validated_data.pop('number', None)
+
+        # https://github.com/cortex-lab/alyx/issues/408
+        # If a base session for that subject and date already exists, use it;
+        base = Session.objects.filter(
+            subject=subject, start_time__date=date, parent_session__isnull=True).first()
+        # otherwise create a base session for that subject and date.
+        if not base:
+            base = Session.objects.create(subject=subject, start_time=date)
+        # If a subsession for that subject, date, and expNum already exists, use it;
+        session = Session.objects.filter(
+            subject=subject, start_time__date=date, number=number).first()
+        # otherwise create the subsession.
+        if not session:
+            session = Session.objects.create(subject=subject, start_time=date, number=number)
+        # Attach the subsession to the base session if not already attached.
+        if not session.parent_session:
+            session.parent_session = base
+        # Create the dataset, attached to the subsession.
+        validated_data['session'] = session
+        return super(DatasetSerializer, self).create(validated_data)
 
     class Meta:
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format', 'parent_dataset',
-                  'timescale', 'session', 'md5', 'experiment_number', 'file_records')
+                  'timescale', 'session', 'md5', 'experiment_number', 'file_records',
+                  'subject', 'date', 'number')
+        extra_kwargs = {
+            'subject': {'write_only': True},
+            'date': {'write_only': True},
+            'number': {'write_only': True},
+        }
 
 
 class TimescaleSerializer(serializers.HyperlinkedModelSerializer):

@@ -71,3 +71,23 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data[0]['dataset'], dataset)
         self.assertEqual(r.data[0]['data_repository'], 'dr')
         self.assertEqual(r.data[0]['relative_path'], 'path/to/file')
+
+    def test_dataset(self):
+        subject = self.client.get(reverse('subject-list')).data[0]['nickname']
+        data = {
+            'dataset_type': 'dst',
+            'created_by': 'test',
+            'subject': subject,
+            'date': '2018-01-01',
+            'number': 2,
+        }
+        # Post the dataset.
+        r = self.client.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+
+        # Make sure a session has been created.
+        session = r.data['session']
+        r = self.client.get(session)
+        self.ar(r, 200)
+        self.assertEqual(r.data['subject'], subject)
+        self.assertEqual(r.data['start_time'][:10], data['date'])
