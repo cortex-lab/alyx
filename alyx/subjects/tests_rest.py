@@ -56,6 +56,7 @@ class APISubjectsTests(BaseTests):
         response = self.client.get(url)
         self.ar(response)
         d = response.data
+        assert d
 
     def test_subject_water_administration(self):
         subject = WaterAdministration.objects.first().subject

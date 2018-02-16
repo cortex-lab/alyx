@@ -151,17 +151,29 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # List of data repositories associated to the subject's projects.
         repositories = set()
         for project in subject.projects.all():
-            set.update(project.repositories)
+            repositories.update(project.repositories.all())
 
         # Create one file record per repository.
         file_records = []
         for repo in repositories:
             fr = FileRecord.objects.create(
                 dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
-            file_records.append(fr)
+            file_records.append({
+                'data_repository': fr.data_repository.name,
+                'relative_path': fr.relative_path,
+                'exists': fr.exists,
+            })
 
-        # TODO: initiate file transfers with globus
-        return Response(file_records)
+        # TODO: (1) sync files and (2) launch transfer tasks
+
+        # Note the use of `get_queryset()` instead of `self.queryset`
+        return Response({
+            'name': dataset.name,
+            'session': session.pk,
+            'created_by': user.username,
+            'dataset_type': dataset_type.name,
+            'data_format': data_format.name,
+            'file_records': file_records})
 
 
 class TimescaleViewSet(viewsets.ModelViewSet):
