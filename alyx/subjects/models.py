@@ -82,6 +82,9 @@ class Project(BaseModel):
         OrderedUser, blank=True,
         help_text="Persons associated to the project.")
 
+    def __str__(self):
+        return "<Project %s>" % self.name
+
 
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""

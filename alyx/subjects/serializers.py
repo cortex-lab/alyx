@@ -1,11 +1,13 @@
 from rest_framework import serializers
-from .models import Allele, Line, Litter, Source, Species, Strain, Subject, Zygosity
+from .models import (Allele, Line, Litter, Source, Species, Strain, Subject, Zygosity,
+                     Project)
 from actions.serializers import (WeighingListSerializer,
                                  WaterAdministrationListSerializer,
                                  SessionListSerializer,
                                  )
 from django.contrib.auth.models import User
 from actions import water
+from data.models import DataRepository
 
 
 class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
@@ -132,3 +134,25 @@ class SubjectDetailSerializer(SubjectListSerializer):
                   'genotype', 'water_requirement_total', 'water_requirement_remaining')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
+
+
+class ProjectSerializer(serializers.HyperlinkedModelSerializer):
+    users = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='username',
+        queryset=User.objects.all(),
+        many=True,
+        required=False)
+
+    repositories = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=DataRepository.objects.all(),
+        many=True,
+        required=False)
+
+    class Meta:
+        model = Project
+        fields = ('name', 'description', 'repositories', 'users')
+        lookup_field = 'name'
+        extra_kwargs = {'url': {'view_name': 'project-detail', 'lookup_field': 'name'}}

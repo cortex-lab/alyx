@@ -1,11 +1,13 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, viewsets
 import django_filters
 from django_filters.rest_framework import FilterSet
 
-from .models import Subject
+from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
-                          WaterRestrictedSubjectListSerializer)
+                          WaterRestrictedSubjectListSerializer,
+                          ProjectSerializer,
+                          )
 
 
 class SubjectFilter(FilterSet):
@@ -45,6 +47,13 @@ class SubjectList(generics.ListCreateAPIView):
     serializer_class = SubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SubjectFilter
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
 
 
 class WaterRestrictedSubjectList(generics.ListAPIView):

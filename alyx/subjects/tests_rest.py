@@ -51,6 +51,12 @@ class APISubjectsTests(BaseTests):
                              'water_requirement_remaining', 'weighings',
                              'water_administrations')) <= set(d))
 
+    def test_list_projects(self):
+        url = reverse('project-list')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data
+
     def test_subject_water_administration(self):
         subject = WaterAdministration.objects.first().subject
         url = reverse('subject-detail', kwargs={'nickname': subject.nickname})

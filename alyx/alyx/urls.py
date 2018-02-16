@@ -84,6 +84,18 @@ dataset_detail = data_views.DatasetViewSet.as_view({
 })
 
 
+project_list = subjects_views.ProjectViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+project_detail = subjects_views.ProjectViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+
+
 filerecord_list = data_views.FileRecordViewSet.as_view({
     'get': 'list',
     'post': 'create'
@@ -166,6 +178,9 @@ urlpatterns = [
 
     url(r'^datasets$', dataset_list, name="dataset-list"),
     url(r'^datasets/(?P<pk>[-_\w].+)$', dataset_detail, name="dataset-detail"),
+
+    url(r'^projects$', project_list, name="project-list"),
+    url(r'^projects/(?P<name>[-_\w].+)$', project_detail, name="project-detail"),
 
     url(r'^files$', filerecord_list, name="filerecord-list"),
     url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name="filerecord-detail"),
