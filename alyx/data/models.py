@@ -10,6 +10,36 @@ def _related_string(field):
     return "%(app_label)s_%(class)s_" + field + "_related"
 
 
+def _get_or_create_session(subject=None, date=None, number=None, user=None):
+    # https://github.com/cortex-lab/alyx/issues/408
+    # If a base session for that subject and date already exists, use it;
+    base = Session.objects.filter(
+        subject=subject, start_time__date=date, parent_session__isnull=True).first()
+    # otherwise create a base session for that subject and date.
+    if not base:
+        base = Session.objects.create(
+            subject=subject, start_time=date, type='Base', narrative="auto-generated session")
+        if user:
+            base.users.add(user.pk)
+            base.save()
+    # If a subsession for that subject, date, and expNum already exists, use it;
+    session = Session.objects.filter(
+        subject=subject, start_time__date=date, number=number).first()
+    # otherwise create the subsession.
+    if not session:
+        session = Session.objects.create(
+            subject=subject, start_time=date, number=number,
+            type='Experiment', narrative="auto-generated session")
+        if user:
+            session.users.add(user.pk)
+            session.save()
+    # Attach the subsession to the base session if not already attached.
+    if not session.parent_session:
+        session.parent_session = base
+        session.save()
+    return session
+
+
 # Data repositories
 # ------------------------------------------------------------------------------------------------
 
