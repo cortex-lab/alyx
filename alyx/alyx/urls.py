@@ -94,6 +94,9 @@ filerecord_detail = data_views.FileRecordViewSet.as_view({
     'patch': 'partial_update',
     'delete': 'destroy'
 })
+register_file = data_views.RegisterFileViewSet.as_view({
+    'post': 'create'
+})
 
 
 timescale_list = data_views.TimescaleViewSet.as_view({
@@ -166,6 +169,8 @@ urlpatterns = [
 
     url(r'^files$', filerecord_list, name="filerecord-list"),
     url(r'^files/(?P<pk>[-_\w].+)$', filerecord_detail, name="filerecord-detail"),
+
+    url(r'^register-file$', register_file, name="register-file"),
 
     url(r'^timescales$', timescale_list, name="timescale-list"),
     url(r'^timescales/(?P<pk>[-_\w].+)$', timescale_detail, name="timescale-detail"),

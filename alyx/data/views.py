@@ -1,6 +1,11 @@
-from rest_framework import generics, permissions, viewsets
+import os.path as op
+import re
+
+from rest_framework import generics, permissions, viewsets, mixins
+from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
+from django.db.models.functions import Length
 
 from .models import (DataRepositoryType,
                      DataRepository,
@@ -9,6 +14,7 @@ from .models import (DataRepositoryType,
                      Dataset,
                      FileRecord,
                      Timescale,
+                     _get_or_create_session,
                      )
 from electrophysiology.models import ExtracellularRecording
 from .serializers import (DataRepositoryTypeSerializer,
@@ -21,6 +27,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
                           )
+from subjects.models import Subject
 
 
 class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
@@ -91,6 +98,70 @@ class FileRecordViewSet(viewsets.ModelViewSet):
     serializer_class = FileRecordSerializer
     queryset = FileRecord.objects.all()
     filter_fields = ('exists', 'dataset')
+
+
+def _get_data_type_format(filename):
+    """Return the DatasetType and DataFormat associated to an ALF filename."""
+
+    dataset_type = None
+    for dt in (DatasetType.objects.filter(alf_filename__isnull=False).
+               order_by(Length('alf_filename').desc())):
+        if not dt.alf_filename.strip():
+            continue
+        reg = dt.alf_filename.replace('.', r'\.').replace('*', r'[^\.]+')
+        if re.match(reg, filename):
+            dataset_type = dt
+            break
+
+    data_format = None
+    for df in DataFormat.objects.filter(alf_filename__isnull=False):
+        reg = df.alf_filename.replace('.', r'\.').replace('*', r'[^\.]+')
+        if not df.alf_filename.strip():
+            continue
+        if re.match(reg, filename):
+            data_format = df
+            break
+
+    return dataset_type, data_format
+
+
+class RegisterFileViewSet(mixins.CreateModelMixin,
+                          viewsets.GenericViewSet):
+    def create(self, request):
+        user = request.user
+        number = request.data.get('session_number', None)
+        date = request.data.get('date', None)
+
+        relative_path = request.data.get('relative_path', None)
+        assert relative_path
+        filename = op.basename(relative_path)
+
+        subject = request.data.get('subject', None)
+        subject = Subject.objects.get(nickname=subject)
+
+        session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+
+        dataset_type, data_format = _get_data_type_format(filename)
+
+        # Create the dataset.
+        dataset = Dataset.objects.create(
+            name=filename, session=session, created_by=user,
+            dataset_type=dataset_type, data_format=data_format)
+
+        # List of data repositories associated to the subject's projects.
+        repositories = set()
+        for project in subject.projects.all():
+            set.update(project.repositories)
+
+        # Create one file record per repository.
+        file_records = []
+        for repo in repositories:
+            fr = FileRecord.objects.create(
+                dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
+            file_records.append(fr)
+
+        # TODO: initiate file transfers with globus
+        return Response(file_records)
 
 
 class TimescaleViewSet(viewsets.ModelViewSet):

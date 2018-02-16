@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Timescale)
+                     Dataset, FileRecord, Timescale,
+                     _get_or_create_session,
+                     )
 from actions.models import Session
 from subjects.models import Subject
 from electrophysiology.models import ExtracellularRecording
@@ -145,32 +147,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         number = validated_data.pop('number', None)
         user = validated_data.pop('created_by', None)
 
-        # https://github.com/cortex-lab/alyx/issues/408
-        # If a base session for that subject and date already exists, use it;
-        base = Session.objects.filter(
-            subject=subject, start_time__date=date, parent_session__isnull=True).first()
-        # otherwise create a base session for that subject and date.
-        if not base:
-            base = Session.objects.create(
-                subject=subject, start_time=date, type='Base', narrative="auto-generated session")
-            if user:
-                base.users.add(user.pk)
-                base.save()
-        # If a subsession for that subject, date, and expNum already exists, use it;
-        session = Session.objects.filter(
-            subject=subject, start_time__date=date, number=number).first()
-        # otherwise create the subsession.
-        if not session:
-            session = Session.objects.create(
-                subject=subject, start_time=date, number=number,
-                type='Experiment', narrative="auto-generated session")
-            if user:
-                session.users.add(user.pk)
-                session.save()
-        # Attach the subsession to the base session if not already attached.
-        if not session.parent_session:
-            session.parent_session = base
-            session.save()
+        session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+
         # Create the dataset, attached to the subsession.
         validated_data['session'] = session
         return super(DatasetSerializer, self).create(validated_data)
