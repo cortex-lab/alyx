@@ -126,6 +126,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
+                  'projects',
                   'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
                   'description', 'actions_sessions', 'weighings', 'water_administrations',
                   'genotype', 'water_requirement_total', 'water_requirement_remaining')
