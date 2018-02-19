@@ -12,6 +12,8 @@ def _related_string(field):
 
 def _get_or_create_session(subject=None, date=None, number=None, user=None):
     # https://github.com/cortex-lab/alyx/issues/408
+    if not subject or not date:
+        return None
     # If a base session for that subject and date already exists, use it;
     base = Session.objects.filter(
         subject=subject, start_time__date=date, parent_session__isnull=True).first()

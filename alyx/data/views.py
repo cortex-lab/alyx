@@ -168,12 +168,15 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         # Note the use of `get_queryset()` instead of `self.queryset`
         return Response({
+            'id': dataset.pk,
             'name': dataset.name,
-            'session': session.pk,
+            'session': getattr(session, 'pk', ''),
             'created_by': user.username,
-            'dataset_type': dataset_type.name,
-            'data_format': data_format.name,
-            'file_records': file_records})
+            'created_datetime': dataset.created_datetime,
+            'dataset_type': getattr(dataset_type, 'name', ''),
+            'data_format': getattr(data_format, 'name', ''),
+            'file_records': file_records,
+        })
 
 
 class TimescaleViewSet(viewsets.ModelViewSet):
