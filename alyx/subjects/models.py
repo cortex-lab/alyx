@@ -193,6 +193,10 @@ class Subject(BaseModel):
     def zygosity_strings(self):
         return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
 
+    def is_negative(self):
+        """Genotype is -/- for all genes."""
+        return all(z.zygosity == 0 for z in Zygosity.objects.filter(subject=self))
+
     def genotype_test_string(self):
         tests = GenotypeTest.objects.filter(subject=self).order_by('sequence__informal_name')
         return ','.join('%s%s' % ('-' if test.test_result == 0 else '', str(test.sequence))

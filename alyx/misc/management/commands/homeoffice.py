@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import sys
 
@@ -11,6 +12,62 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 
+def assigned_to_stock_managers():
+    return Q(responsible_user__username__in=settings.STOCK_MANAGERS)
+
+
+def assigned_to_no_one():
+    return Q(responsible_user__isnull=True)
+
+
+def killed(start_date, end_date):
+    return Q(death_date__gte=start_date, death_date__lte=end_date)
+
+
+def genotyped(start_date, end_date):
+    return Q(genotype_date__gte=start_date, genotype_date__lte=end_date)
+
+
+def not_used(query):
+    return query.filter(assigned_to_stock_managers() |
+                        assigned_to_no_one()).exclude(protocol_number='3')
+
+
+def used(query):
+    return (query.filter(protocol_number='3') |
+            query.exclude(assigned_to_stock_managers() | assigned_to_no_one()))
+
+
+def transgenic(query):
+    return query.exclude(line__auto_name='C57')
+
+
+@contextlib.contextmanager
+def redirect_stdout(stream):
+    import sys
+    sys.stdout = stream
+    yield
+    sys.stdout = sys.__stdout__
+
+
+def display(title, query):
+    with open('homeoffice/%s.txt' % title, 'w') as f:
+        with redirect_stdout(f):
+            print("%s: %d subjects." % (title, len(query)))
+            print('\t'.join(('#   ', 'user       ', 'prot.', 'death    ',
+                             'genotyped', 'EM', 'nickname')))
+            for i, subj in enumerate(query):
+                print('\t'.join(('%04d' % (i + 1),
+                                 '{0: <12}'.format(subj.responsible_user.username),
+                                 subj.protocol_number,
+                                 str(subj.death_date or ' ' * 10),
+                                 str(subj.genotype_date or ' ' * 10),
+                                 subj.ear_mark,
+                                 subj.nickname,
+                                 )))
+            print('\n\n')
+
+
 class Command(BaseCommand):
     help = ("Display information required by Home Office about number of animals used "
             "for research.")
@@ -21,33 +78,20 @@ class Command(BaseCommand):
         parser.add_argument('end_date', type=str)
 
     def handle(self, *args, **options):
-        s = Subject.objects.filter(Q(responsible_user__username__in=settings.STOCK_MANAGERS) |
-                                   Q(responsible_user__isnull=True))
-        s = s.exclude(protocol_number='3')
-
         start_date = options.get('start_date')
         end_date = options.get('end_date')
 
-        killed = s.filter(death_date__gte=start_date,
-                          death_date__lte=end_date).order_by('death_date')
-        genotyped = s.filter(genotype_date__gte=start_date,
-                             genotype_date__lte=end_date).order_by('genotype_date')
+        k = Subject.objects.filter(killed(start_date, end_date)).order_by('death_date')
+        g = Subject.objects.filter(genotyped(start_date, end_date)).order_by('genotype_date')
 
-        self.stdout.write("Between %s and %s" % (start_date, end_date))
-        self.stdout.write("Animals killed: %d" % len(killed))
-        self.stdout.write("Animals genotyped: %d" % len(genotyped))
+        print("Between %s and %s" % (start_date, end_date))
 
-        for (title, subjects) in [('killed', killed), ('genotyped', genotyped)]:
-            self.stdout.write("\nAnimals %s:" % title)
-            i = 1
-            for subj in subjects:
-                self.stdout.write("%d\t%s\t%s\t%s\t%s\t%s" % (
-                    i,
-                    subj.responsible_user,
-                    subj.protocol_number,
-                    '%s: %s' % (title,
-                                subj.death_date if title == 'killed' else subj.genotype_date),
-                    subj.ear_mark,
-                    subj.nickname,
-                ))
-                i += 1
+        display("Killed and not used", not_used(k))
+        display("Genotyped and not used", not_used(g))
+        display("Transgenic killed", transgenic(k))
+        display("Killed and used", used(k))
+        display("Genotyped and used", used(g))
+        display("Negative genotyped and used", [s for s in used(g) if s.is_negative()])
+        display("Genotyped, killed, and not used", not_used(g & k))
+        display("Transgenic killed, not genotyped, and not used",
+                transgenic(not_used(k.difference(g))))
