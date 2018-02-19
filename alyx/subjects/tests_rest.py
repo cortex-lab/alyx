@@ -53,10 +53,11 @@ class APISubjectsTests(BaseTests):
 
     def test_list_projects(self):
         url = reverse('project-list')
+        self.client.post(url, name='test_project')
         response = self.client.get(url)
         self.ar(response)
         d = response.data
-        assert d
+        self.assertEqual(d[0]['name'], 'test_project')
 
     def test_subject_water_administration(self):
         subject = WaterAdministration.objects.first().subject
