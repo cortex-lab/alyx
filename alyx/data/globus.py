@@ -81,14 +81,18 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     source_fr = FileRecord.objects.get(pk=source_file_id)
     destination_fr = FileRecord.objects.get(pk=destination_file_id)
 
-    source_id = source_fr.globus_endpoint_id
-    destination_id = destination_fr.globus_endpoint_id
+    source_id = source_fr.data_repository.globus_endpoint_id
+    destination_id = destination_fr.data_repository.globus_endpoint_id
 
     if not source_id and not destination_id:
         raise ValueError("The Globus endpoint ids of source and destination must be set.")
 
     source_path = _get_absolute_path(source_fr)
     destination_path = _get_absolute_path(destination_fr)
+
+    # Add dataset UUID.
+    dpath, ext = op.splitext(destination_path)
+    destination_path = dpath + '.' + str(source_fr.dataset.pk) + ext
 
     label = 'Transfer %s %s to %s %s' % (
         source_fr.data_repository.name,

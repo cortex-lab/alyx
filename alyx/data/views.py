@@ -28,6 +28,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           ExpMetadataSummarySerializer,
                           )
 from subjects.models import Subject
+from . import globus
 
 
 class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
@@ -164,7 +165,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 'exists': fr.exists,
             })
 
-        # TODO: (1) sync files and (2) launch transfer tasks
+        # Sync files and launch transfer tasks.
+        globus.update_file_exists(dataset)
+        for t in globus.transfers_required(dataset):
+            globus.start_globus_transfer(t['source_file_record'], t['destination_file_record'],
+                                         dry_run=True)
 
         # Note the use of `get_queryset()` instead of `self.queryset`
         return Response({
