@@ -94,4 +94,4 @@ class Command(BaseCommand):
         display("Negative genotyped and used", [s for s in used(g) if s.is_negative()])
         display("Genotyped, killed, and not used", not_used(g & k))
         display("Transgenic killed, not genotyped, and not used",
-                transgenic(not_used(k.difference(g))))
+                transgenic(not_used(k)).exclude(genotyped(start_date, end_date)))
