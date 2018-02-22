@@ -94,11 +94,10 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     dpath, ext = op.splitext(destination_path)
     destination_path = dpath + '.' + str(source_fr.dataset.pk) + ext
 
-    label = 'Transfer %s %s to %s %s' % (
+    label = 'Transfer %s from %s to %s' % (
+        _escape_label(op.basename(destination_path)),
         source_fr.data_repository.name,
-        _escape_label(source_path),
         destination_fr.data_repository.name,
-        _escape_label(destination_path),
     )
     tc = globus_transfer_client()
     tdata = globus_sdk.TransferData(

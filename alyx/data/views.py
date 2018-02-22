@@ -155,21 +155,23 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             repositories.update(project.repositories.all())
 
         # Create one file record per repository.
-        file_records = []
         for repo in repositories:
-            fr = FileRecord.objects.create(
+            FileRecord.objects.create(
                 dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
-            file_records.append({
-                'data_repository': fr.data_repository.name,
-                'relative_path': fr.relative_path,
-                'exists': fr.exists,
-            })
 
         # Sync files and launch transfer tasks.
         globus.update_file_exists(dataset)
         for t in globus.transfers_required(dataset):
-            globus.start_globus_transfer(t['source_file_record'], t['destination_file_record'],
-                                         dry_run=True)
+            globus.start_globus_transfer(t['source_file_record'], t['destination_file_record'])
+
+        # Return the file records.
+        file_records = [
+            {
+                'data_repository': fr.data_repository.name,
+                'relative_path': fr.relative_path,
+                'exists': fr.exists,
+            }
+            for fr in FileRecord.objects.filter(dataset=dataset)]
 
         # Note the use of `get_queryset()` instead of `self.queryset`
         return Response({
