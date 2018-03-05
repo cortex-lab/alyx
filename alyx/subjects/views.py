@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions
 import django_filters
 from django_filters.rest_framework import FilterSet
 
@@ -49,7 +49,21 @@ class SubjectList(generics.ListCreateAPIView):
     filter_class = SubjectFilter
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
+class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectDetailSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'nickname'
+
+
+class ProjectList(generics.ListCreateAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -63,10 +77,3 @@ class WaterRestrictedSubjectList(generics.ListAPIView):
          WHERE end_time IS NULL)'''])
     serializer_class = WaterRestrictedSubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-
-class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Subject.objects.all()
-    serializer_class = SubjectDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'nickname'
