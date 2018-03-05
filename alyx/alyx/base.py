@@ -13,6 +13,7 @@ from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
+from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 from rest_framework.test import APITestCase
 
@@ -123,6 +124,23 @@ class Bunch(dict):
 
 def flatten(l):
     return [item for sublist in l for item in sublist]
+
+
+def _show_change(date_time, old, new):
+    date_time = parse(date_time)
+    return '%s: %s ⇨ %s' % (
+        date_time.strftime("%d/%m/%Y at %H:%M"), str(old), str(new))
+
+
+def _iter_history_changes(obj, field):
+    changes = obj.json.get('history', {}).get(field, [])
+    for d1, d2 in zip(changes, changes[1:]):
+        yield _show_change(d1['date_time'], d1['value'], d2['value'])
+    # Last change to current value.
+    if changes:
+        d = changes[-1]
+        current = getattr(obj, field, None)
+        yield _show_change(d['date_time'], d['value'], current)
 
 
 def _get_category_list(app_list):

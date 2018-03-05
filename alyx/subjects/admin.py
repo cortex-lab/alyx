@@ -9,7 +9,8 @@ from django.db.models import Case, When
 from django.utils.html import format_html
 from django.urls import reverse
 
-from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url)
+from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
+                       _iter_history_changes)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      )
@@ -250,7 +251,8 @@ class SubjectAdmin(BaseAdmin):
                                 'reduced', 'reduced_date',
                                 'ear_mark',
                                 'protocol_number', 'description', 'json')}),
-        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter', 'lamis_cage',),
+        ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
+                                'lamis_cage', 'lamis_cage_changes',),
                      'classes': ('collapse',),
                      }),
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
@@ -283,6 +285,7 @@ class SubjectAdmin(BaseAdmin):
                      ]
     readonly_fields = ('age_days', 'zygosities',
                        'breeding_pair_l', 'litter_l', 'line_l',
+                       'lamis_cage_changes',
                        'last_water_restriction',
                        'reference_weighing_f',
                        'current_weighing_f',
@@ -369,6 +372,9 @@ class SubjectAdmin(BaseAdmin):
         url_h = reverse('water-history', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" /><br /><a href="{url_h}">Water history</a>',
                            url=url, url_h=url_h)
+
+    def lamis_cage_changes(self, obj):
+        return format_html('<br />\n'.join(_iter_history_changes(obj, 'lamis_cage')))
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
