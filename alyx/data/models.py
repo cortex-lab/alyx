@@ -136,6 +136,10 @@ class DatasetType(BaseModel):
     name = models.CharField(max_length=255, unique=True,
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
+    parent_dataset_type = models.ForeignKey(
+        'data.DatasetType', null=True, blank=True,
+        help_text="hierachical parent of this DatasetType.")
+
     created_by = models.ForeignKey(
         OrderedUser, blank=True, null=True,
         related_name=_related_string('created_by'),
@@ -213,7 +217,8 @@ class Dataset(BaseExperimentalData):
     data_format = models.ForeignKey(DataFormat, null=True, blank=True)
 
     parent_dataset = models.ForeignKey(
-        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.")
+        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.",
+        related_name='child_dataset')
 
     timescale = models.ForeignKey(
         'data.Timescale', null=True, blank=True,

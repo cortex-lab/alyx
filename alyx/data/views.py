@@ -27,8 +27,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
                           )
-from subjects.models import Subject
-from . import globus
+from subjects.models import Subject, Project
 
 
 class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
@@ -126,64 +125,105 @@ def _get_data_type_format(filename):
     return dataset_type, data_format
 
 
+def _get_repositories_for_projects(projects):
+    # List of data repositories associated to the subject's projects.
+    repositories = set()
+    for project in projects.all():
+        repositories.update(project.repositories.all())
+    return list(repositories)
+
+
+def _create_dataset_file_records(
+        dirname=None, filename=None, session=None, user=None, repositories=None):
+
+    relative_path = op.join(dirname, filename)
+    dataset_type, data_format = _get_data_type_format(filename)
+    assert dataset_type
+    assert data_format
+
+    # Create the dataset.
+    dataset = Dataset.objects.create(
+        name=filename, session=session, created_by=user,
+        dataset_type=dataset_type, data_format=data_format)
+
+    # Create the parent datasets, according to the parent dataset types.
+    dst = dataset_type.parent_dataset_type
+    ds = dataset
+    while dst is not None:
+        ds.parent_dataset = Dataset.objects.create(
+            session=session, created_by=user, dataset_type=dst)
+        ds.save()
+
+        dst = dst.parent_dataset_type
+        ds = ds.parent_dataset
+
+    # Create one file record per repository.
+    for repo in repositories:
+        FileRecord.objects.create(
+            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
+
+    return dataset
+
+
+def _make_dataset_response(dataset, return_parent=True):
+    if not dataset:
+        return None
+
+    # Return the file records.
+    file_records = [
+        {
+            'data_repository': fr.data_repository.name,
+            'relative_path': fr.relative_path,
+        }
+        for fr in FileRecord.objects.filter(dataset=dataset)]
+
+    out = {
+        'id': dataset.pk,
+        'name': dataset.name,
+        'created_by': dataset.created_by.username,
+        'created_datetime': dataset.created_datetime,
+        'dataset_type': getattr(dataset.dataset_type, 'name', ''),
+        'data_format': getattr(dataset.data_format, 'name', ''),
+        'session': getattr(dataset.session, 'pk', ''),
+    }
+    if return_parent:
+        out['parent_dataset'] = _make_dataset_response(
+            dataset.parent_dataset, return_parent=False)
+    out['file_records'] = file_records
+    return out
+
+
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
     def create(self, request):
         user = request.user
         number = request.data.get('session_number', None)
         date = request.data.get('date', None)
+        dirname = request.data.get('dirname', None)
 
-        relative_path = request.data.get('relative_path', None)
-        assert relative_path
-        filename = op.basename(relative_path)
-
+        # comma-separated filenames
+        filenames = request.data.get('filenames', '').split(',')
         subject = request.data.get('subject', None)
         subject = Subject.objects.get(nickname=subject)
 
+        # Multiple projects, or the subject's projects
+        projects = request.data.get('projects', '').split(',')
+        projects = [Project.objects.get(name=project) for project in projects if project]
+        repositories = _get_repositories_for_projects(projects or subject.projects)
+
         session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
 
-        dataset_type, data_format = _get_data_type_format(filename)
+        response = []
+        for filename in filenames:
+            if not filename:
+                continue
+            dataset = _create_dataset_file_records(
+                dirname=dirname, filename=filename, session=session, user=user,
+                repositories=repositories)
+            out = _make_dataset_response(dataset)
+            response.append(out)
 
-        # Create the dataset.
-        dataset = Dataset.objects.create(
-            name=filename, session=session, created_by=user,
-            dataset_type=dataset_type, data_format=data_format)
-
-        # List of data repositories associated to the subject's projects.
-        repositories = set()
-        for project in subject.projects.all():
-            repositories.update(project.repositories.all())
-
-        # Create one file record per repository.
-        for repo in repositories:
-            FileRecord.objects.create(
-                dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
-
-        # Sync files and launch transfer tasks.
-        globus.update_file_exists(dataset)
-        for t in globus.transfers_required(dataset):
-            globus.start_globus_transfer(t['source_file_record'], t['destination_file_record'])
-
-        # Return the file records.
-        file_records = [
-            {
-                'data_repository': fr.data_repository.name,
-                'relative_path': fr.relative_path,
-                'exists': fr.exists,
-            }
-            for fr in FileRecord.objects.filter(dataset=dataset)]
-
-        # Note the use of `get_queryset()` instead of `self.queryset`
-        return Response({
-            'id': dataset.pk,
-            'name': dataset.name,
-            'session': getattr(session, 'pk', ''),
-            'created_by': user.username,
-            'created_datetime': dataset.created_datetime,
-            'dataset_type': getattr(dataset_type, 'name', ''),
-            'data_format': getattr(data_format, 'name', ''),
-            'file_records': file_records,
-        })
+        return Response(response)
 
 
 class TimescaleViewSet(viewsets.ModelViewSet):

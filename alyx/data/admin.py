@@ -28,22 +28,26 @@ class CreatedByListFilter(DefaultListFilter):
 class DataRepositoryTypeAdmin(BaseAdmin):
     fields = ('name', 'json')
     list_display = ('name',)
+    ordering = ('name',)
 
 
 class DataRepositoryAdmin(BaseAdmin):
     fields = ('name', 'repository_type', 'path', 'globus_endpoint_id', 'globus_is_personal')
     list_display = fields
+    ordering = ('name',)
 
 
 class DataFormatAdmin(BaseAdmin):
     fields = ['name', 'description', 'alf_filename',
               'matlab_loader_function', 'python_loader_function']
     list_display = fields[:-1]
+    ordering = ('name',)
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ('name', 'description', 'alf_filename', 'created_by')
+    fields = ('name', 'description', 'alf_filename', 'created_by', 'parent_dataset_type')
     list_display = fields
+    ordering = ('name',)
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by and 'created_by' not in form.changed_data:
@@ -66,9 +70,10 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'md5', 'session_ro']
+    fields = ['name', 'dataset_type', 'md5', 'session_ro', 'parent_dataset']
     readonly_fields = ['name_', 'session_ro']
-    list_display = ['name_', 'dataset_type', 'session', 'created_by', 'created_datetime']
+    list_display = ['name_', 'dataset_type', 'session', 'parent_dataset',
+                    'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
