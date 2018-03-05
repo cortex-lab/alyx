@@ -272,12 +272,15 @@ class SubjectAdmin(BaseAdmin):
     list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
                     'breeding_pair_l', 'line_l', 'litter_l',
                     'genotype_l', 'zygosities',
-                    'alive', 'responsible_user', 'description'
+                    'alive', 'responsible_user',
+                    'lamis_cage', 'description'
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
-                     'responsible_user__username']
+                     'responsible_user__username',
+                     'lamis_cage',
+                     ]
     readonly_fields = ('age_days', 'zygosities',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'last_water_restriction',
