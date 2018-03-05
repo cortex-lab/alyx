@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale,
                      _get_or_create_session,
@@ -16,7 +17,7 @@ class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'datarepositorytype-detail', 'lookup_field': 'name'}}
 
 
-class DataRepositoryDetailSerializer(serializers.HyperlinkedModelSerializer):
+class DataRepositorySerializer(serializers.HyperlinkedModelSerializer):
 
     repository_type = serializers.SlugRelatedField(
         read_only=False,
@@ -48,9 +49,17 @@ class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
         default=serializers.CurrentUserDefault(),
     )
 
+    parent_dataset_type = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=DatasetType.objects.all(),
+        read_only=False,
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = DatasetType
-        fields = ('__all__')
+        fields = ('name', 'created_by', 'description', 'alf_filename', 'parent_dataset_type')
         extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
 
 

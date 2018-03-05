@@ -18,7 +18,7 @@ from .models import (DataRepositoryType,
                      )
 from electrophysiology.models import ExtracellularRecording
 from .serializers import (DataRepositoryTypeSerializer,
-                          DataRepositoryDetailSerializer,
+                          DataRepositorySerializer,
                           DataFormatSerializer,
                           DatasetTypeSerializer,
                           DatasetSerializer,
@@ -30,45 +30,76 @@ from .serializers import (DataRepositoryTypeSerializer,
 from subjects.models import Subject, Project
 
 
-class DataRepositoryTypeViewSet(viewsets.ModelViewSet):
-    """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
-    This API will probably change.
-    """
+# DataRepositoryType
+# ------------------------------------------------------------------------------------------------
+
+class DataRepositoryTypeList(generics.ListCreateAPIView):
     queryset = DataRepositoryType.objects.all()
     serializer_class = DataRepositoryTypeSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
 
-class DataRepositoryViewSet(viewsets.ModelViewSet):
+class DataRepositoryTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DataRepositoryType.objects.all()
+    serializer_class = DataRepositoryTypeSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = DataRepositoryDetailSerializer
-    queryset = DataRepository.objects.all()
     lookup_field = 'name'
 
 
-class DataFormatViewSet(viewsets.ModelViewSet):
-    """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
-    This API will probably change.
-    """
+# DataRepository
+# ------------------------------------------------------------------------------------------------
+
+class DataRepositoryList(generics.ListCreateAPIView):
+    queryset = DataRepository.objects.all()
+    serializer_class = DataRepositorySerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+class DataRepositoryDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DataRepository.objects.all()
+    serializer_class = DataRepositorySerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+# DataFormat
+# ------------------------------------------------------------------------------------------------
+
+class DataFormatList(generics.ListCreateAPIView):
     queryset = DataFormat.objects.all()
     serializer_class = DataFormatSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
 
-class DatasetTypeViewSet(viewsets.ModelViewSet):
-    """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
-    This API will probably change.
-    """
+class DataFormatDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DataFormat.objects.all()
+    serializer_class = DataFormatSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+# DatasetType
+# ------------------------------------------------------------------------------------------------
+
+class DatasetTypeList(generics.ListCreateAPIView):
     queryset = DatasetType.objects.all()
     serializer_class = DatasetTypeSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
+
+class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DatasetType.objects.all()
+    serializer_class = DatasetTypeSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+# Dataset
+# ------------------------------------------------------------------------------------------------
 
 class DatasetFilter(FilterSet):
     subject = django_filters.CharFilter(name='session__subject__nickname')
@@ -82,30 +113,84 @@ class DatasetFilter(FilterSet):
         exclude = ['json']
 
 
-class DatasetViewSet(viewsets.ModelViewSet):
-    """
-    You can `list`, `create`, `retrieve`,`update` and `destroy` datasets.
-    This API will probably change.
-    """
+class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = DatasetFilter
 
 
-class FileRecordViewSet(viewsets.ModelViewSet):
+class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Dataset.objects.all()
+    serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = FileRecordSerializer
+
+
+# FileRecord
+# ------------------------------------------------------------------------------------------------
+
+class FileRecordList(generics.ListCreateAPIView):
     queryset = FileRecord.objects.all()
+    serializer_class = FileRecordSerializer
+    permission_classes = (permissions.IsAuthenticated,)
     filter_fields = ('exists', 'dataset')
 
+
+class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FileRecord.objects.all()
+    serializer_class = FileRecordSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+# Timescale
+# ------------------------------------------------------------------------------------------------
+
+class TimescaleList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimescaleSerializer
+    queryset = Timescale.objects.all()
+
+
+class TimescaleDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimescaleSerializer
+    queryset = Timescale.objects.all()
+
+
+# ExpMetadata
+# ------------------------------------------------------------------------------------------------
+
+class ExpMetadataList(generics.ListCreateAPIView):
+    """
+    Lists experimental metadata classes. For now just supports ExtracellularRecording
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = ExpMetadataSummarySerializer
+    queryset = ExtracellularRecording.objects.all()
+
+
+class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Lists experimental metadata classes. For now just supports ExtracellularRecording
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = ExpMetadataDetailSerializer
+    queryset = ExtracellularRecording.objects.all()
+
+
+# Register file
+# ------------------------------------------------------------------------------------------------
 
 def _get_data_type_format(filename):
     """Return the DatasetType and DataFormat associated to an ALF filename."""
 
     dataset_type = None
+    # NOTE: we sort by decreasing alf_filename length, so that longer (more specific) alf
+    # filenames are chosen. For example, foo.bar.* has higher priority than foo.*.* because
+    # its length is higher. For 1-character-long parts, we use the fact that * < any character
+    # which is why we sort by decreasing alf_filename.
     for dt in (DatasetType.objects.filter(alf_filename__isnull=False).
-               order_by(Length('alf_filename').desc())):
+               order_by(Length('alf_filename').desc(), '-alf_filename')):
         if not dt.alf_filename.strip():
             continue
         reg = dt.alf_filename.replace('.', r'\.').replace('*', r'[^\.]+')
@@ -128,7 +213,7 @@ def _get_data_type_format(filename):
 def _get_repositories_for_projects(projects):
     # List of data repositories associated to the subject's projects.
     repositories = set()
-    for project in projects.all():
+    for project in projects:
         repositories.update(project.repositories.all())
     return list(repositories)
 
@@ -150,8 +235,8 @@ def _create_dataset_file_records(
     dst = dataset_type.parent_dataset_type
     ds = dataset
     while dst is not None:
-        ds.parent_dataset = Dataset.objects.create(
-            session=session, created_by=user, dataset_type=dst)
+        ds.parent_dataset = Dataset.objects.get_or_create(
+            session=session, created_by=user, dataset_type=dst)[0]
         ds.save()
 
         dst = dst.parent_dataset_type
@@ -209,7 +294,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # Multiple projects, or the subject's projects
         projects = request.data.get('projects', '').split(',')
         projects = [Project.objects.get(name=project) for project in projects if project]
-        repositories = _get_repositories_for_projects(projects or subject.projects)
+        repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
 
         session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
 
@@ -223,28 +308,4 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             out = _make_dataset_response(dataset)
             response.append(out)
 
-        return Response(response)
-
-
-class TimescaleViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TimescaleSerializer
-    queryset = Timescale.objects.all()
-
-
-class ExpMetadataList(generics.ListCreateAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataSummarySerializer
-    queryset = ExtracellularRecording.objects.all()
-
-
-class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataDetailSerializer
-    queryset = ExtracellularRecording.objects.all()
+        return Response(response, status=201)
