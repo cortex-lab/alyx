@@ -67,7 +67,7 @@ class DataRepository(BaseModel):
     cardboard box to find a tape in)
     """
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     repository_type = models.ForeignKey(
         DataRepositoryType, null=True, blank=True)
     path = models.CharField(
@@ -102,7 +102,7 @@ class DataFormat(BaseModel):
         help_text="short identifying nickname, e..g 'npy'.")
 
     description = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Human-readable description of the file format e.g. 'npy-formatted square "
         "numerical array'.")
 
@@ -111,11 +111,11 @@ class DataFormat(BaseModel):
         help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
 
     matlab_loader_function = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Name of MATLAB loader function'.")
 
     python_loader_function = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Name of Python loader function'.")
 
     class Meta:

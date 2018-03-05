@@ -48,6 +48,7 @@ class DatasetTypeAdmin(BaseAdmin):
     fields = ('name', 'description', 'alf_filename', 'created_by', 'parent_dataset_type')
     list_display = fields
     ordering = ('name',)
+    list_filter = [('created_by', RelatedDropdownFilter)]
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by and 'created_by' not in form.changed_data:
