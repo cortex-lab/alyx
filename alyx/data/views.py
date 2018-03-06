@@ -1,3 +1,4 @@
+import logging
 import os.path as op
 import re
 
@@ -28,6 +29,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           ExpMetadataSummarySerializer,
                           )
 from subjects.models import Subject, Project
+
+logger = logging.getLogger(__name__)
 
 
 # DataRepositoryType
@@ -223,8 +226,10 @@ def _create_dataset_file_records(
 
     relative_path = op.join(dirname, filename)
     dataset_type, data_format = _get_data_type_format(filename)
-    assert dataset_type
-    assert data_format
+    if not dataset_type:
+        logger.warn("No dataset type found for %s", filename)
+    if not data_format:
+        logger.warn("No data format found for %s", filename)
 
     # Create the dataset.
     dataset = Dataset.objects.create(
@@ -232,15 +237,16 @@ def _create_dataset_file_records(
         dataset_type=dataset_type, data_format=data_format)
 
     # Create the parent datasets, according to the parent dataset types.
-    dst = dataset_type.parent_dataset_type
-    ds = dataset
-    while dst is not None:
-        ds.parent_dataset = Dataset.objects.get_or_create(
-            session=session, created_by=user, dataset_type=dst)[0]
-        ds.save()
+    if dataset_type:
+        dst = dataset_type.parent_dataset_type
+        ds = dataset
+        while dst is not None:
+            ds.parent_dataset = Dataset.objects.get_or_create(
+                session=session, created_by=user, dataset_type=dst)[0]
+            ds.save()
 
-        dst = dst.parent_dataset_type
-        ds = ds.parent_dataset
+            dst = dst.parent_dataset_type
+            ds = ds.parent_dataset
 
     # Create one file record per repository.
     for repo in repositories:
