@@ -76,6 +76,15 @@ def _get_absolute_path(file_record):
                    file_record.relative_path)
 
 
+def _incomplete_dataset_ids():
+    return FileRecord.objects.filter(exists=False).values_list('dataset', flat=True).distinct()
+
+
+def _add_uuid_to_filename(fn, uuid):
+    dpath, ext = op.splitext(fn)
+    return dpath + '.' + str(uuid) + ext
+
+
 def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     """Start a globus file transfer between two file record UUIDs."""
     source_fr = FileRecord.objects.get(pk=source_file_id)
@@ -91,8 +100,7 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     destination_path = _get_absolute_path(destination_fr)
 
     # Add dataset UUID.
-    dpath, ext = op.splitext(destination_path)
-    destination_path = dpath + '.' + str(source_fr.dataset.pk) + ext
+    destination_path = _add_uuid_to_filename(destination_path, source_fr.dataset.pk)
 
     label = 'Transfer %s from %s to %s' % (
         _escape_label(op.basename(destination_path)),
@@ -128,6 +136,7 @@ def globus_file_exists(file_record):
     tc = globus_transfer_client()
     path = op.dirname(_get_absolute_path(file_record))
     name = op.basename(file_record.relative_path)
+    name = _add_uuid_to_filename(name, file_record.dataset.pk)
     try:
         existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=path)
     except globus_sdk.exc.TransferAPIError as e:
