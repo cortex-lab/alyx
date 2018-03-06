@@ -225,7 +225,8 @@ class Dataset(BaseExperimentalData):
         help_text="Associated time scale (for time series datasets only).")
 
     def __str__(self):
-        return "<Dataset '%s'>" % self.name
+        date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
+        return "<Dataset '%s' by %s on %s>" % (self.name, self.created_by, date)
 
 
 # Files
