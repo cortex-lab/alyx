@@ -67,8 +67,10 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
+                   ('dataset_type', RelatedDropdownFilter),
                    ]
-    search_fields = ('created_by__username', 'name', 'session__subject__nickname')
+    search_fields = ('created_by__username', 'name', 'session__subject__nickname',
+                     'dataset_type__name', 'dataset_type__alf_filename')
     ordering = ('-created_datetime',)
 
     def session_ro(self, obj):
