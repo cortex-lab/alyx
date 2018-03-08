@@ -222,7 +222,8 @@ def _get_repositories_for_projects(projects):
 
 
 def _create_dataset_file_records(
-        dirname=None, filename=None, session=None, user=None, repositories=None):
+        dirname=None, filename=None, session=None, user=None,
+        repositories=None, exists_in=None):
 
     relative_path = op.join(dirname, filename)
     dataset_type, data_format = _get_data_type_format(filename)
@@ -249,9 +250,11 @@ def _create_dataset_file_records(
             ds = ds.parent_dataset
 
     # Create one file record per repository.
+    exists_in = exists_in or ()
     for repo in repositories:
+        exists = repo.name in exists_in
         FileRecord.objects.create(
-            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=False)
+            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=exists)
 
     return dataset
 
@@ -265,6 +268,7 @@ def _make_dataset_response(dataset, return_parent=True):
         {
             'data_repository': fr.data_repository.name,
             'relative_path': fr.relative_path,
+            'exists': fr.exists,
         }
         for fr in FileRecord.objects.filter(dataset=dataset)]
 
@@ -291,6 +295,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         number = request.data.get('session_number', None)
         date = request.data.get('date', None)
         dirname = request.data.get('dirname', None)
+        exists_in = request.data.get('exists_in', None)
 
         # comma-separated filenames
         filenames = request.data.get('filenames', '').split(',')
@@ -310,7 +315,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 continue
             dataset = _create_dataset_file_records(
                 dirname=dirname, filename=filename, session=session, user=user,
-                repositories=repositories)
+                repositories=repositories, exists_in=exists_in)
             out = _make_dataset_response(dataset)
             response.append(out)
 
