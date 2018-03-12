@@ -5,9 +5,10 @@ import os.path as op
 import re
 
 import globus_sdk
+from django.db.models.functions import Length
 
 from alyx import settings
-from data.models import FileRecord
+from data.models import FileRecord, Dataset, DatasetType, DataFormat
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,103 @@ def globus_file_exists(file_record):
         if existing_file['name'] == name and existing_file['size'] > 0:
             return True
     return False
+
+
+def _get_data_type_format(filename):
+    """Return the DatasetType and DataFormat associated to an ALF filename."""
+
+    dataset_type = None
+    # NOTE: we sort by decreasing filename_pattern length, so that longer (more specific) alf
+    # filenames are chosen. For example, foo.bar.* has higher priority than foo.*.* because
+    # its length is higher. For 1-character-long parts, we use the fact that * < any character
+    # which is why we sort by decreasing filename_pattern.
+    for dt in (DatasetType.objects.filter(filename_pattern__isnull=False).
+               order_by(Length('filename_pattern').desc(), '-filename_pattern')):
+        if not dt.filename_pattern.strip():
+            continue
+        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
+        if re.match(reg, filename):
+            dataset_type = dt
+            break
+
+    data_format = None
+    for df in DataFormat.objects.filter(filename_pattern__isnull=False):
+        reg = df.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
+        if not df.filename_pattern.strip():
+            continue
+        if re.match(reg, filename):
+            data_format = df
+            break
+
+    return dataset_type, data_format
+
+
+def _get_repositories_for_projects(projects):
+    # List of data repositories associated to the subject's projects.
+    repositories = set()
+    for project in projects:
+        repositories.update(project.repositories.all())
+    return list(repositories)
+
+
+def _create_dataset_file_records(
+        dirname=None, filename=None, session=None, user=None,
+        repositories=None, exists_in=None):
+
+    relative_path = op.join(dirname, filename)
+    dataset_type, data_format = _get_data_type_format(filename)
+    if not dataset_type:
+        logger.warn("No dataset type found for %s", filename)
+    if not data_format:
+        logger.warn("No data format found for %s", filename)
+
+    # Create the dataset.
+    dataset = Dataset.objects.create(
+        name=filename, session=session, created_by=user,
+        dataset_type=dataset_type, data_format=data_format)
+
+    # Create the parent datasets, according to the parent dataset types.
+    if dataset_type:
+        dst = dataset_type.parent_dataset_type
+        ds = dataset
+        while dst is not None:
+            ds.parent_dataset = Dataset.objects.get_or_create(
+                session=session, created_by=user, dataset_type=dst)[0]
+            ds.save()
+
+            dst = dst.parent_dataset_type
+            ds = ds.parent_dataset
+
+    # Create one file record per repository.
+    exists_in = exists_in or ()
+    for repo in repositories:
+        exists = repo.name in exists_in
+        FileRecord.objects.create(
+            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=exists)
+
+    return dataset
+
+
+def iter_registered_directories(tc, data_repository, path=None):
+    """Iterater over pairs (globus dir path, [list of files]) in any directory that
+    contains session.metadat.json."""
+    # Default path: the root of the data repository.
+    path = path or data_repository.path
+    try:
+        contents = tc.operation_ls(data_repository.globus_endpoint_id, path=path)
+    except globus_sdk.exc.TransferAPIError as e:
+        logger.warn(e)
+        return
+    subdirs = [file for file in contents if file['type'] == 'file_list']
+    files = [file for file in contents if file['type'] == 'file']
+    # Yield the list of files if there is a session.metadata.json file.
+    for file in files:
+        if file['name'] == 'session.metadata.json':
+            yield path, files
+    # Recursively call the function in the subdirectories.
+    for subdir in subdirs:
+        subdir_path = op.join(path, subdir['name'])
+        yield from iter_registered_directories(tc, data_repository, path=subdir_path)
 
 
 def update_file_exists(dataset):

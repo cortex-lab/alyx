@@ -1,13 +1,12 @@
 import logging
-import os.path as op
-import re
 
 from rest_framework import generics, permissions, viewsets, mixins
 from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
-from django.db.models.functions import Length
 
+from subjects.models import Subject, Project
+from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
@@ -17,7 +16,6 @@ from .models import (DataRepositoryType,
                      Timescale,
                      _get_or_create_session,
                      )
-from electrophysiology.models import ExtracellularRecording
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
                           DataFormatSerializer,
@@ -28,7 +26,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           ExpMetadataDetailSerializer,
                           ExpMetadataSummarySerializer,
                           )
-from subjects.models import Subject, Project
+from .transfers import _get_repositories_for_projects, _create_dataset_file_records
 
 logger = logging.getLogger(__name__)
 
@@ -183,81 +181,6 @@ class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
 
 # Register file
 # ------------------------------------------------------------------------------------------------
-
-def _get_data_type_format(filename):
-    """Return the DatasetType and DataFormat associated to an ALF filename."""
-
-    dataset_type = None
-    # NOTE: we sort by decreasing filename_pattern length, so that longer (more specific) alf
-    # filenames are chosen. For example, foo.bar.* has higher priority than foo.*.* because
-    # its length is higher. For 1-character-long parts, we use the fact that * < any character
-    # which is why we sort by decreasing filename_pattern.
-    for dt in (DatasetType.objects.filter(filename_pattern__isnull=False).
-               order_by(Length('filename_pattern').desc(), '-filename_pattern')):
-        if not dt.filename_pattern.strip():
-            continue
-        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
-        if re.match(reg, filename):
-            dataset_type = dt
-            break
-
-    data_format = None
-    for df in DataFormat.objects.filter(filename_pattern__isnull=False):
-        reg = df.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
-        if not df.filename_pattern.strip():
-            continue
-        if re.match(reg, filename):
-            data_format = df
-            break
-
-    return dataset_type, data_format
-
-
-def _get_repositories_for_projects(projects):
-    # List of data repositories associated to the subject's projects.
-    repositories = set()
-    for project in projects:
-        repositories.update(project.repositories.all())
-    return list(repositories)
-
-
-def _create_dataset_file_records(
-        dirname=None, filename=None, session=None, user=None,
-        repositories=None, exists_in=None):
-
-    relative_path = op.join(dirname, filename)
-    dataset_type, data_format = _get_data_type_format(filename)
-    if not dataset_type:
-        logger.warn("No dataset type found for %s", filename)
-    if not data_format:
-        logger.warn("No data format found for %s", filename)
-
-    # Create the dataset.
-    dataset = Dataset.objects.create(
-        name=filename, session=session, created_by=user,
-        dataset_type=dataset_type, data_format=data_format)
-
-    # Create the parent datasets, according to the parent dataset types.
-    if dataset_type:
-        dst = dataset_type.parent_dataset_type
-        ds = dataset
-        while dst is not None:
-            ds.parent_dataset = Dataset.objects.get_or_create(
-                session=session, created_by=user, dataset_type=dst)[0]
-            ds.save()
-
-            dst = dst.parent_dataset_type
-            ds = ds.parent_dataset
-
-    # Create one file record per repository.
-    exists_in = exists_in or ()
-    for repo in repositories:
-        exists = repo.name in exists_in
-        FileRecord.objects.create(
-            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=exists)
-
-    return dataset
-
 
 def _make_dataset_response(dataset, return_parent=True):
     if not dataset:

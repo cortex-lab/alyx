@@ -1,11 +1,11 @@
 from django.core.management import BaseCommand
 
-from data import globus
+from data import transfers
 from data.models import Dataset
 
 
 def _iter_datasets(dataset_id=None, limit=None, user=None):
-    dataset_ids = [dataset_id] if dataset_id is not None else globus._incomplete_dataset_ids()
+    dataset_ids = [dataset_id] if dataset_id is not None else transfers._incomplete_dataset_ids()
     datasets = Dataset.objects.filter(pk__in=dataset_ids).order_by('-created_datetime')
     if user is not None:
         datasets = datasets.filter(created_by__username=user)
@@ -33,19 +33,19 @@ class Command(BaseCommand):
         dry = options.get('dry')
 
         if action == 'login':
-            globus.create_globus_token()
+            transfers.create_globus_token()
             self.stdout.write(self.style.SUCCESS("Login successful."))
 
         if action == 'sync':
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
                 self.stdout.write("Synchronizing file status of %s" % str(dataset))
                 if not dry:
-                    globus.update_file_exists(dataset)
+                    transfers.update_file_exists(dataset)
 
         if action == 'transfer':
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
-                transfers = globus.transfers_required(dataset)
-                for transfer in transfers:
+                to_transfer = transfers.transfers_required(dataset)
+                for transfer in to_transfer:
                     self.stdout.write(
                         "Launch Globus transfer from %s:%s to %s:%s." % (
                             transfer['source_data_repository'],
@@ -55,5 +55,5 @@ class Command(BaseCommand):
                         )
                     )
                     if not dry:
-                        globus.start_globus_transfer(
+                        transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
