@@ -1,7 +1,11 @@
+import logging
 from django.core.management import BaseCommand
 
 from data import transfers
-from data.models import Dataset
+from data.models import Dataset, DataRepository
+
+
+logging.getLogger(__name__).setLevel(logging.INFO)
 
 
 def _iter_datasets(dataset_id=None, limit=None, user=None):
@@ -22,12 +26,16 @@ class Command(BaseCommand):
         parser.add_argument('action', help='Action')
         parser.add_argument('dataset', nargs='?', help='Dataset')
         parser.add_argument('--dry', action='store_true', help='dry run')
+        parser.add_argument('--data-repository', help='data repository')
+        parser.add_argument('--path', help='path')
         parser.add_argument('--limit', help='limit to a maximum number of datasets')
         parser.add_argument('--user', help='select datasets created by a given user')
 
     def handle(self, *args, **options):
         action = options.get('action')
         dataset_id = options.get('dataset')
+        path = options.get('path')
+        data_repository = options.get('data_repository')
         limit = options.get('limit')
         user = options.get('user')
         dry = options.get('dry')
@@ -57,3 +65,11 @@ class Command(BaseCommand):
                     if not dry:
                         transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
+
+        if action == 'autoregister':
+            if not data_repository:
+                raise ValueError("Please specify a data_repository.")
+            data_repository = DataRepository.objects.get(name=data_repository)
+            for dir_path, filenames in transfers.iter_registered_directories(
+                    data_repository=data_repository, path=path):
+                print(dir_path, filenames)

@@ -224,9 +224,10 @@ def _create_dataset_file_records(
     return dataset
 
 
-def iter_registered_directories(tc, data_repository, path=None):
+def iter_registered_directories(data_repository=None, tc=None, path=None):
     """Iterater over pairs (globus dir path, [list of files]) in any directory that
     contains session.metadat.json."""
+    tc = tc or globus_transfer_client()
     # Default path: the root of the data repository.
     path = path or data_repository.path
     try:
@@ -234,16 +235,34 @@ def iter_registered_directories(tc, data_repository, path=None):
     except globus_sdk.exc.TransferAPIError as e:
         logger.warn(e)
         return
-    subdirs = [file for file in contents if file['type'] == 'file_list']
-    files = [file for file in contents if file['type'] == 'file']
+    contents = contents['DATA']
+    subdirs = [file['name'] for file in contents if file['type'] == 'dir']
+    files = [file['name'] for file in contents if file['type'] == 'file']
     # Yield the list of files if there is a session.metadata.json file.
-    for file in files:
-        if file['name'] == 'session.metadata.json':
-            yield path, files
+    if 'session.metadata.json' in files:
+        yield path, files
     # Recursively call the function in the subdirectories.
     for subdir in subdirs:
-        subdir_path = op.join(path, subdir['name'])
-        yield from iter_registered_directories(tc, data_repository, path=subdir_path)
+        subdir_path = op.join(path, subdir)
+        yield from iter_registered_directories(
+            tc=tc, data_repository=data_repository, path=subdir_path)
+
+
+# def register_directory(data_repository=None, tc=None, path=None, filenames=None):
+#     projects = request.data.get('projects', '').split(',')
+#     projects = [Project.objects.get(name=project) for project in projects if project]
+#     repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
+
+#     session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+
+#     response = []
+#     for filename in filenames:
+#         if not filename:
+#             continue
+#         dataset = _create_dataset_file_records(
+#             dirname=dirname, filename=filename, session=session, user=user,
+#             repositories=repositories, exists_in=exists_in)
+#         out = _make_dataset_response(dataset)
 
 
 def update_file_exists(dataset):

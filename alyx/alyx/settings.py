@@ -91,7 +91,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['file', 'console'],
-        'level': 'DEBUG',
+        'level': 'INFO',
         'propagate': True,
     }
 }
