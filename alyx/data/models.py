@@ -106,7 +106,7 @@ class DataFormat(BaseModel):
         help_text="Human-readable description of the file format e.g. 'npy-formatted square "
         "numerical array'.")
 
-    alf_filename = models.CharField(
+    filename_pattern = models.CharField(
         max_length=255, unique=True, blank=True,
         help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
 
@@ -152,7 +152,7 @@ class DatasetType(BaseModel):
         "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
-    alf_filename = models.CharField(
+    filename_pattern = models.CharField(
         max_length=255, unique=True, blank=True, null=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "

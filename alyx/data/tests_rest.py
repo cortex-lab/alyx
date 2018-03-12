@@ -115,18 +115,18 @@ class APIDataTests(BaseTests):
 
         self.client.post(
             reverse('datasettype-list'),
-            {'name': 'a', 'alf_filename': 'a.*.*'})
+            {'name': 'a', 'filename_pattern': 'a.*.*'})
 
         self.client.post(
             reverse('datasettype-list'),
-            {'name': 'a.b', 'alf_filename': 'a.b.*', 'parent_dataset_type': 'a'})
+            {'name': 'a.b', 'filename_pattern': 'a.b.*', 'parent_dataset_type': 'a'})
 
         self.client.post(
             reverse('datasettype-list'),
-            {'name': 'a.c', 'alf_filename': 'a.c.*', 'parent_dataset_type': 'a'})
+            {'name': 'a.c', 'filename_pattern': 'a.c.*', 'parent_dataset_type': 'a'})
 
-        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'alf_filename': '*.*.e1'})
-        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'alf_filename': '*.*.e2'})
+        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
+        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
 
         data = {'subject': subject,
                 'dirname': 'a/b/',

@@ -38,14 +38,14 @@ class DataRepositoryAdmin(BaseAdmin):
 
 
 class DataFormatAdmin(BaseAdmin):
-    fields = ['name', 'description', 'alf_filename',
+    fields = ['name', 'description', 'filename_pattern',
               'matlab_loader_function', 'python_loader_function']
     list_display = fields[:-1]
     ordering = ('name',)
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ('name', 'description', 'alf_filename', 'created_by', 'parent_dataset_type')
+    fields = ('name', 'description', 'filename_pattern', 'created_by', 'parent_dataset_type')
     list_display = fields
     ordering = ('name',)
     list_filter = [('created_by', RelatedDropdownFilter)]
@@ -81,7 +81,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
                    ('dataset_type', RelatedDropdownFilter),
                    ]
     search_fields = ('created_by__username', 'name', 'session__subject__nickname',
-                     'dataset_type__name', 'dataset_type__alf_filename')
+                     'dataset_type__name', 'dataset_type__filename_pattern')
     ordering = ('-created_datetime',)
 
     def name_(self, obj):

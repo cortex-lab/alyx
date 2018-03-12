@@ -188,23 +188,23 @@ def _get_data_type_format(filename):
     """Return the DatasetType and DataFormat associated to an ALF filename."""
 
     dataset_type = None
-    # NOTE: we sort by decreasing alf_filename length, so that longer (more specific) alf
+    # NOTE: we sort by decreasing filename_pattern length, so that longer (more specific) alf
     # filenames are chosen. For example, foo.bar.* has higher priority than foo.*.* because
     # its length is higher. For 1-character-long parts, we use the fact that * < any character
-    # which is why we sort by decreasing alf_filename.
-    for dt in (DatasetType.objects.filter(alf_filename__isnull=False).
-               order_by(Length('alf_filename').desc(), '-alf_filename')):
-        if not dt.alf_filename.strip():
+    # which is why we sort by decreasing filename_pattern.
+    for dt in (DatasetType.objects.filter(filename_pattern__isnull=False).
+               order_by(Length('filename_pattern').desc(), '-filename_pattern')):
+        if not dt.filename_pattern.strip():
             continue
-        reg = dt.alf_filename.replace('.', r'\.').replace('*', r'[^\.]+')
+        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
         if re.match(reg, filename):
             dataset_type = dt
             break
 
     data_format = None
-    for df in DataFormat.objects.filter(alf_filename__isnull=False):
-        reg = df.alf_filename.replace('.', r'\.').replace('*', r'[^\.]+')
-        if not df.alf_filename.strip():
+    for df in DataFormat.objects.filter(filename_pattern__isnull=False):
+        reg = df.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
+        if not df.filename_pattern.strip():
             continue
         if re.match(reg, filename):
             data_format = df
