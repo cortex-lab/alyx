@@ -29,10 +29,10 @@ class DAQAdmin(ApplianceChildAdmin):
 class ApplianceParentAdmin(PolymorphicParentModelAdmin):
     base_model = Appliance
     child_models = (
-        (WeighingScale, WeighingScaleAdmin),
-        (Amplifier, AmplifierAdmin),
-        (PipettePuller, PipettePullerAdmin),
-        (DAQ, DAQAdmin)
+        WeighingScale,
+        Amplifier,
+        PipettePuller,
+        DAQ,
     )
     polymorphic_list = True
     list_display = ('descriptive_name', 'polymorphic_ctype',
@@ -73,3 +73,8 @@ admin.site.register(LabMembership, LabMembershipAdmin)
 admin.site.register(LabLocation, LabLocationAdmin)
 admin.site.register(EquipmentModel, EquipmentModelAdmin)
 admin.site.register(VirusBatch, VirusBatchAdmin)
+
+admin.site.register(WeighingScale, WeighingScaleAdmin)
+admin.site.register(Amplifier, AmplifierAdmin)
+admin.site.register(PipettePuller, PipettePullerAdmin)
+admin.site.register(DAQ, DAQAdmin)
