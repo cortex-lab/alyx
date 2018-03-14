@@ -32,7 +32,7 @@ def _plot_bands(ax, weighings, y0, y1):
 
 
 def weighing_plot(request, subject_id=None):
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse('')
     if subject_id in (None, 'None'):
         return HttpResponse('')
