@@ -73,8 +73,16 @@ def _escape_label(label):
 
 
 def _get_absolute_path(file_record):
-    return op.join(file_record.data_repository.path,
-                   file_record.relative_path)
+    path1 = file_record.data_repository.path
+    path2 = file_record.relative_path
+    path2 = path2.replace('\\', '/')
+    # HACK
+    if path2.startswith('Data2/'):
+        path2 = path2[6:]
+    if path2.startswith('/'):
+        path2 = path2[1:]
+    path = op.join(path1, path2)
+    return path
 
 
 def _incomplete_dataset_ids():
@@ -135,16 +143,17 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
 
 def globus_file_exists(file_record):
     tc = globus_transfer_client()
-    path = op.dirname(_get_absolute_path(file_record))
-    name = op.basename(file_record.relative_path)
-    name = _add_uuid_to_filename(name, file_record.dataset.pk)
+    path = _get_absolute_path(file_record)
+    dir_path = op.dirname(path)
+    name = op.basename(path)
+    name_uuid = _add_uuid_to_filename(name, file_record.dataset.pk)
     try:
-        existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=path)
+        existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=dir_path)
     except globus_sdk.exc.TransferAPIError as e:
         logger.warn(e)
         return False
     for existing_file in existing:
-        if existing_file['name'] == name and existing_file['size'] > 0:
+        if existing_file['name'] in (name, name_uuid) and existing_file['size'] > 0:
             return True
     return False
 
