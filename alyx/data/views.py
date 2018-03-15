@@ -220,8 +220,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         dirname = request.data.get('dirname', None)
         exists_in = request.data.get('exists_in', None)
 
-        # comma-separated filenames
-        filenames = request.data.get('filenames', '').split(',')
+        filenames = request.data.get('filenames', ())
+        if isinstance(filenames, str):
+            # comma-separated filenames
+            filenames = filenames.split(',')
+
         subject = request.data.get('subject', None)
         subject = Subject.objects.get(nickname=subject)
 
