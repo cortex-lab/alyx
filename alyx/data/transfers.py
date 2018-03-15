@@ -198,7 +198,7 @@ def _create_dataset_file_records(
         logger.warn("No data format found for %s", filename)
 
     # Create the dataset.
-    dataset = Dataset.objects.create(
+    dataset, _ = Dataset.objects.get_or_create(
         name=filename, session=session, created_by=user,
         dataset_type=dataset_type, data_format=data_format)
 
@@ -218,8 +218,11 @@ def _create_dataset_file_records(
     exists_in = exists_in or ()
     for repo in repositories:
         exists = repo.name in exists_in
-        FileRecord.objects.create(
-            dataset=dataset, data_repository=repo, relative_path=relative_path, exists=exists)
+        # Do not create a new file record if it already exists.
+        fr, _ = FileRecord.objects.get_or_create(
+            dataset=dataset, data_repository=repo, relative_path=relative_path)
+        fr.exists = exists
+        fr.save()
 
     return dataset
 
