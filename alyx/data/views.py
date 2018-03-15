@@ -229,7 +229,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         subject = Subject.objects.get(nickname=subject)
 
         # Multiple projects, or the subject's projects
-        projects = request.data.get('projects', '').split(',')
+        projects = request.data.get('projects', ())
+        if isinstance(projects, str):
+            projects = projects.split(',')
+
         projects = [Project.objects.get(name=project) for project in projects if project]
         repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
 
