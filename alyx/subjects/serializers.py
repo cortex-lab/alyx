@@ -109,6 +109,14 @@ class SubjectDetailSerializer(SubjectListSerializer):
     actions_sessions = SessionListSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
+    projects = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Project.objects.all(),
+        many=True,
+        required=False,
+    )
+
     water_requirement_total = serializers.SerializerMethodField()
     water_requirement_remaining = serializers.SerializerMethodField()
 
