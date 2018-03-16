@@ -2,7 +2,7 @@ import logging
 from django.core.management import BaseCommand
 
 from data import transfers
-from data.models import Dataset, DataRepository
+from data.models import Dataset, DataRepository, FileRecord
 
 
 logging.getLogger(__name__).setLevel(logging.INFO)
@@ -49,6 +49,16 @@ class Command(BaseCommand):
                 self.stdout.write("Synchronizing file status of %s" % str(dataset))
                 if not dry:
                     transfers.update_file_exists(dataset)
+
+        if action == 'syncfast':
+            with open(path, 'r') as f:
+                existing = {p.strip(): True for p in f.readlines()}
+            for fr in FileRecord.objects.filter(exists=False):
+                path = transfers._get_absolute_path(fr)
+                if existing.get(path, None):
+                    self.stdout.write("File %s exists, updating." % path)
+                    fr.exists = True
+                    fr.save()
 
         if action == 'transfer':
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
