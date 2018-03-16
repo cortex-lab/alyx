@@ -51,6 +51,25 @@ class Command(BaseCommand):
                     transfers.update_file_exists(dataset)
 
         if action == 'syncfast':
+
+            # TO REMOVE after merge to master
+            ibl = DataRepository.objects.get(name='IBL_cortexlab')
+            ibl.globus_is_personal = False
+            ibl.path = '/cortexlab/'
+            ibl.save()
+
+            zserver = DataRepository.objects.get(name='zserver')
+            zserver.globus_is_personal = True
+            zserver.path = '/mnt/zserver/Data/'
+            zserver.globus_endpoint_id = 'f691e2ce-004a-11e8-a61e-0a448319c2f8'
+            zserver.save()
+
+            zubjects = DataRepository.objects.get(name='zubjects')
+            zubjects.globus_is_personal = True
+            zubjects.path = '/mnt/zubjects/'
+            zubjects.globus_endpoint_id = 'f691e2ce-004a-11e8-a61e-0a448319c2f8'
+            zubjects.save()
+
             with open(path, 'r') as f:
                 existing = {p.strip(): True for p in f.readlines()}
             for fr in FileRecord.objects.filter(exists=False):
