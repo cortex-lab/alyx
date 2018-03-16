@@ -94,7 +94,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
 
 class FileRecordAdmin(BaseAdmin):
-    fields = ('data_repository', 'relative_path', 'dataset')
+    fields = ('data_repository', 'relative_path', 'exists', 'dataset')
     list_display = fields
 
 
