@@ -313,7 +313,7 @@ def transfers_required(dataset):
         existing_file = FileRecord.objects.filter(
             dataset=dataset, exists=True).first()
     if not existing_file:
-        logger.warn("No file exists on any data repository for dataset %s.", dataset.pk)
+        logger.debug("No file exists on any data repository for dataset %s.", dataset.pk)
         return
 
     # Launch the file transfers for the missing files.
