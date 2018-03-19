@@ -13,6 +13,7 @@ from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSit
                        _iter_history_changes)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
+                     Project,
                      )
 from actions.models import Surgery, Session, OtherAction
 from actions import water
@@ -157,6 +158,22 @@ class LineDropdownFilter(RelatedDropdownFilter):
         return field.get_choices(include_blank=False, limit_choices_to={'is_active': True})
 
 
+# Project
+# ------------------------------------------------------------------------------------------------
+
+class ProjectAdmin(BaseAdmin):
+    fields = ('name', 'description', 'repositories', 'users')
+    list_display = ('name', 'repositories_l', 'users_l')
+
+    def repositories_l(self, obj):
+        return ', '.join(repo.name for repo in obj.repositories.all())
+    repositories_l.short_description = 'repositories'
+
+    def users_l(self, obj):
+        return ', '.join(map(str, obj.users.all()))
+    users_l.short_description = 'users'
+
+
 # Subject
 # ------------------------------------------------------------------------------------------------
 
@@ -250,7 +267,8 @@ class SubjectAdmin(BaseAdmin):
                                 'death_date', 'to_be_culled',
                                 'reduced', 'reduced_date',
                                 'ear_mark',
-                                'protocol_number', 'description', 'json')}),
+                                'protocol_number', 'description',
+                                'projects', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'lamis_cage', 'lamis_cage_changes',),
                      'classes': ('collapse',),
@@ -1039,6 +1057,7 @@ mysite.register(User, MyUserAdmin)
 mysite.register(StockManager, StockManagerAdmin)
 mysite.register(Group)
 
+mysite.register(Project, ProjectAdmin)
 mysite.register(Subject, SubjectAdmin)
 mysite.register(Litter, LitterAdmin)
 mysite.register(Line, LineAdmin)

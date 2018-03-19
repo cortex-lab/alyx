@@ -10,6 +10,38 @@ def _related_string(field):
     return "%(app_label)s_%(class)s_" + field + "_related"
 
 
+def _get_or_create_session(subject=None, date=None, number=None, user=None):
+    # https://github.com/cortex-lab/alyx/issues/408
+    if not subject or not date:
+        return None
+    # If a base session for that subject and date already exists, use it;
+    base = Session.objects.filter(
+        subject=subject, start_time__date=date, parent_session__isnull=True).first()
+    # otherwise create a base session for that subject and date.
+    if not base:
+        base = Session.objects.create(
+            subject=subject, start_time=date, type='Base', narrative="auto-generated session")
+        if user:
+            base.users.add(user.pk)
+            base.save()
+    # If a subsession for that subject, date, and expNum already exists, use it;
+    session = Session.objects.filter(
+        subject=subject, start_time__date=date, number=number).first()
+    # otherwise create the subsession.
+    if not session:
+        session = Session.objects.create(
+            subject=subject, start_time=date, number=number,
+            type='Experiment', narrative="auto-generated session")
+        if user:
+            session.users.add(user.pk)
+            session.save()
+    # Attach the subsession to the base session if not already attached.
+    if not session.parent_session:
+        session.parent_session = base
+        session.save()
+    return session
+
+
 # Data repositories
 # ------------------------------------------------------------------------------------------------
 
@@ -35,14 +67,17 @@ class DataRepository(BaseModel):
     cardboard box to find a tape in)
     """
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     repository_type = models.ForeignKey(
         DataRepositoryType, null=True, blank=True)
     path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
     globus_endpoint_id = models.UUIDField(
-        blank=True, null=True, help_text=" UUID of the globus endpoint")
+        blank=True, null=True, help_text="UUID of the globus endpoint")
+    globus_is_personal = models.NullBooleanField(
+        blank=True, help_text="whether the Globus endpoint is personal or not. "
+        "By default, Globus cannot transfer a file between two personal endpoints.")
 
     def __str__(self):
         return "<DataRepository '%s'>" % self.name
@@ -67,20 +102,20 @@ class DataFormat(BaseModel):
         help_text="short identifying nickname, e..g 'npy'.")
 
     description = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Human-readable description of the file format e.g. 'npy-formatted square "
         "numerical array'.")
 
-    alf_filename = models.CharField(
+    filename_pattern = models.CharField(
         max_length=255, unique=True, blank=True,
         help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
 
     matlab_loader_function = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Name of MATLAB loader function'.")
 
     python_loader_function = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, blank=True,
         help_text="Name of Python loader function'.")
 
     class Meta:
@@ -101,6 +136,15 @@ class DatasetType(BaseModel):
     name = models.CharField(max_length=255, unique=True,
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
+    parent_dataset_type = models.ForeignKey(
+        'data.DatasetType', null=True, blank=True,
+        help_text="hierachical parent of this DatasetType.")
+
+    created_by = models.ForeignKey(
+        OrderedUser, blank=True, null=True,
+        related_name=_related_string('created_by'),
+        help_text="The creator of the data.")
+
     description = models.CharField(
         max_length=1023, blank=True,
         help_text="Human-readable description of data type. Should say what is in the file, and "
@@ -108,7 +152,7 @@ class DatasetType(BaseModel):
         "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
-    alf_filename = models.CharField(
+    filename_pattern = models.CharField(
         max_length=255, unique=True, blank=True, null=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
@@ -173,14 +217,16 @@ class Dataset(BaseExperimentalData):
     data_format = models.ForeignKey(DataFormat, null=True, blank=True)
 
     parent_dataset = models.ForeignKey(
-        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.")
+        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.",
+        related_name='child_dataset')
 
     timescale = models.ForeignKey(
         'data.Timescale', null=True, blank=True,
         help_text="Associated time scale (for time series datasets only).")
 
     def __str__(self):
-        return "<Dataset '%s'>" % self.name
+        date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
+        return "<Dataset '%s' by %s on %s>" % (self.name, self.created_by, date)
 
 
 # Files
@@ -191,7 +237,7 @@ class FileRecord(BaseModel):
     A single file on disk or tape. Normally specified by a path within an archive. If required,
     more details can be in the JSON
     """
-    dataset = models.ForeignKey(Dataset, related_name=_related_string('dataset'))
+    dataset = models.ForeignKey(Dataset, related_name='file_records')
     data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
     relative_path = models.CharField(
         max_length=1000, blank=True,

@@ -42,6 +42,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ALYX-SPECIFIC
 
+GLOBUS_CLIENT_ID = '525cc517-8ccb-4d11-8036-af332da5eafd'
 SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
 DEFAULT_SOURCE = 'Cruciform BSU'
 DEFAULT_PROTOCOL = '1'
@@ -90,7 +91,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['file', 'console'],
-        'level': 'DEBUG',
+        'level': 'INFO',
         'propagate': True,
     }
 }

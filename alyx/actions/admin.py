@@ -366,7 +366,7 @@ class SessionAdmin(BaseActionAdmin):
     fields = BaseActionAdmin.fields + ['type', 'number']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
-                   ('projects', RelatedDropdownFilter),
+                   ('subject__projects', RelatedDropdownFilter),
                    ]
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
@@ -376,7 +376,7 @@ class SessionAdmin(BaseActionAdmin):
         return ', '.join(map(str, obj.users.all()))
 
     def project_list(self, obj):
-        return ', '.join(map(str, obj.projects.all()))
+        return ', '.join(map(str, obj.subject.projects.all()))
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)

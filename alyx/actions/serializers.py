@@ -72,7 +72,8 @@ class SessionDetailSerializer(BaseActionSerializer):
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures',
-                  'narrative', 'start_time', 'end_time', 'url', 'json', 'exp_metadata_related')
+                  'narrative', 'start_time', 'end_time', 'url', 'json',
+                  'parent_session', 'exp_metadata_related')
 
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):

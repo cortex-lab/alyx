@@ -66,6 +66,26 @@ def _default_source():
     return None
 
 
+class Project(BaseModel):
+    name = models.CharField(
+        max_length=255, unique=True, blank=True, help_text="Project name")
+
+    description = models.CharField(
+        max_length=1023, blank=True, help_text="Description of the project")
+
+    repositories = models.ManyToManyField(
+        'data.DataRepository', blank=True,
+        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
+        "automatically copied to all repositories assigned to its project.")
+
+    users = models.ManyToManyField(
+        OrderedUser, blank=True,
+        help_text="Persons associated to the project.")
+
+    def __str__(self):
+        return "<Project %s>" % self.name
+
+
 class Subject(BaseModel):
     """Metadata about an experimental subject (animal or human)."""
     SEXES = (
@@ -115,6 +135,11 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
+
+    projects = models.ManyToManyField(
+        Project, blank=True,
+        help_text='Project associated to this session')
+
     lamis_cage = models.IntegerField(null=True, blank=True)
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)

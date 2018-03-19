@@ -155,23 +155,6 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-class Project(BaseModel):
-    name = models.CharField(
-        max_length=255, unique=True, blank=True, help_text="Project name")
-
-    description = models.CharField(
-        max_length=1023, blank=True, help_text="Description of the project")
-
-    repositories = models.ManyToManyField(
-        'data.DataRepository', blank=True,
-        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
-        "automatically copied to all repositories assigned to its project.")
-
-    users = models.ManyToManyField(
-        OrderedUser, blank=True,
-        help_text="Persons associated to the project.")
-
-
 # WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT.
 class Session(BaseAction):
     """
@@ -187,9 +170,6 @@ class Session(BaseAction):
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        help_text="Hierarchical parent to this session")
-    projects = models.ManyToManyField(
-        Project, blank=True,
-        help_text='Project associated to this session')
     type = models.CharField(max_length=255, null=True, blank=True,
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,

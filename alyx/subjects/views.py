@@ -2,10 +2,12 @@ from rest_framework import generics, permissions
 import django_filters
 from django_filters.rest_framework import FilterSet
 
-from .models import Subject
+from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
-                          WaterRestrictedSubjectListSerializer)
+                          WaterRestrictedSubjectListSerializer,
+                          ProjectSerializer,
+                          )
 
 
 class SubjectFilter(FilterSet):
@@ -47,6 +49,27 @@ class SubjectList(generics.ListCreateAPIView):
     filter_class = SubjectFilter
 
 
+class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectDetailSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'nickname'
+
+
+class ProjectList(generics.ListCreateAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
 class WaterRestrictedSubjectList(generics.ListAPIView):
     queryset = Subject.objects.all().extra(where=['''
         subjects_subject.id IN
@@ -54,10 +77,3 @@ class WaterRestrictedSubjectList(generics.ListAPIView):
          WHERE end_time IS NULL)'''])
     serializer_class = WaterRestrictedSubjectListSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-
-class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Subject.objects.all()
-    serializer_class = SubjectDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'nickname'

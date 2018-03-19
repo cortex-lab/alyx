@@ -28,22 +28,32 @@ class CreatedByListFilter(DefaultListFilter):
 class DataRepositoryTypeAdmin(BaseAdmin):
     fields = ('name', 'json')
     list_display = ('name',)
+    ordering = ('name',)
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ('name', 'repository_type', 'globus_endpoint_id', 'path')
+    fields = ('name', 'repository_type', 'path', 'globus_endpoint_id', 'globus_is_personal')
     list_display = fields
+    ordering = ('name',)
 
 
 class DataFormatAdmin(BaseAdmin):
-    fields = ['name', 'description', 'alf_filename',
+    fields = ['name', 'description', 'filename_pattern',
               'matlab_loader_function', 'python_loader_function']
     list_display = fields[:-1]
+    ordering = ('name',)
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ('name', 'description', 'alf_filename')
+    fields = ('name', 'description', 'filename_pattern', 'created_by', 'parent_dataset_type')
     list_display = fields
+    ordering = ('name',)
+    list_filter = [('created_by', RelatedDropdownFilter)]
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by and 'created_by' not in form.changed_data:
+            obj.created_by = request.user
+        super(DatasetTypeAdmin, self).save_model(request, obj, form, change)
 
 
 class BaseExperimentalDataAdmin(BaseAdmin):
@@ -61,17 +71,21 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'md5', 'session_ro']
-    readonly_fields = ['session_ro']
-    list_display = ['name', 'dataset_type', 'session', 'created_by', 'created_datetime']
+    fields = ['name', 'dataset_type', 'md5', 'session_ro', 'parent_dataset']
+    readonly_fields = ['name_', 'session_ro']
+    list_display = ['name_', 'dataset_type', 'session', 'parent_dataset',
+                    'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ]
     search_fields = ('created_by__username', 'name', 'session__subject__nickname',
-                     'dataset_type__name', 'dataset_type__alf_filename')
+                     'dataset_type__name', 'dataset_type__filename_pattern')
     ordering = ('-created_datetime',)
+
+    def name_(self, obj):
+        return obj.name or '<unnamed>'
 
     def session_ro(self, obj):
         url = get_admin_url(obj.session)
@@ -80,8 +94,9 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
 
 class FileRecordAdmin(BaseAdmin):
-    fields = ('data_repository', 'relative_path', 'dataset')
+    fields = ('data_repository', 'relative_path', 'dataset', 'exists')
     list_display = fields
+    list_filter = ('exists', 'data_repository')
 
 
 class TimescaleAdmin(BaseAdmin):
