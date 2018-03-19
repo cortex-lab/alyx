@@ -16,5 +16,5 @@ experimental
 *.patch
 *.sql
 *.html.py
-notes.txt
 *.orig
+notes.txt
