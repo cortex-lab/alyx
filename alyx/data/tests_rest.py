@@ -11,7 +11,7 @@ class APIDataTests(BaseTests):
 
         # Create some static data.
         self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
-        self.client.post(reverse('datarepository-list'), {'name': 'dr'})
+        self.client.post(reverse('datarepository-list'), {'name': 'dr', 'dns': 'dns'})
         self.client.post(reverse('datasettype-list'), {'name': 'dst'})
         self.client.post(reverse('dataformat-list'), {'name': 'df'})
 
@@ -29,8 +29,7 @@ class APIDataTests(BaseTests):
         self.ar(r)
         self.assertEqual(r.data[0]['name'], 'dr')
 
-        r = self.client.get(
-            reverse('datarepository-detail', kwargs={'name': 'dr', 'dns': 'dns'}))
+        r = self.client.get(reverse('datarepository-detail', kwargs={'name': 'dr'}))
         self.ar(r)
         self.assertEqual(r.data['name'], 'dr')
 
@@ -154,7 +153,9 @@ class APIDataTests(BaseTests):
         self.assertEqual(d0['parent_dataset'], d1['parent_dataset'])
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
-        self.assertEqual(d0['file_records'][0]['relative_path'], 'a/b/a.b.e1')
+        self.assertEqual(d0['file_records'][0]['relative_path'],
+                         'Subjects/%s/dir/a.b.e1' % subject)
 
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
-        self.assertEqual(d1['file_records'][0]['relative_path'], 'a/b/a.c.e2')
+        self.assertEqual(d1['file_records'][0]['relative_path'],
+                         'Subjects/%s/dir/a.c.e2' % subject)
