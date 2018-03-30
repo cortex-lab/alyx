@@ -29,7 +29,8 @@ class APIDataTests(BaseTests):
         self.ar(r)
         self.assertEqual(r.data[0]['name'], 'dr')
 
-        r = self.client.get(reverse('datarepository-detail', kwargs={'name': 'dr'}))
+        r = self.client.get(
+            reverse('datarepository-detail', kwargs={'name': 'dr', 'dns': 'dns'}))
         self.ar(r)
         self.assertEqual(r.data['name'], 'dr')
 
@@ -128,8 +129,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
         self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
 
-        data = {'subject': subject,
-                'dirname': 'a/b/',
+        data = {'path': '\\\\dns\\Subjects\\%s\\dir\\' % subject,
                 'filenames': 'a.b.e1,a.c.e2',
                 'session_number': 2,
                 'date': '2018-03-01',

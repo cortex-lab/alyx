@@ -233,7 +233,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         user = request.user
         number = request.data.get('session_number', None)
         date = request.data.get('date', None)
-        path = request.data.get('path')
+        path = request.data.get('path', '')
+        if not path:
+            raise ValueError("The path argument is required.")
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
