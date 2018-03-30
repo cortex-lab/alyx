@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -70,7 +71,13 @@ class DataRepository(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     repository_type = models.ForeignKey(
         DataRepositoryType, null=True, blank=True)
-    path = models.CharField(
+    dns = models.CharField(
+        max_length=200, blank=True, unique=True,
+        validators=[RegexValidator(r'^[a-zA-Z0-9\.\-\_]+$',
+                                   message='Invalid DNS',
+                                   code='invalid_dns')],
+        help_text="DNS of the network drive")
+    globus_path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute URI path to the repository")
     globus_endpoint_id = models.UUIDField(
@@ -241,6 +248,9 @@ class FileRecord(BaseModel):
     data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
     relative_path = models.CharField(
         max_length=1000, blank=True,
+        validators=[RegexValidator(r'^[a-zA-Z0-9\_][^\\\:]+$',
+                                   message='Invalid path',
+                                   code='invalid_path')],
         help_text="path name within repository")
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )

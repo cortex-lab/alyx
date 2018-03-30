@@ -32,7 +32,8 @@ class DataRepositoryTypeAdmin(BaseAdmin):
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ('name', 'repository_type', 'path', 'globus_endpoint_id', 'globus_is_personal')
+    fields = ('name', 'repository_type', 'dns', 'globus_path',
+              'globus_endpoint_id', 'globus_is_personal')
     list_display = fields
     ordering = ('name',)
 
@@ -95,6 +96,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
 class FileRecordAdmin(BaseAdmin):
     fields = ('relative_path', 'data_repository', 'dataset', 'exists')
+    readonly_fields = ('dataset',)
     list_display = fields
     list_filter = ('exists', 'data_repository')
 

@@ -1,4 +1,6 @@
 import logging
+import os.path as op
+import re
 
 from rest_framework import generics, permissions, viewsets, mixins
 from rest_framework.response import Response
@@ -211,22 +213,36 @@ def _make_dataset_response(dataset, return_parent=True):
     return out
 
 
+def _parse_path(path):
+    pattern = r'^\\\\([a-zA-Z0-9\.\-\_]+)\\Subjects\\([a-zA-Z0-9\-\_]+)\\(.+)'
+    m = re.match(pattern, path)
+    if not m:
+        raise ValueError(r"The path %s should be \\<dns>\Subjects\<nickname>\...." % path)
+    dns = m.group(1)
+    nickname = m.group(2)
+    relative_path = op.join("Subjects/", nickname, m.group(3).replace('\\', '/'))
+    # An error is raised if the subject or data repository do not exist.
+    subject = Subject.objects.get(nickname=nickname)
+    repo = DataRepository.objects.get(dns=dns)
+    return repo, subject, relative_path
+
+
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
     def create(self, request):
         user = request.user
         number = request.data.get('session_number', None)
         date = request.data.get('date', None)
-        dirname = request.data.get('dirname', None)
-        exists_in = request.data.get('exists_in', None)
+        path = request.data.get('path')
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
             # comma-separated filenames
             filenames = filenames.split(',')
 
-        subject = request.data.get('subject', None)
-        subject = Subject.objects.get(nickname=subject)
+        # Extract the data repository from the DNS, the subject, the directory path.
+        repo, subject, dirname = _parse_path(path)
+        exists_in = (repo,)
 
         # Multiple projects, or the subject's projects
         projects = request.data.get('projects', ())
