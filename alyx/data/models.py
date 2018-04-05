@@ -72,7 +72,7 @@ class DataRepository(BaseModel):
     repository_type = models.ForeignKey(
         DataRepositoryType, null=True, blank=True)
     dns = models.CharField(
-        max_length=200, blank=True, unique=True,
+        max_length=200, blank=True,
         validators=[RegexValidator(r'^[a-zA-Z0-9\.\-\_]+$',
                                    message='Invalid DNS',
                                    code='invalid_dns')],
