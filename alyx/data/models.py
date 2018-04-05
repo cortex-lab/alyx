@@ -79,7 +79,7 @@ class DataRepository(BaseModel):
         help_text="DNS of the network drive")
     globus_path = models.CharField(
         max_length=1000, blank=True,
-        help_text="absolute URI path to the repository")
+        help_text="absolute path to the repository on the server e.g. /mnt/something/")
     globus_endpoint_id = models.UUIDField(
         blank=True, null=True, help_text="UUID of the globus endpoint")
     globus_is_personal = models.NullBooleanField(
