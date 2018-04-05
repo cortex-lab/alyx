@@ -76,6 +76,17 @@ class Command(BaseCommand):
                         transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
 
+        if action == 'normalize_relative_paths':
+            for fr in FileRecord.objects.all():
+                p = fr.relative_path or ''
+                p = p.replace('\\', '/')
+                if 'Subjects/' not in p:
+                    continue
+                i = p.index('Subjects/')
+                p2 = p[i:]
+                fr.relative_path = p2
+                fr.save()
+
         if action == 'autoregister':
             if not data_repository:
                 raise ValueError("Please specify a data_repository.")
