@@ -57,7 +57,7 @@ class APIActionsTests(BaseTests):
         self.client.post(reverse('weighing-create'),
                          {'subject': self.subject, 'weight': 12.3})
 
-        url = reverse('water-requirement', kwargs={'nickname': self.subject.nickname})
+        url = reverse('water-requirement-detail', kwargs={'nickname': self.subject.nickname})
 
         date = now().date()
         response = self.client.get(url + '?start_date=%s&end_date=%s' % (date, date))
