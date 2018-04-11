@@ -233,6 +233,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         user = request.user
         number = request.data.get('session_number', None)
         date = request.data.get('date', None)
+        if not date:
+            raise ValueError("The date argument is required.")
         path = request.data.get('path', '')
         if not path:
             raise ValueError("The path argument is required.")
@@ -255,6 +257,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
 
         session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+        assert session
 
         response = []
         for filename in filenames:
