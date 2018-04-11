@@ -11,6 +11,9 @@ class APIActionsTests(BaseTests):
         self.superuser = User.objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.subject = Subject.objects.all().first()
+        # Set an implant weight.
+        self.subject.implant_weight = 4.56
+        self.subject.save()
 
     def test_create_weighing(self):
         url = reverse('weighing-create')
@@ -61,5 +64,6 @@ class APIActionsTests(BaseTests):
         self.ar(response)
         d = response.data
         self.assertEqual(d['subject'], self.subject.nickname)
+        self.assertEqual(d['implant_weight'], 4.56)
         self.assertTrue(set(('date', 'weight_measured', 'weight_expected', 'water_expected',
                              'water_given', 'hydrogel_given',)) <= set(d['records'][0]))
