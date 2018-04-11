@@ -73,7 +73,7 @@ def _escape_label(label):
 
 
 def _get_absolute_path(file_record):
-    path1 = file_record.data_repository.path
+    path1 = file_record.data_repository.globus_path
     path2 = file_record.relative_path
     path2 = path2.replace('\\', '/')
     # HACK

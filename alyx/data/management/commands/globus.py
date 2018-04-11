@@ -88,19 +88,19 @@ class Command(BaseCommand):
                 fr.save()
 
         if action == 'update_alyx_dev':
-            dr = DataRepository.objects.get(name='IBL_cortexlab')
+            dr = DataRepository.objects.get(name='flatiron_cortexlab')
             dr.dns = 'ibl.flatironinstitute.org'
             dr.globus_path = '/cortexlab/'
             dr.save()
 
             dr = DataRepository.objects.get(name='zserver')
             dr.dns = 'zserver.cortexlab.net'
-            dr.globus_path = '/mnt/zserver/Data/'
+            dr.globus_path = '/mnt/zserver/'
             dr.save()
 
             dr = DataRepository.objects.get(name='zubjects')
             dr.dns = 'zubjects.cortexlab.net'
-            dr.globus_path = '/mnt/zubjects/Data/'
+            dr.globus_path = '/mnt/zubjects/'
             dr.save()
 
             for fr in FileRecord.objects.all():
