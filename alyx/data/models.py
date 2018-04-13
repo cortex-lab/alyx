@@ -2,6 +2,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
+from alyx.settings import TIME_ZONE
 from actions.models import Session
 from alyx.base import BaseModel
 from misc.models import OrderedUser
@@ -77,6 +78,10 @@ class DataRepository(BaseModel):
                                    message='Invalid DNS',
                                    code='invalid_dns')],
         help_text="DNS of the network drive")
+    timezone = models.CharField(
+        max_length=64, blank=True, default=TIME_ZONE,
+        help_text="Timezone of the server "
+        "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
     globus_path = models.CharField(
         max_length=1000, blank=True,
         help_text="absolute path to the repository on the server e.g. /mnt/something/")
