@@ -2,7 +2,7 @@ import logging
 import os.path as op
 import re
 
-from rest_framework import generics, permissions, viewsets, mixins
+from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
@@ -229,6 +229,9 @@ def _parse_path(path):
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
     def create(self, request):
         user = request.user
         number = request.data.get('session_number', None)
