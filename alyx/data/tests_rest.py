@@ -1,3 +1,5 @@
+import os.path as op
+
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -128,10 +130,9 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
         self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
 
-        data = {'path': '\\\\dns\\Subjects\\%s\\dir\\' % subject,
+        data = {'path': '%s/20180301/2/dir' % subject,
                 'filenames': 'a.b.e1,a.c.e2',
-                'session_number': 2,
-                'date': '2018-03-01',
+                'dns': 'dns',
                 'projects': 'tp',
                 }
         r = self.client.post(reverse('register-file'), data)
@@ -150,12 +151,12 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['data_format'], 'e2')
 
         self.assertTrue(d0['parent_dataset'] is not None)
-        self.assertEqual(d0['parent_dataset'], d1['parent_dataset'])
+        self.assertEqual(d0['parent_dataset']['id'], d1['parent_dataset']['id'])
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d0['file_records'][0]['relative_path'],
-                         'Subjects/%s/dir/a.b.e1' % subject)
+                         op.join(data['path'], 'a.b.e1'))
 
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
-                         'Subjects/%s/dir/a.c.e2' % subject)
+                         op.join(data['path'], 'a.c.e2'))

@@ -196,10 +196,10 @@ def _get_repositories_for_projects(projects):
 
 
 def _create_dataset_file_records(
-        dirname=None, filename=None, session=None, user=None,
+        rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None):
 
-    relative_path = op.join(dirname, filename)
+    relative_path = op.join(rel_dir_path, filename)
     dataset_type, data_format = _get_data_type_format(filename)
     if not dataset_type:
         logger.warn("No dataset type found for %s", filename)
@@ -258,23 +258,6 @@ def iter_registered_directories(data_repository=None, tc=None, path=None):
         subdir_path = op.join(path, subdir)
         yield from iter_registered_directories(
             tc=tc, data_repository=data_repository, path=subdir_path)
-
-
-# def register_directory(data_repository=None, tc=None, path=None, filenames=None):
-#     projects = request.data.get('projects', '').split(',')
-#     projects = [Project.objects.get(name=project) for project in projects if project]
-#     repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
-
-#     session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
-
-#     response = []
-#     for filename in filenames:
-#         if not filename:
-#             continue
-#         dataset = _create_dataset_file_records(
-#             dirname=dirname, filename=filename, session=session, user=user,
-#             repositories=repositories, exists_in=exists_in)
-#         out = _make_dataset_response(dataset)
 
 
 def update_file_exists(dataset):

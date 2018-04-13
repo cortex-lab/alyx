@@ -1,12 +1,14 @@
+from datetime import datetime
 import logging
-import os.path as op
 import re
+import pytz
 
 from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
 
+from alyx.settings import TIME_ZONE
 from subjects.models import Subject, Project
 from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
@@ -191,6 +193,7 @@ def _make_dataset_response(dataset, return_parent=True):
     # Return the file records.
     file_records = [
         {
+            'id': fr.pk,
             'data_repository': fr.data_repository.name,
             'relative_path': fr.relative_path,
             'exists': fr.exists,
@@ -200,11 +203,15 @@ def _make_dataset_response(dataset, return_parent=True):
     out = {
         'id': dataset.pk,
         'name': dataset.name,
+        'subject': dataset.session.subject.nickname,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,
         'dataset_type': getattr(dataset.dataset_type, 'name', ''),
         'data_format': getattr(dataset.data_format, 'name', ''),
         'session': getattr(dataset.session, 'pk', ''),
+        'session_number': dataset.session.number,
+        'session_users': ','.join(_.username for _ in dataset.session.users.all()),
+        'session_start_time': dataset.session.start_time,
     }
     if return_parent:
         out['parent_dataset'] = _make_dataset_response(
@@ -214,17 +221,20 @@ def _make_dataset_response(dataset, return_parent=True):
 
 
 def _parse_path(path):
-    pattern = r'^\\\\([a-zA-Z0-9\.\-\_]+)\\Subjects\\([a-zA-Z0-9\-\_]+)\\(.+)'
+    path = path.replace('\\', '/')
+    pattern = (r'^(?P<nickname>[a-zA-Z0-9\-\_]+)/'
+               '(?P<year>[0-9]{4})(?P<month>[0-9]{2})(?P<day>[0-9]{2})/'
+               '(?P<session_number>[0-9]+)/'
+               '(.*)$')
     m = re.match(pattern, path)
     if not m:
-        raise ValueError(r"The path %s should be \\<dns>\Subjects\<nickname>\...." % path)
-    dns = m.group(1)
-    nickname = m.group(2)
-    relative_path = op.join("Subjects/", nickname, m.group(3).replace('\\', '/'))
+        raise ValueError(r"The path %s should be `nickname/YYYYMMDD/n/..." % path)
+    date_triplet = (m.group('year'), m.group('month'), m.group('day'))
+    nickname = m.group('nickname')
+    session_number = int(m.group('session_number'))
     # An error is raised if the subject or data repository do not exist.
     subject = Subject.objects.get(nickname=nickname)
-    repo = DataRepository.objects.get(dns=dns)
-    return repo, subject, relative_path
+    return subject, date_triplet, session_number
 
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
@@ -233,23 +243,28 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.Serializer
 
     def create(self, request):
-        user = request.user
-        number = request.data.get('session_number', None)
-        date = request.data.get('date', None)
-        if not date:
-            raise ValueError("The date argument is required.")
-        path = request.data.get('path', '')
-        if not path:
+        user = request.data.get('created_by', None) or request.user
+        dns = request.data.get('dns', None)
+        if not dns:
+            raise ValueError("The dns argument is required.")
+        repo = DataRepository.objects.get(dns=dns)
+        exists_in = (repo,)
+
+        rel_dir_path = request.data.get('path', '')
+        if not rel_dir_path:
             raise ValueError("The path argument is required.")
+
+        # Extract the data repository from the DNS, the subject, the directory path.
+        subject, (year, month, day), session_number = _parse_path(rel_dir_path)
+        # Convert the date string to a UTC date
+        dt = datetime(int(year), int(month), int(day), 12, 0, 0)
+        tz = repo.timezone or TIME_ZONE
+        date = pytz.timezone(tz).localize(dt, is_dst=True).astimezone(pytz.utc)
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
             # comma-separated filenames
             filenames = filenames.split(',')
-
-        # Extract the data repository from the DNS, the subject, the directory path.
-        repo, subject, dirname = _parse_path(path)
-        exists_in = (repo,)
 
         # Multiple projects, or the subject's projects
         projects = request.data.get('projects', ())
@@ -259,7 +274,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         projects = [Project.objects.get(name=project) for project in projects if project]
         repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
 
-        session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+        session = _get_or_create_session(
+            subject=subject, date=date, number=session_number, user=user)
         assert session
 
         response = []
@@ -267,7 +283,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             if not filename:
                 continue
             dataset = _create_dataset_file_records(
-                dirname=dirname, filename=filename, session=session, user=user,
+                rel_dir_path=rel_dir_path, filename=filename, session=session, user=user,
                 repositories=repositories, exists_in=exists_in)
             out = _make_dataset_response(dataset)
             response.append(out)
