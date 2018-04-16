@@ -136,8 +136,11 @@ urlpatterns = [
     url(r'^water-restricted-subjects$', sv.WaterRestrictedSubjectList.as_view(),
         name="water-restricted-subject-list"),
 
-    url(r'^water-requirement/(?P<nickname>[-._~\w]+)$', av.WaterRequirement.as_view(),
+    url(r'^water-requirement/$', av.WaterRequirement.as_view(),
         name='water-requirement'),
+
+    url(r'^water-requirement/(?P<nickname>[-._~\w]+)$', av.WaterRequirement.as_view(),
+        name='water-requirement-detail'),
 
 
     url(r'^admin/', include(admin.site.urls)),

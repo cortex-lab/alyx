@@ -134,14 +134,14 @@ class Command(BaseCommand):
             wyep = 100. * wy / wye
             way = WaterAdministration.objects.filter(subject=w.subject,
                                                      date_time__date=last_date)
-            way = sum(w.water_administered or 0 for w in way)
+            way = sum(_.water_administered or 0 for _ in way)
             waym = water.water_requirement_total(w.subject, date=last_date)
             waye = way - waym
             wr = water.water_requirement_total(w.subject)
             s = '''
                 * {sn} since {sd}.
                 Weight {n} day(s) ago: {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
-                Given {way:.2f}mL (min {waym:.2f}mL, excess {waye:.2f}mL).
+                Given  {n} day(s) ago: {way:.2f}mL (min {waym:.2f}mL, excess {waye:.2f}mL).
                 Today requires {wr:.2f}mL.
                 '''.format(sn=sn, sd=sd, wy=wy, wye=wye, wyep=wyep,
                            n=n,

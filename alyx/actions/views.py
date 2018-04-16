@@ -239,5 +239,5 @@ class WaterRequirement(APIView):
                 r['water_given'] = 0.
             if 'hydrogel_given' not in r:
                 r['hydrogel_given'] = 0.
-        data = {'subject': nickname, 'records': records}
+        data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
         return Response(data)

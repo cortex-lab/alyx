@@ -76,6 +76,43 @@ class Command(BaseCommand):
                         transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
 
+        if action == 'normalize_relative_paths':
+            for fr in FileRecord.objects.all():
+                p = fr.relative_path or ''
+                p = p.replace('\\', '/')
+                if 'Subjects/' not in p:
+                    continue
+                i = p.index('Subjects/')
+                p2 = p[i + 9:]
+                fr.relative_path = p2
+                fr.save()
+
+        if action == 'update_alyx_dev':
+            dr = DataRepository.objects.get(name='flatiron_cortexlab')
+            dr.dns = 'ibl.flatironinstitute.org'
+            dr.globus_path = '/cortexlab/Subjects/'
+            dr.save()
+
+            dr = DataRepository.objects.get(name='zserver')
+            dr.dns = 'zserver.cortexlab.net'
+            dr.globus_path = '/mnt/zserver/Subjects/'
+            dr.save()
+
+            dr = DataRepository.objects.get(name='zubjects')
+            dr.dns = 'zubjects.cortexlab.net'
+            dr.globus_path = '/mnt/zubjects/Subjects/'
+            dr.save()
+
+            for fr in FileRecord.objects.all():
+                p = fr.relative_path or ''
+                p = p.replace('\\', '/')
+                if 'Subjects/' not in p:
+                    continue
+                i = p.index('Subjects/')
+                p2 = p[i + 9:]
+                fr.relative_path = p2
+                fr.save()
+
         if action == 'autoregister':
             if not data_repository:
                 raise ValueError("Please specify a data_repository.")

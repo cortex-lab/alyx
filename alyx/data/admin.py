@@ -32,7 +32,8 @@ class DataRepositoryTypeAdmin(BaseAdmin):
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ('name', 'repository_type', 'path', 'globus_endpoint_id', 'globus_is_personal')
+    fields = ('name', 'repository_type', 'timezone', 'dns', 'globus_path',
+              'globus_endpoint_id', 'globus_is_personal')
     list_display = fields
     ordering = ('name',)
 
@@ -72,7 +73,7 @@ class FileRecordInline(BaseInlineAdmin):
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5', 'session_ro', 'parent_dataset']
-    readonly_fields = ['name_', 'session_ro']
+    readonly_fields = ['name_', 'session_ro', 'parent_dataset']
     list_display = ['name_', 'dataset_type', 'session', 'parent_dataset',
                     'created_by', 'created_datetime']
     inlines = [FileRecordInline]
@@ -95,6 +96,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
 class FileRecordAdmin(BaseAdmin):
     fields = ('relative_path', 'data_repository', 'dataset', 'exists')
+    readonly_fields = ('dataset',)
     list_display = fields
     list_filter = ('exists', 'data_repository')
 

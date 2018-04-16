@@ -21,24 +21,33 @@ def api_root(request, format=None):
         'users-url': reverse('user-list', request=request, format=format),
         'subjects-url': reverse('subject-list', request=request, format=format),
 
-        'water-restricted-subjects-url': reverse('water-restricted-subject-list',
-                                                 request=request, format=format),
         'sessions-url': reverse('session-list', request=request, format=format),
+        'datasets-url': reverse('dataset-list', request=request, format=format),
+        'files-url': reverse('filerecord-list', request=request, format=format),
 
-        'datarepositorytype-url': reverse('datarepositorytype-list', request=request,
-                                          format=format),
         'datarepository-url': reverse('datarepository-list', request=request, format=format),
+        'datarepositorytype-url': reverse(
+            'datarepositorytype-list', request=request, format=format),
 
         'dataformat-url': reverse('dataformat-list', request=request, format=format),
         'dataset-types-url': reverse('datasettype-list', request=request, format=format),
-        'datasets-url': reverse('dataset-list', request=request, format=format),
-        'files-url': reverse('filerecord-list', request=request, format=format),
         'timescales-url': reverse('timescale-list', request=request, format=format),
+        'register-file': reverse(
+            'register-file', request=request, format=format),
 
         'weighings-url': reverse('weighing-create', request=request, format=format),
-        'water-administrations-url': reverse('water-administration-create',
-                                             request=request, format=format),
-        'exp-metadata-url': reverse('exp-metadata-list', request=request, format=format),
+
+        'water-restricted-subjects-url': reverse(
+            'water-restricted-subject-list', request=request, format=format),
+
+        'water-administrations-url': reverse(
+            'water-administration-create', request=request, format=format),
+
+        'water-requirement-url': reverse(
+            'water-requirement', request=request, format=format),
+
+        'exp-metadata-url': reverse(
+            'exp-metadata-list', request=request, format=format),
     })
 
 
