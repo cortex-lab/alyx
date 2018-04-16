@@ -83,24 +83,24 @@ class Command(BaseCommand):
                 if 'Subjects/' not in p:
                     continue
                 i = p.index('Subjects/')
-                p2 = p[i:]
+                p2 = p[i + 9:]
                 fr.relative_path = p2
                 fr.save()
 
         if action == 'update_alyx_dev':
             dr = DataRepository.objects.get(name='flatiron_cortexlab')
             dr.dns = 'ibl.flatironinstitute.org'
-            dr.globus_path = '/cortexlab/'
+            dr.globus_path = '/cortexlab/Subjects/'
             dr.save()
 
             dr = DataRepository.objects.get(name='zserver')
             dr.dns = 'zserver.cortexlab.net'
-            dr.globus_path = '/mnt/zserver/'
+            dr.globus_path = '/mnt/zserver/Subjects/'
             dr.save()
 
             dr = DataRepository.objects.get(name='zubjects')
             dr.dns = 'zubjects.cortexlab.net'
-            dr.globus_path = '/mnt/zubjects/'
+            dr.globus_path = '/mnt/zubjects/Subjects/'
             dr.save()
 
             for fr in FileRecord.objects.all():
@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 if 'Subjects/' not in p:
                     continue
                 i = p.index('Subjects/')
-                p2 = p[i:]
+                p2 = p[i + 9:]
                 fr.relative_path = p2
                 fr.save()
 

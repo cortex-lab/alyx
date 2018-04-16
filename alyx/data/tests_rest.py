@@ -130,7 +130,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
         self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
 
-        data = {'path': '%s/20180301/2/dir' % subject,
+        data = {'path': '%s/2018-03-01/2/dir' % subject,
                 'filenames': 'a.b.e1,a.c.e2',
                 'dns': 'dns',
                 'projects': 'tp',
