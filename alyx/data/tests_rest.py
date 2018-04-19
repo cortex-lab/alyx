@@ -17,6 +17,19 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('datasettype-list'), {'name': 'dst'})
         self.client.post(reverse('dataformat-list'), {'name': 'df'})
 
+        self.subject = self.client.get(reverse('subject-list')).data[0]['nickname']
+
+        # Create a session and base session.
+        date = '2018-01-01T12:00'
+        r = self.client.post(
+            reverse('session-list'),
+            {'subject': self.subject, 'start_time': date})
+
+        url = r.data['url']
+        r = self.client.post(
+            reverse('session-list'),
+            {'subject': self.subject, 'start_time': date, 'number': 2, 'parent_session': url})
+
     def test_datarepositorytype(self):
         r = self.client.get(reverse('datarepositorytype-list'))
         self.ar(r)
@@ -91,11 +104,10 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data[0]['relative_path'], 'path/to/file')
 
     def test_dataset(self):
-        subject = self.client.get(reverse('subject-list')).data[0]['nickname']
         data = {
             'dataset_type': 'dst',
             'created_by': 'test',
-            'subject': subject,
+            'subject': self.subject,
             'date': '2018-01-01',
             'number': 2,
         }
@@ -107,12 +119,10 @@ class APIDataTests(BaseTests):
         session = r.data['session']
         r = self.client.get(session)
         self.ar(r, 200)
-        self.assertEqual(r.data['subject'], subject)
+        self.assertEqual(r.data['subject'], self.subject)
         self.assertEqual(r.data['start_time'][:10], data['date'])
 
     def test_register_files(self):
-        subject = self.client.get(reverse('subject-list')).data[0]['nickname']
-
         self.client.post(reverse('project-list'), {'name': 'tp', 'repositories': ['dr']})
 
         self.client.post(
@@ -130,7 +140,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
         self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
 
-        data = {'path': '%s/2018-03-01/2/dir' % subject,
+        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
                 'filenames': 'a.b.e1,a.c.e2',
                 'dns': 'dns',
                 'projects': 'tp',

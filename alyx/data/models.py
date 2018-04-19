@@ -12,31 +12,28 @@ def _related_string(field):
     return "%(app_label)s_%(class)s_" + field + "_related"
 
 
-def _get_or_create_session(subject=None, date=None, number=None, user=None):
+def _get_session(subject=None, date=None, number=None, user=None):
     # https://github.com/cortex-lab/alyx/issues/408
     if not subject or not date:
         return None
     # If a base session for that subject and date already exists, use it;
     base = Session.objects.filter(
         subject=subject, start_time__date=date, parent_session__isnull=True).first()
-    # otherwise create a base session for that subject and date.
+    # Ensure a base session for that subject and date exists.
     if not base:
-        base = Session.objects.create(
-            subject=subject, start_time=date, type='Base', narrative="auto-generated session")
-        if user:
-            base.users.add(user.pk)
-            base.save()
+        raise ValueError("A base session for %s on %s does not exist" % (subject, date))
+    if user and user not in base.users.all():
+        base.users.add(user.pk)
+        base.save()
     # If a subsession for that subject, date, and expNum already exists, use it;
     session = Session.objects.filter(
         subject=subject, start_time__date=date, number=number).first()
-    # otherwise create the subsession.
+    # Ensure the subsession exists.
     if not session:
-        session = Session.objects.create(
-            subject=subject, start_time=date, number=number,
-            type='Experiment', narrative="auto-generated session")
-        if user:
-            session.users.add(user.pk)
-            session.save()
+        raise ValueError("A session for %s/%d on %s does not exist" % (subject, number, date))
+    if user and user not in session.users.all():
+        session.users.add(user.pk)
+        session.save()
     # Attach the subsession to the base session if not already attached.
     if not session.parent_session:
         session.parent_session = base

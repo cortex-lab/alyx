@@ -19,7 +19,7 @@ from .models import (DataRepositoryType,
                      Dataset,
                      FileRecord,
                      Timescale,
-                     _get_or_create_session,
+                     _get_session,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -281,7 +281,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if repo not in repositories:
             repositories += [repo]
 
-        session = _get_or_create_session(
+        session = _get_session(
             subject=subject, date=date, number=session_number, user=user)
         assert session
 

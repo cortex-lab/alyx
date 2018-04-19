@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Timescale,
-                     _get_or_create_session,
+                     _get_session,
                      )
 from actions.models import Session
 from subjects.models import Subject
@@ -157,7 +157,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         number = validated_data.pop('number', None)
         user = validated_data.pop('created_by', None)
 
-        session = _get_or_create_session(subject=subject, date=date, number=number, user=user)
+        session = _get_session(subject=subject, date=date, number=number, user=user)
 
         # Create the dataset, attached to the subsession.
         validated_data['session'] = session
