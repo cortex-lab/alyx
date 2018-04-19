@@ -278,6 +278,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         projects = [Project.objects.get(name=project) for project in projects if project]
         repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
+        if repo not in repositories:
+            repositories += [repo]
 
         session = _get_or_create_session(
             subject=subject, date=date, number=session_number, user=user)
