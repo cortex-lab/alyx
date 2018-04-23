@@ -8,6 +8,7 @@ from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
 
+from misc.models import OrderedUser
 from alyx.settings import TIME_ZONE
 from subjects.models import Subject, Project
 from electrophysiology.models import ExtracellularRecording
@@ -243,7 +244,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.Serializer
 
     def create(self, request):
-        user = request.data.get('created_by', None) or request.user
+        user = request.data.get('created_by', None)
+        if user:
+            user = OrderedUser.objects.get(username=user)
+        else:
+            user = request.user
         dns = request.data.get('dns', None)
         if not dns:
             raise ValueError("The dns argument is required.")
@@ -273,6 +278,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         projects = [Project.objects.get(name=project) for project in projects if project]
         repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
+        if repo not in repositories:
+            repositories += [repo]
 
         session = _get_or_create_session(
             subject=subject, date=date, number=session_number, user=user)

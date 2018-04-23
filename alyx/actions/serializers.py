@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
+from misc.models import OrderedUser
 from data.serializers import ExpMetadataSummarySerializer
 from equipment.models import LabLocation
 
@@ -33,7 +34,7 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False,
         many=True,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=OrderedUser.objects.all(),
         required=False,
     )
 
