@@ -74,7 +74,7 @@ class FileRecordInline(BaseInlineAdmin):
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5', 'session_ro', 'parent_dataset']
     readonly_fields = ['name_', 'session_ro', 'parent_dataset']
-    list_display = ['name_', 'dataset_type', 'session', 'parent_dataset',
+    list_display = ['name_', 'dataset_type', 'session', 'parent_dataset_id',
                     'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
@@ -93,12 +93,28 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.session)
     session_ro.short_description = 'session'
 
+    def parent_dataset_id(self, obj):
+        return getattr(obj.parent_dataset, 'pk', None)
+
 
 class FileRecordAdmin(BaseAdmin):
-    fields = ('relative_path', 'data_repository', 'dataset', 'exists')
-    readonly_fields = ('dataset',)
+    fields = ('relative_path', 'repository', 'dataset_name',
+              'user', 'datetime', 'exists')
+    readonly_fields = ('dataset', 'dataset_name')
     list_display = fields
     list_filter = ('exists', 'data_repository')
+
+    def repository(self, obj):
+        return getattr(obj.data_repository, 'name', None)
+
+    def dataset_name(self, obj):
+        return getattr(obj.dataset, 'name', None)
+
+    def user(self, obj):
+        return getattr(obj.dataset, 'created_by', None)
+
+    def datetime(self, obj):
+        return getattr(obj.dataset, 'created_datetime', None)
 
 
 class TimescaleAdmin(BaseAdmin):
