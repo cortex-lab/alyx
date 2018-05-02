@@ -98,10 +98,10 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
 
 class FileRecordAdmin(BaseAdmin):
-    fields = ('relative_path', 'repository', 'dataset_name',
-              'user', 'datetime', 'exists')
-    readonly_fields = ('dataset', 'dataset_name')
-    list_display = fields
+    fields = ('relative_path', 'data_repository', 'dataset', 'exists')
+    list_display = ('relative_path', 'repository', 'dataset_name',
+                    'user', 'datetime', 'exists')
+    readonly_fields = ('dataset', 'dataset_name', 'repository', 'user', 'datetime')
     list_filter = ('exists', 'data_repository')
 
     def repository(self, obj):
