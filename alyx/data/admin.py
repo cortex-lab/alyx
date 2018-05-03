@@ -102,7 +102,10 @@ class FileRecordAdmin(BaseAdmin):
     list_display = ('relative_path', 'repository', 'dataset_name',
                     'user', 'datetime', 'exists')
     readonly_fields = ('dataset', 'dataset_name', 'repository', 'user', 'datetime')
-    list_filter = ('exists', 'data_repository')
+    list_filter = ('exists', 'data_repository__name')
+    search_fields = ('dataset__created_by__username', 'dataset__name',
+                     'relative_path', 'data_repository__name')
+    ordering = ('-dataset__created_datetime',)
 
     def repository(self, obj):
         return getattr(obj.data_repository, 'name', None)
