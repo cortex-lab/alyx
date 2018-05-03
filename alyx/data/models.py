@@ -258,7 +258,7 @@ class FileRecord(BaseModel):
         default=False, help_text="Whether the file exists in the data repository", )
 
     def __str__(self):
-        return "<FileRecord '%s'>" % self.relative_path
+        return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
 
 
 class Timescale(BaseModel):
