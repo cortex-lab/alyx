@@ -20,7 +20,7 @@ def _iter_datasets(dataset_id=None, limit=None, user=None):
 
 
 class Command(BaseCommand):
-    help = "Interact with globus"
+    help = "Manage files"
 
     def add_arguments(self, parser):
         parser.add_argument('action', help='Action')
@@ -76,33 +76,22 @@ class Command(BaseCommand):
                         transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
 
+        if action == 'clean':
+            fr = FileRecord.objects.filter(exists=False, data_repository__name='zserver')
+            fr = fr.exclude(dataset__session__subject__nickname='test')
+            fr = fr.order_by('dataset__created_by',
+                             'dataset__session__subject__nickname',
+                             'dataset__name',
+                             )
+            for f in fr:
+                print(f, end='')
+                if not dry:
+                    f.delete()
+                    print(': deleted!')
+                else:
+                    print('')
+
         if action == 'normalize_relative_paths':
-            for fr in FileRecord.objects.all():
-                p = fr.relative_path or ''
-                p = p.replace('\\', '/')
-                if 'Subjects/' not in p:
-                    continue
-                i = p.index('Subjects/')
-                p2 = p[i + 9:]
-                fr.relative_path = p2
-                fr.save()
-
-        if action == 'update_alyx_dev':
-            dr = DataRepository.objects.get(name='flatiron_cortexlab')
-            dr.dns = 'ibl.flatironinstitute.org'
-            dr.globus_path = '/cortexlab/Subjects/'
-            dr.save()
-
-            dr = DataRepository.objects.get(name='zserver')
-            dr.dns = 'zserver.cortexlab.net'
-            dr.globus_path = '/mnt/zserver/Subjects/'
-            dr.save()
-
-            dr = DataRepository.objects.get(name='zubjects')
-            dr.dns = 'zubjects.cortexlab.net'
-            dr.globus_path = '/mnt/zubjects/Subjects/'
-            dr.save()
-
             for fr in FileRecord.objects.all():
                 p = fr.relative_path or ''
                 p = p.replace('\\', '/')
