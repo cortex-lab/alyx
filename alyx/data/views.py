@@ -222,7 +222,6 @@ def _make_dataset_response(dataset, return_parent=True):
 
 
 def _parse_path(path):
-    path = path.replace('\\', '/')
     pattern = (r'^(?P<nickname>[a-zA-Z0-9\-\_]+)/'
                '(?P<year>[0-9]{4})\-(?P<month>[0-9]{2})\-(?P<day>[0-9]{2})/'
                '(?P<session_number>[0-9]+)'
@@ -260,6 +259,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             raise ValueError("The path argument is required.")
 
         # Extract the data repository from the DNS, the subject, the directory path.
+        rel_dir_path = rel_dir_path.replace('\\', '/')
         subject, (year, month, day), session_number = _parse_path(rel_dir_path)
         # Convert the date string to a UTC date
         dt = datetime(int(year), int(month), int(day), 12, 0, 0)
