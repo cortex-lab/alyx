@@ -210,6 +210,7 @@ def _create_dataset_file_records(
     dataset, _ = Dataset.objects.get_or_create(
         name=filename, session=session, created_by=user,
         dataset_type=dataset_type, data_format=data_format)
+    dataset.full_clean()
 
     # Create the parent datasets, according to the parent dataset types.
     if dataset_type:
@@ -231,6 +232,7 @@ def _create_dataset_file_records(
         fr, _ = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
         fr.exists = exists
+        fr.full_clean()
         fr.save()
 
     return dataset
