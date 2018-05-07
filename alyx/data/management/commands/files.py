@@ -103,6 +103,15 @@ class Command(BaseCommand):
                         print(e)
                         continue
                     fr.save()
+                if '//' in p:
+                    fr.relative_path = p.replace('//', '/')
+                    try:
+                        fr.full_clean()
+                    except Exception as e:
+                        print(fr)
+                        print(e)
+                        continue
+                    fr.save()
 
         if action == 'autoregister':
             if not data_repository:

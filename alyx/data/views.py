@@ -260,6 +260,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         # Extract the data repository from the DNS, the subject, the directory path.
         rel_dir_path = rel_dir_path.replace('\\', '/')
+        rel_dir_path = rel_dir_path.replace('//', '/')
         subject, (year, month, day), session_number = _parse_path(rel_dir_path)
         # Convert the date string to a UTC date
         dt = datetime(int(year), int(month), int(day), 12, 0, 0)
