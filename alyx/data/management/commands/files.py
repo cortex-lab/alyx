@@ -94,13 +94,15 @@ class Command(BaseCommand):
         if action == 'normalize_relative_paths':
             for fr in FileRecord.objects.all():
                 p = fr.relative_path or ''
-                p = p.replace('\\', '/')
-                if 'Subjects/' not in p:
-                    continue
-                i = p.index('Subjects/')
-                p2 = p[i + 9:]
-                fr.relative_path = p2
-                fr.save()
+                if '\\' in p:
+                    fr.relative_path = p.replace('\\', '/')
+                    try:
+                        fr.full_clean()
+                    except Exception as e:
+                        print(fr)
+                        print(e)
+                        continue
+                    fr.save()
 
         if action == 'autoregister':
             if not data_repository:
