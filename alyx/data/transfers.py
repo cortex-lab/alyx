@@ -232,7 +232,7 @@ def _create_dataset_file_records(
         fr, _ = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
         fr.exists = exists
-        # fr.full_clean()
+        fr.full_clean()
         fr.save()
 
     return dataset
