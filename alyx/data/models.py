@@ -236,7 +236,8 @@ class Dataset(BaseExperimentalData):
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
         return "<Dataset %s %s '%s' by %s on %s>" % (
-            str(self.pk)[:8], self.dataset_type.name, self.name, self.created_by, date)
+            str(self.pk)[:8], getattr(self.dataset_type, 'name', ''),
+            self.name, self.created_by, date)
 
 
 # Files
