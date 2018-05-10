@@ -175,6 +175,9 @@ class Session(BaseAction):
     number = models.IntegerField(null=True, blank=True,
                                  help_text="Optional session number for this level")
 
+    def __str__(self):
+        return "Session %s for %s" % (self.subject, str(self.pk)[:8])
+
 
 class WaterRestriction(BaseAction):
     """

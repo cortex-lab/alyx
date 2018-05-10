@@ -199,6 +199,8 @@ def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None):
 
+    assert session is not None
+
     relative_path = op.join(rel_dir_path, filename)
     dataset_type, data_format = _get_data_type_format(filename)
     if not dataset_type:
@@ -216,13 +218,30 @@ def _create_dataset_file_records(
     if dataset_type:
         dst = dataset_type.parent_dataset_type
         ds = dataset
+        i = 0
         while dst is not None:
-            ds.parent_dataset = Dataset.objects.get_or_create(
-                session=session, created_by=user, dataset_type=dst)[0]
+            # for d in Dataset.objects.filter(session=session, created_by=user, dataset_type=dst):
+            #     print(d)
+            parents = Dataset.objects.filter(
+                session=session, created_by=user, dataset_type=dst)
+            if len(parents) == 0:
+                ds.parent_dataset = Dataset.objects.create(
+                    session=session, created_by=user, dataset_type=dst)
+            elif len(parents) == 1:
+                ds.parent_dataset = parents[0]
+            elif len(parents) >= 2:
+                logger.warn("Multiple parent datasets were found, using the first one: %s",
+                            parents)
+                ds.parent_dataset = parents[0]
+            assert ds.parent_dataset != ds
             ds.save()
 
             dst = dst.parent_dataset_type
             ds = ds.parent_dataset
+
+            if i > 10:
+                raise ValueError("Infinite loop detected when creating parent datasets.")
+            i += 1
 
     # Create one file record per repository.
     exists_in = exists_in or ()

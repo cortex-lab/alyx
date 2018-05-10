@@ -360,7 +360,7 @@ class DatasetInline(BaseInlineAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'project_list', 'location', 'user_list']
+    list_display = ['subject_l', 'start_time', 'number', 'project_list', 'location', 'user_list']
     list_display_links = ['start_time']
     inlines = [NoteInline]
     fields = BaseActionAdmin.fields + ['type', 'number']
