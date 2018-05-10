@@ -14,6 +14,9 @@ class Lab(BaseModel):
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
+    def __str__(self):
+        return self.name
+
 
 class LabLocation(BaseModel):
     # minor but can we change this to Location or LabLocation? Because it could

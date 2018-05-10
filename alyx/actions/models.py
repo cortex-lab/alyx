@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel
-from equipment.models import LabLocation, WeighingScale, VirusBatch
+from equipment.models import LabLocation, Lab, WeighingScale, VirusBatch
 from misc.models import BrainLocation, OrderedUser
 
 
@@ -86,6 +86,7 @@ class BaseAction(BaseModel):
     location = models.ForeignKey(LabLocation, null=True, blank=True,
                                  help_text="The physical location at which the action was "
                                  "performed")
+    lab = models.ForeignKey(Lab, null=True, blank=True)
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(blank=True)

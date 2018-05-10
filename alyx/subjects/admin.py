@@ -268,7 +268,7 @@ class SubjectAdmin(BaseAdmin):
                                 'reduced', 'reduced_date',
                                 'ear_mark',
                                 'protocol_number', 'description',
-                                'projects', 'json')}),
+                                'lab', 'projects', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'lamis_cage', 'lamis_cage_changes',),
                      'classes': ('collapse',),

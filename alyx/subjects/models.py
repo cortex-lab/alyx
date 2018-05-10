@@ -15,6 +15,7 @@ from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
 from actions.models import WaterRestriction
 from actions.water import last_water_restriction, today
+from equipment.models import Lab
 from misc.models import OrderedUser
 
 logger = logging.getLogger(__name__)
@@ -135,6 +136,7 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
+    lab = models.ForeignKey(Lab, null=True, blank=True)
 
     projects = models.ManyToManyField(
         Project, blank=True,

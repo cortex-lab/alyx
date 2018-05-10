@@ -128,7 +128,7 @@ class BaseActionForm(forms.ModelForm):
 
 class BaseActionAdmin(BaseAdmin):
     fields = ['subject', 'start_time', 'end_time', 'users',
-              'location', 'procedures', 'narrative']
+              'location', 'lab', 'procedures', 'narrative']
     readonly_fields = ['subject_l']
 
     form = BaseActionForm
