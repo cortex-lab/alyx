@@ -2,6 +2,17 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel, BasePolymorphicModel
+from alyx.settings import TIME_ZONE
+
+
+class Lab(BaseModel):
+    name = models.CharField(max_length=255, unique=True)
+    institution = models.CharField(max_length=255, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    timezone = models.CharField(
+        max_length=64, blank=True, default=TIME_ZONE,
+        help_text="Timezone of the server "
+        "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
 
 class LabLocation(BaseModel):
