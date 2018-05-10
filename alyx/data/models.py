@@ -86,6 +86,9 @@ class DataRepository(BaseModel):
                                    message='Invalid DNS',
                                    code='invalid_dns')],
         help_text="DNS of the network drive")
+    url = models.URLField(
+        blank=True, null=True,
+        help_text="URL of the data repository, if it is accessible via HTTP")
     timezone = models.CharField(
         max_length=64, blank=True, default=TIME_ZONE,
         help_text="Timezone of the server "
