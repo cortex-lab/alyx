@@ -1,7 +1,5 @@
-from datetime import datetime
 import logging
 import re
-import pytz
 
 from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
@@ -9,7 +7,6 @@ import django_filters
 from django_filters.rest_framework import FilterSet
 
 from misc.models import OrderedUser
-from alyx.settings import TIME_ZONE
 from subjects.models import Subject, Project
 from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
@@ -187,7 +184,7 @@ class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
 # Register file
 # ------------------------------------------------------------------------------------------------
 
-def _make_dataset_response(dataset, return_parent=True):
+def _make_dataset_response(dataset):
     if not dataset:
         return None
 
@@ -214,27 +211,26 @@ def _make_dataset_response(dataset, return_parent=True):
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
     }
-    if return_parent:
-        out['parent_dataset'] = _make_dataset_response(
-            dataset.parent_dataset, return_parent=False)
     out['file_records'] = file_records
     return out
 
 
 def _parse_path(path):
     pattern = (r'^(?P<nickname>[a-zA-Z0-9\-\_]+)/'
-               '(?P<year>[0-9]{4})\-(?P<month>[0-9]{2})\-(?P<day>[0-9]{2})/'
-               '(?P<session_number>[0-9]+)'
-               '(.*)$')
+               # '(?P<year>[0-9]{4})\-(?P<month>[0-9]{2})\-(?P<day>[0-9]{2})/'
+               r'(?P<date>[0-9\-]{10})/'
+               r'(?P<session_number>[0-9]+)'
+               r'(.*)$')
     m = re.match(pattern, path)
     if not m:
         raise ValueError(r"The path %s should be `nickname/YYYY-MM-DD/n/..." % path)
-    date_triplet = (m.group('year'), m.group('month'), m.group('day'))
+    # date_triplet = (m.group('year'), m.group('month'), m.group('day'))
+    date = m.group('date')
     nickname = m.group('nickname')
     session_number = int(m.group('session_number'))
     # An error is raised if the subject or data repository do not exist.
     subject = Subject.objects.get(nickname=nickname)
-    return subject, date_triplet, session_number
+    return subject, date, session_number
 
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
@@ -261,11 +257,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # Extract the data repository from the DNS, the subject, the directory path.
         rel_dir_path = rel_dir_path.replace('\\', '/')
         rel_dir_path = rel_dir_path.replace('//', '/')
-        subject, (year, month, day), session_number = _parse_path(rel_dir_path)
-        # Convert the date string to a UTC date
-        dt = datetime(int(year), int(month), int(day), 12, 0, 0)
-        tz = repo.timezone or TIME_ZONE
-        date = pytz.timezone(tz).localize(dt, is_dst=True).astimezone(pytz.utc)
+        subject, date, session_number = _parse_path(rel_dir_path)
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):

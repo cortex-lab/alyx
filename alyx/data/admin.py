@@ -39,14 +39,14 @@ class DataRepositoryAdmin(BaseAdmin):
 
 
 class DataFormatAdmin(BaseAdmin):
-    fields = ['name', 'description', 'filename_pattern',
+    fields = ['name', 'description', 'file_extension',
               'matlab_loader_function', 'python_loader_function']
     list_display = fields[:-1]
     ordering = ('name',)
 
 
 class DatasetTypeAdmin(BaseAdmin):
-    fields = ('name', 'description', 'filename_pattern', 'created_by', 'parent_dataset_type')
+    fields = ('name', 'description', 'filename_pattern', 'created_by')
     list_display = fields
     ordering = ('name',)
     list_filter = [('created_by', RelatedDropdownFilter)]
@@ -72,9 +72,9 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'md5', 'session_ro', 'parent_dataset']
-    readonly_fields = ['name_', 'session_ro', 'parent_dataset']
-    list_display = ['name_', 'dataset_type', 'session', 'parent_dataset_id',
+    fields = ['name', 'dataset_type', 'md5', 'session_ro']
+    readonly_fields = ['name_', 'session_ro']
+    list_display = ['name_', 'dataset_type', 'session',
                     'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
@@ -92,9 +92,6 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         url = get_admin_url(obj.session)
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.session)
     session_ro.short_description = 'session'
-
-    def parent_dataset_id(self, obj):
-        return getattr(obj.parent_dataset, 'pk', None)
 
 
 class FileRecordAdmin(BaseAdmin):

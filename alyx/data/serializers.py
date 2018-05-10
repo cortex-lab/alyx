@@ -50,17 +50,9 @@ class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
         default=serializers.CurrentUserDefault(),
     )
 
-    parent_dataset_type = serializers.SlugRelatedField(
-        slug_field='name',
-        queryset=DatasetType.objects.all(),
-        read_only=False,
-        required=False,
-        allow_null=True,
-    )
-
     class Meta:
         model = DatasetType
-        fields = ('name', 'created_by', 'description', 'filename_pattern', 'parent_dataset_type')
+        fields = ('name', 'created_by', 'description', 'filename_pattern')
         extra_kwargs = {'url': {'view_name': 'datasettype-detail', 'lookup_field': 'name'}}
 
 
@@ -104,11 +96,6 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     data_format = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='name',
         queryset=DataFormat.objects.all(),
-    )
-
-    parent_dataset = serializers.HyperlinkedRelatedField(
-        read_only=False, required=False, view_name="dataset-detail",
-        queryset=Dataset.objects.all(),
     )
 
     timescale = serializers.HyperlinkedRelatedField(
@@ -166,7 +153,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
-                  'dataset_type', 'data_format', 'parent_dataset',
+                  'dataset_type', 'data_format',
                   'timescale', 'session', 'md5', 'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {

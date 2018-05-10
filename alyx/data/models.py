@@ -44,11 +44,21 @@ def _get_session(subject=None, date=None, number=None, user=None):
 # Data repositories
 # ------------------------------------------------------------------------------------------------
 
+class NameManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class DataRepositoryType(BaseModel):
     """
     A type of data repository, e.g. local SAMBA file server; web archive; LTO tape
     """
+    objects = NameManager()
+
     name = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return "<DataRepositoryType '%s'>" % self.name
@@ -65,10 +75,11 @@ class DataRepository(BaseModel):
     repository can stored in JSON  in a type-specific manner (e.g. which
     cardboard box to find a tape in)
     """
+    objects = NameManager()
 
     name = models.CharField(max_length=255, unique=True)
     repository_type = models.ForeignKey(
-        DataRepositoryType, null=True, blank=True)
+        DataRepositoryType, null=True, blank=True, on_delete=models.CASCADE)
     dns = models.CharField(
         max_length=200, blank=True,
         validators=[RegexValidator(r'^[a-zA-Z0-9\.\-\_]+$',
@@ -93,6 +104,7 @@ class DataRepository(BaseModel):
 
     class Meta:
         verbose_name_plural = "data repositories"
+        ordering = ('name',)
 
 
 # Datasets
@@ -105,9 +117,10 @@ class DataFormat(BaseModel):
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
+    objects = NameManager()
 
     name = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, unique=True,
         help_text="short identifying nickname, e..g 'npy'.")
 
     description = models.CharField(
@@ -115,9 +128,12 @@ class DataFormat(BaseModel):
         help_text="Human-readable description of the file format e.g. 'npy-formatted square "
         "numerical array'.")
 
-    filename_pattern = models.CharField(
-        max_length=255, unique=True, blank=True,
-        help_text="string (with wildcards) identifying these files, e.g. '*.*.npy'.")
+    file_extension = models.CharField(
+        max_length=255,
+        validators=[RegexValidator(r'^\.[^\.]+$',
+                                   message='Invalid file extension, should start with a dot',
+                                   code='invalid_file_extension')],
+        help_text="file extension, starting with a dot.")
 
     matlab_loader_function = models.CharField(
         max_length=255, blank=True,
@@ -129,6 +145,7 @@ class DataFormat(BaseModel):
 
     class Meta:
         verbose_name_plural = "data formats"
+        ordering = ('name',)
 
     def __str__(self):
         return "<DataFormat '%s'>" % self.name
@@ -141,16 +158,14 @@ class DatasetType(BaseModel):
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
+    objects = NameManager()
 
     name = models.CharField(max_length=255, unique=True,
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
-    parent_dataset_type = models.ForeignKey(
-        'data.DatasetType', null=True, blank=True,
-        help_text="hierachical parent of this DatasetType.")
-
     created_by = models.ForeignKey(
         OrderedUser, blank=True, null=True,
+        on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
 
@@ -162,10 +177,13 @@ class DatasetType(BaseModel):
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
     filename_pattern = models.CharField(
-        max_length=255, unique=True, blank=True, null=True,
+        max_length=255, unique=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
         "would include all files starting with the word 'spikes'.")
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
@@ -180,11 +198,13 @@ class BaseExperimentalData(BaseModel):
     """
     session = models.ForeignKey(
         Session, blank=True, null=True,
+        on_delete=models.CASCADE,
         related_name=_related_string('session'),
         help_text="The Session to which this data belongs")
 
     created_by = models.ForeignKey(
         OrderedUser, blank=True, null=True,
+        on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
 
@@ -198,11 +218,20 @@ class BaseExperimentalData(BaseModel):
 
     provenance_directory = models.ForeignKey(
         'data.Dataset', blank=True, null=True,
+        on_delete=models.CASCADE,
         related_name=_related_string('provenance'),
         help_text="link to directory containing intermediate results")
 
     class Meta:
         abstract = True
+
+
+def default_dataset_type():
+    return DatasetType.objects.get(name='unknown').pk
+
+
+def default_data_format():
+    return DataFormat.objects.get(name='unknown').pk
 
 
 class Dataset(BaseExperimentalData):
@@ -212,25 +241,23 @@ class Dataset(BaseExperimentalData):
     all containing identical data, with the same MD5.
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
-
-    Also note that a Datasets can be hierarchically organized, in which case the parent Datasets
-    won't have files directly associated with them.
     """
-    name = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255)
 
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 
-    dataset_type = models.ForeignKey(DatasetType, null=True, blank=True)
+    dataset_type = models.ForeignKey(
+        DatasetType, blank=False, null=False, on_delete=models.SET_DEFAULT,
+        default=default_dataset_type)
 
-    data_format = models.ForeignKey(DataFormat, null=True, blank=True)
-
-    parent_dataset = models.ForeignKey(
-        'data.Dataset', null=True, blank=True, help_text="hierachical parent of this Dataset.",
-        related_name='child_dataset')
+    data_format = models.ForeignKey(
+        DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
+        default=default_data_format)
 
     timescale = models.ForeignKey(
         'data.Timescale', null=True, blank=True,
+        on_delete=models.CASCADE,
         help_text="Associated time scale (for time series datasets only).")
 
     def __str__(self):
@@ -248,14 +275,19 @@ class FileRecord(BaseModel):
     A single file on disk or tape. Normally specified by a path within an archive. If required,
     more details can be in the JSON
     """
-    dataset = models.ForeignKey(Dataset, related_name='file_records')
-    data_repository = models.ForeignKey('DataRepository', blank=True, null=True)
+
+    dataset = models.ForeignKey(Dataset, related_name='file_records', on_delete=models.CASCADE)
+
+    data_repository = models.ForeignKey(
+        'DataRepository', on_delete=models.CASCADE)
+
     relative_path = models.CharField(
-        max_length=1000, blank=True,
+        max_length=1000,
         validators=[RegexValidator(r'^[a-zA-Z0-9\_][^\\\:]+$',
                                    message='Invalid path',
                                    code='invalid_path')],
         help_text="path name within repository")
+
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )
 

@@ -5,7 +5,6 @@ import os.path as op
 import re
 
 import globus_sdk
-from django.db.models.functions import Length
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat
@@ -158,33 +157,27 @@ def globus_file_exists(file_record):
     return False
 
 
-def _get_data_type_format(filename):
-    """Return the DatasetType and DataFormat associated to an ALF filename."""
-
-    dataset_type = None
-    # NOTE: we sort by decreasing filename_pattern length, so that longer (more specific) alf
-    # filenames are chosen. For example, foo.bar.* has higher priority than foo.*.* because
-    # its length is higher. For 1-character-long parts, we use the fact that * < any character
-    # which is why we sort by decreasing filename_pattern.
-    for dt in (DatasetType.objects.filter(filename_pattern__isnull=False).
-               order_by(Length('filename_pattern').desc(), '-filename_pattern')):
+def _get_dataset_type(filename):
+    dataset_types = []
+    for dt in DatasetType.objects.filter(filename_pattern__isnull=False):
         if not dt.filename_pattern.strip():
             continue
-        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
-        if re.match(reg, filename):
-            dataset_type = dt
-            break
+        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'.+')
+        if re.match(reg, filename, re.IGNORECASE):
+            dataset_types.append(dt)
+    n = len(dataset_types)
+    if n == 0:
+        raise ValueError("No dataset type found for filename `%s`" % filename)
+    elif n >= 2:
+        raise ValueError("Multiple matching dataset types found for filename `%s`: %s" % (
+            filename, ', '.join(map(str, dataset_types))))
+    return dataset_types[0]
 
-    data_format = None
-    for df in DataFormat.objects.filter(filename_pattern__isnull=False):
-        reg = df.filename_pattern.replace('.', r'\.').replace('*', r'[^\.]+')
-        if not df.filename_pattern.strip():
-            continue
-        if re.match(reg, filename):
-            data_format = df
-            break
 
-    return dataset_type, data_format
+def _get_data_format(filename):
+    file_extension = op.splitext(filename)[-1]
+    # This raises an error if there is 0 or 2+ matching data formats.
+    return DataFormat.objects.get(file_extension=file_extension)
 
 
 def _get_repositories_for_projects(projects):
@@ -202,46 +195,17 @@ def _create_dataset_file_records(
     assert session is not None
 
     relative_path = op.join(rel_dir_path, filename)
-    dataset_type, data_format = _get_data_type_format(filename)
-    if not dataset_type:
-        logger.warn("No dataset type found for %s", filename)
-    if not data_format:
-        logger.warn("No data format found for %s", filename)
+    dataset_type = _get_dataset_type(filename)
+    data_format = _get_data_format(filename)
+    assert dataset_type
+    assert data_format
 
     # Create the dataset.
     dataset, _ = Dataset.objects.get_or_create(
         name=filename, session=session, created_by=user,
         dataset_type=dataset_type, data_format=data_format)
+    # Validate the fields.
     dataset.full_clean()
-
-    # Create the parent datasets, according to the parent dataset types.
-    if dataset_type:
-        dst = dataset_type.parent_dataset_type
-        ds = dataset
-        i = 0
-        while dst is not None:
-            # for d in Dataset.objects.filter(session=session, created_by=user, dataset_type=dst):
-            #     print(d)
-            parents = Dataset.objects.filter(
-                session=session, created_by=user, dataset_type=dst)
-            if len(parents) == 0:
-                ds.parent_dataset = Dataset.objects.create(
-                    session=session, created_by=user, dataset_type=dst)
-            elif len(parents) == 1:
-                ds.parent_dataset = parents[0]
-            elif len(parents) >= 2:
-                logger.warn("Multiple parent datasets were found, using the first one: %s",
-                            parents)
-                ds.parent_dataset = parents[0]
-            assert ds.parent_dataset != ds
-            ds.save()
-
-            dst = dst.parent_dataset_type
-            ds = ds.parent_dataset
-
-            if i > 10:
-                raise ValueError("Infinite loop detected when creating parent datasets.")
-            i += 1
 
     # Create one file record per repository.
     exists_in = exists_in or ()
@@ -251,6 +215,7 @@ def _create_dataset_file_records(
         fr, _ = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
         fr.exists = exists
+        # Validate the fields.
         fr.full_clean()
         fr.save()
 

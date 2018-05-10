@@ -14,8 +14,8 @@ class APIDataTests(BaseTests):
         # Create some static data.
         self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
         self.client.post(reverse('datarepository-list'), {'name': 'dr', 'dns': 'dns'})
-        self.client.post(reverse('datasettype-list'), {'name': 'dst'})
-        self.client.post(reverse('dataformat-list'), {'name': 'df'})
+        self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '-'})
+        self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
 
         self.subject = self.client.get(reverse('subject-list')).data[0]['nickname']
 
@@ -105,9 +105,12 @@ class APIDataTests(BaseTests):
 
     def test_dataset(self):
         data = {
+            'name': 'some-dataset',
             'dataset_type': 'dst',
             'created_by': 'test',
             'subject': self.subject,
+            'dataset_type': 'dst',
+            'data_format': 'df',
             'date': '2018-01-01',
             'number': 2,
         }
@@ -127,18 +130,14 @@ class APIDataTests(BaseTests):
 
         self.client.post(
             reverse('datasettype-list'),
-            {'name': 'a', 'filename_pattern': 'a.*.*'})
+            {'name': 'a.b', 'filename_pattern': 'a.b.*'})
 
         self.client.post(
             reverse('datasettype-list'),
-            {'name': 'a.b', 'filename_pattern': 'a.b.*', 'parent_dataset_type': 'a'})
+            {'name': 'a.c', 'filename_pattern': 'a.c.*'})
 
-        self.client.post(
-            reverse('datasettype-list'),
-            {'name': 'a.c', 'filename_pattern': 'a.c.*', 'parent_dataset_type': 'a'})
-
-        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'filename_pattern': '*.*.e1'})
-        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'filename_pattern': '*.*.e2'})
+        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
+        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
 
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
                 'filenames': 'a.b.e1,a.c.e2',
@@ -159,9 +158,6 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['created_by'], 'test')
         self.assertEqual(d1['dataset_type'], 'a.c')
         self.assertEqual(d1['data_format'], 'e2')
-
-        self.assertTrue(d0['parent_dataset'] is not None)
-        self.assertEqual(d0['parent_dataset']['id'], d1['parent_dataset']['id'])
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d0['file_records'][0]['relative_path'],
