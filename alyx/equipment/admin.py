@@ -1,7 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
 from .models import (Appliance, WeighingScale, Amplifier, PipettePuller, DAQ,
-                     VirusBatch, Lab, LabLocation, EquipmentModel
+                     VirusBatch, Lab, LabMembership, LabLocation, EquipmentModel
                      )
 from alyx.base import BaseAdmin
 
@@ -45,6 +45,11 @@ class LabAdmin(BaseAdmin):
     list_display = fields
 
 
+class LabMembershipAdmin(BaseAdmin):
+    fields = ['user', 'lab', 'role', 'start_date', 'end_date']
+    list_display = fields
+
+
 class LabLocationAdmin(BaseAdmin):
     fields = ['name']
 
@@ -64,6 +69,7 @@ class VirusBatchAdmin(BaseAdmin):
 admin.site.register(Appliance, ApplianceParentAdmin)
 
 admin.site.register(Lab, LabAdmin)
+admin.site.register(LabMembership, LabMembershipAdmin)
 admin.site.register(LabLocation, LabLocationAdmin)
 admin.site.register(EquipmentModel, EquipmentModelAdmin)
 admin.site.register(VirusBatch, VirusBatchAdmin)
