@@ -159,6 +159,7 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'alyx.base.QueryPrintingMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'

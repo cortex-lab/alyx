@@ -2,9 +2,11 @@ import logging
 import os.path as op
 from polymorphic.models import PolymorphicModel
 import uuid
+import sys
 
 from django import forms
 from django.db import models
+from django.db import connection
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.postgres.fields import JSONField
@@ -12,6 +14,7 @@ from django.core.mail import send_mail
 from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils import termcolors
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -21,6 +24,36 @@ from rest_framework.test import APITestCase
 logger = logging.getLogger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
+
+
+class QueryPrintingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        if settings.DEBUG:
+            self.start = 0
+
+    def __call__(self, request):
+
+        response = self.get_response(request)
+
+        if settings.DEBUG and 'runserver' in sys.argv and self.start is not None:
+            red = termcolors.make_style(opts=('bold',), fg='red')
+            yellow = termcolors.make_style(opts=('bold',), fg='yellow')
+
+            count = len(connection.queries) - self.start
+            output = '# queries: %s' % count
+            output = output.ljust(18)
+
+            # add some colour
+            if count > 100:
+                output = red(output)
+            elif count > 10:
+                output = yellow(output)
+
+            # runserver just prints its output to sys.stderr, so follow suite
+            sys.stderr.write(output)
+
+        return response
 
 
 class BaseModel(models.Model):
