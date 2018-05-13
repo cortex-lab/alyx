@@ -300,11 +300,10 @@ class SubjectRequest(BaseModel):
         return (self.count or 0) - len(self.subjects())
 
     def subjects(self):
-        return Subject.objects.filter(responsible_user=self.user,
-                                      line=self.line,
-                                      death_date__isnull=True,
-                                      request=self,
-                                      )
+        subjects = self.subject_set.all()
+        return [s for s in subjects
+                if s.responsible_user_id == self.user_id and
+                s.line_id == self.line_id and s.death_date is None]
 
     def __str__(self):
         return '{count} {line} due {due_date} for {user}'.format(

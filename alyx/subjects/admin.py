@@ -864,6 +864,7 @@ class LineAdmin(BaseAdmin):
               'litter_autoname_index',
               ]
     list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'is_active']
+    list_select_related = ('strain',)
     ordering = ['auto_name']
     list_filter = [LineFilter]
     list_editable = ['is_active']
@@ -962,6 +963,7 @@ class SubjectRequestAdmin(BaseAdmin):
     fields = ['line', 'count', 'date_time', 'due_date', 'description', 'user',
               'subjects_l', 'remaining', 'status']
     list_display = ['line', 'user', 'remaining_count', 'date_time', 'due_date', 'is_closed']
+    list_select_related = ('line', 'user')
     readonly_fields = ['subjects_l', 'status', 'remaining', 'remaining_count']
     list_filter = [SubjectRequestUserListFilter,
                    SubjectRequestStatusListFilter,
@@ -972,7 +974,9 @@ class SubjectRequestAdmin(BaseAdmin):
     form = SubjectRequestForm
 
     def remaining_count(self, obj):
-        return '%d/%d' % ((obj.count or 0) - (obj.remaining() or 0), obj.count or 0)
+        c = obj.count or 0
+        r = obj.remaining() or 0
+        return '%d/%d' % (c - r, c)
     remaining_count.short_description = 'count'
 
     def is_closed(self, obj):
@@ -985,6 +989,10 @@ class SubjectRequestAdmin(BaseAdmin):
                                      url=get_admin_url(subject))
                                      for subject in obj.subjects()))
     subjects_l.short_description = 'subjects'
+
+    def get_queryset(self, request):
+        return super(SubjectRequestAdmin, self).get_queryset(request).prefetch_related(
+            'subject_set')
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
