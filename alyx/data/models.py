@@ -86,7 +86,7 @@ class DataRepository(BaseModel):
                                    message='Invalid DNS',
                                    code='invalid_dns')],
         help_text="DNS of the network drive")
-    url = models.URLField(
+    data_url = models.URLField(
         blank=True, null=True,
         help_text="URL of the data repository, if it is accessible via HTTP")
     timezone = models.CharField(
@@ -293,6 +293,12 @@ class FileRecord(BaseModel):
 
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )
+
+    def data_url(self):
+        root = self.data_repository.data_url
+        if not root:
+            return None
+        return root + self.relative_path
 
     def __str__(self):
         return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
