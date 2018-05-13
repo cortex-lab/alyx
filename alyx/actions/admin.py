@@ -204,6 +204,7 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
     list_display = ['subject_l', 'water_administered', 'date_time', 'hydrogel']
     list_display_links = ('water_administered',)
+    list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter,
@@ -253,6 +254,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                     'water_requirement_remaining',
                     'is_active',
                     ]
+    list_select_related = ('subject',)
     list_display_links = ('start_time_l',)
     readonly_fields = ['reference_weighing', 'current_weighing',
                        'water_requirement_total', 'water_requirement_remaining',
@@ -320,6 +322,7 @@ class WeighingForm(BaseActionForm):
 
 class WeighingAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'weight', 'date_time']
+    list_select_related = ('subject',)
     fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
@@ -332,6 +335,8 @@ class WeighingAdmin(BaseActionAdmin):
 
 class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
+    list_select_related = ('subject',)
+
     fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type']
     list_display_links = ['date']
     list_filter = [SubjectAliveListFilter,
@@ -351,6 +356,10 @@ class SurgeryAdmin(BaseActionAdmin):
     def procedures_l(self, obj):
         return ', '.join(map(str, obj.procedures.all()))
     procedures_l.short_description = 'procedures'
+
+    def get_queryset(self, request):
+        return super(SurgeryAdmin, self).get_queryset(request).prefetch_related(
+            'users', 'procedures')
 
 
 class DatasetInline(BaseInlineAdmin):

@@ -680,6 +680,7 @@ class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
     list_display = ['name', 'lamis_cage', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
+    list_select_related = ('line', 'father', 'mother1', 'mother2')
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage', 'description']
     list_filter = [BreedingPairFilter,
@@ -758,6 +759,7 @@ class LitterForm(forms.ModelForm):
 
 class LitterAdmin(BaseAdmin):
     list_display = ['descriptive_name', 'breeding_pair', 'birth_date']
+    list_select_related = ('breeding_pair',)
     fields = ['line', 'descriptive_name',
               'breeding_pair', 'birth_date',
               'description',
