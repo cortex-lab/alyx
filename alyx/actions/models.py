@@ -171,10 +171,17 @@ class Session(BaseAction):
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        help_text="Hierarchical parent to this session")
+    project = models.ForeignKey('subjects.Project', null=True, blank=True)
     type = models.CharField(max_length=255, null=True, blank=True,
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,
                                  help_text="Optional session number for this level")
+
+    def save(self, *args, **kwargs):
+        # Default project is the subject's project.
+        if not self.project_id:
+            self.project = self.subject.projects.first()
+        return super(Session, self).save(*args, **kwargs)
 
     def __str__(self):
         return "Session %s for %s" % (self.subject, str(self.pk)[:8])

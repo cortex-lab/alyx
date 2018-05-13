@@ -373,7 +373,7 @@ class SessionAdmin(BaseActionAdmin):
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     inlines = [NoteInline]
-    fields = BaseActionAdmin.fields + ['type', 'number']
+    fields = BaseActionAdmin.fields + ['project', 'type', 'number']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
