@@ -56,5 +56,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     Lists all users with the subjects which they are responsible for.
     """
     queryset = User.objects.all()
+    queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'

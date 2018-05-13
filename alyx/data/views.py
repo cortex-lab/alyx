@@ -118,6 +118,7 @@ class DatasetFilter(FilterSet):
 
 class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
+    queryset = DatasetSerializer.setup_eager_loading(queryset)
     serializer_class = DatasetSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = DatasetFilter
@@ -134,6 +135,7 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class FileRecordList(generics.ListCreateAPIView):
     queryset = FileRecord.objects.all()
+    queryset = FileRecordSerializer.setup_eager_loading(queryset)
     serializer_class = FileRecordSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_fields = ('exists', 'dataset')

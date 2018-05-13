@@ -108,6 +108,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     List and create sessions - view in summary form
     """
     queryset = Session.objects.all()
+    queryset = SessionListSerializer.setup_eager_loading(queryset)
     serializer_class = SessionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SessionFilter

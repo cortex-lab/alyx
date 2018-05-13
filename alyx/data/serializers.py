@@ -65,6 +65,12 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False, slug_field='name',
         queryset=DataRepository.objects.all())
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('dataset', 'data_repository')
+        return queryset
+
     class Meta:
         model = FileRecord
         fields = ('__all__')
@@ -125,6 +131,16 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     date = serializers.DateField(required=False)
 
     number = serializers.IntegerField(required=False)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related(
+            'created_by', 'dataset_type', 'data_format', 'timescale', 'session',
+            'session__subject')
+        queryset = queryset.prefetch_related(
+            'file_records', 'file_records__data_repository')
+        return queryset
 
     def get_experiment_number(self, obj):
         return obj.session.number if obj and obj.session else None

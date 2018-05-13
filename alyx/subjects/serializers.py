@@ -90,8 +90,9 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('responsible_user', 'species', 'strain',
-                                           'line', 'litter')
+        queryset = queryset.select_related(
+            'responsible_user', 'species', 'strain', 'line', 'litter')
+        queryset = queryset.prefetch_related('zygosity_set', 'zygosity_set__allele')
         return queryset
 
     class Meta:
