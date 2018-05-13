@@ -14,7 +14,7 @@ class APIDataTests(BaseTests):
         # Create some static data.
         self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
         self.client.post(reverse('datarepository-list'), {'name': 'dr', 'dns': 'dns'})
-        self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '-'})
+        self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
         self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
 
         self.subject = self.client.get(reverse('subject-list')).data[0]['nickname']
@@ -42,7 +42,7 @@ class APIDataTests(BaseTests):
     def test_datarepository(self):
         r = self.client.get(reverse('datarepository-list'))
         self.ar(r)
-        self.assertEqual(r.data[0]['name'], 'dr')
+        self.assertEqual(r.data[-1]['name'], 'dr')
 
         r = self.client.get(reverse('datarepository-detail', kwargs={'name': 'dr'}))
         self.ar(r)
@@ -51,7 +51,9 @@ class APIDataTests(BaseTests):
     def test_datasettype(self):
         r = self.client.get(reverse('datasettype-list'))
         self.ar(r)
-        self.assertEqual(r.data[0]['name'], 'dst')
+        d = next((_ for _ in r.data if _['name'] == 'dst'), None)
+        self.assertTrue(d is not None)
+        self.assertEqual(d['name'], 'dst')
 
         r = self.client.get(reverse('datasettype-detail', kwargs={'name': 'dst'}))
         self.ar(r)
@@ -60,7 +62,9 @@ class APIDataTests(BaseTests):
     def test_dataformat(self):
         r = self.client.get(reverse('dataformat-list'))
         self.ar(r)
-        self.assertEqual(r.data[0]['name'], 'df')
+        d = next((_ for _ in r.data if _['name'] == 'df'), None)
+        self.assertTrue(d is not None)
+        self.assertEqual(d['name'], 'df')
 
         r = self.client.get(reverse('dataformat-detail', kwargs={'name': 'df'}))
         self.ar(r)
