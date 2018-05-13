@@ -92,3 +92,23 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         for user in self.users:  # test with different users
             self.request.user = user
             self._test_list_change(self.site._registry[cls])
+
+    def test_history(self):
+        from subjects.models import Subject, _has_field_changed
+
+        s = Subject.objects.first()
+
+        # Change the nickname.
+        old_nickname = s.nickname
+        s.nickname = 'new_nickname'
+        s.save()
+
+        self.assertEqual(s.json['history']['nickname'][-1]['value'], old_nickname)
+
+        self.assertTrue(_has_field_changed(s, 'nickname'))
+        self.assertFalse(_has_field_changed(s, 'death_date'))
+
+        self.assertTrue(s.responsible_user is not None)
+        self.assertFalse(_has_field_changed(s, 'responsible_user'))
+        s.responsible_user = User.objects.last()
+        self.assertTrue(_has_field_changed(s, 'responsible_user'))

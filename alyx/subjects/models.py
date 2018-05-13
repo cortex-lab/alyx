@@ -5,7 +5,6 @@ import urllib
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import validators
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -28,17 +27,28 @@ DEFAULT_RESPONSIBLE_USER_ID = 5
 # Subject
 # ------------------------------------------------------------------------------------------------
 
+def _is_foreign_key(obj, field):
+    return hasattr(obj, field + '_id')
+
+
+def _get_current_field(obj, field):
+    if _is_foreign_key(obj, field):
+        return getattr(obj, field + '_id', None)
+    else:
+        return str(getattr(obj, field, None))
+
+
 def init_old_fields(obj, fields):
     obj._original_fields = getattr(obj, '_original_fields', {})
     for field in fields:
-        obj._original_fields[field] = str(getattr(obj, field)) if hasattr(obj, field) else None
+        obj._original_fields[field] = _get_current_field(obj, field)
 
 
 def save_old_fields(obj, fields):
     date_time = datetime.now(timezone.utc).isoformat()
     d = (getattr(obj, 'json', None) or {}).get('history', {})
     for field in fields:
-        v = str(getattr(obj, field)) if hasattr(obj, field) else None
+        v = _get_current_field(obj, field)
         if v is None or v == obj._original_fields.get(field, None):
             continue
         if field not in d:
@@ -46,13 +56,23 @@ def save_old_fields(obj, fields):
         l = d[field]
         l.append({'date_time': date_time, 'value': obj._original_fields[field]})
         # Update the new value.
-        obj._original_fields[field] = v
+        # obj._original_fields[field] = v
         # Set the object's JSON if necessary.
         if not obj.json:
             obj.json = {}
         if 'history' not in obj.json:
             obj.json['history'] = {}
         obj.json['history'].update(d)
+
+
+def _get_old_field(obj, field):
+    return obj._original_fields.get(field, None)
+
+
+def _has_field_changed(obj, field):
+    current = _get_current_field(obj, field)
+    original = _get_old_field(obj, field)
+    return current != original
 
 
 class SubjectManager(models.Manager):
@@ -164,25 +184,16 @@ class Subject(BaseModel):
 
     # We save the history of these fields.
     _fields_history = ('nickname', 'responsible_user', 'lamis_cage')
+    # We track the changes of these fields without saving their history in the JSON.
+    _track_field_changes = ('request', 'litter', 'genotype_date', 'death_date', 'reduced')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
-        # Used to detect when the request has changed.
-        self._original_request = self.request
-        self._original_nickname = self.nickname
-        self._original_litter = self.litter
-        self._original_genotype_date = self.genotype_date
-        self._original_death_date = self.death_date
-        self._original_reduced = self.reduced
-        try:
-            self._original_responsible_user = self.responsible_user
-        except ObjectDoesNotExist:
-            self._original_responsible_user = None
         # Initialize the history of some fields.
-        init_old_fields(self, self._fields_history)
+        init_old_fields(self, self._fields_history + self._track_field_changes)
 
     def alive(self):
         return self.death_date is None
@@ -237,13 +248,13 @@ class Subject(BaseModel):
         if self.line and not self.strain:
             self.strain = self.line.strain
         # Update the zygosities when the subject is assigned a litter.
-        if self.litter and not self._original_litter:
+        if self.litter_id and not _get_old_field(self, 'litter'):
             ZygosityFinder().genotype_from_litter(self)
         # Remove "to be genotyped" if genotype date is set.
-        if self.genotype_date and not self._original_genotype_date:
+        if self.genotype_date and not _get_old_field(self, 'genotype_date'):
             self.to_be_genotyped = False
         # When a subject dies.
-        if self.death_date and not self._original_death_date:
+        if self.death_date and not _get_old_field('death_date'):
             # Close all water restrictions without an end date.
             for wr in WaterRestriction.objects.filter(subject=self,
                                                       start_time__isnull=False,
@@ -251,11 +262,10 @@ class Subject(BaseModel):
                 wr.end_time = self.death_date
                 wr.save()
         # Save the reduced date.
-        if self.reduced and self.reduced != self._original_reduced:
+        if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = timezone.now().date()
         # Update subject request.
-        if (self.responsible_user and
-                self.responsible_user != self._original_responsible_user and
+        if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
                 self.request is None):
             srs = SubjectRequest.objects.filter(user=self.responsible_user,
@@ -318,7 +328,8 @@ def send_subject_request_mail_change(sender, instance=None, **kwargs):
     if not instance:
         return
     # Only continue if the request has changed.
-    if not (instance._original_request is None and instance.request is not None):
+    if not (_get_current_field(instance, 'request') is not None and
+            _get_old_field(instance, 'request') is None):
         return
     # Only continue if there's an email.
     if not instance.responsible_user.email:
@@ -334,14 +345,14 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     if not instance:
         return
     # Only continue if the request has changed.
-    if instance.responsible_user == instance._original_responsible_user:
+    if not _has_field_changed(instance, 'responsible_user'):
         return
     # Only continue if there's an email.
     if not instance.responsible_user.email:
         return
     logger.info("Subject %s was assigned from %s to %s.",
                 instance,
-                instance._original_responsible_user,
+                _get_old_field(instance, 'responsible_user'),
                 instance.responsible_user,
                 )
     subject = "Subject %s was assigned to you" % instance.nickname
