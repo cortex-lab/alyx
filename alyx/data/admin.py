@@ -76,6 +76,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     readonly_fields = ['name_', 'session_ro']
     list_display = ['name_', 'dataset_type', 'session',
                     'created_by', 'created_datetime']
+    list_select_related = ('dataset_type', 'session', 'session__subject', 'created_by')
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
@@ -98,6 +99,7 @@ class FileRecordAdmin(BaseAdmin):
     fields = ('relative_path', 'data_repository', 'dataset', 'exists')
     list_display = ('relative_path', 'repository', 'dataset_name',
                     'user', 'datetime', 'exists')
+    list_select_related = ('data_repository', 'dataset', 'dataset__created_by')
     readonly_fields = ('dataset', 'dataset_name', 'repository', 'user', 'datetime')
     list_filter = ('exists', 'data_repository__name')
     search_fields = ('dataset__created_by__username', 'dataset__name',
