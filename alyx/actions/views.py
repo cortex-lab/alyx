@@ -3,7 +3,7 @@ from datetime import timedelta
 import itertools
 from operator import itemgetter
 
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.views.generic.list import ListView
@@ -97,6 +97,15 @@ class SessionFilter(FilterSet):
     starts_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
     ends_before = django_filters.CharFilter(name='start_time__date', lookup_expr=('lte'))
     ends_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
+    dataset_types = django_filters.CharFilter(name='dataset_types', method='filter_dataset_types')
+
+    def filter_dataset_types(self, queryset, name, value):
+        types = value.split(',')
+        queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=types)
+        queryset = queryset.annotate(
+            dtypes_count=Count('data_dataset_session_related__dataset_type'))
+        queryset = queryset.filter(dtypes_count__gte=len(types))
+        return queryset
 
     class Meta:
         model = Session
