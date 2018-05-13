@@ -361,6 +361,7 @@ class DatasetInline(BaseInlineAdmin):
 
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'project_list', 'location', 'user_list']
+    list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     inlines = [NoteInline]
     fields = BaseActionAdmin.fields + ['type', 'number']
@@ -371,6 +372,10 @@ class SessionAdmin(BaseActionAdmin):
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
     inlines = [DatasetInline]
+
+    def get_queryset(self, request):
+        return super(SessionAdmin, self).get_queryset(request).prefetch_related(
+            'subject__projects', 'users')
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
