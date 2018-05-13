@@ -229,7 +229,7 @@ class Subject(BaseModel):
         return last_water_restriction(self, today())
 
     def zygosity_strings(self):
-        return (str(z) for z in Zygosity.objects.filter(subject__id=self.id))
+        return list(map(str, self.zygosity_set.all()))
 
     def is_negative(self):
         """Genotype is -/- for all genes."""

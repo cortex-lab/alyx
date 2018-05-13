@@ -291,10 +291,11 @@ class SubjectAdmin(BaseAdmin):
 
     list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
                     'breeding_pair_l', 'line_l', 'litter_l',
-                    'genotype_l', 'zygosities',
+                    'zygosities',
                     'alive', 'responsible_user',
                     'lamis_cage', 'description'
                     ]
+    list_select_related = ('line', 'litter', 'litter__breeding_pair', 'responsible_user')
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
@@ -359,8 +360,7 @@ class SubjectAdmin(BaseAdmin):
     line_l.short_description = 'line'
 
     def zygosities(self, obj):
-        genotype = Zygosity.objects.filter(subject=obj)
-        return '; '.join(map(str, genotype))
+        return '; '.join(obj.zygosity_strings())
 
     def reference_weighing_f(self, obj):
         res = water.reference_weighing(obj)
@@ -393,6 +393,9 @@ class SubjectAdmin(BaseAdmin):
 
     def lamis_cage_changes(self, obj):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'lamis_cage')))
+
+    def get_queryset(self, request):
+        return super(SubjectAdmin, self).get_queryset(request).prefetch_related('zygosity_set')
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
