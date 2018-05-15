@@ -25,7 +25,10 @@ admin.site.site_header = 'Alyx'
 
 urlpatterns = [
     url(r'^$', mv.api_root),
-    url(r'^docs/', include_docs_urls(title='Alyx REST API documentation')),
+
+    # Built-in docs:
+    # url(r'^docs/', include_docs_urls(title='Alyx REST API documentation')),
+    url(r'^docs/', include('rest_framework_docs.urls')),
 
     url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^auth-token', authv.obtain_auth_token),
