@@ -117,8 +117,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Alyx'
-copyright = '2016, Max Hunter, Chris Burgess, Kenneth Harris'
-author = 'Maximilian L. D. Hunter, Christopher P. Burgess, Kenneth D. Harris'
+copyright = '2018, Cyrille Rossant, Max Hunter, Chris Burgess, Kenneth Harris'
+author = 'Cyrille Rossant, Maximilian L. D. Hunter, Christopher P. Burgess, Kenneth D. Harris'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -296,7 +296,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'Alyx.tex', 'Alyx Documentation',
-     'Max Hunter, Chris Burgess, Kenneth Harris', 'manual'),
+     'Cyrille Rossant, Max Hunter, Chris Burgess, Kenneth Harris', 'manual'),
 ]
 
 latex_elements = { 'classoptions': ',openany,oneside', 'babel' : '\\usepackage[english]{babel}' }
@@ -427,5 +427,3 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
-
-
