@@ -157,13 +157,17 @@ def globus_file_exists(file_record):
     return False
 
 
+def _filename_matches_pattern(filename, pattern):
+    reg = pattern.replace('.', r'\.').replace('*', r'.+')
+    return re.match(reg, filename, re.IGNORECASE)
+
+
 def _get_dataset_type(filename):
     dataset_types = []
     for dt in DatasetType.objects.filter(filename_pattern__isnull=False):
         if not dt.filename_pattern.strip():
             continue
-        reg = dt.filename_pattern.replace('.', r'\.').replace('*', r'.+')
-        if re.match(reg, filename, re.IGNORECASE):
+        if _filename_matches_pattern(filename, dt.filename_pattern):
             dataset_types.append(dt)
     n = len(dataset_types)
     if n == 0:
