@@ -1,5 +1,6 @@
 Motivation
 =====================================
+
 Previous standardisation efforts, as well as current data organisation methods used in laboratories, have several drawbacks. Most recently, the `Neurodata Without Borders`_ project has worked to standardise a format for all experimental neurophysiology data. Alyx builds on this work and adds a number of key advantages:
 
 .. _Neurodata Without Borders: https://neurodatawithoutborders.github.io/

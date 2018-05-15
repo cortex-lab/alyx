@@ -2,13 +2,6 @@ List of models
 ==================
 These models generally correspond one-to-one with tables in the database.
 
-Coordinate transforms
--------------------
-.. automodule:: misc.models
-   :member-order: bysource
-   :show-inheritance:
-   :members:
-
 Subjects
 -------------------
 .. automodule:: subjects.models
@@ -23,16 +16,16 @@ Actions
    :show-inheritance:
    :members:
 
-Equipment
+Data
 -------------------
-.. automodule:: equipment.models
+.. automodule:: data.models
    :member-order: bysource
    :show-inheritance:
    :members:
 
-Data
+Equipment
 -------------------
-.. automodule:: data.models
+.. automodule:: equipment.models
    :member-order: bysource
    :show-inheritance:
    :members:
@@ -54,6 +47,13 @@ Electrophysiology
 Imaging
 -------------------
 .. automodule:: imaging.models
+   :member-order: bysource
+   :show-inheritance:
+   :members:
+
+Coordinate transforms
+-------------------
+.. automodule:: misc.models
    :member-order: bysource
    :show-inheritance:
    :members:
