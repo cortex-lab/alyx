@@ -17,7 +17,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
         self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
 
-        self.subject = self.client.get(reverse('subject-list')).data[0]['nickname']
+        self.subject = self.client.get(reverse('subject-list')).data['results'][0]['nickname']
 
         # Create a session and base session.
         date = '2018-01-01T12:00'
@@ -33,7 +33,7 @@ class APIDataTests(BaseTests):
     def test_datarepositorytype(self):
         r = self.client.get(reverse('datarepositorytype-list'))
         self.ar(r)
-        self.assertEqual(r.data[0]['name'], 'drt')
+        self.assertEqual(r.data['results'][0]['name'], 'drt')
 
         r = self.client.get(reverse('datarepositorytype-detail', kwargs={'name': 'drt'}))
         self.ar(r)
@@ -42,7 +42,7 @@ class APIDataTests(BaseTests):
     def test_datarepository(self):
         r = self.client.get(reverse('datarepository-list'))
         self.ar(r)
-        self.assertEqual(r.data[-1]['name'], 'dr')
+        self.assertEqual(r.data['results'][-1]['name'], 'dr')
 
         r = self.client.get(reverse('datarepository-detail', kwargs={'name': 'dr'}))
         self.ar(r)
@@ -51,7 +51,7 @@ class APIDataTests(BaseTests):
     def test_datasettype(self):
         r = self.client.get(reverse('datasettype-list'))
         self.ar(r)
-        d = next((_ for _ in r.data if _['name'] == 'dst'), None)
+        d = next((_ for _ in r.data['results'] if _['name'] == 'dst'), None)
         self.assertTrue(d is not None)
         self.assertEqual(d['name'], 'dst')
 
@@ -62,7 +62,7 @@ class APIDataTests(BaseTests):
     def test_dataformat(self):
         r = self.client.get(reverse('dataformat-list'))
         self.ar(r)
-        d = next((_ for _ in r.data if _['name'] == 'df'), None)
+        d = next((_ for _ in r.data['results'] if _['name'] == 'df'), None)
         self.assertTrue(d is not None)
         self.assertEqual(d['name'], 'df')
 
@@ -81,16 +81,16 @@ class APIDataTests(BaseTests):
 
         r = self.client.get(reverse('dataset-list'))
         self.ar(r)
-        self.assertTrue(r.data[0]['url'] is not None)
+        self.assertTrue(r.data['results'][0]['url'] is not None)
         # Test using the returned URL.
-        self.assertEqual(self.client.get(r.data[0]['url']).data['name'], 'mydataset')
-        self.assertTrue(r.data[0]['created_datetime'] is not None)
-        self.assertEqual(r.data[0]['name'], 'mydataset')
-        self.assertEqual(r.data[0]['dataset_type'], 'dst')
-        self.assertEqual(r.data[0]['created_by'], 'test')
+        self.assertEqual(self.client.get(r.data['results'][0]['url']).data['name'], 'mydataset')
+        self.assertTrue(r.data['results'][0]['created_datetime'] is not None)
+        self.assertEqual(r.data['results'][0]['name'], 'mydataset')
+        self.assertEqual(r.data['results'][0]['dataset_type'], 'dst')
+        self.assertEqual(r.data['results'][0]['created_by'], 'test')
 
         # Create a file record.
-        dataset = r.data[0]['url']
+        dataset = r.data['results'][0]['url']
         data = {'dataset': dataset,
                 'data_repository': 'dr',
                 'relative_path': 'path/to/file',
@@ -100,12 +100,13 @@ class APIDataTests(BaseTests):
 
         r = self.client.get(reverse('filerecord-list'))
         self.ar(r)
-        self.assertTrue(r.data[0]['url'] is not None)
+        self.assertTrue(r.data['results'][0]['url'] is not None)
         # Test using the returned URL.
-        self.assertEqual(self.client.get(r.data[0]['url']).data['relative_path'], 'path/to/file')
-        self.assertEqual(r.data[0]['dataset'], dataset)
-        self.assertEqual(r.data[0]['data_repository'], 'dr')
-        self.assertEqual(r.data[0]['relative_path'], 'path/to/file')
+        self.assertEqual(self.client.get(r.data['results'][0]['url']).data['relative_path'],
+                         'path/to/file')
+        self.assertEqual(r.data['results'][0]['dataset'], dataset)
+        self.assertEqual(r.data['results'][0]['data_repository'], 'dr')
+        self.assertEqual(r.data['results'][0]['relative_path'], 'path/to/file')
 
     def test_dataset(self):
         data = {

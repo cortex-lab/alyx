@@ -39,7 +39,7 @@ class APIActionsTests(BaseTests):
         url = reverse('water-administration-create')
         response = self.client.get(url)
         self.ar(response)
-        d = response.data[0]
+        d = response.data['results'][0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
                              'water_administered', 'hydrogel')) <= set(d))
 
@@ -47,7 +47,7 @@ class APIActionsTests(BaseTests):
         url = reverse('weighing-create')
         response = self.client.get(url)
         self.ar(response)
-        d = response.data[0]
+        d = response.data['results'][0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
 
     def test_water_requirement(self):
