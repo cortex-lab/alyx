@@ -198,6 +198,10 @@ class DatasetType(BaseModel):
         for fr in FileRecord.objects.exclude(dataset__dataset_type__name=self.name):
             filename = op.basename(fr.relative_path)
             if _filename_matches_pattern(filename, self.filename_pattern):
+                # Override the dataset's type ?
+                # fr.dataset.dataset_type = self
+                # fr.dataset.save()
+                # Raise an error.
                 raise ValidationError(
                     "The dataset type %s with filename pattern %s matches %s" % (
                         self.name, self.filename_pattern, fr.dataset))
@@ -251,6 +255,13 @@ def default_data_format():
     return DataFormat.objects.get(name='unknown').pk
 
 
+class DatasetManager(models.Manager):
+    def get_queryset(self):
+        qs = super(DatasetManager, self).get_queryset()
+        qs = qs.select_related('dataset_type', 'data_format')
+        return qs
+
+
 class Dataset(BaseExperimentalData):
     """
     A chunk of data that is stored outside the database, most often a rectangular binary array.
@@ -259,6 +270,8 @@ class Dataset(BaseExperimentalData):
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
     """
+    objects = DatasetManager()
+
     name = models.CharField(max_length=255)
 
     md5 = models.UUIDField(blank=True, null=True,
@@ -277,6 +290,12 @@ class Dataset(BaseExperimentalData):
         on_delete=models.CASCADE,
         help_text="Associated time scale (for time series datasets only).")
 
+    def data_url(self):
+        records = self.file_records.all()
+        records = [r for r in records if r.data_repository.data_url and r.exists]
+        if records:
+            return records[0].data_url()
+
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
         return "<Dataset %s %s '%s' by %s on %s>" % (
@@ -287,11 +306,20 @@ class Dataset(BaseExperimentalData):
 # Files
 # ------------------------------------------------------------------------------------------------
 
+class FileRecordManager(models.Manager):
+    def get_queryset(self):
+        qs = super(FileRecordManager, self).get_queryset()
+        qs = qs.select_related('data_repository')
+        return qs
+
+
 class FileRecord(BaseModel):
     """
     A single file on disk or tape. Normally specified by a path within an archive. If required,
     more details can be in the JSON
     """
+
+    objects = FileRecordManager()
 
     dataset = models.ForeignKey(Dataset, related_name='file_records', on_delete=models.CASCADE)
 
@@ -312,7 +340,8 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        return root + self.relative_path
+        from data.transfers import _add_uuid_to_filename
+        return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
 
     def __str__(self):
         return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
