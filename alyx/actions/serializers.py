@@ -72,7 +72,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = ('id', 'name', 'dataset_type', 'data_format', 'url')
+        fields = ('id', 'name', 'dataset_type', 'data_url', 'data_format', 'url')
 
 
 class SessionListSerializer(BaseActionSerializer):
@@ -84,9 +84,13 @@ class SessionListSerializer(BaseActionSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related('subject', 'location', 'parent_session')
         queryset = queryset.prefetch_related(
-            'users', 'procedures', 'data_dataset_session_related',
+            'users', 'procedures',
+            'data_dataset_session_related',
             'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__data_format')
+            'data_dataset_session_related__data_format',
+            'data_dataset_session_related__file_records',
+            'data_dataset_session_related__file_records__data_repository',
+        )
         return queryset
 
     class Meta:
