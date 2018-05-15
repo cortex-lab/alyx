@@ -1,7 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 from rest_framework.authtoken import views as authv
-from rest_framework.documentation import include_docs_urls
 
 from subjects import views as sv
 from actions import views as av
