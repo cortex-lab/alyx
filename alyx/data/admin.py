@@ -49,6 +49,7 @@ class DatasetTypeAdmin(BaseAdmin):
     fields = ('name', 'description', 'filename_pattern', 'created_by')
     list_display = fields
     ordering = ('name',)
+    search_fields = ('name', 'description', 'filename_pattern', 'created_by__username')
     list_filter = [('created_by', RelatedDropdownFilter)]
 
     def save_model(self, request, obj, form, change):
