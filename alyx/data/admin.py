@@ -52,6 +52,11 @@ class DatasetTypeAdmin(BaseAdmin):
     search_fields = ('name', 'description', 'filename_pattern', 'created_by__username')
     list_filter = [('created_by', RelatedDropdownFilter)]
 
+    def get_queryset(self, request):
+        qs = super(DatasetTypeAdmin, self).get_queryset(request)
+        qs = qs.select_related('created_by')
+        return qs
+
     def save_model(self, request, obj, form, change):
         if not obj.created_by and 'created_by' not in form.changed_data:
             obj.created_by = request.user
@@ -75,9 +80,8 @@ class FileRecordInline(BaseInlineAdmin):
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', 'dataset_type', 'md5', 'session_ro']
     readonly_fields = ['name_', 'session_ro']
-    list_display = ['name_', 'dataset_type', 'session',
+    list_display = ['name_', 'subject', 'dataset_type_', 'session_ro',
                     'created_by', 'created_datetime']
-    list_select_related = ('dataset_type', 'session', 'session__subject', 'created_by')
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
@@ -87,6 +91,14 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
                      'dataset_type__name', 'dataset_type__filename_pattern')
     ordering = ('-created_datetime',)
 
+    def get_queryset(self, request):
+        qs = super(DatasetAdmin, self).get_queryset(request)
+        qs = qs.select_related('dataset_type', 'session', 'session__subject', 'created_by')
+        return qs
+
+    def dataset_type_(self, obj):
+        return obj.dataset_type.name
+
     def name_(self, obj):
         return obj.name or '<unnamed>'
 
@@ -95,17 +107,24 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.session)
     session_ro.short_description = 'session'
 
+    def subject(self, obj):
+        return obj.session.subject.nickname
+
 
 class FileRecordAdmin(BaseAdmin):
     fields = ('relative_path', 'data_repository', 'dataset', 'exists')
     list_display = ('relative_path', 'repository', 'dataset_name',
                     'user', 'datetime', 'exists')
-    list_select_related = ('data_repository', 'dataset', 'dataset__created_by')
     readonly_fields = ('dataset', 'dataset_name', 'repository', 'user', 'datetime')
     list_filter = ('exists', 'data_repository__name')
     search_fields = ('dataset__created_by__username', 'dataset__name',
                      'relative_path', 'data_repository__name')
     ordering = ('-dataset__created_datetime',)
+
+    def get_queryset(self, request):
+        qs = super(FileRecordAdmin, self).get_queryset(request)
+        qs = qs.select_related('data_repository', 'dataset', 'dataset__created_by')
+        return qs
 
     def repository(self, obj):
         return getattr(obj.data_repository, 'name', None)
