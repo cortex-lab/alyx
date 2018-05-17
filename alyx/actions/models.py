@@ -184,7 +184,7 @@ class Session(BaseAction):
         return super(Session, self).save(*args, **kwargs)
 
     def __str__(self):
-        return "Session %s for %s" % (self.subject, str(self.pk)[:8])
+        return "Session %s for %s" % (str(self.pk)[:8], self.subject)
 
 
 class WaterRestriction(BaseAction):
