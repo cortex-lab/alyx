@@ -158,13 +158,15 @@ def globus_file_exists(file_record):
 
 
 def _filename_matches_pattern(filename, pattern):
-    reg = pattern.replace('.', r'\.').replace('*', r'.+')
+    filename = op.basename(filename)
+    reg = pattern.replace('.', r'\.').replace('_', r'\_').replace('*', r'.+')
     return re.match(reg, filename, re.IGNORECASE)
 
 
-def _get_dataset_type(filename):
+def get_dataset_type(filename, qs=None):
     dataset_types = []
-    for dt in DatasetType.objects.filter(filename_pattern__isnull=False):
+    qs = qs or DatasetType.objects.filter(filename_pattern__isnull=False)
+    for dt in qs:
         if not dt.filename_pattern.strip():
             continue
         if _filename_matches_pattern(filename, dt.filename_pattern):
@@ -199,7 +201,7 @@ def _create_dataset_file_records(
     assert session is not None
 
     relative_path = op.join(rel_dir_path, filename)
-    dataset_type = _get_dataset_type(filename)
+    dataset_type = get_dataset_type(filename)
     data_format = _get_data_format(filename)
     assert dataset_type
     assert data_format

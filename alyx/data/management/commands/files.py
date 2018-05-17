@@ -2,7 +2,7 @@ import logging
 from django.core.management import BaseCommand
 
 from data import transfers
-from data.models import Dataset, DataRepository, FileRecord
+from data.models import Dataset, DatasetType, DataRepository, FileRecord
 
 
 logging.getLogger(__name__).setLevel(logging.INFO)
@@ -76,20 +76,27 @@ class Command(BaseCommand):
                         transfers.start_globus_transfer(
                             transfer['source_file_record'], transfer['destination_file_record'])
 
-        if action == 'clean':
-            fr = FileRecord.objects.filter(exists=False, data_repository__name='zserver')
-            fr = fr.exclude(dataset__session__subject__nickname='test')
-            fr = fr.order_by('dataset__created_by',
-                             'dataset__session__subject__nickname',
-                             'dataset__name',
-                             )
-            for f in fr:
-                print(f, end='')
-                if not dry:
-                    f.delete()
-                    print(': deleted!')
-                else:
-                    print('')
+        if action == 'migrate':
+            dr = DataRepository.objects.get(name='flatiron_cortexlab')
+            dr.data_url = 'http://ibl.flatironinstitute.org/cortexlab/Subjects/'
+            dr.save()
+
+            qs = DatasetType.objects.filter(filename_pattern__isnull=False)
+            dt = None
+            for d in FileRecord.objects.all().select_related('dataset'):
+                try:
+                    dt = transfers.get_dataset_type(d.relative_path, qs=qs)
+                except ValueError as e:
+                    print("Delete %s" % d.dataset)
+                    d.dataset.delete()
+                    dt = None
+                    continue
+                if d.dataset.dataset_type_id != dt.pk:
+                    print("Different dataset type for %s : old %s new %s" % (
+                        d.relative_path, d.dataset.dataset_type.name, dt.name))
+                    d.dataset.dataset_type_id = dt.pk
+                    d.dataset.save()
+                dt = None
 
         if action == 'normalize_relative_paths':
             for fr in FileRecord.objects.all():
