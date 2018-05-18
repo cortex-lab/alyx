@@ -13,20 +13,18 @@ class APISubjectsTests(BaseTests):
         url = reverse('subject-list')
         response = self.client.get(url)
         self.ar(response)
-        d = response.data['results']
-        self.assertTrue(len(d) > 50)
+        d = response.data
+        self.assertTrue(len(d) > 200)
         self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date',
-                             'line', 'litter', 'sex', 'genotype', 'url')) <=
-                        set(d[0]))
+                             'line', 'litter', 'sex', 'genotype', 'url')) <= set(d[0]))
 
     def test_list_alive_subjects(self):
         url = reverse('subject-list') + '?alive=True&stock=True'
         response = self.client.get(url)
         self.ar(response)
-        d = response.data['results']
-        self.assertTrue(len(d) > 50)
-        self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date')) <=
-                        set(d[0]))
+        d = response.data
+        self.assertTrue(len(d) > 200)
+        self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date')) <= set(d[0]))
 
         # also test that you can get some back when asking for non-stock
         url = reverse('subject-list') + '?alive=True&stock=False'
@@ -34,8 +32,7 @@ class APISubjectsTests(BaseTests):
         self.ar(response)
         d = response.data
         self.assertTrue(len(d) > 0)
-        self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date')) <=
-                        set(d['results'][0]))
+        self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date')) <= set(d[0]))
 
     def test_subject_1(self):
         # test the individual subject endpoint, i.e. when you ask for a subject by name
@@ -45,7 +42,7 @@ class APISubjectsTests(BaseTests):
         d = response.data
 
         # Ask for the first subject
-        response = self.client.get(d['results'][0]['url'])
+        response = self.client.get(d[0]['url'])
         self.ar(response)
         d = response.data
 
@@ -60,7 +57,7 @@ class APISubjectsTests(BaseTests):
         response = self.client.get(url)
         self.ar(response)
         d = response.data
-        self.assertEqual(d['results'][0]['name'], 'test_project')
+        self.assertEqual(d[0]['name'], 'test_project')
 
     def test_subject_water_administration(self):
         subject = WaterAdministration.objects.first().subject
@@ -90,7 +87,7 @@ class APISubjectsTests(BaseTests):
         url = reverse('water-restricted-subject-list')
         response = self.client.get(url)
         self.ar(response)
-        d = response.data['results']
+        d = response.data
 
         self.assertTrue(set(('nickname', 'water_requirement_total',
                              'water_requirement_remaining')) <= set(d[0]))
