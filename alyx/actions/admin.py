@@ -393,7 +393,10 @@ class SessionAdmin(BaseActionAdmin):
     user_list.short_description = 'users'
 
     def project_list(self, obj):
-        return ', '.join(map(str, obj.subject.projects.all()))
+        projects = list(obj.subject.projects.all())
+        if obj.project_id:
+            projects += [obj.project]
+        return ', '.join(p.name for p in projects)
     project_list.short_description = 'projects'
 
     def dataset_types(self, obj):
