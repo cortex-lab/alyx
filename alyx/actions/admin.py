@@ -369,7 +369,8 @@ class DatasetInline(BaseInlineAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'number', 'project_list', 'location', 'user_list']
+    list_display = ['subject_l', 'start_time', 'number', 'project_list',
+                    'dataset_types', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     inlines = [NoteInline]
@@ -384,13 +385,19 @@ class SessionAdmin(BaseActionAdmin):
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(
-            'subject__projects', 'users')
+            'subject__projects', 'users', 'data_dataset_session_related',
+            'data_dataset_session_related__dataset_type')
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
+    user_list.short_description = 'users'
 
     def project_list(self, obj):
         return ', '.join(map(str, obj.subject.projects.all()))
+    project_list.short_description = 'projects'
+
+    def dataset_types(self, obj):
+        return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
