@@ -1,6 +1,7 @@
 import logging
 from django.core.management import BaseCommand
 
+from actions.models import Session
 from data import transfers
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 
@@ -119,6 +120,28 @@ class Command(BaseCommand):
                         print(e)
                         continue
                     fr.save()
+
+        if action == 'create_file_records':
+            # Create missing file records for sessions that have been manually assigned
+            # to a project.
+            for s in Session.objects.select_related('project').prefetch_related(
+                    'data_dataset_session_related',
+                    'data_dataset_session_related__file_records',
+                    ).filter(project__isnull=False):  # noqa
+                # All repositories associated to the session's projects.
+                expected_repos = set(s.project.repositories.all())
+                # Going through the datasets.
+                for d in s.data_dataset_session_related.all():
+                    fr = d.file_records.first()
+                    # Find the repositories which do not have a FileRecord yet.
+                    actual_repos = set([fr.data_repository for fr in d.file_records.all()])
+                    repos_to_create = expected_repos - actual_repos
+                    # Create them.
+                    for dr in repos_to_create:
+                        fr = FileRecord.objects.create(dataset=fr.dataset,
+                                                       relative_path=fr.relative_path,
+                                                       data_repository=dr)
+                        print("Created %s" % fr)
 
         if action == 'autoregister':
             if not data_repository:
