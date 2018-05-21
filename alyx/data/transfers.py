@@ -265,6 +265,8 @@ def update_file_exists(dataset):
             logger.warn(
                 "File %s exists on %s in the database but not in globus.",
                 file.relative_path, file.data_repository.name)
+            file.exists = False
+            file.save()
         elif not file_exists_db and file_exists_globus:
             logger.info(
                 "File %s exists on %s, updating the database.",

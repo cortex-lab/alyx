@@ -88,8 +88,6 @@ class Command(BaseCommand):
                 try:
                     dt = transfers.get_dataset_type(d.relative_path, qs=qs)
                 except ValueError as e:
-                    print("Delete %s" % d.dataset)
-                    d.dataset.delete()
                     dt = None
                     continue
                 if d.dataset.dataset_type_id != dt.pk:
