@@ -251,6 +251,7 @@ class BaseAdmin(VersionAdmin):
 
 
 class BaseInlineAdmin(admin.TabularInline):
+    show_change_link = True
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 3,
