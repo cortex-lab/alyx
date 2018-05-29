@@ -17,10 +17,12 @@ def random_string():
 
 def update_data_instances(apps, schema_editor):
     DataFormat = apps.get_model("data", "DataFormat")
+    Dataset = apps.get_model("data", "Dataset")
     # Update the DataFormat file extension (only keep the extension).
     db_alias = schema_editor.connection.alias
     for df in DataFormat.objects.using(db_alias).all():
         if not df.filename_pattern:
+            Dataset.objects.filter(data_format=df).update(data_format=None)
             df.delete()
         assert df.name
         df.filename_pattern = os.path.splitext(df.filename_pattern)[-1]
@@ -37,6 +39,7 @@ def update_data_instances(apps, schema_editor):
         dst.parent_dataset_type = None
         dst.save()
         if not dst.filename_pattern or '.*.*' in dst.filename_pattern:
+            Dataset.objects.filter(dataset_type=dst).update(dataset_type=None)
             dst.delete()
 
     DatasetType.objects.using(db_alias).create(name='unknown', filename_pattern='-',
