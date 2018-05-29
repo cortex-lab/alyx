@@ -180,7 +180,7 @@ def get_dataset_type(filename, qs=None):
     return dataset_types[0]
 
 
-def _get_data_format(filename):
+def get_data_format(filename):
     file_extension = op.splitext(filename)[-1]
     # This raises an error if there is 0 or 2+ matching data formats.
     return DataFormat.objects.get(file_extension=file_extension)
@@ -202,7 +202,7 @@ def _create_dataset_file_records(
 
     relative_path = op.join(rel_dir_path, filename)
     dataset_type = get_dataset_type(filename)
-    data_format = _get_data_format(filename)
+    data_format = get_data_format(filename)
     assert dataset_type
     assert data_format
 
