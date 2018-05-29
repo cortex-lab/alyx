@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
+from rest_framework import permissions
 
 from .serializers import UserSerializer
 
@@ -59,3 +60,4 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'
+    permission_classes = (permissions.IsAuthenticated,)
