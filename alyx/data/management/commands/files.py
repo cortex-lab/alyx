@@ -20,6 +20,29 @@ def _iter_datasets(dataset_id=None, limit=None, user=None):
         yield dataset
 
 
+def _create_missing_file_records():
+    # Create missing file records for sessions that have been manually assigned
+    # to a project.
+    for s in Session.objects.select_related('project').prefetch_related(
+            'data_dataset_session_related',
+            'data_dataset_session_related__file_records',
+    ).filter(project__isnull=False):  # noqa
+        # All repositories associated to the session's projects.
+        expected_repos = set(s.project.repositories.all())
+        # Going through the datasets.
+        for d in s.data_dataset_session_related.all():
+            fr = d.file_records.first()
+            # Find the repositories which do not have a FileRecord yet.
+            actual_repos = set([fr.data_repository for fr in d.file_records.all()])
+            repos_to_create = expected_repos - actual_repos
+            # Create them.
+            for dr in repos_to_create:
+                fr = FileRecord.objects.create(dataset=fr.dataset,
+                                               relative_path=fr.relative_path,
+                                               data_repository=dr)
+                print("Created %s" % fr)
+
+
 class Command(BaseCommand):
     help = "Manage files"
 
@@ -46,6 +69,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Login successful."))
 
         if action == 'sync':
+            _create_missing_file_records()
+
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
                 self.stdout.write("Synchronizing file status of %s" % str(dataset))
                 if not dry:
@@ -118,28 +143,6 @@ class Command(BaseCommand):
                         print(e)
                         continue
                     fr.save()
-
-        if action == 'create_file_records':
-            # Create missing file records for sessions that have been manually assigned
-            # to a project.
-            for s in Session.objects.select_related('project').prefetch_related(
-                    'data_dataset_session_related',
-                    'data_dataset_session_related__file_records',
-                    ).filter(project__isnull=False):  # noqa
-                # All repositories associated to the session's projects.
-                expected_repos = set(s.project.repositories.all())
-                # Going through the datasets.
-                for d in s.data_dataset_session_related.all():
-                    fr = d.file_records.first()
-                    # Find the repositories which do not have a FileRecord yet.
-                    actual_repos = set([fr.data_repository for fr in d.file_records.all()])
-                    repos_to_create = expected_repos - actual_repos
-                    # Create them.
-                    for dr in repos_to_create:
-                        fr = FileRecord.objects.create(dataset=fr.dataset,
-                                                       relative_path=fr.relative_path,
-                                                       data_repository=dr)
-                        print("Created %s" % fr)
 
         if action == 'autoregister':
             if not data_repository:
