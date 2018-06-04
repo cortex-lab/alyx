@@ -27,7 +27,7 @@ class Weighing(BaseModel):
     user = models.ForeignKey(OrderedUser, null=True, blank=True, on_delete=models.SET_NULL,
                              help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
-                                on_delete=models.SET_NULL,
+                                on_delete=models.CASCADE,
                                 help_text="The subject which was weighed")
     date_time = models.DateTimeField(
         null=True, blank=True, default=timezone.now)
@@ -57,7 +57,7 @@ class WaterAdministration(BaseModel):
                              on_delete=models.SET_NULL,
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
-                                on_delete=models.SET_NULL,
+                                on_delete=models.CASCADE,
                                 related_name='water_administrations',
                                 help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
@@ -85,7 +85,7 @@ class BaseAction(BaseModel):
     users = models.ManyToManyField(OrderedUser, blank=True,
                                    help_text="The user(s) involved in this action")
     subject = models.ForeignKey('subjects.Subject',
-                                on_delete=models.SET_NULL,
+                                on_delete=models.CASCADE,
                                 related_name="%(app_label)s_%(class)ss",
                                 help_text="The subject on which this action was performed")
     location = models.ForeignKey(LabLocation, null=True, blank=True, on_delete=models.SET_NULL,

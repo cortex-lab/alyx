@@ -11,7 +11,7 @@ class ProbeInsertion(BaseModel):
     """
 
     extracellular_recording = models.ForeignKey('ExtracellularRecording',
-                                                on_delete=models.SET_NULL,
+                                                on_delete=models.CASCADE,
                                                 help_text="id of extracellular recording")
 
     entry_point_rl = models.FloatField(null=True, blank=True,
@@ -107,7 +107,7 @@ class RecordingSite(BaseBrainLocation):
     """
 
     probe_insertion = models.ForeignKey(
-        ProbeInsertion, on_delete=models.SET_NULL, help_text="id of probe insertion")
+        ProbeInsertion, on_delete=models.CASCADE, help_text="id of probe insertion")
 
     site_no = models.IntegerField(help_text="which site on the probe")
 
@@ -190,11 +190,11 @@ class SpikeSorting(Dataset):
     """
 
     extracellular_recording = models.ForeignKey(ExtracellularRecording,
-                                                on_delete=models.SET_NULL,
+                                                on_delete=models.CASCADE,
                                                 related_name='spike_sorting_recording')
 
     probe_insertion = models.ForeignKey(ExtracellularRecording,
-                                        on_delete=models.SET_NULL,
+                                        on_delete=models.CASCADE,
                                         related_name='spike_sorting_probe')
 
 

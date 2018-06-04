@@ -110,7 +110,7 @@ class Appliance(BasePolymorphicModel):
     location = models.ForeignKey(
         'LabLocation', null=True, blank=True, on_delete=models.SET_NULL,
         help_text="The physical location of the appliance.")
-    equipment_model = models.ForeignKey('EquipmentModel', on_delete=models.SET_NULL)
+    equipment_model = models.ForeignKey('EquipmentModel', on_delete=models.CASCADE)
     serial = models.CharField(max_length=255, blank=True,
                               help_text="The serial number of the appliance.")
     description = models.TextField(blank=True)
