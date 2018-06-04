@@ -1,8 +1,8 @@
-django==1.11
+django
 coreapi
-psycopg2
+psycopg2-binary
 drfdocs
-django-polymorphic==1.3
+django-polymorphic
 djangorestframework
 django-autocomplete-light
 django-filter
@@ -11,9 +11,7 @@ django-test-without-migrations
 django-admin-rangefilter
 flake8
 colorlog
-git+http://github.com/mrts/django-admin-list-filter-dropdown.git
-git+https://github.com/burnash/gspread.git
-git+https://github.com/google/oauth2client.git
+django-admin-list-filter-dropdown
 globus-cli
 globus-sdk
 markdown
