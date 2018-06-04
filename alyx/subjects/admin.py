@@ -386,6 +386,8 @@ class SubjectAdmin(BaseAdmin):
     water_requirement_remaining_f.short_description = 'water requirement remaining'
 
     def weighing_plot(self, obj):
+        if not obj or not obj.id:
+            return
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
         url_h = reverse('water-history', kwargs={'subject_id': obj.id})
         return format_html('<img src="{url}" /><br /><a href="{url_h}">Water history</a>',
