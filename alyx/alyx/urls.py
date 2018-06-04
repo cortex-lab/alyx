@@ -1,6 +1,8 @@
-from django.conf.urls import include, url
+from django.conf.urls import include
+from django.urls import path
 from django.contrib import admin
 from rest_framework.authtoken import views as authv
+from rest_framework.documentation import include_docs_urls
 
 from subjects import views as sv
 from actions import views as av
@@ -23,130 +25,125 @@ user_detail = mv.UserViewSet.as_view({
 admin.site.site_header = 'Alyx'
 
 urlpatterns = [
-    url(r'^$', mv.api_root),
+    path('', mv.api_root),
+    path('docs/', include_docs_urls(title='Alyx REST API documentation')),
 
-    # Built-in docs:
-    # url(r'^docs/', include_docs_urls(title='Alyx REST API documentation')),
-    url(r'^docs/', include('rest_framework_docs.urls')),
-
-    url(r'^auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^auth-token', authv.obtain_auth_token),
+    path('auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('auth-token', authv.obtain_auth_token),
 
 
-    url(r'^weighings$', av.WeighingAPIListCreate.as_view(),
-        name="weighing-create"),
+    path('weighings', av.WeighingAPIListCreate.as_view(),
+         name="weighing-create"),
 
-    url(r'^weighings/(?P<pk>[-_\w].+)$', av.WeighingAPIDetail.as_view(),
-        name="weighing-detail"),
-
-
-    url(r'^water-administrations$', av.WaterAdministrationAPIListCreate.as_view(),
-        name="water-administration-create"),
-
-    url(r'^water-administrations/(?P<pk>[-_\w].+)$', av.WaterAdministrationAPIDetail.as_view(),
-        name="water-administration-detail"),
+    path('weighings/<uuid:pk>', av.WeighingAPIDetail.as_view(),
+         name="weighing-detail"),
 
 
-    url(r'^subjects$', sv.SubjectList.as_view(),
-        name="subject-list"),
+    path('water-administrations', av.WaterAdministrationAPIListCreate.as_view(),
+         name="water-administration-create"),
 
-    url(r'^subjects/(?P<nickname>[-._~\w]+)$', sv.SubjectDetail.as_view(),
-        name="subject-detail"),
-
-
-    url(r'^projects$', sv.ProjectList.as_view(),
-        name="project-list"),
-
-    url(r'^projects/(?P<name>[-_\w].*)$', sv.ProjectDetail.as_view(),
-        name="project-detail"),
+    path('water-administrations/<uuid:pk>', av.WaterAdministrationAPIDetail.as_view(),
+         name="water-administration-detail"),
 
 
-    url(r'^sessions$', av.SessionAPIList.as_view(),
-        name="session-list"),
+    path('subjects', sv.SubjectList.as_view(),
+         name="subject-list"),
 
-    url(r'^sessions/(?P<pk>[-_\w].+)$', av.SessionAPIDetail.as_view(),
-        name="session-detail"),
-
-
-    url(r'^exp-metadata$', dv.ExpMetadataList.as_view(),
-        name="exp-metadata-list"),
-
-    url(r'^exp-metadata/(?P<pk>[-_\w].+)$', dv.ExpMetadataDetail.as_view(),
-        name="exp-metadata-detail"),
+    path('subjects/<str:nickname>', sv.SubjectDetail.as_view(),
+         name="subject-detail"),
 
 
-    url(r'^data-repository-type$', dv.DataRepositoryTypeList.as_view(),
-        name="datarepositorytype-list"),
+    path('projects', sv.ProjectList.as_view(),
+         name="project-list"),
 
-    url(r'^data-repository-type/(?P<name>[-_\w].*)$', dv.DataRepositoryTypeDetail.as_view(),
-        name="datarepositorytype-detail"),
-
-
-    url(r'^data-repository$', dv.DataRepositoryList.as_view(),
-        name="datarepository-list"),
-
-    url(r'^data-repository/(?P<name>[-_\w].*)$', dv.DataRepositoryDetail.as_view(),
-        name="datarepository-detail"),
+    path('projects/<str:name>', sv.ProjectDetail.as_view(),
+         name="project-detail"),
 
 
-    url(r'^data-formats$', dv.DataFormatList.as_view(),
-        name="dataformat-list"),
+    path('sessions', av.SessionAPIList.as_view(),
+         name="session-list"),
 
-    url(r'^data-formats/(?P<name>[-_\w].*)$', dv.DataFormatDetail.as_view(),
-        name="dataformat-detail"),
-
-
-    url(r'^dataset-types$', dv.DatasetTypeList.as_view(),
-        name="datasettype-list"),
-
-    url(r'^dataset-types/(?P<name>[-_\w].*)$', dv.DatasetTypeDetail.as_view(),
-        name="datasettype-detail"),
+    path('sessions/<uuid:pk>', av.SessionAPIDetail.as_view(),
+         name="session-detail"),
 
 
-    url(r'^datasets$', dv.DatasetList.as_view(),
-        name="dataset-list"),
+    path('exp-metadata', dv.ExpMetadataList.as_view(),
+         name="exp-metadata-list"),
 
-    url(r'^datasets/(?P<pk>[-_\w].+)$', dv.DatasetDetail.as_view(),
-        name="dataset-detail"),
-
-
-    url(r'^files$', dv.FileRecordList.as_view(),
-        name="filerecord-list"),
-
-    url(r'^files/(?P<pk>[-_\w].+)$', dv.FileRecordDetail.as_view(),
-        name="filerecord-detail"),
+    path('exp-metadata/<uuid:pk>', dv.ExpMetadataDetail.as_view(),
+         name="exp-metadata-detail"),
 
 
-    url(r'^timescales$', dv.TimescaleList.as_view(),
-        name="timescale-list"),
+    path('data-repository-type', dv.DataRepositoryTypeList.as_view(),
+         name="datarepositorytype-list"),
 
-    url(r'^timescales/(?P<pk>[-_\w].+)$', dv.TimescaleDetail.as_view(),
-        name="timescale-detail"),
-
-
-    url(r'^register-file$', register_file,
-        name="register-file"),
+    path('data-repository-type/<str:name>', dv.DataRepositoryTypeDetail.as_view(),
+         name="datarepositorytype-detail"),
 
 
-    url(r'^users$', user_list,
-        name='user-list'),
+    path('data-repository', dv.DataRepositoryList.as_view(),
+         name="datarepository-list"),
 
-    url(r'^users/(?P<username>[-_\w].*)$', user_detail,
-        name='user-detail'),
-
-
-    url(r'^water-restricted-subjects$', sv.WaterRestrictedSubjectList.as_view(),
-        name="water-restricted-subject-list"),
-
-    url(r'^water-requirement/$', av.WaterRequirement.as_view(),
-        name='water-requirement'),
-
-    url(r'^water-requirement/(?P<nickname>[-._~\w]+)$', av.WaterRequirement.as_view(),
-        name='water-requirement-detail'),
+    path('data-repository/<str:name>', dv.DataRepositoryDetail.as_view(),
+         name="datarepository-detail"),
 
 
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^admin-subjects/', include('subjects.urls')),
-    url(r'^admin-actions/', include('actions.urls')),
+    path('data-formats', dv.DataFormatList.as_view(),
+         name="dataformat-list"),
+
+    path('data-formats/<str:name>', dv.DataFormatDetail.as_view(),
+         name="dataformat-detail"),
+
+
+    path('dataset-types', dv.DatasetTypeList.as_view(),
+         name="datasettype-list"),
+
+    path('dataset-types/<str:name>', dv.DatasetTypeDetail.as_view(),
+         name="datasettype-detail"),
+
+
+    path('datasets', dv.DatasetList.as_view(),
+         name="dataset-list"),
+
+    path('datasets/<uuid:pk>', dv.DatasetDetail.as_view(),
+         name="dataset-detail"),
+
+
+    path('files', dv.FileRecordList.as_view(),
+         name="filerecord-list"),
+
+    path('files/<uuid:pk>', dv.FileRecordDetail.as_view(),
+         name="filerecord-detail"),
+
+
+    path('timescales', dv.TimescaleList.as_view(),
+         name="timescale-list"),
+
+    path('timescales/<uuid:pk>', dv.TimescaleDetail.as_view(),
+         name="timescale-detail"),
+
+
+    path('register-file', register_file,
+         name="register-file"),
+
+
+    path('users', user_list,
+         name='user-list'),
+
+    path('users/<str:username>', user_detail,
+         name='user-detail'),
+
+
+    path('water-restricted-subjects', sv.WaterRestrictedSubjectList.as_view(),
+         name="water-restricted-subject-list"),
+
+    path('water-requirement/<str:nickname>', av.WaterRequirement.as_view(),
+         name='water-requirement'),
+
+
+    path('admin/', admin.site.urls),
+
+    path('admin-subjects/', include('subjects.urls')),
+    path('admin-actions/', include('actions.urls')),
 
 ]
