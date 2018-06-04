@@ -24,15 +24,17 @@ class Weighing(BaseModel):
     """
     A weighing of a subject.
     """
-    user = models.ForeignKey(OrderedUser, null=True, blank=True,
+    user = models.ForeignKey(OrderedUser, null=True, blank=True, on_delete=models.SET_NULL,
                              help_text="The user who weighed the subject")
     subject = models.ForeignKey('subjects.Subject', related_name='weighings',
+                                on_delete=models.SET_NULL,
                                 help_text="The subject which was weighed")
     date_time = models.DateTimeField(
         null=True, blank=True, default=timezone.now)
     weight = models.FloatField(validators=[MinValueValidator(limit_value=0)],
                                help_text="Weight in grams")
     weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
+                                       on_delete=models.SET_NULL,
                                        help_text="The scale record that was used "
                                        "to weigh the subject")
 
@@ -52,8 +54,10 @@ class WaterAdministration(BaseModel):
     For keeping track of water for subjects not on free water.
     """
     user = models.ForeignKey(OrderedUser, null=True, blank=True,
+                             on_delete=models.SET_NULL,
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
+                                on_delete=models.SET_NULL,
                                 related_name='water_administrations',
                                 help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
@@ -81,12 +85,13 @@ class BaseAction(BaseModel):
     users = models.ManyToManyField(OrderedUser, blank=True,
                                    help_text="The user(s) involved in this action")
     subject = models.ForeignKey('subjects.Subject',
+                                on_delete=models.SET_NULL,
                                 related_name="%(app_label)s_%(class)ss",
                                 help_text="The subject on which this action was performed")
-    location = models.ForeignKey(LabLocation, null=True, blank=True,
+    location = models.ForeignKey(LabLocation, null=True, blank=True, on_delete=models.SET_NULL,
                                  help_text="The physical location at which the action was "
                                  "performed")
-    lab = models.ForeignKey(Lab, null=True, blank=True)
+    lab = models.ForeignKey(Lab, null=True, blank=True, on_delete=models.SET_NULL)
     procedures = models.ManyToManyField('ProcedureType', blank=True,
                                         help_text="The procedure(s) performed")
     narrative = models.TextField(blank=True)
@@ -109,7 +114,7 @@ class VirusInjection(BaseAction):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True)
+    virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True, on_delete=models.SET_NULL,)
     injection_volume = models.FloatField(
         null=True, blank=True, help_text="Volume in nanoliters")
     rate_of_injection = models.FloatField(
@@ -136,12 +141,14 @@ class Surgery(BaseAction):
         ('a', 'Acute'),
         ('r', 'Recovery'),
     )
-    brain_location = models.ForeignKey(BrainLocation, null=True, blank=True)
+    brain_location = models.ForeignKey(BrainLocation, null=True, blank=True,
+                                       on_delete=models.SET_NULL,)
     outcome_type = models.CharField(max_length=1,
                                     choices=OUTCOME_TYPES,
                                     blank=True,
                                     )
     location = models.ForeignKey(LabLocation, null=True, blank=True,
+                                 on_delete=models.SET_NULL,
                                  default=_default_surgery_location,
                                  help_text="The physical location at which the surgery was "
                                  "performed")
@@ -170,8 +177,10 @@ class Session(BaseAction):
     If the fields (e.g. users) of a subsession are null, they should inherited from the parent.
     """
     parent_session = models.ForeignKey('Session', null=True, blank=True,
+                                       on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
-    project = models.ForeignKey('subjects.Project', null=True, blank=True)
+    project = models.ForeignKey('subjects.Project', null=True, blank=True,
+                                on_delete=models.SET_NULL)
     type = models.CharField(max_length=255, null=True, blank=True,
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,

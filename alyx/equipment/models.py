@@ -60,7 +60,7 @@ class EquipmentModel(BaseModel):
     An equipment model. i.e. "BrainScanner 4X"
     """
     manufacturer = models.ForeignKey(
-        Supplier, null=True, blank=True)
+        Supplier, null=True, blank=True, on_delete=models.SET_NULL)
     model_name = models.CharField(
         max_length=255, help_text="e.g. 'BrainScanner 4X'")
     description = models.CharField(max_length=255, blank=True)
@@ -80,8 +80,9 @@ class VirusBatch(BaseModel):
     virus_type = models.CharField(max_length=255, blank=True,
                                   help_text="UPenn ID or equivalent")
     description = models.CharField(max_length=255, blank=True)
-    virus_source = models.ForeignKey(Supplier, null=True, blank=True,
-                                     help_text="Who supplied the virus")
+    virus_source = models.ForeignKey(
+        Supplier, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="Who supplied the virus")
     date_time_made = models.DateTimeField(
         null=True, blank=True, default=timezone.now)
     nominal_titer = models.FloatField(
@@ -106,9 +107,10 @@ class Appliance(BasePolymorphicModel):
     An appliance, provided by a specific manufacturer. This class is only accessed through
     its subclasses.
     """
-    location = models.ForeignKey('LabLocation', null=True, blank=True,
-                                 help_text="The physical location of the appliance.")
-    equipment_model = models.ForeignKey('EquipmentModel')
+    location = models.ForeignKey(
+        'LabLocation', null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="The physical location of the appliance.")
+    equipment_model = models.ForeignKey('EquipmentModel', on_delete=models.SET_NULL)
     serial = models.CharField(max_length=255, blank=True,
                               help_text="The serial number of the appliance.")
     description = models.TextField(blank=True)

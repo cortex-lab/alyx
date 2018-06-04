@@ -6,11 +6,13 @@ from misc.models import CoordinateTransformation
 
 class SVDCompressedMovie(BaseExperimentalData):
     compressed_data_U = models.ForeignKey(Dataset, blank=True, null=True,
+                                          on_delete=models.SET_NULL,
                                           related_name="svd_movie_u",
                                           help_text="nSVs*nY*nX binary array giving normalized "
                                           "eigenframes"
                                           "SVD-compression eigenframes")
     compressed_data_V = models.ForeignKey(Dataset, blank=True, null=True,
+                                          on_delete=models.SET_NULL,
                                           related_name="svd_movie_v",
                                           help_text="nSamples*nSVs binary array "
                                           "SVD-compression timecourses")
@@ -19,9 +21,12 @@ class SVDCompressedMovie(BaseExperimentalData):
 class WidefieldImaging(BaseExperimentalData):
     # we need to talk this through with nick - not sure if he is using
     # multiple files or just one for multispectral
-    raw_data = models.ForeignKey(Dataset, blank=True, null=True, related_name="widefield_raw",
+    raw_data = models.ForeignKey(Dataset, blank=True, null=True,
+                                 on_delete=models.SET_NULL,
+                                 related_name="widefield_raw",
                                  help_text="pointer to nT by nX by nY by nC (colors) binary file")
     compressed_data = models.ForeignKey(SVDCompressedMovie, null=True, blank=True,
+                                        on_delete=models.SET_NULL,
                                         related_name="widefield_compressed",
                                         help_text="Link to SVD compressed movie, "
                                         "if compression was run")
@@ -47,7 +52,7 @@ class WidefieldImaging(BaseExperimentalData):
                                    help_text="e.g. 'field of view includes V1, S1, "
                                    "retrosplenial'")
     image_position = models.ForeignKey(
-        CoordinateTransformation, null=True, blank=True)
+        CoordinateTransformation, null=True, blank=True, on_delete=models.SET_NULL,)
     excitation_nominal_wavelength = models.FloatField(null=True, blank=True,
                                                       help_text="in nm. "
                                                       "Can be array for multispectral")
@@ -57,7 +62,8 @@ class WidefieldImaging(BaseExperimentalData):
     # excitation_device = models.CharField(max_length=255, null=True, blank=True,
     # help_text="e.g. LED part number. Can be array for multispectral. TODO:
     # Appliance subclass - what name?")
-    excitation_device = models.ForeignKey(LightSource, blank=True, null=True)
+    excitation_device = models.ForeignKey(LightSource, blank=True, null=True,
+                                          on_delete=models.SET_NULL,)
     recording_device = models.CharField(max_length=255, blank=True,
                                         help_text="e.g. camera manufacturer, plus filter "
                                         "description etc. TODO: Appliance subclass - what name?")
@@ -65,14 +71,17 @@ class WidefieldImaging(BaseExperimentalData):
 
 class TwoPhotonImaging(BaseExperimentalData):
     raw_data = models.ForeignKey(Dataset, blank=True, null=True,
+                                 on_delete=models.SET_NULL,
                                  related_name="two_photon_raw",
                                  help_text="array of size nT by nX by nY by nZ by nC")
     compressed_data = models.ForeignKey(SVDCompressedMovie, blank=True, null=True,
+                                        on_delete=models.SET_NULL,
                                         related_name="two_photon_compressed",
                                         help_text="to Compressed_movie, if compression was run")
     description = models.CharField(max_length=255, blank=True,
                                    help_text="e.g. 'V1 layers 2-4'")
     image_position = models.ForeignKey(CoordinateTransformation, null=True, blank=True,
+                                       on_delete=models.SET_NULL,
                                        help_text="Note if different planes have different "
                                        "alignment (e.g. flyback plane), this can’t be done "
                                        "in a single 3x3 transformation matrix, instead you "
@@ -86,25 +95,33 @@ class TwoPhotonImaging(BaseExperimentalData):
     # does django have a way of encoding small arrays in regular tables? I
     # guess not if they are variable size... so it would need to be json
     reference_stack = models.ForeignKey(Dataset, blank=True, null=True,
+                                        on_delete=models.SET_NULL,
                                         related_name="two_photon_reference",
                                         help_text="TODO: reference stack / BrainImage")
 
 
 class ROIDetection(BaseExperimentalData):
     masks = models.ForeignKey(Dataset, blank=True, null=True,
+                              on_delete=models.SET_NULL,
                               related_name="roi_detection_masks",
                               help_text="array of size nROIs by nY by nX")
     plane = models.ForeignKey(Dataset, null=True, blank=True,
+                              on_delete=models.SET_NULL,
                               help_text="array saying which plane each roi is found in. "
                               "TODO: is this an ArrayField? JSON?")
     preprocessing = models.CharField(max_length=255, blank=True,
                                      help_text="computed (F-F0) / F0, estimating "
                                      "F0 as running min'")
-    f = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f",
+    f = models.ForeignKey(Dataset, blank=True, null=True,
+                          on_delete=models.SET_NULL,
+                          related_name="roi_detection_f",
                           help_text="array of size nT by nROIs giving raw fluorescence")
-    f0 = models.ForeignKey(Dataset, blank=True, null=True, related_name="roi_detection_f0",
+    f0 = models.ForeignKey(Dataset, blank=True, null=True,
+                           on_delete=models.SET_NULL,
+                           related_name="roi_detection_f0",
                            help_text="array of size nT by nROIs giving resting fluorescence")
     two_photon_imaging_id = models.ForeignKey('TwoPhotonImaging', null=True, blank=True,
+                                              on_delete=models.SET_NULL,
                                               help_text="2P imaging stack.")
     # TODO: multiple sortings?
     # taken care of already : this is a many-to-one relationship
@@ -120,4 +137,5 @@ class ROI(BaseExperimentalData):
     estimated_layer = models.CharField(max_length=255, blank=True,
                                        help_text="e.g. 'Layer 5b'")
     roi_detection_id = models.ForeignKey('ROIDetection', blank=True, null=True,
+                                         on_delete=models.SET_NULL,
                                          help_text="link to detection entry")

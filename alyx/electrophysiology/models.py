@@ -11,6 +11,7 @@ class ProbeInsertion(BaseModel):
     """
 
     extracellular_recording = models.ForeignKey('ExtracellularRecording',
+                                                on_delete=models.SET_NULL,
                                                 help_text="id of extracellular recording")
 
     entry_point_rl = models.FloatField(null=True, blank=True,
@@ -41,10 +42,13 @@ class ProbeInsertion(BaseModel):
                                           "its entry point. (microns).")
 
     probe_model = models.ForeignKey('ProbeModel', blank=True, null=True,
+                                    on_delete=models.SET_NULL,
                                     help_text="model of probe used")
 
     channel_mapping = models.ForeignKey(
-        Dataset, blank=True, null=True, related_name='probe_insertion_channel_mapping',
+        Dataset, blank=True, null=True,
+        on_delete=models.SET_NULL,
+        related_name='probe_insertion_channel_mapping',
         help_text="numerical array of size nSites x 1 giving the row of the raw data file "
                   "for each contact site. You will have one of these files per probe, "
                   "including if you record multiple probes through the same amplifier. "
@@ -56,7 +60,8 @@ class ProbeModel(BaseModel):
     Metadata describing each probe model
     """
 
-    probe_manufacturer = models.ForeignKey(Supplier, blank=True, null=True)
+    probe_manufacturer = models.ForeignKey(Supplier, blank=True, null=True,
+                                           on_delete=models.SET_NULL,)
 
     probe_model = models.CharField(
         max_length=255, help_text="manufacturer's part number e.g. A4x8-5mm-100-200-177")
@@ -67,6 +72,7 @@ class ProbeModel(BaseModel):
 
     site_positions = models.ForeignKey(
         Dataset, blank=True, null=True,
+        on_delete=models.SET_NULL,
         help_text="numerical array of size nSites x 2 giving locations "
                   "of each contact site  in local coordinates. Probe tip is at "
                   "the origin.")
@@ -101,7 +107,7 @@ class RecordingSite(BaseBrainLocation):
     """
 
     probe_insertion = models.ForeignKey(
-        ProbeInsertion, help_text="id of probe insertion")
+        ProbeInsertion, on_delete=models.SET_NULL, help_text="id of probe insertion")
 
     site_no = models.IntegerField(help_text="which site on the probe")
 
@@ -126,15 +132,18 @@ class ExtracellularRecording(Dataset):
     )
 
     lfp = models.ForeignKey(Dataset, blank=True, null=True,
+                            on_delete=models.SET_NULL,
                             related_name="extracellular_recording_lfp",
                             help_text="lfp: low-pass filtered and downsampled")
 
     impedances = models.ForeignKey(Dataset, blank=True, null=True,
+                                   on_delete=models.SET_NULL,
                                    related_name="extracellular_impedances",
                                    help_text="dataset containing measured impedance of "
                                    "each channel (ohms).")
 
     gains = models.ForeignKey(Dataset, blank=True, null=True,
+                              on_delete=models.SET_NULL,
                               related_name="extracellular_gains",
                               help_text="dataset containing gain of each channel "
                               " microvolts/bit")
@@ -154,9 +163,11 @@ class ExtracellularRecording(Dataset):
                                            help_text="e.g. 'shorted to ground'")
 
     amplifier = models.ForeignKey(Amplifier, blank=True, null=True,
+                                  on_delete=models.SET_NULL,
                                   help_text="The amplifier used in this recording.")
 
     daq_description = models.ForeignKey(DAQ, blank=True, null=True,
+                                        on_delete=models.SET_NULL,
                                         help_text="The DAQ used.")
 
 
@@ -179,9 +190,11 @@ class SpikeSorting(Dataset):
     """
 
     extracellular_recording = models.ForeignKey(ExtracellularRecording,
+                                                on_delete=models.SET_NULL,
                                                 related_name='spike_sorting_recording')
 
     probe_insertion = models.ForeignKey(ExtracellularRecording,
+                                        on_delete=models.SET_NULL,
                                         related_name='spike_sorting_probe')
 
 
@@ -206,6 +219,7 @@ class SpikeSortedUnit(BaseBrainLocation):
     cluster_number = models.IntegerField()
 
     spike_sorting = models.ForeignKey('SpikeSorting', blank=True, null=True,
+                                      on_delete=models.SET_NULL,
                                       help_text="The spike sorting this unit came from")
 
     # automatically computed information:
@@ -258,9 +272,11 @@ class IntracellularRecording(BaseExperimentalData):
     )
 
     tip_location = models.ForeignKey(BrainLocation, null=True, blank=True,
+                                     on_delete=models.SET_NULL,
                                      help_text="Estimated location of probe tip")
     electrode_type = models.CharField(max_length=1, choices=ELECTRODE_TYPES)
-    pipette_puller = models.ForeignKey(PipettePuller, null=True, blank=True)
+    pipette_puller = models.ForeignKey(PipettePuller, null=True, blank=True,
+                                       on_delete=models.SET_NULL,)
     inner_diameter = models.FloatField(null=True, blank=True,
                                        help_text="mm – before pulling")
     outer_diameter = models.FloatField(null=True, blank=True,
@@ -287,12 +303,14 @@ class IntracellularRecording(BaseExperimentalData):
     series_resistance_compensation_prediction = models.FloatField(null=True, blank=True,
                                                                   help_text="(%)")
     recorded_current = models.ForeignKey(Dataset, blank=True, null=True,
+                                         on_delete=models.SET_NULL,
                                          related_name="intracellular_recording_recorded_current",
                                          help_text="nA. TODO: time series? flat file? "
                                          "sample rate?")
     # it is a timeseries. But the plan was that would be taken care of by the file.timestamps etc.
     # however we could have a timeseries class, that subclasses Dataset.
     voltage_command = models.ForeignKey(Dataset, blank=True, null=True,
+                                        on_delete=models.SET_NULL,
                                         related_name="intracellular_recording_voltage_command",
                                         help_text="mV")
     gain = models.FloatField(null=True, blank=True,
@@ -305,9 +323,11 @@ class IntracellularRecording(BaseExperimentalData):
     bridge_balance = models.FloatField(null=True, blank=True,
                                        help_text="(M Ohm)")
     recorded_voltage = models.ForeignKey(Dataset, blank=True, null=True,
+                                         on_delete=models.SET_NULL,
                                          related_name="intracellular_recording_recorded_voltage",
                                          help_text="mV")
     current_command = models.ForeignKey(Dataset, blank=True, null=True,
+                                        on_delete=models.SET_NULL,
                                         related_name="intracellular_recording_current_command",
                                         help_text="nA")
     gain = models.FloatField(null=True, blank=True,

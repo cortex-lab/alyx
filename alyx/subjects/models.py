@@ -156,7 +156,7 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    lab = models.ForeignKey(Lab, null=True, blank=True)
+    lab = models.ForeignKey(Lab, null=True, blank=True, on_delete=models.SET_NULL)
 
     projects = models.ManyToManyField(
         Project, blank=True,
@@ -566,7 +566,7 @@ class Source(BaseModel):
 
 
 class StockManager(BaseModel):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE,)
 
     class Meta:
         ordering = ['user__username']

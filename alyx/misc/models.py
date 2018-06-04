@@ -15,7 +15,7 @@ class OrderedUser(User):
 
 
 class Note(BaseModel):
-    user = models.ForeignKey(OrderedUser)
+    user = models.ForeignKey(OrderedUser, on_delete=models.SET_NULL,)
     date_time = models.DateTimeField(default=timezone.now)
     text = models.TextField(blank=True)
 
