@@ -108,6 +108,12 @@
                 this.value = newId;
             }
         });
+        selects.next().find('.select2-selection__rendered').each(function() {
+            // The element can have a clear button as a child.
+            // Use the lastChild to modify only the displayed value.
+            this.lastChild.textContent = newRepr;
+            this.title = newRepr;
+        });
         win.close();
     }
 
@@ -162,7 +168,7 @@
             }
         });
         $('.related-widget-wrapper select').trigger('change');
-        $('.related-lookup').click(function(e) {
+        $('body').on('click', '.related-lookup', function(e) {
             e.preventDefault();
             var event = $.Event('django:lookup-related');
             $(this).trigger(event);
