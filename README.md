@@ -8,6 +8,30 @@ Database for experimental neuroscience laboratories
 Documentation: http://alyx.readthedocs.io
 
 
+## Installation
+
+Alyx has only been tested on Ubuntu (16.04 and 18.04). It could work on other systems but with no guarantees.
+
+```
+$ sudo apt-get update
+$ sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib
+$ git clone https://github.com/cortex-lab/alyx.git
+$ cd alyx
+$ python setup.py
+Enter a database name [labdb]:
+Enter a postgres username [labdbuser]:
+Enter a postgres password:
+...
+$ source alyxvenv/bin/activate
+$ python alyx/manage.py check
+$ python alyx/manage.py runserver
+```
+
+Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
+
+The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the `alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual environment with the dependencies (including django), and it creates all the required SQL tables.
+
+
 ## Development
 
 * Development happens on the **dev** branch
