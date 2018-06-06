@@ -7,6 +7,7 @@ Database for experimental neuroscience laboratories
 
 Documentation: http://alyx.readthedocs.io
 
+![Screenshot of alyx](docs/alyx_screen0.png)
 
 ## Installation
 
