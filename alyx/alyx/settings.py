@@ -112,7 +112,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 
-
 # Application definition
 
 INSTALLED_APPS = (
