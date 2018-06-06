@@ -248,11 +248,11 @@ class BaseExperimentalData(BaseModel):
 
 
 def default_dataset_type():
-    return DatasetType.objects.get(name='unknown').pk
+    return DatasetType.objects.get_or_create(name='unknown')[0].pk
 
 
 def default_data_format():
-    return DataFormat.objects.get(name='unknown').pk
+    return DataFormat.objects.get_or_create(name='unknown')[0].pk
 
 
 class DatasetManager(models.Manager):
