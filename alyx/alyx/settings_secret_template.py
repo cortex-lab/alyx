@@ -2,7 +2,7 @@
 # "settings_secret.py".
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'ab5d+*w*er&*ym32k33x6p6v$v+3_pmrf%e3eg-_9+0%2lu-1)'
+SECRET_KEY = '%SECRET_KEY%'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
@@ -10,9 +10,9 @@ SECRET_KEY = 'ab5d+*w*er&*ym32k33x6p6v$v+3_pmrf%e3eg-_9+0%2lu-1)'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'labdb',
-        'USER': 'labdb',
-        'PASSWORD': 'abcdefg',
+        'NAME': '%DBNAME%',
+        'USER': '%DBUSER%',
+        'PASSWORD': '%DBPASSWORD%',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
