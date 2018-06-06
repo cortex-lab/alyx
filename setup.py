@@ -2,9 +2,8 @@
 
 from getpass import getpass
 import os
-from shutil import copyfile
-import subprocess
-import sys
+import os.path as op
+import shutil
 from django.utils.crypto import get_random_string
 
 
@@ -14,13 +13,8 @@ def _secret_key():
 
 
 def _system(cmd):
-    print("cmd:", cmd)
     res = os.popen(cmd).read().strip()
-    print("out:", res)
     return res
-    #process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    #output, error = process.communicate()
-    #return output, error
 
 
 def _psql(sql, **kwargs):
@@ -29,12 +23,28 @@ def _psql(sql, **kwargs):
     return _system(cmd)
 
 
+def _replace_in_file(source_file, target_file, replacements=None, target_mode='w', chmod=None):
+    target_file = op.expanduser(target_file)
+    #copy2(source_file, target_file)
+    with open(source_file, 'r') as f:
+        contents = f.read()
+    for key, value in replacements.items():
+        contents = contents.replace(key, value)
+    with open(target_file, target_mode) as f:
+        f.write(contents)
+    if chmod:
+        os.chmod(target_file, chmod)
+
+
 # Prompt information.
 DBNAME = input("Enter a database name [labdb]:") or 'labdb'
 DBUSER = input("Enter a postgres username [labdbuser]:") or 'labdbuser'
-DBPASSWORD = getpass("Enter a postgres password:") or '123'  # TODO: remove this! for testing only
+DBPASSWORD = getpass("Enter a postgres password:")
 if not DBPASSWORD:
     print("A password is mandatory.")
+    exit(1)
+if getpass("Enter a postgres password (again):") != DBPASSWORD:
+    print("The passwords don't match.")
     exit(1)
 SECRET_KEY = _secret_key()
 
@@ -69,20 +79,31 @@ _system('rm alyx/*/migrations/0*.py')
 _system('virtualenv alyxvenv')
 
 
+repl = {
+    '%SECRET_KEY%': SECRET_KEY,
+    '%DBNAME%': DBNAME,
+    '%DBUSER%': DBUSER,
+    '%DBPASSWORD%': DBPASSWORD,
+}
+
+
 # Set up the settings file.
-SETTINGS_SECRET_PATH = 'alyx/alyx/settings_secret.py'
-copyfile('alyx/alyx/settings_secret_template.py',
-        SETTINGS_SECRET_PATH)
-with open(SETTINGS_SECRET_PATH, 'r') as f:
-    contents = f.read()
+_replace_in_file('alyx/alyx/settings_secret_template.py',
+                 'alyx/alyx/settings_secret.py',
+                 replacements=repl,
+                 )
 
-contents = contents.replace('%SECRET_KEY%', SECRET_KEY)
-contents = contents.replace('%DBNAME%', DBNAME)
-contents = contents.replace('%DBUSER%', DBUSER)
-contents = contents.replace('%DBPASSWORD%', DBPASSWORD)
 
-with open(SETTINGS_SECRET_PATH, 'w') as f:
-    f.write(contents)
+# Set up the .pgpass file to avoid typing the postgres password.
+_replace_in_file('scripts/templates/.pgpass_template', '~/.pgpass',
+                 replacements=repl, target_mode='a', chmod=0o600)
+
+
+# Set up the maintainance scripts.
+_replace_in_file('scripts/templates/load_db.sh', 'scripts/load_db.sh',
+                 replacements=repl, chmod=0o755)
+_replace_in_file('scripts/templates/dump_db.sh', 'scripts/dump_db.sh',
+                 replacements=repl, chmod=0o755)
 
 
 # Install the Python requirements in the virtual environment.
