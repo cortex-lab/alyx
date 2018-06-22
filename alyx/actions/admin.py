@@ -1,10 +1,12 @@
 from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.db.models import Case, When
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
+import webdav3.client as wc
 
 from alyx.base import BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
@@ -19,6 +21,13 @@ from . import water
 
 # Filters
 # ------------------------------------------------------------------------------------------------
+
+WEBDAV_CLIENT = wc.Client({
+    'webdav_hostname': settings.WEBDAV_URL,
+    'webdav_login': settings.WEBDAV_LOGIN,
+    'webdav_password': settings.WEBDAV_PASSWORD,
+})
+
 
 class ResponsibleUserListFilter(DefaultListFilter):
     title = 'responsible user'
