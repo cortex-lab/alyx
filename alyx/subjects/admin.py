@@ -10,7 +10,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
-                       _iter_history_changes)
+                       _iter_history_changes, list_images, show_images)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
                      Project,
@@ -269,6 +269,7 @@ class SubjectAdmin(BaseAdmin):
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json')}),
+        ('IMAGES', {'fields': ('images',)}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'lamis_cage', 'lamis_cage_changes',),
                      'classes': ('collapse',),
@@ -312,6 +313,7 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_total_f',
                        'water_requirement_remaining_f',
                        'weighing_plot',
+                       'images',
                        )
     ordering = ['-birth_date', '-nickname']
     list_editable = []
@@ -328,6 +330,9 @@ class SubjectAdmin(BaseAdmin):
                SessionInline, OtherActionInline,
                NoteInline,
                ]
+
+    def images(self, obj):
+        return show_images(list_images(obj.nickname))
 
     def ear_mark_(self, obj):
         return obj.ear_mark

@@ -1,14 +1,15 @@
+import logging
+
 from django import forms
-from django.conf import settings
 from django.contrib import admin
 from django.db.models import Case, When
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
-import webdav3.client as wc
 
-from alyx.base import BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url
+from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
+                       get_admin_url, list_images, show_images)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
@@ -18,16 +19,11 @@ from misc.models import OrderedUser
 from subjects.models import Subject
 from . import water
 
+logger = logging.getLogger(__name__)
+
 
 # Filters
 # ------------------------------------------------------------------------------------------------
-
-WEBDAV_CLIENT = wc.Client({
-    'webdav_hostname': settings.WEBDAV_URL,
-    'webdav_login': settings.WEBDAV_LOGIN,
-    'webdav_password': settings.WEBDAV_PASSWORD,
-})
-
 
 class ResponsibleUserListFilter(DefaultListFilter):
     title = 'responsible user'
@@ -346,13 +342,18 @@ class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
     list_select_related = ('subject',)
 
-    fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type']
+    fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type', 'images']
+    readonly_fields = ['images']
     list_display_links = ['date']
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ('subject__line', RelatedDropdownFilter),
                    ]
     ordering = ['-start_time']
+
+    def images(self, obj):
+        images = list_images(obj.subject.nickname, 'Surgery', self.date(obj))
+        return show_images(images)
 
     def date(self, obj):
         return obj.start_time.date()
