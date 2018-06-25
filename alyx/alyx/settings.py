@@ -196,3 +196,9 @@ USE_TZ = False
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
+
+
+# WebDAV server is used to store images. This is a WIP feature.
+WEBDAV_URL = ''
+WEBDAV_LOGIN = ''
+WEBDAV_PASSWORD = ''
