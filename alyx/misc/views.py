@@ -44,8 +44,8 @@ def api_root(request, format=None):
         'water-administrations-url': reverse(
             'water-administration-create', request=request, format=format),
 
-        'water-requirement-url': reverse(
-            'water-requirement', request=request, format=format),
+        #'water-requirement-url': reverse(
+        #    'water-requirement', request=request, format=format),
 
         'exp-metadata-url': reverse(
             'exp-metadata-list', request=request, format=format),
