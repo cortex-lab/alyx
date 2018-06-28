@@ -8,6 +8,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
+# WebDAV server is used to store images. This is a WIP feature.
+# Will be overriden by settings_secret.
+WEBDAV_URL = ''
+WEBDAV_LOGIN = ''
+WEBDAV_PASSWORD = ''
+
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 try:
@@ -196,9 +203,3 @@ USE_TZ = False
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
-
-
-# WebDAV server is used to store images. This is a WIP feature.
-WEBDAV_URL = ''
-WEBDAV_LOGIN = ''
-WEBDAV_PASSWORD = ''
