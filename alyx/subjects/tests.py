@@ -5,7 +5,8 @@ import sys
 from uuid import UUID
 import warnings
 
-from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -46,7 +47,8 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         request = self.factory.get('/')
         request.csrf_processing_done = True
         self.request = request
-        self.users = [User.objects.get(pk=pk) for pk in (2, 3, 5)]
+        self.users = [get_user_model.objects.get(username=username)
+                      for username in settings.SUPERUSERS]
 
     def tearDown(self):
         warnings.simplefilter('default')
@@ -110,5 +112,5 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
         self.assertTrue(s.responsible_user is not None)
         self.assertFalse(_has_field_changed(s, 'responsible_user'))
-        s.responsible_user = User.objects.last()
+        s.responsible_user = get_user_model().objects.last()
         self.assertTrue(_has_field_changed(s, 'responsible_user'))

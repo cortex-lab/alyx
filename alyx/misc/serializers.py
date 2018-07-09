@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from subjects.models import Subject
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,5 +13,5 @@ class UserSerializer(serializers.ModelSerializer):
         return queryset
 
     class Meta:
-        model = User
+        model = get_user_model()
         fields = ('id', 'username', 'email', 'subjects_responsible')

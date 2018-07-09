@@ -2,32 +2,6 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel, BasePolymorphicModel
-from misc.models import OrderedUser
-from alyx.settings import TIME_ZONE
-
-
-class Lab(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
-    institution = models.CharField(max_length=255, blank=True)
-    address = models.CharField(max_length=255, blank=True)
-    timezone = models.CharField(
-        max_length=64, blank=True, default=TIME_ZONE,
-        help_text="Timezone of the server "
-        "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
-
-    def __str__(self):
-        return self.name
-
-
-class LabMembership(BaseModel):
-    user = models.ForeignKey(OrderedUser, on_delete=models.CASCADE)
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
-    role = models.CharField(max_length=255, blank=True)
-    start_date = models.DateField(blank=True, null=True)
-    end_date = models.DateField(blank=True, null=True)
-
-    def __str__(self):
-        return "%s %s in %s" % (self.user, self.role, self.lab)
 
 
 class LabLocation(BaseModel):

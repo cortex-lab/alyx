@@ -1,12 +1,12 @@
 import logging
 import re
 
+from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
 
-from misc.models import OrderedUser
 from subjects.models import Subject, Project
 from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
@@ -247,7 +247,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     def create(self, request):
         user = request.data.get('created_by', None)
         if user:
-            user = OrderedUser.objects.get(username=user)
+            user = get_user_model().objects.get(username=user)
         else:
             user = request.user
         dns = request.data.get('dns', None)

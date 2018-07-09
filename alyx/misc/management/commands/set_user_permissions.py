@@ -2,10 +2,9 @@ import logging
 import sys
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
-
-from subjects.models import StockManager
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
@@ -24,7 +23,7 @@ class Command(BaseCommand):
         group.save()
 
         # No right to delete except a few select models.
-        group.permissions = Permission.objects.exclude(codename__startswith='delete')
+        group.permissions.add(*Permission.objects.exclude(codename__startswith='delete'))
         group.permissions.add(Permission.objects.get(codename='delete_surgery'))
         group.permissions.add(Permission.objects.get(codename='delete_wateradministration'))
         group.permissions.add(Permission.objects.get(codename='delete_waterrestriction'))
@@ -32,7 +31,7 @@ class Command(BaseCommand):
         group.permissions.add(Permission.objects.get(codename='delete_subjectrequest'))
 
         # Exclude some permissions.
-        for m in ('user', 'ordereduser', 'group', 'permission'):
+        for m in ('labmember', 'group', 'permission'):
             group.permissions.remove(Permission.objects.get(codename='add_%s' % m))
             group.permissions.remove(Permission.objects.get(codename='change_%s' % m))
 
@@ -41,14 +40,12 @@ class Command(BaseCommand):
                           (len(group.permissions.all()), group))
 
         # Set user permissions.
-        users = User.objects.all()
+        users = get_user_model().objects.all()
         for user in users:
             # Add all users to the group.
             user.groups.add(group)
             # Set super users for a few select users.
             user.is_superuser = user.username in settings.SUPERUSERS
-            # Create the stock managers.
-            if user.username in settings.STOCK_MANAGERS:
-                StockManager.objects.get_or_create(user=user)[0].save()
+            user.is_stock_manager = user.username in settings.STOCK_MANAGERS
             user.save()
         self.stdout.write("%d users have been successfully updated." % len(users))

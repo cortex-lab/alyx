@@ -7,7 +7,7 @@ from operator import itemgetter
 from textwrap import dedent
 
 from django.contrib.admin.models import LogEntry
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -77,8 +77,8 @@ class Command(BaseCommand):
             return
         self.do_send = not options.get('no_email')
         users = options.get('users')
-        users = (User.objects.filter(username__in=users).order_by('username')
-                 if users else User.objects.all())
+        users = (get_user_model().objects.filter(username__in=users).order_by('username')
+                 if users else get_user_model().objects.all())
         for name in options.get('names'):
             method = getattr(self, 'make_%s' % name, None)
             if not method:

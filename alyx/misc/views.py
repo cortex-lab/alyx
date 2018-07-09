@@ -1,4 +1,5 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -56,7 +57,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Lists all users with the subjects which they are responsible for.
     """
-    queryset = User.objects.all()
+    queryset = get_user_model().objects.all()
     queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'

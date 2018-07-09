@@ -5,10 +5,9 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
-from alyx.settings import TIME_ZONE
+from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
 from alyx.base import BaseModel
-from misc.models import OrderedUser
 
 
 def _related_string(field):
@@ -170,7 +169,7 @@ class DatasetType(BaseModel):
                             blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
 
     created_by = models.ForeignKey(
-        OrderedUser, blank=True, null=True,
+        AUTH_USER_MODEL, blank=True, null=True,
         on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
@@ -224,7 +223,7 @@ class BaseExperimentalData(BaseModel):
         help_text="The Session to which this data belongs")
 
     created_by = models.ForeignKey(
-        OrderedUser, blank=True, null=True,
+        AUTH_USER_MODEL, blank=True, null=True,
         on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")

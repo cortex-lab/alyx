@@ -1,6 +1,6 @@
 import os.path as op
-import datetime
-from django.contrib.auth.models import User
+
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
@@ -8,7 +8,7 @@ from alyx.base import BaseTests
 
 class APIDataTests(BaseTests):
     def setUp(self):
-        self.superuser = User.objects.create_superuser('test', 'test', 'test')
+        self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
 
         # Create some static data.
@@ -113,6 +113,7 @@ class APIDataTests(BaseTests):
             'dataset_type': 'dst',
             'created_by': 'test',
             'subject': self.subject,
+            #'dataset_type': 'dst',
             'data_format': 'df',
             'date': '2018-01-01',
             'number': 2,

@@ -146,8 +146,7 @@ ADMIN_PAGES = [('Common', ['Subjects',
                           ]),
                ('IT admin', ['Tokens',
                              'Groups',
-                             'Users',
-                             'Stock managers',
+                             'Lab members',
                              ]),
                ]
 

@@ -1,11 +1,10 @@
 from rest_framework import serializers
 from django.contrib.admin.models import LogEntry, ADDITION
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
-from misc.models import OrderedUser
 from data.models import Dataset, DatasetType, DataFormat
 from data.serializers import ExpMetadataSummarySerializer
 from equipment.models import LabLocation
@@ -35,7 +34,7 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         read_only=False,
         many=True,
         slug_field='username',
-        queryset=OrderedUser.objects.all(),
+        queryset=get_user_model().objects.all(),
         required=False,
     )
 
@@ -129,7 +128,7 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
     user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         required=False,
     )
 
@@ -164,7 +163,7 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
     user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         required=False,
     )
 

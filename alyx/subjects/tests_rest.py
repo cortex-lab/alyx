@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from alyx.base import BaseTests
 from actions.models import WaterAdministration, Weighing
@@ -6,7 +6,7 @@ from actions.models import WaterAdministration, Weighing
 
 class APISubjectsTests(BaseTests):
     def setUp(self):
-        self.superuser = User.objects.create_superuser('test', 'test', 'test')
+        self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
 
     def test_list_subjects(self):

@@ -8,10 +8,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
-
 import os
-from django.conf.locale.en import formats as en_formats  # lab-specific
-
+from django.conf.locale.en import formats as en_formats
 
 # WebDAV server is used to store images. This is a WIP feature.
 # Will be overriden by settings_secret.
@@ -46,6 +44,10 @@ if 'TRAVIS' in os.environ:
             'PORT': '',
         }
     }
+
+
+# Custom User model with UUID primary key
+AUTH_USER_MODEL = 'misc.LabMember'
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

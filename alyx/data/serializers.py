@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
@@ -44,7 +44,7 @@ class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         allow_null=True,
         required=False,
         default=serializers.CurrentUserDefault(),
@@ -96,7 +96,7 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         default=serializers.CurrentUserDefault(),
     )
 

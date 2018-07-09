@@ -2,6 +2,7 @@ import logging
 
 from django import forms
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.db.models import Case, When
 from django.urls import reverse
 from django.utils.html import format_html
@@ -15,7 +16,6 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      )
 from data.models import Dataset
 from misc.admin import NoteInline
-from misc.models import OrderedUser
 from subjects.models import Subject
 from . import water
 
@@ -111,9 +111,9 @@ class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BaseActionForm, self).__init__(*args, **kwargs)
         if 'users' in self.fields:
-            self.fields['users'].queryset = OrderedUser.objects.all().order_by('username')
+            self.fields['users'].queryset = get_user_model().objects.all().order_by('username')
         if 'user' in self.fields:
-            self.fields['user'].queryset = OrderedUser.objects.all().order_by('username')
+            self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
         if 'subject' in self.fields:
             inst = self.instance
             ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
@@ -199,7 +199,7 @@ class WaterAdministrationForm(forms.ModelForm):
         # These ids first in the list of subjects.
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
-        self.fields['user'].queryset = OrderedUser.objects.all().order_by('username')
+        self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
 

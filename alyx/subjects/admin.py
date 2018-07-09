@@ -1,9 +1,9 @@
 from django import forms
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
-from django.conf import settings
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When
 from django.utils.html import format_html
@@ -12,11 +12,12 @@ from django.urls import reverse
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
                        _iter_history_changes, list_images, show_images)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
-                     Species, Strain, Subject, SubjectRequest, Zygosity, StockManager,
+                     Species, Strain, Subject, SubjectRequest, Zygosity,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
 from actions import water
+from misc.models import LabMember
 from misc.admin import NoteInline
 
 
@@ -53,7 +54,7 @@ class ResponsibleUserListFilter(DefaultListFilter):
         if self.value() is None:
             return queryset.filter(responsible_user=request.user)
         if self.value() == 'stock':
-            sms = [sm.user for sm in StockManager.objects.all()]
+            sms = [sm.user for sm in get_user_model().objects.filter(is_stock_manager=True)]
             return queryset.filter(responsible_user__in=sms)
         elif self.value == 'all':
             return queryset.all()
@@ -243,7 +244,7 @@ class SubjectForm(forms.ModelForm):
         super(SubjectForm, self).__init__(*args, **kwargs)
         if self.instance.line:
             self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
-        self.fields['responsible_user'].queryset = User.objects.all().order_by('username')
+        self.fields['responsible_user'].queryset = get_user_model().objects.all()
 
     def clean_responsible_user(self):
         old_ru = self.instance.responsible_user
@@ -252,8 +253,7 @@ class SubjectForm(forms.ModelForm):
         # NOTE: skip the test if the instance is being created
         # such that any user can create a new subject.
         if not self.instance._state.adding and old_ru and new_ru and old_ru != new_ru:
-            if (not logged.is_superuser and
-                    not StockManager.objects.filter(user=logged) and
+            if (not logged.is_superuser and not logged.is_stock_manager and
                     logged != old_ru):
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
@@ -446,7 +446,7 @@ class SubjectAdmin(BaseAdmin):
     def changelist_view(self, request, extra_context=None):
         """Restrict ability to change responsible user on the subjects list view."""
         if self.__class__.__name__ == 'SubjectAdmin':
-            if request.user.is_superuser or StockManager.objects.filter(user=request.user):
+            if request.user.is_superuser or request.user.is_stock_manager:
                 self.list_editable = ['responsible_user']
             else:
                 self.list_editable = []
@@ -642,11 +642,10 @@ class BreedingPairFilter(DefaultListFilter):
 
 
 def _bp_subjects(line, sex):
-    sm = settings.STOCK_MANAGERS
     qs = Subject.objects.filter(line=line, sex=sex,
-                                responsible_user__username__in=sm).order_by('nickname')
+                                responsible_user__is_stock_manager=True).order_by('nickname')
     ids = [item.id for item in qs]
-    qs = Subject.objects.filter(responsible_user__username__in=sm,
+    qs = Subject.objects.filter(responsible_user__is_stock_manager=True,
                                 sex=sex)
     if ids:
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
@@ -965,7 +964,7 @@ class SubjectInlineNonEditable(SubjectInline):
 class SubjectRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SubjectRequestForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = User.objects.all().order_by('username')
+        self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
 
 
 class SubjectRequestAdmin(BaseAdmin):
@@ -1046,20 +1045,16 @@ class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
 
 
-class MyUserAdmin(UserAdmin):
+class LabMemberAdmin(UserAdmin):
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l',
-                    'is_staff', 'is_superuser',
+                    'is_staff', 'is_superuser', 'is_stock_manager',
                     ]
 
     def groups_l(self, obj):
         return ', '.join(map(str, obj.groups.all()))
     groups_l.short_description = 'groups'
-
-
-class StockManagerAdmin(BaseAdmin):
-    fields = ['user']
 
 
 # Reorganize admin index
@@ -1073,8 +1068,7 @@ mysite.index_title = 'Welcome to Alyx'
 
 admin.site = mysite
 
-mysite.register(User, MyUserAdmin)
-mysite.register(StockManager, StockManagerAdmin)
+mysite.register(LabMember, LabMemberAdmin)
 mysite.register(Group)
 
 mysite.register(Project, ProjectAdmin)
