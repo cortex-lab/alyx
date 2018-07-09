@@ -8,13 +8,19 @@ import uuid
 import re
 
 
+if len(sys.argv) > 1 and sys.argv[1] == 'test':
+    path = '../data/all_dumped_anon.json'
+    out = '../data/all_dumped_anon.uuid.json'
+else:
+    path = 'dump.json'
+    out = 'dump.uuid.json'
+
 user_keys = {}
 
 if op.exists('user_keys.json'):
     with open('user_keys.json', 'r') as f:
         user_keys.update({int(key): value for key, value in json.load(f).items()})
 
-path = 'dump.json'
 
 """
 actions.ProcedureType.user
@@ -42,7 +48,7 @@ groups should not be dumped, but set up locally with a management command
 """
 
 # Load the database dump.
-with open('dump.json', 'r') as f:
+with open(path, 'r') as f:
     db = json.load(f)
 
 
@@ -128,7 +134,7 @@ for item in db:
         # Many-to-many relationships.
         if isinstance(value, list):
             for _ in value:
-                if re.match(UUID_REGEX, _):
+                if re.match(UUID_REGEX, str(_)):
                     if _ not in pks:
                         assert field in ('species, data_format, dataset_type')
                         fields_to_remove.append(field)
@@ -141,7 +147,7 @@ missing_item_field = set((item['model'], field) for (item, field, _) in missing)
 
 
 # Save the database dump.
-with open('dump.uuid.json', 'w') as f:
+with open(out, 'w') as f:
     json.dump(db, f, indent=1)
 
 
