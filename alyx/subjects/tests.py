@@ -47,8 +47,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         request = self.factory.get('/')
         request.csrf_processing_done = True
         self.request = request
-        self.users = [get_user_model.objects.get(username=username)
-                      for username in settings.SUPERUSERS]
+        self.users = [user for user in get_user_model().objects.filter(is_superuser=True)]
 
     def tearDown(self):
         warnings.simplefilter('default')
