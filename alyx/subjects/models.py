@@ -322,7 +322,7 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
     if not instance or not kwargs['created']:
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
-    to = [sm.user.email for sm in get_user_model().objects.filter(
+    to = [sm.email for sm in get_user_model().objects.filter(
           is_stock_manager=True, email__isnull=False)]
     alyx_mail(to, subject, instance.description)
 

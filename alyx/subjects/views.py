@@ -18,9 +18,9 @@ class SubjectFilter(FilterSet):
 
     def filter_stock(self, queryset, name, value):
         if value is True:
-            return queryset.filter(responsible_user__id=5)
+            return queryset.filter(responsible_user__is_stock_manager=True)
         else:
-            return queryset.exclude(responsible_user__id=5)
+            return queryset.exclude(responsible_user__is_stock_manager=True)
 
     def filter_water_restricted(self, queryset, name, value):
         if value is True:
