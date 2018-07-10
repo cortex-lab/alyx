@@ -114,7 +114,7 @@ class DatasetFilter(FilterSet):
                                                          lookup_expr='gte')
     created_datetime_lte = django_filters.DateTimeFilter(name='created_datetime',
                                                          lookup_expr='lte')
-    
+
     class Meta:
         model = Dataset
         exclude = ['json']
