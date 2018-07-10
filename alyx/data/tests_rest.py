@@ -1,5 +1,5 @@
 import os.path as op
-
+import datetime
 from django.contrib.auth.models import User
 from django.urls import reverse
 
@@ -113,7 +113,6 @@ class APIDataTests(BaseTests):
             'dataset_type': 'dst',
             'created_by': 'test',
             'subject': self.subject,
-            'dataset_type': 'dst',
             'data_format': 'df',
             'date': '2018-01-01',
             'number': 2,
@@ -121,13 +120,35 @@ class APIDataTests(BaseTests):
         # Post the dataset.
         r = self.client.post(reverse('dataset-list'), data)
         self.ar(r, 201)
-
         # Make sure a session has been created.
         session = r.data['session']
         r = self.client.get(session)
         self.ar(r, 200)
         self.assertEqual(r.data['subject'], self.subject)
         self.assertEqual(r.data['start_time'][:10], data['date'])
+
+    def test_dataset_date_filter(self):
+        # create 2 datasets with different dates
+        data = {
+            'name': 'some-filter-dataset',
+            'dataset_type': 'dst',
+            'created_by': 'test',
+            'subject': self.subject,
+            'dataset_type': 'dst',
+            'data_format': 'df',
+            'date': '2018-01-01',
+            'created_datetime' : '2018-01-01T12:34',
+            'number': 2,
+        }
+        data = [data, data.copy()]
+        data[1]['created_datetime'] = '2017-12-21T12:00'
+        r = self.client.post(reverse('dataset-list'), data[0])
+        self.ar(r, 201)
+        r = self.client.post(reverse('dataset-list'), data[1])
+        self.ar(r, 201)
+        r = self.client.get(reverse('dataset-list') + '?created_datetime_lte=2018-01-01')
+        a = [datetime.datetime.strptime(d['created_datetime'],'%Y-%m-%dT%H:%M:%S') for d in r.data]
+        self.assertTrue(max(a) <= datetime.datetime(2018, 1, 1))
 
     def test_register_files(self):
         self.client.post(reverse('project-list'), {'name': 'tp', 'repositories': ['dr']})
