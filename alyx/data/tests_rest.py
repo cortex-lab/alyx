@@ -136,7 +136,7 @@ class APIDataTests(BaseTests):
             'subject': self.subject,
             'data_format': 'df',
             'date': '2018-01-01',
-            'created_datetime' : '2018-01-01T12:34',
+            'created_datetime': '2018-01-01T12:34',
             'number': 2,
         }
         data = [data, data.copy()]

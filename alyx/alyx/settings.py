@@ -8,6 +8,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
+
+import os
+from django.conf.locale.en import formats as en_formats  # lab-specific
+
+
 # WebDAV server is used to store images. This is a WIP feature.
 # Will be overriden by settings_secret.
 WEBDAV_URL = ''
@@ -16,7 +21,6 @@ WEBDAV_PASSWORD = ''
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-import os
 try:
     from .settings_secret import *  # noqa
 except ImportError:
@@ -26,8 +30,6 @@ except ImportError:
 
 # Lab-specific settings
 from .settings_lab import *  # noqa
-
-from django.conf.locale.en import formats as en_formats
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
