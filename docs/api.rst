@@ -197,7 +197,11 @@ GET /datasets
   Get the list of all datasets
 GET /datasets/<pk>
   Get the details about a dataset
-
+GET /datasets?created_datetime_gte=YYYY-MM-DD 
+GET /datasets?created_datetime_lte=YYYY-MM-DD 
+  Filter by start or end date 
+example: GET /datasets?created_by=Hamish&dataset_type=Block&created_datetime_lte=2018-01-01 
+ 
 GET /data-repository-type
   Get the list of all data repository types
 GET /data-repository-type/<pk>
