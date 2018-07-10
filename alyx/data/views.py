@@ -110,8 +110,10 @@ class DatasetFilter(FilterSet):
     created_by = django_filters.CharFilter(name='created_by__username')
     dataset_type = django_filters.CharFilter(name='dataset_type__name')
     experiment_number = django_filters.CharFilter(name='session__number')
-    created_datetime_gte = django_filters.DateTimeFilter(name='created_datetime', lookup_expr='gte') 
-    created_datetime_lte = django_filters.DateTimeFilter(name='created_datetime', lookup_expr='lte') 
+    created_datetime_gte = django_filters.DateTimeFilter(name=
+                                                         'created_datetime', lookup_expr='gte')
+    created_datetime_lte = django_filters.DateTimeFilter(name=
+                                                         'created_datetime', lookup_expr='lte')
     
     class Meta:
         model = Dataset

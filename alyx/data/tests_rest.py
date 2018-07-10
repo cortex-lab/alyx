@@ -134,7 +134,6 @@ class APIDataTests(BaseTests):
             'dataset_type': 'dst',
             'created_by': 'test',
             'subject': self.subject,
-            'dataset_type': 'dst',
             'data_format': 'df',
             'date': '2018-01-01',
             'created_datetime' : '2018-01-01T12:34',
@@ -147,7 +146,8 @@ class APIDataTests(BaseTests):
         r = self.client.post(reverse('dataset-list'), data[1])
         self.ar(r, 201)
         r = self.client.get(reverse('dataset-list') + '?created_datetime_lte=2018-01-01')
-        a = [datetime.datetime.strptime(d['created_datetime'],'%Y-%m-%dT%H:%M:%S') for d in r.data]
+        a = [datetime.datetime.strptime(d['created_datetime'],
+                                        '%Y-%m-%dT%H:%M:%S') for d in r.data]
         self.assertTrue(max(a) <= datetime.datetime(2018, 1, 1))
 
     def test_register_files(self):
