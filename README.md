@@ -40,7 +40,6 @@ The `setup.py` script sets up postgres (it creates the database and postgres use
 * alyx-dev is sync with the **dev** branch
 * From now on, only main alyx should git add and push the migration files
 
-
 ## Deployment process
 
 1. Freeze alyx-dev
@@ -50,4 +49,7 @@ The `setup.py` script sets up postgres (it creates the database and postgres use
 5. Make SQL migrations
 6. Migrate
 7. Git add and push the new migration files from alyx
-8. Full test on alyx
+8. Full test on alyx:
+```
+$  python alyx/manage.py test -n
+```

@@ -272,7 +272,7 @@ class BaseTests(APITestCase):
         call_command('loaddata', op.join(DATA_DIR, 'all_dumped_anon.json.gz'), verbosity=1)
 
     def ar(self, r, code=200):
-        self.assertTrue(r.status_code == code)
+        self.assertTrue(r.status_code == code, r.data)
 
 
 WEBDAV_OPTIONS = {
