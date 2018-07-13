@@ -90,14 +90,14 @@ class WaterHistoryListView(ListView):
 
 
 class SessionFilter(FilterSet):
-    subject = django_filters.CharFilter(name='subject__nickname')
-    start_date = django_filters.CharFilter(name='start_time__date', lookup_expr=('exact'))
-    end_date = django_filters.CharFilter(name='end_time__date', lookup_expr=('exact'))
-    starts_before = django_filters.CharFilter(name='start_time__date', lookup_expr=('lte'))
-    starts_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
-    ends_before = django_filters.CharFilter(name='start_time__date', lookup_expr=('lte'))
-    ends_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
-    dataset_types = django_filters.CharFilter(name='dataset_types', method='filter_dataset_types')
+    subject = django_filters.CharFilter('subject__nickname')
+    start_date = django_filters.CharFilter('start_time__date', lookup_expr=('exact'))
+    end_date = django_filters.CharFilter('end_time__date', lookup_expr=('exact'))
+    starts_before = django_filters.CharFilter('start_time__date', lookup_expr=('lte'))
+    starts_after = django_filters.CharFilter('start_time__date', lookup_expr=('gte'))
+    ends_before = django_filters.CharFilter('start_time__date', lookup_expr=('lte'))
+    ends_after = django_filters.CharFilter('start_time__date', lookup_expr=('gte'))
+    dataset_types = django_filters.CharFilter('dataset_types', method='filter_dataset_types')
 
     def filter_dataset_types(self, queryset, name, value):
         types = value.split(',')

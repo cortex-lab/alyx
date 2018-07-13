@@ -4,8 +4,6 @@ python:
 addons:
   postgresql: "9.4"
 services: postgresql
-env:
-  - DJANGO=1.11
 before_install:
   - export DJANGO_SETTINGS_MODULE=alyx.settings
   - export PYTHONPATH=$HOME/builds/cortexlab/alyx

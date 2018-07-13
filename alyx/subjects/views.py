@@ -11,9 +11,9 @@ from .serializers import (SubjectListSerializer,
 
 
 class SubjectFilter(FilterSet):
-    alive = django_filters.BooleanFilter(name='death_date', lookup_expr='isnull')
-    responsible_user = django_filters.CharFilter(name='responsible_user__username')
-    stock = django_filters.BooleanFilter(name='responsible_user', method='filter_stock')
+    alive = django_filters.BooleanFilter('death_date', lookup_expr='isnull')
+    responsible_user = django_filters.CharFilter('responsible_user__username')
+    stock = django_filters.BooleanFilter('responsible_user', method='filter_stock')
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
 
     def filter_stock(self, queryset, name, value):

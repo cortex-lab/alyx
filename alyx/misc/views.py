@@ -48,8 +48,6 @@ def api_root(request, format=None):
         #'water-requirement-url': reverse(
         #    'water-requirement', request=request, format=format),
 
-        'exp-metadata-url': reverse(
-            'exp-metadata-list', request=request, format=format),
     })
 
 
