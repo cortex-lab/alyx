@@ -207,6 +207,7 @@ def _make_dataset_response(dataset):
     out = {
         'id': dataset.pk,
         'name': dataset.name,
+        'file_size': dataset.file_size,
         'subject': dataset.session.subject.nickname,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,

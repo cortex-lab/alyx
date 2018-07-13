@@ -273,6 +273,8 @@ class Dataset(BaseExperimentalData):
 
     name = models.CharField(max_length=255)
 
+    file_size = models.IntegerField(blank=True, null=True, help_text="Size in bytes")
+
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 

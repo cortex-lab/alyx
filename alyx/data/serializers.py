@@ -124,6 +124,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         format='hex_verbose', allow_null=True, required=False,
     )
 
+    file_size = serializers.IntegerField(required=False)
+
     experiment_number = serializers.SerializerMethodField()
 
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
@@ -176,7 +178,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format',
-                  'timescale', 'session', 'md5', 'experiment_number', 'file_records',
+                  'timescale', 'session', 'file_size', 'md5',
+                  'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {
             'subject': {'write_only': True},

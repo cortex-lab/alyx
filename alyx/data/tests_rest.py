@@ -76,6 +76,7 @@ class APIDataTests(BaseTests):
         data = {'name': 'mydataset',
                 'dataset_type': 'dst',
                 'data_format': 'df',
+                'file_size': 1234,
                 }
         r = self.client.post(reverse('dataset-list'), data)
         self.ar(r, 201)
@@ -87,6 +88,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(self.client.get(r.data[0]['url']).data['name'], 'mydataset')
         self.assertTrue(r.data[0]['created_datetime'] is not None)
         self.assertEqual(r.data[0]['name'], 'mydataset')
+        self.assertEqual(r.data[0]['file_size'], 1234)
         self.assertEqual(r.data[0]['dataset_type'], 'dst')
         self.assertEqual(r.data[0]['created_by'], 'test')
 
@@ -114,7 +116,6 @@ class APIDataTests(BaseTests):
             'dataset_type': 'dst',
             'created_by': 'test',
             'subject': self.subject,
-            #'dataset_type': 'dst',
             'data_format': 'df',
             'date': '2018-01-01',
             'number': 2,
