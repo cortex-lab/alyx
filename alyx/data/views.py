@@ -8,7 +8,6 @@ import django_filters
 from django_filters.rest_framework import FilterSet
 
 from subjects.models import Subject, Project
-from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
@@ -25,8 +24,6 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
                           TimescaleSerializer,
-                          ExpMetadataDetailSerializer,
-                          ExpMetadataSummarySerializer,
                           )
 from .transfers import _get_repositories_for_projects, _create_dataset_file_records
 
@@ -164,27 +161,6 @@ class TimescaleDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = TimescaleSerializer
     queryset = Timescale.objects.all()
-
-
-# ExpMetadata
-# ------------------------------------------------------------------------------------------------
-
-class ExpMetadataList(generics.ListCreateAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataSummarySerializer
-    queryset = ExtracellularRecording.objects.all()
-
-
-class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataDetailSerializer
-    queryset = ExtracellularRecording.objects.all()
 
 
 # Register file

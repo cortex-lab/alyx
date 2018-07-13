@@ -6,8 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
 from data.models import Dataset, DatasetType, DataFormat
-from data.serializers import ExpMetadataSummarySerializer
-from equipment.models import LabLocation
+from misc.models import LabLocation
 
 
 def _log_entry(instance, user):
@@ -101,13 +100,11 @@ class SessionListSerializer(BaseActionSerializer):
 
 class SessionDetailSerializer(BaseActionSerializer):
 
-    exp_metadata_related = ExpMetadataSummarySerializer(many=True, read_only=True)
-
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'parent_session', 'exp_metadata_related')
+                  'parent_session')
 
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
@@ -141,7 +138,7 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Weighing
         fields = ('subject', 'date_time', 'weight',
-                  'user', 'weighing_scale', 'url')
+                  'user', 'url')
 
 
 class WaterAdministrationListSerializer(serializers.HyperlinkedModelSerializer):

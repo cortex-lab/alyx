@@ -7,7 +7,6 @@ from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType
                      )
 from actions.models import Session
 from subjects.models import Subject
-from electrophysiology.models import ExtracellularRecording
 
 
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -193,17 +192,3 @@ class TimescaleSerializer(serializers.HyperlinkedModelSerializer):
         model = Timescale
         fields = ('__all__')
         extra_kwargs = {'url': {'view_name': 'timescale-detail', 'lookup_field': 'name'}}
-
-
-class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ExtracellularRecording
-        fields = ('classname', 'json', 'session', 'url')
-        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}
-
-
-class ExpMetadataDetailSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ExtracellularRecording
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}

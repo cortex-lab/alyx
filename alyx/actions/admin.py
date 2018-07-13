@@ -328,7 +328,7 @@ class WeighingForm(BaseActionForm):
 class WeighingAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'weight', 'date_time']
     list_select_related = ('subject',)
-    fields = ['subject', 'date_time', 'weight', 'user', 'weighing_scale']
+    fields = ['subject', 'date_time', 'weight', 'user']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
     search_fields = ['subject__nickname']

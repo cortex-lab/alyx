@@ -144,13 +144,9 @@ INSTALLED_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_docs',
-    'equipment',
     'actions',
     'data',
     'misc',
-    'behavior',
-    'electrophysiology',
-    'imaging'
 )
 
 MIDDLEWARE = (

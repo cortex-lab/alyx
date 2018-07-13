@@ -67,13 +67,6 @@ urlpatterns = [
          name="session-detail"),
 
 
-    path('exp-metadata', dv.ExpMetadataList.as_view(),
-         name="exp-metadata-list"),
-
-    path('exp-metadata/<uuid:pk>', dv.ExpMetadataDetail.as_view(),
-         name="exp-metadata-detail"),
-
-
     path('data-repository-type', dv.DataRepositoryTypeList.as_view(),
          name="datarepositorytype-list"),
 

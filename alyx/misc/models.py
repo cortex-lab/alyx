@@ -44,15 +44,17 @@ class LabMembership(BaseModel):
         return "%s %s in %s" % (self.user, self.role, self.lab)
 
 
-class Note(BaseModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    date_time = models.DateTimeField(default=timezone.now)
-    text = models.TextField(blank=True)
+class LabLocation(BaseModel):
+    # minor but can we change this to Location or LabLocation? Because it could
+    # also be a room in the animal house
+    """
+    The physical location at which an session is performed or appliances are located.
+    This could be a room, a bench, a rig, etc.
+    """
+    name = models.CharField(max_length=255)
 
-    # Generic foreign key to arbitrary model instances.
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.UUIDField()
-    content_object = GenericForeignKey()
+    def __str__(self):
+        return self.name
 
 
 class BrainLocation(BaseModel):
@@ -69,22 +71,12 @@ class BrainLocation(BaseModel):
         return self.name
 
 
-class CoordinateTransformation(BaseModel):
-    """
-    This defines how to convert from a local coordinate system (e.g. of a silicon probe) to
-    stereotaxic coordinates.
-    It is an affine transformation:
-    stereotaxic_coordinates = origin + transformation_matrix*local_coordinates.
-    The decription and allen_location_ontology apply to the coordinate origin
-    (e.g. electrode tip).
-    """
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    allen_location_ontology = models.CharField(max_length=1000)
+class Note(BaseModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    date_time = models.DateTimeField(default=timezone.now)
+    text = models.TextField(blank=True)
 
-    origin = ArrayField(models.FloatField(blank=True, null=True), size=3)
-    transformation_matrix = ArrayField(ArrayField(models.FloatField(blank=True, null=True),
-                                                  size=3), size=3)
-
-    def __str__(self):
-        return self.name
+    # Generic foreign key to arbitrary model instances.
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey()

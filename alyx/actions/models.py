@@ -4,8 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel
-from equipment.models import WeighingScale, VirusBatch, LabLocation
-from misc.models import BrainLocation, Lab
+from misc.models import BrainLocation, Lab, LabLocation
 
 
 class ProcedureType(BaseModel):
@@ -37,10 +36,6 @@ class Weighing(BaseModel):
     weight = models.FloatField(
         validators=[MinValueValidator(limit_value=0)],
         help_text="Weight in grams")
-    weighing_scale = models.ForeignKey(
-        WeighingScale, null=True, blank=True,
-        on_delete=models.SET_NULL,
-        help_text="The scale record that was used to weigh the subject")
 
     def expected(self):
         """Expected weighing."""
@@ -118,7 +113,7 @@ class VirusInjection(BaseAction):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True, on_delete=models.SET_NULL,)
+    virus_batch = models.CharField(max_length=255, null=True, blank=True)
     injection_volume = models.FloatField(
         null=True, blank=True, help_text="Volume in nanoliters")
     rate_of_injection = models.FloatField(

@@ -79,13 +79,14 @@ for i, item in enumerate(db):
         if field in ('user', 'created_by', 'responsible_user'):
             if value is None:
                 continue
-            assert isinstance(value, int)
+            if not isinstance(value, int):
+                continue
             new_pk = user_keys[value]
             item['fields'][field] = new_pk
             assert isinstance(item['fields'][field], str)
         elif field == 'users':
             value = item['fields'][field]
-            item['fields'][field] = [user_keys[pk] for pk in value]
+            item['fields'][field] = [user_keys.get(pk, pk) for pk in value]
             assert all(isinstance(_, str) for _ in item['fields'][field])
 
     # Mark some items to remove.
@@ -113,6 +114,13 @@ for item in db:
                 assert all(isinstance(_, str) for _ in value)
             else:
                 assert value is None or isinstance(value, str)
+
+
+# Moved modules.
+for item in db:
+    if item['model'] == 'equipment.lablocation':
+        item['model'] = 'misc.lablocation'
+    item['fields'].pop('weighing_scale', None)
 
 
 # Integrity check: remove non-existing foreign keys.
