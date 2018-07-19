@@ -128,6 +128,7 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     Detail of one session
     """
     queryset = Session.objects.all()
+    queryset = SessionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = SessionDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
 

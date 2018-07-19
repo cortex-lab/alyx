@@ -103,11 +103,24 @@ class SessionListSerializer(BaseActionSerializer):
 class SessionDetailSerializer(BaseActionSerializer):
 
     exp_metadata_related = ExpMetadataSummarySerializer(many=True, read_only=True)
+    data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related(
+            'data_dataset_session_related',
+            'data_dataset_session_related__dataset_type',
+            'data_dataset_session_related__data_format',
+            'data_dataset_session_related__file_records',
+            'data_dataset_session_related__file_records__data_repository',
+        )
+        return queryset
 
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
+                  'data_dataset_session_related',
                   'parent_session', 'exp_metadata_related')
 
 
