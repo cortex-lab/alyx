@@ -5,7 +5,6 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 
 from alyx.base import BaseModel
@@ -52,20 +51,6 @@ class LabLocation(BaseModel):
     This could be a room, a bench, a rig, etc.
     """
     name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
-
-class BrainLocation(BaseModel):
-    """Gives a brain location in stereotaxic coordinates, plus other information about location."""
-    name = models.CharField(max_length=255)
-    # [Anterior, Right, Down], relative to bregma in µm
-    stereotaxic_coordinates = ArrayField(models.FloatField(blank=True, null=True), size=3)
-    # e.g. area, layer, comments on how estimated
-    description = models.TextField()
-    # using their vocabulary
-    allen_location_ontology = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name

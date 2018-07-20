@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Timescale,
+                     Dataset, FileRecord,
                      _get_session,
                      )
 from actions.models import Session
@@ -109,11 +109,6 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=DataFormat.objects.all(),
     )
 
-    timescale = serializers.HyperlinkedRelatedField(
-        read_only=False, required=False, view_name="timescale-detail",
-        queryset=Timescale.objects.all(),
-    )
-
     session = serializers.HyperlinkedRelatedField(
         read_only=False, required=False, view_name="session-detail",
         queryset=Session.objects.all(),
@@ -143,7 +138,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related(
-            'created_by', 'dataset_type', 'data_format', 'timescale', 'session',
+            'created_by', 'dataset_type', 'data_format', 'session',
             'session__subject')
         queryset = queryset.prefetch_related(
             'file_records', 'file_records__data_repository')
@@ -177,7 +172,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format',
-                  'timescale', 'session', 'file_size', 'md5',
+                  'session', 'file_size', 'md5',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {
@@ -185,10 +180,3 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
             'date': {'write_only': True},
             'number': {'write_only': True},
         }
-
-
-class TimescaleSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Timescale
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'timescale-detail', 'lookup_field': 'name'}}

@@ -286,11 +286,6 @@ class Dataset(BaseExperimentalData):
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
 
-    timescale = models.ForeignKey(
-        'data.Timescale', null=True, blank=True,
-        on_delete=models.CASCADE,
-        help_text="Associated time scale (for time series datasets only).")
-
     def data_url(self):
         records = self.file_records.all()
         records = [r for r in records if r.data_repository.data_url and r.exists]
@@ -346,47 +341,3 @@ class FileRecord(BaseModel):
 
     def __str__(self):
         return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
-
-
-class Timescale(BaseModel):
-    """
-    A timescale that is used to align recordings on multiple devices.
-    There could be multiple timescales for a single experiment, which could be used for example
-    if some information could only be aligned with poor temporal resolution.
-
-    However there can only be one timescale with the flag "final" set to True at any moment.
-    This should reflect a final, accurate time alignement, that can be used by data analysts who
-    do not need to understand how time alignment was performed. It should have a sample rate of 1.
-
-    When users search for data, they will normally search for a timescale that is linked to
-    timeseries of the appropriate kind.
-
-    A timescale is always associated with a session, and can also optionally be associated with a
-    series or experiment.
-    """
-
-    name = models.CharField(
-        max_length=255, blank=True,
-        help_text="informal name describing this field")
-
-    nominal_start = models.DateTimeField(
-        blank=True, null=True,
-        help_text="Approximate date and time corresponding to 0 samples")
-
-    nominal_time_unit = models.FloatField(
-        blank=True, null=True,
-        help_text="Nominal time unit for this timescale (in seconds)")
-
-    final = models.BooleanField(
-        help_text="set to true for the final results of time alignment, in seconds")
-
-    info = models.CharField(
-        max_length=255, blank=True,
-        help_text="any information, e.g. length of break around 300s inferred approximately "
-        "from computer clock")
-
-    def __str__(self):
-        return "<Timescale '%s'>" % self.name
-
-    class Meta:
-        verbose_name_plural = 'Time scales'

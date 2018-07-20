@@ -109,13 +109,6 @@ urlpatterns = [
          name="filerecord-detail"),
 
 
-    path('timescales', dv.TimescaleList.as_view(),
-         name="timescale-list"),
-
-    path('timescales/<uuid:pk>', dv.TimescaleDetail.as_view(),
-         name="timescale-detail"),
-
-
     path('register-file', register_file,
          name="register-file"),
 

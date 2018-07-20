@@ -342,7 +342,7 @@ class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
     list_select_related = ('subject',)
 
-    fields = BaseActionAdmin.fields + ['brain_location', 'outcome_type', 'images']
+    fields = BaseActionAdmin.fields + ['outcome_type', 'images']
     readonly_fields = ['images']
     list_display_links = ['date']
     list_filter = [SubjectAliveListFilter,

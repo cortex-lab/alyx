@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel
-from misc.models import BrainLocation, Lab, LabLocation
+from misc.models import Lab, LabLocation
 
 
 class ProcedureType(BaseModel):
@@ -140,8 +140,6 @@ class Surgery(BaseAction):
         ('a', 'Acute'),
         ('r', 'Recovery'),
     )
-    brain_location = models.ForeignKey(BrainLocation, null=True, blank=True,
-                                       on_delete=models.SET_NULL,)
     outcome_type = models.CharField(max_length=1,
                                     choices=OUTCOME_TYPES,
                                     blank=True,

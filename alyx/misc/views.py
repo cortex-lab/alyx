@@ -33,7 +33,6 @@ def api_root(request, format=None):
 
         'dataformat-url': reverse('dataformat-list', request=request, format=format),
         'dataset-types-url': reverse('datasettype-list', request=request, format=format),
-        'timescales-url': reverse('timescale-list', request=request, format=format),
         'register-file': reverse(
             'register-file', request=request, format=format),
 

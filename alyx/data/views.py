@@ -14,7 +14,6 @@ from .models import (DataRepositoryType,
                      DatasetType,
                      Dataset,
                      FileRecord,
-                     Timescale,
                      _get_session,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
@@ -23,7 +22,6 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
-                          TimescaleSerializer,
                           )
 from .transfers import _get_repositories_for_projects, _create_dataset_file_records
 
@@ -146,21 +144,6 @@ class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = FileRecord.objects.all()
     serializer_class = FileRecordSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-
-# Timescale
-# ------------------------------------------------------------------------------------------------
-
-class TimescaleList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TimescaleSerializer
-    queryset = Timescale.objects.all()
-
-
-class TimescaleDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TimescaleSerializer
-    queryset = Timescale.objects.all()
 
 
 # Register file

@@ -121,6 +121,8 @@ for item in db:
     if item['model'] == 'equipment.lablocation':
         item['model'] = 'misc.lablocation'
     item['fields'].pop('weighing_scale', None)
+    item['fields'].pop('brain_location', None)
+    item['fields'].pop('timescale', None)
 
 
 # Integrity check: remove non-existing foreign keys.
