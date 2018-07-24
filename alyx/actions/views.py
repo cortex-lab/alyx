@@ -90,14 +90,25 @@ class WaterHistoryListView(ListView):
 
 
 class SessionFilter(FilterSet):
-    subject = django_filters.CharFilter(name='subject__nickname')
-    start_date = django_filters.CharFilter(name='start_time__date', lookup_expr=('exact'))
-    end_date = django_filters.CharFilter(name='end_time__date', lookup_expr=('exact'))
-    starts_before = django_filters.CharFilter(name='start_time__date', lookup_expr=('lte'))
-    starts_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
-    ends_before = django_filters.CharFilter(name='start_time__date', lookup_expr=('lte'))
-    ends_after = django_filters.CharFilter(name='start_time__date', lookup_expr=('gte'))
+    subject = django_filters.CharFilter(name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(name='dataset_types', method='filter_dataset_types')
+    users = django_filters.CharFilter(name='users__username', method=('filter_users'))
+    date_range = django_filters.CharFilter(name='date_range', method=('filter_date_range'))
+
+    def filter_users(self, queryset, name, value):
+        types = value.split(',')
+        queryset = queryset.filter(users__username__in=types)
+        queryset = queryset.annotate(
+            dtypes_count=Count('users__username'))
+        queryset = queryset.filter(dtypes_count__gte=len(types))
+        return queryset
+
+    def filter_date_range(self, queryset, name, value):
+        drange = value.split(',')
+        queryset = queryset.filter(start_time__date__gte=drange[0]).filter(
+            end_time__date__lte=drange[1]
+        )
+        return queryset
 
     def filter_dataset_types(self, queryset, name, value):
         types = value.split(',')
