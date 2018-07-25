@@ -1,10 +1,10 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel
-from equipment.models import LabLocation, Lab, WeighingScale, VirusBatch
-from misc.models import BrainLocation, OrderedUser
+from misc.models import Lab, LabLocation
 
 
 class ProcedureType(BaseModel):
@@ -24,19 +24,18 @@ class Weighing(BaseModel):
     """
     A weighing of a subject.
     """
-    user = models.ForeignKey(OrderedUser, null=True, blank=True, on_delete=models.SET_NULL,
-                             help_text="The user who weighed the subject")
-    subject = models.ForeignKey('subjects.Subject', related_name='weighings',
-                                on_delete=models.CASCADE,
-                                help_text="The subject which was weighed")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="The user who weighed the subject")
+    subject = models.ForeignKey(
+        'subjects.Subject', related_name='weighings',
+        on_delete=models.CASCADE,
+        help_text="The subject which was weighed")
     date_time = models.DateTimeField(
         null=True, blank=True, default=timezone.now)
-    weight = models.FloatField(validators=[MinValueValidator(limit_value=0)],
-                               help_text="Weight in grams")
-    weighing_scale = models.ForeignKey(WeighingScale, null=True, blank=True,
-                                       on_delete=models.SET_NULL,
-                                       help_text="The scale record that was used "
-                                       "to weigh the subject")
+    weight = models.FloatField(
+        validators=[MinValueValidator(limit_value=0)],
+        help_text="Weight in grams")
 
     def expected(self):
         """Expected weighing."""
@@ -53,7 +52,7 @@ class WaterAdministration(BaseModel):
     """
     For keeping track of water for subjects not on free water.
     """
-    user = models.ForeignKey(OrderedUser, null=True, blank=True,
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                              on_delete=models.SET_NULL,
                              help_text="The user who administered water")
     subject = models.ForeignKey('subjects.Subject',
@@ -82,7 +81,7 @@ class BaseAction(BaseModel):
     surgery; etc. This should always be accessed through one of its subclasses.
     """
 
-    users = models.ManyToManyField(OrderedUser, blank=True,
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True,
                                    help_text="The user(s) involved in this action")
     subject = models.ForeignKey('subjects.Subject',
                                 on_delete=models.CASCADE,
@@ -114,7 +113,7 @@ class VirusInjection(BaseAction):
         ('I', 'Iontophoresis'),
         ('P', 'Pressure'),
     )
-    virus_batch = models.ForeignKey(VirusBatch, null=True, blank=True, on_delete=models.SET_NULL,)
+    virus_batch = models.CharField(max_length=255, null=True, blank=True)
     injection_volume = models.FloatField(
         null=True, blank=True, help_text="Volume in nanoliters")
     rate_of_injection = models.FloatField(
@@ -141,8 +140,6 @@ class Surgery(BaseAction):
         ('a', 'Acute'),
         ('r', 'Recovery'),
     )
-    brain_location = models.ForeignKey(BrainLocation, null=True, blank=True,
-                                       on_delete=models.SET_NULL,)
     outcome_type = models.CharField(max_length=1,
                                     choices=OUTCOME_TYPES,
                                     blank=True,

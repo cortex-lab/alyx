@@ -52,7 +52,7 @@ Imaging
    :members:
 
 Coordinate transforms
--------------------
+---------------------
 .. automodule:: misc.models
    :member-order: bysource
    :show-inheritance:

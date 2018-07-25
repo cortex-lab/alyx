@@ -1,21 +1,19 @@
 import logging
 import re
 
+from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 from django_filters.rest_framework import FilterSet
 
-from misc.models import OrderedUser
 from subjects.models import Subject, Project
-from electrophysiology.models import ExtracellularRecording
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
                      DatasetType,
                      Dataset,
                      FileRecord,
-                     Timescale,
                      _get_session,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
@@ -24,9 +22,6 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
-                          TimescaleSerializer,
-                          ExpMetadataDetailSerializer,
-                          ExpMetadataSummarySerializer,
                           )
 from .transfers import _get_repositories_for_projects, _create_dataset_file_records
 
@@ -105,14 +100,14 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 # ------------------------------------------------------------------------------------------------
 
 class DatasetFilter(FilterSet):
-    subject = django_filters.CharFilter(name='session__subject__nickname')
-    date = django_filters.CharFilter(name='created_datetime__date')
-    created_by = django_filters.CharFilter(name='created_by__username')
-    dataset_type = django_filters.CharFilter(name='dataset_type__name')
-    experiment_number = django_filters.CharFilter(name='session__number')
-    created_datetime_gte = django_filters.DateTimeFilter(name='created_datetime',
+    subject = django_filters.CharFilter('session__subject__nickname')
+    date = django_filters.CharFilter('created_datetime__date')
+    created_by = django_filters.CharFilter('created_by__username')
+    dataset_type = django_filters.CharFilter('dataset_type__name')
+    experiment_number = django_filters.CharFilter('session__number')
+    created_datetime_gte = django_filters.DateTimeFilter('created_datetime',
                                                          lookup_expr='gte')
-    created_datetime_lte = django_filters.DateTimeFilter(name='created_datetime',
+    created_datetime_lte = django_filters.DateTimeFilter('created_datetime',
                                                          lookup_expr='lte')
 
     class Meta:
@@ -151,42 +146,6 @@ class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-# Timescale
-# ------------------------------------------------------------------------------------------------
-
-class TimescaleList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TimescaleSerializer
-    queryset = Timescale.objects.all()
-
-
-class TimescaleDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = TimescaleSerializer
-    queryset = Timescale.objects.all()
-
-
-# ExpMetadata
-# ------------------------------------------------------------------------------------------------
-
-class ExpMetadataList(generics.ListCreateAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataSummarySerializer
-    queryset = ExtracellularRecording.objects.all()
-
-
-class ExpMetadataDetail(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Lists experimental metadata classes. For now just supports ExtracellularRecording
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = ExpMetadataDetailSerializer
-    queryset = ExtracellularRecording.objects.all()
-
-
 # Register file
 # ------------------------------------------------------------------------------------------------
 
@@ -207,6 +166,7 @@ def _make_dataset_response(dataset):
     out = {
         'id': dataset.pk,
         'name': dataset.name,
+        'file_size': dataset.file_size,
         'subject': dataset.session.subject.nickname,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,
@@ -247,7 +207,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     def create(self, request):
         user = request.data.get('created_by', None)
         if user:
-            user = OrderedUser.objects.get(username=user)
+            user = get_user_model().objects.get(username=user)
         else:
             user = request.user
         dns = request.data.get('dns', None)

@@ -67,13 +67,6 @@ urlpatterns = [
          name="session-detail"),
 
 
-    path('exp-metadata', dv.ExpMetadataList.as_view(),
-         name="exp-metadata-list"),
-
-    path('exp-metadata/<uuid:pk>', dv.ExpMetadataDetail.as_view(),
-         name="exp-metadata-detail"),
-
-
     path('data-repository-type', dv.DataRepositoryTypeList.as_view(),
          name="datarepositorytype-list"),
 
@@ -114,13 +107,6 @@ urlpatterns = [
 
     path('files/<uuid:pk>', dv.FileRecordDetail.as_view(),
          name="filerecord-detail"),
-
-
-    path('timescales', dv.TimescaleList.as_view(),
-         name="timescale-list"),
-
-    path('timescales/<uuid:pk>', dv.TimescaleDetail.as_view(),
-         name="timescale-detail"),
 
 
     path('register-file', register_file,

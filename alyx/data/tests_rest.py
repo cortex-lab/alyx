@@ -1,6 +1,7 @@
-import os.path as op
 import datetime
-from django.contrib.auth.models import User
+import os.path as op
+
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
@@ -8,7 +9,7 @@ from alyx.base import BaseTests
 
 class APIDataTests(BaseTests):
     def setUp(self):
-        self.superuser = User.objects.create_superuser('test', 'test', 'test')
+        self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
 
         # Create some static data.
@@ -75,6 +76,7 @@ class APIDataTests(BaseTests):
         data = {'name': 'mydataset',
                 'dataset_type': 'dst',
                 'data_format': 'df',
+                'file_size': 1234,
                 }
         r = self.client.post(reverse('dataset-list'), data)
         self.ar(r, 201)
@@ -86,6 +88,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(self.client.get(r.data[0]['url']).data['name'], 'mydataset')
         self.assertTrue(r.data[0]['created_datetime'] is not None)
         self.assertEqual(r.data[0]['name'], 'mydataset')
+        self.assertEqual(r.data[0]['file_size'], 1234)
         self.assertEqual(r.data[0]['dataset_type'], 'dst')
         self.assertEqual(r.data[0]['created_by'], 'test')
 

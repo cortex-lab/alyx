@@ -1,13 +1,12 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Timescale,
+                     Dataset, FileRecord,
                      _get_session,
                      )
 from actions.models import Session
 from subjects.models import Subject
-from electrophysiology.models import ExtracellularRecording
 
 
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -44,7 +43,7 @@ class DatasetTypeSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         allow_null=True,
         required=False,
         default=serializers.CurrentUserDefault(),
@@ -96,7 +95,7 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         default=serializers.CurrentUserDefault(),
     )
 
@@ -110,11 +109,6 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=DataFormat.objects.all(),
     )
 
-    timescale = serializers.HyperlinkedRelatedField(
-        read_only=False, required=False, view_name="timescale-detail",
-        queryset=Timescale.objects.all(),
-    )
-
     session = serializers.HyperlinkedRelatedField(
         read_only=False, required=False, view_name="session-detail",
         queryset=Session.objects.all(),
@@ -123,6 +117,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     md5 = serializers.UUIDField(
         format='hex_verbose', allow_null=True, required=False,
     )
+
+    file_size = serializers.IntegerField(required=False)
 
     experiment_number = serializers.SerializerMethodField()
 
@@ -142,7 +138,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related(
-            'created_by', 'dataset_type', 'data_format', 'timescale', 'session',
+            'created_by', 'dataset_type', 'data_format', 'session',
             'session__subject')
         queryset = queryset.prefetch_related(
             'file_records', 'file_records__data_repository')
@@ -176,31 +172,11 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format',
-                  'timescale', 'session', 'md5', 'experiment_number', 'file_records',
+                  'session', 'file_size', 'md5',
+                  'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},
             'number': {'write_only': True},
         }
-
-
-class TimescaleSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Timescale
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'timescale-detail', 'lookup_field': 'name'}}
-
-
-class ExpMetadataSummarySerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ExtracellularRecording
-        fields = ('classname', 'json', 'session', 'url')
-        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}
-
-
-class ExpMetadataDetailSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ExtracellularRecording
-        fields = ('__all__')
-        extra_kwargs = {'url': {'view_name': 'exp-metadata-detail', 'lookup_field': 'pk'}}

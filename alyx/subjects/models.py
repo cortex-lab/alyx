@@ -2,8 +2,8 @@ from datetime import datetime
 import logging
 import urllib
 
+from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core import validators
 from django.db import models
 from django.db.models.signals import post_save
@@ -14,14 +14,9 @@ from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
 from actions.models import WaterRestriction
 from actions.water import last_water_restriction, today
-from equipment.models import Lab
-from misc.models import OrderedUser
+from misc.models import Lab
 
 logger = logging.getLogger(__name__)
-
-
-MOUSE_SPECIES_ID = 'c8339f4f-4afe-49d5-b2a2-a7fc61389aaf'
-DEFAULT_RESPONSIBLE_USER_ID = 5
 
 
 # Subject
@@ -87,6 +82,15 @@ def _default_source():
     return None
 
 
+def default_responsible():
+    return get_user_model().objects.filter(is_stock_manager=True).first()
+
+
+def default_species():
+    return Species.objects.get_or_create(
+        display_name='Laboratory mouse', binomial="Mus musculus")[0].pk
+
+
 class Project(BaseModel):
     name = models.CharField(
         max_length=255, unique=True, blank=True, help_text="Project name")
@@ -100,7 +104,7 @@ class Project(BaseModel):
         "automatically copied to all repositories assigned to its project.")
 
     users = models.ManyToManyField(
-        OrderedUser, blank=True,
+        settings.AUTH_USER_MODEL, blank=True,
         help_text="Persons associated to the project.")
 
     def __str__(self):
@@ -134,7 +138,7 @@ class Subject(BaseModel):
                                           "(e.g. 'Hercules').",
                                 validators=[nickname_validator])
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
-                                default=MOUSE_SPECIES_ID)
+                                default=default_species)
     litter = models.ForeignKey('Litter', null=True, blank=True, on_delete=models.SET_NULL)
     sex = models.CharField(max_length=1, choices=SEXES,
                            blank=True, default='U')
@@ -150,9 +154,9 @@ class Subject(BaseModel):
     death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     genotype_date = models.DateField(null=True, blank=True)
-    responsible_user = models.ForeignKey(OrderedUser, null=True, blank=True,
+    responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                                          on_delete=models.SET_NULL,
-                                         default=DEFAULT_RESPONSIBLE_USER_ID,
+                                         default=default_responsible,
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
@@ -281,9 +285,10 @@ class Subject(BaseModel):
 
 
 class SubjectRequest(BaseModel):
-    user = models.ForeignKey(OrderedUser, null=True, blank=True, on_delete=models.SET_NULL,
-                             related_name='subjects_requested',
-                             help_text="Who requested this subject.")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='subjects_requested',
+        help_text="Who requested this subject.")
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     count = models.IntegerField(null=True, blank=True)
     date_time = models.DateField(default=timezone.now, null=True, blank=True)
@@ -317,7 +322,8 @@ def send_subject_request_mail_new(sender, instance=None, **kwargs):
     if not instance or not kwargs['created']:
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
-    to = [sm.user.email for sm in StockManager.objects.all() if sm.user.email]
+    to = [sm.email for sm in get_user_model().objects.filter(
+          is_stock_manager=True, email__isnull=False)]
     alyx_mail(to, subject, instance.description)
 
 
@@ -454,7 +460,7 @@ class Line(BaseModel):
     sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
-                                default=MOUSE_SPECIES_ID)
+                                default=default_species)
     subject_autoname_index = models.IntegerField(default=0)
     breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
@@ -563,16 +569,6 @@ class Source(BaseModel):
 
     def __str__(self):
         return self.name
-
-
-class StockManager(BaseModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE,)
-
-    class Meta:
-        ordering = ['user__username']
-
-    def __str__(self):
-        return self.user.username
 
 
 # Genotypes

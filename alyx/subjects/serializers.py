@@ -5,7 +5,7 @@ from actions.serializers import (WeighingListSerializer,
                                  WaterAdministrationListSerializer,
                                  SessionListSerializer,
                                  )
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from actions import water
 from data.models import DataRepository
 
@@ -56,7 +56,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     responsible_user = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         required=False)
 
     species = serializers.SlugRelatedField(
@@ -149,7 +149,7 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
     users = serializers.SlugRelatedField(
         read_only=False,
         slug_field='username',
-        queryset=User.objects.all(),
+        queryset=get_user_model().objects.all(),
         many=True,
         required=False)
 

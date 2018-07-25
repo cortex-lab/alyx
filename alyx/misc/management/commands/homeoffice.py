@@ -2,7 +2,6 @@ import contextlib
 import logging
 import sys
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
@@ -13,7 +12,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15
 
 
 def assigned_to_stock_managers():
-    return Q(responsible_user__username__in=settings.STOCK_MANAGERS)
+    return Q(responsible_user__is_stock_manager=True)
 
 
 def assigned_to_no_one():

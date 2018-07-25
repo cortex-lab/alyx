@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
 
@@ -8,7 +8,7 @@ from subjects.models import Subject
 
 class APIActionsTests(BaseTests):
     def setUp(self):
-        self.superuser = User.objects.create_superuser('test', 'test', 'test')
+        self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.subject = Subject.objects.all().first()
         # Set an implant weight.

@@ -1,4 +1,5 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -32,7 +33,6 @@ def api_root(request, format=None):
 
         'dataformat-url': reverse('dataformat-list', request=request, format=format),
         'dataset-types-url': reverse('datasettype-list', request=request, format=format),
-        'timescales-url': reverse('timescale-list', request=request, format=format),
         'register-file': reverse(
             'register-file', request=request, format=format),
 
@@ -47,8 +47,6 @@ def api_root(request, format=None):
         #'water-requirement-url': reverse(
         #    'water-requirement', request=request, format=format),
 
-        'exp-metadata-url': reverse(
-            'exp-metadata-list', request=request, format=format),
     })
 
 
@@ -56,7 +54,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Lists all users with the subjects which they are responsible for.
     """
-    queryset = User.objects.all()
+    queryset = get_user_model().objects.all()
     queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'

@@ -4,16 +4,22 @@ from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 
-from .models import BrainLocation, CoordinateTransformation, Note
+from .models import Note, Lab, LabMembership, LabLocation
 from alyx.base import BaseAdmin
 
 
-class BrainLocationAdmin(BaseAdmin):
-    fields = ['name', 'allen_location_ontology', 'description', 'stereotaxic_coordinates']
+class LabAdmin(BaseAdmin):
+    fields = ['name', 'institution', 'address', 'timezone']
+    list_display = fields
 
 
-class CoordinateTransformationAdmin(BaseAdmin):
-    fields = ['name', 'allen_location_ontology', 'description', 'origin', 'transformation_matrix']
+class LabMembershipAdmin(BaseAdmin):
+    fields = ['user', 'lab', 'role', 'start_date', 'end_date']
+    list_display = fields
+
+
+class LabLocationAdmin(BaseAdmin):
+    fields = ['name']
 
 
 class NoteAdmin(BaseAdmin):
@@ -50,6 +56,7 @@ class NoteInline(GenericTabularInline):
         return False
 
 
-admin.site.register(BrainLocation, BrainLocationAdmin)
-admin.site.register(CoordinateTransformation, CoordinateTransformationAdmin)
+admin.site.register(Lab, LabAdmin)
+admin.site.register(LabMembership, LabMembershipAdmin)
+admin.site.register(LabLocation, LabLocationAdmin)
 admin.site.register(Note, NoteAdmin)

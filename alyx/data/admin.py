@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Timescale)
+                     Dataset, FileRecord)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -78,9 +78,9 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'md5', 'session_ro']
+    fields = ['name', 'dataset_type', 'file_size', 'md5', 'session_ro']
     readonly_fields = ['name_', 'session_ro']
-    list_display = ['name_', 'subject', 'dataset_type_', 'session_ro',
+    list_display = ['name_', 'subject', 'dataset_type_', 'file_size', 'session_ro',
                     'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
@@ -139,15 +139,9 @@ class FileRecordAdmin(BaseAdmin):
         return getattr(obj.dataset, 'created_datetime', None)
 
 
-class TimescaleAdmin(BaseAdmin):
-    fields = ('name', 'nominal_start', 'nominal_time_unit', 'final')
-    list_display = fields
-
-
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
-admin.site.register(Timescale, TimescaleAdmin)
