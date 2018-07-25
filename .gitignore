@@ -20,3 +20,4 @@ experimental
 notes.txt
 build
 *venv
+.idea/*
