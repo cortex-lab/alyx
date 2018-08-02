@@ -3,7 +3,7 @@ from datetime import timedelta
 import itertools
 from operator import itemgetter
 
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.views.generic.list import ListView
@@ -106,8 +106,9 @@ class SessionFilter(FilterSet):
 
     def filter_date_range(self, queryset, name, value):
         drange = value.split(',')
-        queryset = queryset.filter(start_time__date__gte=drange[0]).filter(
-            end_time__date__lte=drange[1]
+        queryset = queryset.filter(
+            Q(start_time__date__gte=drange[0]) | Q(end_time__date__gte=drange[0]),
+            Q(start_time__date__lte=drange[1]) | Q(end_time__date__lte=drange[1]),
         )
         return queryset
 
