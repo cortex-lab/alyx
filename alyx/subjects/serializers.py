@@ -51,7 +51,9 @@ class ZygosityListSerializer(serializers.ModelSerializer):
 
 
 class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
-    genotype = serializers.ListField(source='zygosity_strings')
+    genotype = serializers.ListField(
+        source='zygosity_strings',
+        required=False)
 
     responsible_user = serializers.SlugRelatedField(
         read_only=False,
