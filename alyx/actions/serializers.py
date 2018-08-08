@@ -100,7 +100,6 @@ class SessionListSerializer(BaseActionSerializer):
 
 class SessionDetailSerializer(BaseActionSerializer):
 
-    exp_metadata_related = ExpMetadataSummarySerializer(many=True, read_only=True)
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
 
     @staticmethod
@@ -118,8 +117,7 @@ class SessionDetailSerializer(BaseActionSerializer):
         model = Session
         fields = ('subject', 'users', 'location', 'procedures',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'data_dataset_session_related',
-                  'parent_session', 'exp_metadata_related')
+                  'data_dataset_session_related', 'parent_session')
 
 
 class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
