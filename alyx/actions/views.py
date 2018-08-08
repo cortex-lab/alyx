@@ -3,7 +3,7 @@ from datetime import timedelta
 import itertools
 from operator import itemgetter
 
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.views.generic.list import ListView
@@ -90,21 +90,34 @@ class WaterHistoryListView(ListView):
 
 
 class SessionFilter(FilterSet):
-    subject = django_filters.CharFilter('subject__nickname')
-    start_date = django_filters.CharFilter('start_time__date', lookup_expr=('exact'))
-    end_date = django_filters.CharFilter('end_time__date', lookup_expr=('exact'))
-    starts_before = django_filters.CharFilter('start_time__date', lookup_expr=('lte'))
-    starts_after = django_filters.CharFilter('start_time__date', lookup_expr=('gte'))
-    ends_before = django_filters.CharFilter('start_time__date', lookup_expr=('lte'))
-    ends_after = django_filters.CharFilter('start_time__date', lookup_expr=('gte'))
-    dataset_types = django_filters.CharFilter('dataset_types', method='filter_dataset_types')
+    subject = django_filters.CharFilter(name='subject__nickname', lookup_expr=('iexact'))
+    dataset_types = django_filters.CharFilter(name='dataset_types', method='filter_dataset_types')
+    users = django_filters.CharFilter(name='users__username', method=('filter_users'))
+    date_range = django_filters.CharFilter(name='date_range', method=('filter_date_range'))
+    type = django_filters.CharFilter(name='type', lookup_expr=('iexact'))
+
+    def filter_users(self, queryset, name, value):
+        users = value.split(',')
+        queryset = queryset.filter(users__username__in=users)
+        queryset = queryset.annotate(
+            dtypes_count=Count('users__username'))
+        queryset = queryset.filter(dtypes_count__gte=len(users))
+        return queryset
+
+    def filter_date_range(self, queryset, name, value):
+        drange = value.split(',')
+        queryset = queryset.filter(
+            Q(start_time__date__gte=drange[0]) | Q(end_time__date__gte=drange[0]),
+            Q(start_time__date__lte=drange[1]) | Q(end_time__date__lte=drange[1]),
+        )
+        return queryset
 
     def filter_dataset_types(self, queryset, name, value):
-        types = value.split(',')
-        queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=types)
+        dtypes = value.split(',')
+        queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
             dtypes_count=Count('data_dataset_session_related__dataset_type'))
-        queryset = queryset.filter(dtypes_count__gte=len(types))
+        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
         return queryset
 
     class Meta:
@@ -128,6 +141,7 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     Detail of one session
     """
     queryset = Session.objects.all()
+    queryset = SessionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = SessionDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
