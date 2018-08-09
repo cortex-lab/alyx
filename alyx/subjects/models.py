@@ -10,13 +10,30 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .zygosities import ZYGOSITY_RULES
 from alyx.base import BaseModel, alyx_mail
 from actions.models import WaterRestriction
 from actions.water import last_water_restriction, today
 from misc.models import Lab
 
 logger = logging.getLogger(__name__)
+
+
+# Zygosity constants
+# ------------------------------------------------------------------------------------------------
+
+ZYGOSITY_TYPES = (
+    (0, 'Absent'),
+    (1, 'Heterozygous'),
+    (2, 'Homozygous'),
+    (3, 'Present'),
+)
+
+ZYGOSITY_SYMBOLS = ('-/-', '+/-', '+/+', '+')
+
+TEST_RESULTS = (
+    (0, 'Absent'),
+    (1, 'Present'),
+)
 
 
 # Subject
@@ -233,7 +250,7 @@ class Subject(BaseModel):
         return last_water_restriction(self, today())
 
     def zygosity_strings(self):
-        alleles = self.line.alleles.all()
+        alleles = self.line.alleles.all() if self.line else Allele.objects.all()
         return list(map(str, self.zygosity_set.filter(allele__in=alleles)))
 
     def is_negative(self):
@@ -580,6 +597,25 @@ class Source(BaseModel):
 # Genotypes
 # ------------------------------------------------------------------------------------------------
 
+class ZygosityRule(BaseModel):
+    line = models.ForeignKey('Line', null=True, on_delete=models.SET_NULL)
+    allele = models.ForeignKey('Allele', null=True, on_delete=models.SET_NULL)
+    sequence0 = models.ForeignKey('Sequence', blank=True, null=True, on_delete=models.SET_NULL,
+                                  related_name='zygosity_rule_sequence0')
+    sequence0_result = models.IntegerField(choices=TEST_RESULTS, null=True, blank=True)
+    sequence1 = models.ForeignKey('Sequence', blank=True, null=True, on_delete=models.SET_NULL,
+                                  related_name='zygosity_rule_sequence1')
+    sequence1_result = models.IntegerField(choices=TEST_RESULTS, null=True, blank=True)
+    zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
+
+    def __str__(self):
+        return '<Rule {line} {allele}: {seq0} {res0}, {seq1} {res1} => {z}>'.format(
+            line=self.line, allele=self.allele,
+            seq0=self.sequence0, res0=self.sequence0_result,
+            seq1=self.sequence1, res1=self.sequence1_result, z=self.zygosity
+        )
+
+
 class ZygosityFinder(object):
     def _existing_alleles(self, subject):
         if not subject:
@@ -587,38 +623,22 @@ class ZygosityFinder(object):
         return set([allele.informal_name for allele in subject.genotype.all()])
 
     def _alleles_in_line(self, line):
-        for l, allele, _ in ZYGOSITY_RULES:
-            if line and l == line.auto_name:
-                yield allele
-
-    def _parse_rule(self, rule):
-        string, res = rule
-        out = {}
-        for substr in string.split(','):
-            if substr[0] == '-':
-                sign = 0
-                substr = substr[1:]
-            else:
-                sign = 1
-            out[substr] = sign
-        out['res'] = res
-        return out
+        return (zr.allele for zr in ZygosityRule.objects.filter(line=line))
 
     def _find_zygosity(self, rules, tests):
         if not tests:
             return
-        tests = {test.sequence.informal_name: test.test_result for test in tests}
+        tests = {test.sequence: test.test_result for test in tests}
         for rule in rules:
-            d = self._parse_rule(rule)
-            match = all(tests.get(test, None) == res for test, res in d.items() if test != 'res')
-            if match:
-                return d['res']
+            result0 = tests.get(rule.sequence0, None)
+            result1 = tests.get(rule.sequence1, None)
+            pass0 = rule.sequence0_result == result0
+            pass1 = rule.sequence1_result == result1
+            if (result1 is None and pass0) or (result1 is not None and pass0 and pass1):
+                return rule.zygosity
 
     def _get_allele_rules(self, line, allele):
-        for l, a, rules in ZYGOSITY_RULES:
-            if l == line and a == allele:
-                return rules
-        return []
+        return ZygosityRule.objects.filter(line__auto_name=line, allele__informal_name=allele)
 
     def _get_tests(self, subject):
         return GenotypeTest.objects.filter(subject=subject)
@@ -658,13 +678,15 @@ class ZygosityFinder(object):
         alleles_in_line = set(self._alleles_in_line(subject.line))
         tests = self._get_tests(subject)
         for allele in alleles_in_line:
+            print(allele)
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
             if not z:
                 continue
+            symbol = ZYGOSITY_SYMBOLS[z]
             logger.debug("Zygosity %s: %s %s from tests %s.",
-                         subject, allele, z, ', '.join(str(_) for _ in tests))
-            self._create_zygosity(subject, allele, z)
+                         subject, allele, symbol, ', '.join(str(_) for _ in tests))
+            self._create_zygosity(subject, allele, symbol)
 
     def _get_parents_alleles(self, subject, allele):
         out = {'mother': None, 'father': None}
@@ -763,13 +785,6 @@ class Zygosity(BaseModel):
     """
     A junction table between Subject and Allele.
     """
-    ZYGOSITY_TYPES = (
-        (0, 'Absent'),
-        (1, 'Heterozygous'),
-        (2, 'Homozygous'),
-        (3, 'Present'),
-    )
-    ZYGOSITY_SYMBOLS = ('-/-', '+/-', '+/+', '+')
 
     subject = models.ForeignKey('Subject', on_delete=models.CASCADE)
     allele = models.ForeignKey('Allele', on_delete=models.CASCADE)
@@ -777,10 +792,10 @@ class Zygosity(BaseModel):
 
     @staticmethod
     def from_symbol(symbol):
-        return Zygosity.ZYGOSITY_SYMBOLS.index(symbol)
+        return ZYGOSITY_SYMBOLS.index(symbol)
 
     def symbol(self):
-        return (self.ZYGOSITY_SYMBOLS[self.zygosity]
+        return (ZYGOSITY_SYMBOLS[self.zygosity]
                 if self.zygosity is not None else '?')
 
     def __str__(self):
@@ -817,10 +832,7 @@ class Sequence(BaseModel):
 
 
 class GenotypeTest(BaseModel):
-    TEST_RESULTS = (
-        (0, 'Absent'),
-        (1, 'Present'),
-    )
+
     """
     A junction table between Subject and Sequence.
     """

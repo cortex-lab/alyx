@@ -13,7 +13,7 @@ from django.urls import reverse
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
                        _iter_history_changes, list_images, show_images)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
-                     Species, Strain, Subject, SubjectRequest, Zygosity,
+                     Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
@@ -1079,6 +1079,13 @@ class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
 
 
+class ZygosityRuleAdmin(BaseAdmin):
+    fields = ('line', 'allele', 'sequence0', 'sequence0_result',
+              'sequence1', 'sequence1_result', 'zygosity')
+    list_display = fields
+    list_editable = fields[2:]
+
+
 class LabMemberAdmin(UserAdmin):
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
@@ -1120,6 +1127,7 @@ mysite.register(Sequence, SequenceAdmin)
 
 mysite.register(GenotypeTest)
 mysite.register(Zygosity)
+mysite.register(ZygosityRule, ZygosityRuleAdmin)
 
 
 # Alternative admin views
