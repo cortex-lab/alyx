@@ -831,6 +831,12 @@ class SequencesInline(BaseInlineAdmin):
     fields = ['sequence']
 
 
+class AllelesInline(BaseInlineAdmin):
+    model = Line.alleles.through
+    extra = 1
+    fields = ['allele']
+
+
 class BreedingPairFormset(BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         super(BreedingPairFormset, self).__init__(*args, **kwargs)
@@ -888,7 +894,7 @@ class LineAdmin(BaseAdmin):
     list_filter = [LineFilter]
     list_editable = ['is_active']
 
-    inlines = [SubjectRequestInline, SequencesInline, BreedingPairInline]
+    inlines = [SubjectRequestInline, SequencesInline, AllelesInline, BreedingPairInline]
 
     def source_link(self, obj):
         return format_html('<a href="{source_url}">{source_text}</a>',

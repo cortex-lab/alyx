@@ -233,7 +233,8 @@ class Subject(BaseModel):
         return last_water_restriction(self, today())
 
     def zygosity_strings(self):
-        return list(map(str, self.zygosity_set.all()))
+        alleles = self.line.alleles.all()
+        return list(map(str, self.zygosity_set.filter(allele__in=alleles)))
 
     def is_negative(self):
         """Genotype is -/- for all genes."""
@@ -458,6 +459,7 @@ class Line(BaseModel):
     target_phenotype = models.CharField(max_length=1023)
     auto_name = models.CharField(max_length=255, unique=True)
     sequences = models.ManyToManyField('Sequence')
+    alleles = models.ManyToManyField('Allele')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
     source_identifier = models.CharField(max_length=64, blank=True)
