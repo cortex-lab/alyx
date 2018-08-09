@@ -678,7 +678,6 @@ class ZygosityFinder(object):
         alleles_in_line = set(self._alleles_in_line(subject.line))
         tests = self._get_tests(subject)
         for allele in alleles_in_line:
-            print(allele)
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
             if not z:

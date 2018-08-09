@@ -1084,6 +1084,8 @@ class ZygosityRuleAdmin(BaseAdmin):
               'sequence1', 'sequence1_result', 'zygosity')
     list_display = fields
     list_editable = fields[2:]
+    ordering = ('line', 'allele', 'sequence0', 'sequence1')
+    list_filter = (('line', RelatedDropdownFilter), ('allele', RelatedDropdownFilter))
 
 
 class LabMemberAdmin(UserAdmin):
