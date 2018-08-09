@@ -879,14 +879,33 @@ class LineAdmin(BaseAdmin):
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
+              'source', 'source_identifier', 'source_url', 'expression_data_url'
               ]
-    list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'is_active']
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain',
+                    'source_link', 'expression', 'is_active']
     list_select_related = ('strain',)
     ordering = ['auto_name']
     list_filter = [LineFilter]
     list_editable = ['is_active']
 
     inlines = [SubjectRequestInline, SequencesInline, BreedingPairInline]
+
+    def source_link(self, obj):
+        return format_html('<a href="{source_url}">{source_text}</a>',
+                           source_url=obj.source_url or '#',
+                           source_text='%s %s' % (obj.source, obj.source_identifier)
+                           if obj.source else '')
+    source_link.short_description = 'source'
+
+    def expression(self, obj):
+        e = obj.expression_data_url
+        if not e:
+            return
+        t = e[:12] + '...'
+        return format_html('<a href="{expression_url}">{expression_text}</a>',
+                           expression_url=e,
+                           expression_text=t,
+                           )
 
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.

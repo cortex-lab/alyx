@@ -459,6 +459,10 @@ class Line(BaseModel):
     auto_name = models.CharField(max_length=255, unique=True)
     sequences = models.ManyToManyField('Sequence')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
+    source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
+    source_identifier = models.CharField(max_length=64, blank=True)
+    source_url = models.URLField(blank=True)
+    expression_data_url = models.URLField(blank=True)
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=default_species)
     subject_autoname_index = models.IntegerField(default=0)
