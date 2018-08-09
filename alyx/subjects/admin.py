@@ -204,7 +204,7 @@ class SurgeryInline(BaseInlineAdmin):
     verbose_name = "Past surgery"
     verbose_name_plural = "Past surgeries"
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
 
@@ -214,10 +214,10 @@ class AddSurgeryInline(SurgeryInline):
     verbose_name = "New surgery"
     verbose_name_plural = "New surgeries"
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return True
 
-    def has_change_permission(self, request):
+    def has_change_permission(self, request, obj=None):
         return False
 
 
