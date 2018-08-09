@@ -877,7 +877,7 @@ class LineAdmin(BaseAdmin):
     list_filter = [LineFilter]
     list_editable = ['is_active']
 
-    inlines = [SubjectRequestInline, SubjectInline, SequencesInline, BreedingPairInline]
+    inlines = [SubjectRequestInline, SequencesInline, BreedingPairInline]
 
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.
