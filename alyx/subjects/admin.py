@@ -6,6 +6,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When
+from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -830,9 +831,17 @@ class SequencesInline(BaseInlineAdmin):
     fields = ['sequence']
 
 
+class BreedingPairFormset(BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BreedingPairFormset, self).__init__(*args, **kwargs)
+
+
 class BreedingPairInline(BaseInlineAdmin):
     model = BreedingPair
+    formset = BreedingPairFormset
     fields = ('line', 'name', 'father', 'mother1', 'mother2')
+    autocomplete_fields = ('father', 'mother1', 'mother2')
+    readonly_fields = ()
     extra = 1
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
