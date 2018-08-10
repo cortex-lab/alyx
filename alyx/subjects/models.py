@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -269,8 +269,9 @@ class Subject(BaseModel):
         # Default strain.
         if self.line and not self.strain:
             self.strain = self.line.strain
-        # Update the zygosities when the subject is assigned a litter.
-        if self.litter_id and not _get_old_field(self, 'litter'):
+        # Update the zygosities when the subject is created or assigned a litter.
+        is_created = self._state.adding is True
+        if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
             ZygosityFinder().genotype_from_litter(self)
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not _get_old_field(self, 'genotype_date'):
@@ -597,6 +598,19 @@ class Source(BaseModel):
 # Genotypes
 # ------------------------------------------------------------------------------------------------
 
+def _update_zygosyties(line, sequence):
+    # Apply the rule.
+    zf = ZygosityFinder()
+    # Subjects from the line and that have a test with the first sequence.
+    subjects = set(gt.subject for gt in GenotypeTest.objects.filter(
+        sequence=sequence,
+        subject__line=line))
+    for subject in subjects:
+        # Note: need force=True when deleting a zygosity rule.
+        zf.genotype_from_litter(subject, force=True)
+        zf.update_subject(subject)
+
+
 class ZygosityRule(BaseModel):
     line = models.ForeignKey('Line', null=True, on_delete=models.SET_NULL)
     allele = models.ForeignKey('Allele', null=True, on_delete=models.SET_NULL)
@@ -607,6 +621,10 @@ class ZygosityRule(BaseModel):
                                   related_name='zygosity_rule_sequence1')
     sequence1_result = models.IntegerField(choices=TEST_RESULTS, null=True, blank=True)
     zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
+
+    def save(self, *args, **kwargs):
+        super(ZygosityRule, self).save(*args, **kwargs)
+        _update_zygosyties(self.line, self.sequence0)
 
     def __str__(self):
         return '<Rule {line} {allele}: {seq0} {res0}, {seq1} {res1} => {z}>'.format(
@@ -646,7 +664,7 @@ class ZygosityFinder(object):
     def _get_allele(self, name):
         return Allele.objects.get_or_create(informal_name=name)[0]
 
-    def _create_zygosity(self, subject, allele_name, symbol, ignore_conflict=True):
+    def _create_zygosity(self, subject, allele_name, symbol, force=True):
         if symbol is not None:
             zygosity = Zygosity.objects.filter(subject=subject,
                                                allele=self._get_allele(allele_name),
@@ -656,7 +674,7 @@ class ZygosityFinder(object):
             if zygosity:
                 zygosity = zygosity[0]
                 if z != zygosity.zygosity:
-                    if ignore_conflict:
+                    if force:
                         logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
                                     subject, zygosity, symbol)
                     else:
@@ -671,9 +689,10 @@ class ZygosityFinder(object):
                                     )
             zygosity.save()
 
-    def update_subject(self, subject):
+    def update_subject(self, subject, force=True):
         if not subject.line:
             return
+        logger.debug("Genotype from rules for subject %s", subject.nickname)
         line = subject.line.auto_name
         alleles_in_line = set(self._alleles_in_line(subject.line))
         tests = self._get_tests(subject)
@@ -685,7 +704,7 @@ class ZygosityFinder(object):
             symbol = ZYGOSITY_SYMBOLS[z]
             logger.debug("Zygosity %s: %s %s from tests %s.",
                          subject, allele, symbol, ', '.join(str(_) for _ in tests))
-            self._create_zygosity(subject, allele, symbol)
+            self._create_zygosity(subject, allele, symbol, force=force)
 
     def _get_parents_alleles(self, subject, allele):
         out = {'mother': None, 'father': None}
@@ -729,12 +748,13 @@ class ZygosityFinder(object):
             (None, None): '-/-',
         }.get((zm, zf), None)
 
-    def genotype_from_litter(self, subject):
+    def genotype_from_litter(self, subject, force=False):
         if not subject.litter:
             return
         bp = subject.litter.breeding_pair
         if not bp:
             return
+        logger.debug("Genotype from litter for subject %s", subject.nickname)
         mother = bp.mother1
         father = bp.father
         alleles_m = self._existing_alleles(mother)
@@ -751,7 +771,13 @@ class ZygosityFinder(object):
                          father, zf,
                          )
             # If there is a conflict when setting a litter, we don't update the zygosities.
-            self._create_zygosity(subject, allele, z, ignore_conflict=False)
+            self._create_zygosity(subject, allele, z, force=force)
+
+
+@receiver(post_delete)
+def delete_zygosity_rule(sender, instance, **kwargs):
+    if isinstance(instance, ZygosityRule):
+        _update_zygosyties(instance.line, instance.sequence0)
 
 
 class AlleleManager(models.Manager):
