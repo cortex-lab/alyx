@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+from operator import attrgetter
 import urllib
 
 from django.contrib.auth import get_user_model
@@ -598,14 +599,14 @@ class Source(BaseModel):
 # Genotypes
 # ------------------------------------------------------------------------------------------------
 
-def _update_zygosyties(line, sequence):
+def _update_zygosities(line, sequence):
     # Apply the rule.
     zf = ZygosityFinder()
     # Subjects from the line and that have a test with the first sequence.
     subjects = set(gt.subject for gt in GenotypeTest.objects.filter(
         sequence=sequence,
         subject__line=line))
-    for subject in subjects:
+    for subject in sorted(subjects, key=attrgetter('nickname')):
         # Note: need force=True when deleting a zygosity rule.
         zf.genotype_from_litter(subject, force=True)
         zf.update_subject(subject)
@@ -624,7 +625,7 @@ class ZygosityRule(BaseModel):
 
     def save(self, *args, **kwargs):
         super(ZygosityRule, self).save(*args, **kwargs)
-        _update_zygosyties(self.line, self.sequence0)
+        _update_zygosities(self.line, self.sequence0)
 
     def __str__(self):
         return '<Rule {line} {allele}: {seq0} {res0}, {seq1} {res1} => {z}>'.format(
@@ -777,7 +778,7 @@ class ZygosityFinder(object):
 @receiver(post_delete)
 def delete_zygosity_rule(sender, instance, **kwargs):
     if isinstance(instance, ZygosityRule):
-        _update_zygosyties(instance.line, instance.sequence0)
+        _update_zygosities(instance.line, instance.sequence0)
 
 
 class AlleleManager(models.Manager):

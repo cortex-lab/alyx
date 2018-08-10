@@ -1091,9 +1091,19 @@ class ZygosityRuleAdmin(BaseAdmin):
 class ZygosityAdmin(BaseAdmin):
     fields = ('subject', 'allele', 'zygosity')
     list_display = fields
+    list_editable = ('allele', 'zygosity')
     ordering = ('subject', 'allele')
     search_fields = ('subject__nickname', 'allele__informal_name')
-    # list_filter = (('subject', RelatedDropdownFilter),)
+    list_filter = (('allele', RelatedDropdownFilter),)
+
+
+class GenotypeTestAdmin(BaseAdmin):
+    fields = ('subject', 'sequence', 'test_result')
+    list_display = fields
+    list_editable = ('sequence', 'test_result')
+    ordering = ('subject', 'sequence')
+    search_fields = ('subject__nickname', 'sequence__informal_name')
+    list_filter = (('sequence', RelatedDropdownFilter),)
 
 
 class LabMemberAdmin(UserAdmin):
@@ -1135,7 +1145,7 @@ mysite.register(Source, SourceAdmin)
 mysite.register(Allele, AlleleAdmin)
 mysite.register(Sequence, SequenceAdmin)
 
-mysite.register(GenotypeTest)
+mysite.register(GenotypeTest, GenotypeTestAdmin)
 mysite.register(Zygosity, ZygosityAdmin)
 mysite.register(ZygosityRule, ZygosityRuleAdmin)
 
