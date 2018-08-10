@@ -112,3 +112,21 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         self.assertFalse(_has_field_changed(s, 'responsible_user'))
         s.responsible_user = get_user_model().objects.last()
         self.assertTrue(_has_field_changed(s, 'responsible_user'))
+
+    def test_zygosities(self):
+        from subjects import models as m
+        sequence = m.Sequence.objects.create(informal_name='sequence')
+        allele = m.Allele.objects.create(informal_name='allele')
+        line = m.Line.objects.create(auto_name='line')
+        line.alleles.add(allele)
+        subject = m.Subject.objects.create(nickname='subject', line=line)
+        assert len(subject.genotype.all()) == 0
+        m.ZygosityRule.objects.create(
+            line=line, allele=allele, sequence0=sequence, sequence0_result=1, zygosity=2)
+        m.GenotypeTest.objects.create(
+            subject=subject, sequence=sequence, test_result=1)
+        a = m.Zygosity.objects.filter(subject=subject).first()
+        assert len(subject.genotype.all()) == 1
+        assert a.allele == allele
+        assert a.subject == subject
+        assert a.zygosity == 2
