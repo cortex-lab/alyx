@@ -345,6 +345,7 @@ class SurgeryAdmin(BaseActionAdmin):
     fields = BaseActionAdmin.fields + ['outcome_type', 'images']
     readonly_fields = ['images']
     list_display_links = ['date']
+    search_fields = ('subject__nickname',)
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ('subject__line', RelatedDropdownFilter),
