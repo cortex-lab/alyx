@@ -824,8 +824,8 @@ class Zygosity(BaseModel):
                 if self.zygosity is not None else '?')
 
     def __str__(self):
-        return "{0:s} {1:s} for {2:s}".format(
-            str(self.allele), self.symbol(), self.subject.nickname)
+        return "{0:s} {1:s}".format(
+            str(self.allele), self.symbol())
 
     class Meta:
         verbose_name_plural = "zygosities"
