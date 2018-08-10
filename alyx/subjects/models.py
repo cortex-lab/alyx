@@ -304,6 +304,13 @@ class Subject(BaseModel):
         return self.nickname
 
 
+class SubjectRequestManager(models.Manager):
+    def get_queryset(self, *args, **kwargs):
+        return super(SubjectRequestManager, self).get_queryset(*args, **kwargs).select_related(
+            'line', 'user'
+        )
+
+
 class SubjectRequest(BaseModel):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
@@ -314,6 +321,8 @@ class SubjectRequest(BaseModel):
     date_time = models.DateField(default=timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
+
+    objects = SubjectRequestManager()
 
     class Meta:
         ordering = ['-date_time']

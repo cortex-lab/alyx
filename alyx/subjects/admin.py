@@ -263,7 +263,9 @@ class SubjectForm(forms.ModelForm):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
-                                'responsible_user', 'request', 'wean_date',
+                                'responsible_user',
+                                'request',
+                                'wean_date',
                                 'to_be_genotyped', 'genotype_date',
                                 'death_date', 'to_be_culled',
                                 'reduced', 'reduced_date',
@@ -403,7 +405,10 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'lamis_cage')))
 
     def get_queryset(self, request):
-        return super(SubjectAdmin, self).get_queryset(request).prefetch_related('zygosity_set')
+        return super(SubjectAdmin, self).get_queryset(request).select_related(
+            'request', 'request__user'
+        ).prefetch_related(
+            'zygosity_set')
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
@@ -432,9 +437,8 @@ class SubjectAdmin(BaseAdmin):
                 parent_obj_id = request.resolver_match.args[0]
                 instance = Subject.objects.get(pk=parent_obj_id)
                 line = instance.line
-                kwargs["queryset"] = SubjectRequest.objects.filter(line=line,
-                                                                   user=request.user,
-                                                                   )
+                kwargs["queryset"] = SubjectRequest.objects.filter(
+                    line=line, user=request.user)
             except (IndexError, ValidationError):
                 pass
 
@@ -690,6 +694,7 @@ class BreedingPairAdmin(BaseAdmin):
     list_select_related = ('line', 'father', 'mother1', 'mother2')
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage', 'description']
+    autocomplete_fields = ('father', 'mother1', 'mother2')
     list_filter = [BreedingPairFilter,
                    ('line', LineDropdownFilter),
                    ]
@@ -893,6 +898,7 @@ class LineAdmin(BaseAdmin):
     ordering = ['auto_name']
     list_filter = [LineFilter]
     list_editable = ['is_active']
+    search_fields = ('auto_name',)
 
     inlines = [SubjectRequestInline, SequencesInline, AllelesInline, BreedingPairInline]
 
@@ -1069,6 +1075,7 @@ class StrainAdmin(BaseAdmin):
 
 class AlleleAdmin(BaseAdmin):
     fields = ['standard_name', 'informal_name']
+    search_fields = fields
 
 
 class SourceAdmin(BaseAdmin):
@@ -1077,6 +1084,7 @@ class SourceAdmin(BaseAdmin):
 
 class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
+    search_fields = fields
 
 
 class ZygosityRuleAdmin(BaseAdmin):
@@ -1086,6 +1094,7 @@ class ZygosityRuleAdmin(BaseAdmin):
     list_editable = fields[2:]
     ordering = ('line', 'allele', 'sequence0', 'sequence1')
     list_filter = (('line', RelatedDropdownFilter), ('allele', RelatedDropdownFilter))
+    list_select_related = ('line', 'allele', 'sequence0', 'sequence1')
 
 
 class ZygosityAdmin(BaseAdmin):
@@ -1095,6 +1104,7 @@ class ZygosityAdmin(BaseAdmin):
     ordering = ('subject', 'allele')
     search_fields = ('subject__nickname', 'allele__informal_name')
     list_filter = (('allele', RelatedDropdownFilter),)
+    list_select_related = ('subject', 'allele')
 
 
 class GenotypeTestAdmin(BaseAdmin):
@@ -1104,6 +1114,7 @@ class GenotypeTestAdmin(BaseAdmin):
     ordering = ('subject', 'sequence')
     search_fields = ('subject__nickname', 'sequence__informal_name')
     list_filter = (('sequence', RelatedDropdownFilter),)
+    list_select_related = ('subject', 'sequence')
 
 
 class LabMemberAdmin(UserAdmin):
