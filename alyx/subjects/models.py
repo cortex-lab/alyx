@@ -699,7 +699,7 @@ class ZygosityFinder(object):
         for allele in alleles_in_line:
             rules = self._get_allele_rules(line, allele)
             z = self._find_zygosity(rules, tests)
-            if not z:
+            if z is None:
                 continue
             symbol = ZYGOSITY_SYMBOLS[z]
             logger.debug("Zygosity %s: %s %s from tests %s.",

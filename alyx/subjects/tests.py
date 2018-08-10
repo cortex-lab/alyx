@@ -169,7 +169,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
         # Create a rule and a genotype test ; the subject should be automatically genotyped.
         zr = m.ZygosityRule.objects.create(
-            line=line, allele=allele, sequence0=sequence, sequence0_result=1, zygosity=1)
+            line=line, allele=allele, sequence0=sequence, sequence0_result=1, zygosity=0)
         m.GenotypeTest.objects.create(
             subject=subject, sequence=sequence, test_result=1)
 
@@ -177,7 +177,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert len(subject.genotype.all()) == 1
         assert a.allele == allele
         assert a.subject == subject
-        assert a.zygosity == 1
+        assert a.zygosity == 0
 
         # Delete the rule.
         zr.delete()
