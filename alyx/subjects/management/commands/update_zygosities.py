@@ -24,8 +24,21 @@ class Command(BaseCommand):
         parser.add_argument('subjects', nargs='*',
                             help='Subject nicknames')
         parser.add_argument('--migrate_rules', action='store_true')
+        parser.add_argument('--add_line_alleles', action='store_true')
 
     def handle(self, *args, **options):
+
+        if options.get('add_line_alleles'):
+            from collections import defaultdict
+            lines = defaultdict(set)
+            for subject in Subject.objects.all():
+                if not subject.line:
+                    continue
+                alleles = subject.genotype.all()
+                lines[subject.line].update([al for al in alleles])
+            for line, alleles in lines.items():
+                line.alleles.add(*alleles)
+                return
 
         if options.get('migrate_rules'):
             from subjects.zygosities import ZYGOSITY_RULES
