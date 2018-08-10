@@ -1088,6 +1088,14 @@ class ZygosityRuleAdmin(BaseAdmin):
     list_filter = (('line', RelatedDropdownFilter), ('allele', RelatedDropdownFilter))
 
 
+class ZygosityAdmin(BaseAdmin):
+    fields = ('subject', 'allele', 'zygosity')
+    list_display = fields
+    ordering = ('subject', 'allele')
+    search_fields = ('subject__nickname', 'allele__informal_name')
+    # list_filter = (('subject', RelatedDropdownFilter),)
+
+
 class LabMemberAdmin(UserAdmin):
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
@@ -1128,7 +1136,7 @@ mysite.register(Allele, AlleleAdmin)
 mysite.register(Sequence, SequenceAdmin)
 
 mysite.register(GenotypeTest)
-mysite.register(Zygosity)
+mysite.register(Zygosity, ZygosityAdmin)
 mysite.register(ZygosityRule, ZygosityRuleAdmin)
 
 
