@@ -89,6 +89,14 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False)
 
+    projects = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Project.objects.all(),
+        many=True,
+        required=False,
+    )
+
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
@@ -101,7 +109,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         model = Subject
         fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
                   'species', 'sex', 'litter', 'strain', 'line', 'description',
-                  'genotype', 'alive')
+                  'genotype', 'alive', 'projects')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
