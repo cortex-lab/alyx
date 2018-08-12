@@ -154,9 +154,16 @@ class Surgery(BaseAction):
         verbose_name_plural = "surgeries"
 
     def save(self, *args, **kwargs):
+        # Issue #422.
+        if self.subject.protocol_number == '1':
+            self.subject.protocol_number = '3'
+        # Change from mild to moderate.
+        if self.subject.actual_severity == 2:
+            self.subject.actual_severity = 3
+
         if self.outcome_type == 'a' and self.start_time:
             self.subject.death_date = self.start_time.date()
-            self.subject.save()
+        self.subject.save()
         return super(Surgery, self).save(*args, **kwargs)
 
 

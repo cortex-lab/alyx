@@ -112,3 +112,77 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         self.assertFalse(_has_field_changed(s, 'responsible_user'))
         s.responsible_user = get_user_model().objects.last()
         self.assertTrue(_has_field_changed(s, 'responsible_user'))
+
+    def test_zygosities_1(self):
+        from subjects import models as m
+        sequence = m.Sequence.objects.create(informal_name='sequence')
+        allele = m.Allele.objects.create(informal_name='allele')
+        line = m.Line.objects.create(auto_name='line')
+        line.alleles.add(allele)
+        subject = m.Subject.objects.create(nickname='subject', line=line)
+        assert len(subject.genotype.all()) == 0
+
+        # Create a rule and a genotype test ; the subject should be automatically genotyped.
+        rule = m.ZygosityRule.objects.create(
+            line=line, allele=allele, sequence0=sequence, sequence0_result=1, zygosity=2)
+        m.GenotypeTest.objects.create(
+            subject=subject, sequence=sequence, test_result=1)
+
+        a = m.Zygosity.objects.filter(subject=subject).first()
+        assert len(subject.genotype.all()) == 1
+        assert a.allele == allele
+        assert a.subject == subject
+        assert a.zygosity == 2
+
+        # Change the rule
+        rule.zygosity = 3
+        rule.save()
+        a = m.Zygosity.objects.filter(subject=subject).first()
+        assert a.zygosity == 3
+
+    def test_zygosities_2(self):
+        from subjects import models as m
+        sequence = m.Sequence.objects.create(informal_name='sequence')
+        allele = m.Allele.objects.create(informal_name='allele')
+        line = m.Line.objects.create(auto_name='line')
+        line.alleles.add(allele)
+
+        # Create the parents.
+        father = m.Subject.objects.create(
+            nickname='father', sex='M', line=line)
+        mother = m.Subject.objects.create(
+            nickname='mother', sex='F', line=line)
+
+        # Create the parents genotypes.
+        m.Zygosity.objects.create(subject=father, allele=allele, zygosity=2)
+        m.Zygosity.objects.create(subject=mother, allele=allele, zygosity=2)
+
+        # Create the breeding pair and litter.
+        bp = m.BreedingPair.objects.create(line=line, father=father, mother1=mother)
+        litter = m.Litter.objects.create(line=line, breeding_pair=bp)
+
+        # Create the subject.
+        subject = m.Subject.objects.create(
+            nickname='subject', line=line, litter=litter)
+        z = m.Zygosity.objects.filter(subject=subject).first()
+        assert z.zygosity == 2  # from parents
+
+        # Create a rule and a genotype test ; the subject should be automatically genotyped.
+        zr = m.ZygosityRule.objects.create(
+            line=line, allele=allele, sequence0=sequence, sequence0_result=1, zygosity=0)
+        m.GenotypeTest.objects.create(
+            subject=subject, sequence=sequence, test_result=1)
+
+        a = m.Zygosity.objects.filter(subject=subject).first()
+        assert len(subject.genotype.all()) == 1
+        assert a.allele == allele
+        assert a.subject == subject
+        assert a.zygosity == 0
+
+        # Delete the rule.
+        zr.delete()
+        a = m.Zygosity.objects.filter(subject=subject).first()
+        assert len(subject.genotype.all()) == 1
+        assert a.allele == allele
+        assert a.subject == subject
+        assert a.zygosity == 2

@@ -6,13 +6,14 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When
+from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
                        _iter_history_changes, list_images, show_images)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
-                     Species, Strain, Subject, SubjectRequest, Zygosity,
+                     Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
@@ -204,7 +205,7 @@ class SurgeryInline(BaseInlineAdmin):
     verbose_name = "Past surgery"
     verbose_name_plural = "Past surgeries"
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
 
@@ -214,10 +215,10 @@ class AddSurgeryInline(SurgeryInline):
     verbose_name = "New surgery"
     verbose_name_plural = "New surgeries"
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return True
 
-    def has_change_permission(self, request):
+    def has_change_permission(self, request, obj=None):
         return False
 
 
@@ -262,7 +263,9 @@ class SubjectForm(forms.ModelForm):
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
-                                'responsible_user', 'request', 'wean_date',
+                                'responsible_user',
+                                'request',
+                                'wean_date',
                                 'to_be_genotyped', 'genotype_date',
                                 'death_date', 'to_be_culled',
                                 'reduced', 'reduced_date',
@@ -402,7 +405,10 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'lamis_cage')))
 
     def get_queryset(self, request):
-        return super(SubjectAdmin, self).get_queryset(request).prefetch_related('zygosity_set')
+        return super(SubjectAdmin, self).get_queryset(request).select_related(
+            'request', 'request__user'
+        ).prefetch_related(
+            'zygosity_set')
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
@@ -431,9 +437,8 @@ class SubjectAdmin(BaseAdmin):
                 parent_obj_id = request.resolver_match.args[0]
                 instance = Subject.objects.get(pk=parent_obj_id)
                 line = instance.line
-                kwargs["queryset"] = SubjectRequest.objects.filter(line=line,
-                                                                   user=request.user,
-                                                                   )
+                kwargs["queryset"] = SubjectRequest.objects.filter(
+                    line=line, user=request.user)
             except (IndexError, ValidationError):
                 pass
 
@@ -689,6 +694,7 @@ class BreedingPairAdmin(BaseAdmin):
     list_select_related = ('line', 'father', 'mother1', 'mother2')
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'lamis_cage', 'description']
+    autocomplete_fields = ('father', 'mother1', 'mother2')
     list_filter = [BreedingPairFilter,
                    ('line', LineDropdownFilter),
                    ]
@@ -830,9 +836,23 @@ class SequencesInline(BaseInlineAdmin):
     fields = ['sequence']
 
 
+class AllelesInline(BaseInlineAdmin):
+    model = Line.alleles.through
+    extra = 1
+    fields = ['allele']
+
+
+class BreedingPairFormset(BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        super(BreedingPairFormset, self).__init__(*args, **kwargs)
+
+
 class BreedingPairInline(BaseInlineAdmin):
     model = BreedingPair
+    formset = BreedingPairFormset
     fields = ('line', 'name', 'father', 'mother1', 'mother2')
+    autocomplete_fields = ('father', 'mother1', 'mother2')
+    readonly_fields = ()
     extra = 1
 
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
@@ -870,14 +890,34 @@ class LineAdmin(BaseAdmin):
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
+              'source', 'source_identifier', 'source_url', 'expression_data_url'
               ]
-    list_display = ['name', 'auto_name', 'target_phenotype', 'strain', 'is_active']
+    list_display = ['name', 'auto_name', 'target_phenotype', 'strain',
+                    'source_link', 'expression', 'is_active']
     list_select_related = ('strain',)
     ordering = ['auto_name']
     list_filter = [LineFilter]
     list_editable = ['is_active']
+    search_fields = ('auto_name',)
 
-    inlines = [SubjectRequestInline, SubjectInline, SequencesInline, BreedingPairInline]
+    inlines = [SubjectRequestInline, SequencesInline, AllelesInline, BreedingPairInline]
+
+    def source_link(self, obj):
+        return format_html('<a href="{source_url}">{source_text}</a>',
+                           source_url=obj.source_url or '#',
+                           source_text='%s %s' % (obj.source, obj.source_identifier)
+                           if obj.source else '')
+    source_link.short_description = 'source'
+
+    def expression(self, obj):
+        e = obj.expression_data_url
+        if not e:
+            return
+        t = e[:12] + '...'
+        return format_html('<a href="{expression_url}">{expression_text}</a>',
+                           expression_url=e,
+                           expression_text=t,
+                           )
 
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.
@@ -1035,6 +1075,7 @@ class StrainAdmin(BaseAdmin):
 
 class AlleleAdmin(BaseAdmin):
     fields = ['standard_name', 'informal_name']
+    search_fields = fields
 
 
 class SourceAdmin(BaseAdmin):
@@ -1043,6 +1084,37 @@ class SourceAdmin(BaseAdmin):
 
 class SequenceAdmin(BaseAdmin):
     fields = ['base_pairs', 'informal_name', 'description']
+    search_fields = fields
+
+
+class ZygosityRuleAdmin(BaseAdmin):
+    fields = ('line', 'allele', 'sequence0', 'sequence0_result',
+              'sequence1', 'sequence1_result', 'zygosity')
+    list_display = fields
+    list_editable = fields[2:]
+    ordering = ('line', 'allele', 'sequence0', 'sequence1')
+    list_filter = (('line', RelatedDropdownFilter), ('allele', RelatedDropdownFilter))
+    list_select_related = ('line', 'allele', 'sequence0', 'sequence1')
+
+
+class ZygosityAdmin(BaseAdmin):
+    fields = ('subject', 'allele', 'zygosity')
+    list_display = fields
+    list_editable = ('allele', 'zygosity')
+    ordering = ('subject', 'allele')
+    search_fields = ('subject__nickname', 'allele__informal_name')
+    list_filter = (('allele', RelatedDropdownFilter),)
+    list_select_related = ('subject', 'allele')
+
+
+class GenotypeTestAdmin(BaseAdmin):
+    fields = ('subject', 'sequence', 'test_result')
+    list_display = fields
+    list_editable = ('sequence', 'test_result')
+    ordering = ('subject', 'sequence')
+    search_fields = ('subject__nickname', 'sequence__informal_name')
+    list_filter = (('sequence', RelatedDropdownFilter),)
+    list_select_related = ('subject', 'sequence')
 
 
 class LabMemberAdmin(UserAdmin):
@@ -1084,8 +1156,9 @@ mysite.register(Source, SourceAdmin)
 mysite.register(Allele, AlleleAdmin)
 mysite.register(Sequence, SequenceAdmin)
 
-mysite.register(GenotypeTest)
-mysite.register(Zygosity)
+mysite.register(GenotypeTest, GenotypeTestAdmin)
+mysite.register(Zygosity, ZygosityAdmin)
+mysite.register(ZygosityRule, ZygosityRuleAdmin)
 
 
 # Alternative admin views
