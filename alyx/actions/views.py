@@ -90,11 +90,12 @@ class WaterHistoryListView(ListView):
 
 
 class SessionFilter(FilterSet):
-    subject = django_filters.CharFilter(lookup_expr=('iexact'))
-    dataset_types = django_filters.CharFilter(method='filter_dataset_types')
-    users = django_filters.CharFilter(method=('filter_users'))
-    date_range = django_filters.CharFilter(method=('filter_date_range'))
-    type = django_filters.CharFilter(lookup_expr=('iexact'))
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
+    dataset_types = django_filters.CharFilter(field_name='dataset_types',
+                                              method='filter_dataset_types')
+    users = django_filters.CharFilter(field_name='users__username', method=('filter_users'))
+    date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
+    type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
