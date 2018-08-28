@@ -253,7 +253,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     fields = ['subject', 'implant_weight', 'start_time', 'end_time', 'users', 'narrative']
     list_display = ['subject_w', 'start_time_l',
-                    'reference_weighing', 'current_weighing',
+                    'reference_weighing', 'current_weighing', 'percentage_weighing',
                     'water_requirement_total',
                     'water_requirement_today',
                     'water_requirement_remaining',
@@ -294,6 +294,12 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         w = water.current_weighing(obj.subject)
         return w.weight if w else None
     current_weighing.short_description = 'cur weigh'
+
+    def percentage_weighing(self, obj):
+        if not obj.subject:
+            return
+        return '%.1f%%' % (self.current_weighing(obj) / self.reference_weighing(obj) * 100)
+    percentage_weighing.short_description = 'perc'
 
     def water_requirement_total(self, obj):
         if not obj.subject:
