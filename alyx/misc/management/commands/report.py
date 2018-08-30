@@ -14,7 +14,7 @@ from django.utils import timezone
 from alyx.base import alyx_mail
 from actions.models import Surgery, Weighing, WaterRestriction, WaterAdministration
 from actions import water
-from subjects.models import Subject, StockManager
+from subjects.models import Subject
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ class Command(BaseCommand):
 
     def make_surgery(self, user):
         # Skip surgeries on stock managers.
-        if StockManager.objects.filter(user=user):
+        if user.is_stock_manager:
             return
         surgery_done = set([surgery.subject.nickname for surgery in
                             Surgery.objects.filter(subject__responsible_user=user)])
