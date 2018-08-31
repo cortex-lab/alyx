@@ -112,7 +112,7 @@ class Command(BaseCommand):
             for d in FileRecord.objects.all().select_related('dataset'):
                 try:
                     dt = transfers.get_dataset_type(d.relative_path, qs=qs)
-                except ValueError as e:
+                except ValueError:
                     dt = None
                     continue
                 if d.dataset.dataset_type_id != dt.pk:
