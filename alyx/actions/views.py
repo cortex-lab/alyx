@@ -115,7 +115,6 @@ class SessionFilter(FilterSet):
 
     def filter_dataset_types(self, queryset, name, value):
         dtypes = value.split(',')
-        print(dtypes)
         queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
             dtypes_count=Count('data_dataset_session_related__dataset_type'))
