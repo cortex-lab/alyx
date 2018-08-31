@@ -48,7 +48,7 @@ class APISubjectsTests(BaseTests):
 
         self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date', 'line', 'litter',
                              'sex', 'genotype', 'url', 'water_requirement_total',
-                             'water_requirement_remaining', 'weighings',
+                             'water_requirement_remaining', 'weighings', 'projects',
                              'water_administrations')) <= set(d))
 
     def test_list_projects(self):

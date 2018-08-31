@@ -37,7 +37,7 @@ def _get_session(subject=None, date=None, number=None, user=None):
         session.users.add(user.pk)
         session.save()
     # Attach the subsession to the base session if not already attached.
-    if not session.parent_session:
+    if (not session.parent_session) and base != session:
         session.parent_session = base
         session.save()
     return session
