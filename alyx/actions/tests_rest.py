@@ -9,6 +9,7 @@ from subjects.models import Subject
 class APIActionsTests(BaseTests):
     def setUp(self):
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
+        self.superuser2 = get_user_model().objects.create_superuser('test2', 'test2', 'test2')
         self.client.login(username='test', password='test')
         self.subject = Subject.objects.all().first()
         # Set an implant weight.
@@ -67,3 +68,31 @@ class APIActionsTests(BaseTests):
         self.assertEqual(d['implant_weight'], 4.56)
         self.assertTrue(set(('date', 'weight_measured', 'weight_expected', 'water_expected',
                              'water_given', 'hydrogel_given',)) <= set(d['records'][0]))
+
+    def test_sessions(self):
+        ses_dict = {'subject': self.subject,
+                    'users': self.superuser,
+                    'narrative': 'auto-generated-session, test',
+                    'start_time': '2018-07-09T12:34:56',
+                    'end_time': '2018-07-09T12:34:57',
+                    'type': 'Base',
+                    'number': '1',
+                    'parent_session': ''}
+        # Test the session creation
+        r = self.client.post(reverse('session-list'), ses_dict)
+        self.ar(r, 201)
+        s1 = r.data
+        ses_dict['start_time'] = '2018-07-11T12:34:56'
+        ses_dict['end_time'] = '2018-07-11T12:34:57'
+        ses_dict['users'] = [self.superuser, self.superuser2]
+        r = self.client.post(reverse('session-list'), ses_dict)
+        s2 = r.data
+        # Test the date range filter
+        r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
+        self.assertEqual(r.data[0], s1)
+        # Test the user filter, this should return 2 sessions
+        r = self.client.get(reverse('session-list') + '?users=test')
+        self.assertTrue(len(r.data) == 2)
+        # This should return only one session
+        r = self.client.get(reverse('session-list') + '?users=test2')
+        self.assertEqual(r.data[0], s2)
