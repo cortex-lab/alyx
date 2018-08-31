@@ -298,7 +298,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     def percentage_weighing(self, obj):
         if not obj.subject:
             return
-        return '%.1f%%' % (self.current_weighing(obj) / self.reference_weighing(obj) * 100)
+        return '%.1f%%' % ((self.current_weighing(obj) or 0) /
+                           (self.reference_weighing(obj) or 0) * 100)
     percentage_weighing.short_description = 'perc'
 
     def water_requirement_total(self, obj):
