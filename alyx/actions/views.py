@@ -101,8 +101,8 @@ class SessionFilter(FilterSet):
         users = value.split(',')
         queryset = queryset.filter(users__username__in=users)
         queryset = queryset.annotate(
-            dtypes_count=Count('users__username'))
-        queryset = queryset.filter(dtypes_count__gte=len(users))
+            users_count=Count('users__username'))
+        queryset = queryset.filter(users_count__gte=len(users))
         return queryset
 
     def filter_date_range(self, queryset, name, value):
