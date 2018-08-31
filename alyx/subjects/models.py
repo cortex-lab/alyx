@@ -10,6 +10,7 @@ from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.html import format_html
 
 from alyx.base import BaseModel, alyx_mail
 from actions.models import WaterRestriction
@@ -127,6 +128,24 @@ class Project(BaseModel):
 
     def __str__(self):
         return "<Project %s>" % self.name
+
+
+class SubjectImage(BaseModel):
+    subject = models.ForeignKey(
+        'subjects.Subject', null=True, blank=True, on_delete=models.CASCADE)
+    image = models.ImageField(
+        upload_to='%Y/%m/%d/', max_length=255, blank=True, null=True)
+    date_time = models.DateTimeField(
+        null=True, blank=True, default=timezone.now)
+    user = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
+
+    def image_tag(self):
+        return format_html('<img src="{0:s}" />', self.image.url)
+
+    def __str__(self):
+        return "<Image for %s %s>" % (self.subject.nickname, self.date_time)
 
 
 class Subject(BaseModel):

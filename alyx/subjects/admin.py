@@ -11,15 +11,16 @@ from django.utils.html import format_html
 from django.urls import reverse
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
-                       _iter_history_changes, list_images, show_images)
+                       _iter_history_changes)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
-                     Project,
+                     Project, SubjectImage
                      )
 from actions.models import Surgery, Session, OtherAction
 from actions import water
-from misc.models import LabMember
-from misc.admin import NoteInline
+from misc.models import LabMember, Lab, LabLocation, LabMembership, Note
+from misc.admin import (NoteInline, LabAdmin, LabMembershipAdmin,
+                        LabLocationAdmin, NoteAdmin)
 
 
 # Utility functions
@@ -260,6 +261,20 @@ class SubjectForm(forms.ModelForm):
         return new_ru
 
 
+class SubjectImageAdmin(BaseAdmin):
+    model = SubjectImage
+    fields = ('subject', 'user', 'date_time', 'image_tag', 'image', 'description')
+    readonly_fields = ('image_tag',)
+
+
+class SubjectImageInline(BaseInlineAdmin):
+    model = SubjectImage
+    extra = 1
+    fields = ('user', 'date_time', 'image_tag')
+    readonly_fields = ('image_tag',)
+    classes = ['collapse']
+
+
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
@@ -272,7 +287,6 @@ class SubjectAdmin(BaseAdmin):
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json')}),
-        ('IMAGES', {'fields': ('images',)}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'lamis_cage', 'lamis_cage_changes',),
                      'classes': ('collapse',),
@@ -316,7 +330,6 @@ class SubjectAdmin(BaseAdmin):
                        'water_requirement_total_f',
                        'water_requirement_remaining_f',
                        'weighing_plot',
-                       'images',
                        )
     ordering = ['-birth_date', '-nickname']
     list_editable = []
@@ -331,11 +344,9 @@ class SubjectAdmin(BaseAdmin):
     inlines = [ZygosityInline, GenotypeTestInline,
                SurgeryInline, AddSurgeryInline,
                SessionInline, OtherActionInline,
+               SubjectImageInline,
                NoteInline,
                ]
-
-    def images(self, obj):
-        return show_images(list_images(obj.nickname))
 
     def ear_mark_(self, obj):
         return obj.ear_mark
@@ -1159,6 +1170,13 @@ mysite.register(Sequence, SequenceAdmin)
 mysite.register(GenotypeTest, GenotypeTestAdmin)
 mysite.register(Zygosity, ZygosityAdmin)
 mysite.register(ZygosityRule, ZygosityRuleAdmin)
+
+admin.site.register(Lab, LabAdmin)
+admin.site.register(LabMembership, LabMembershipAdmin)
+admin.site.register(LabLocation, LabLocationAdmin)
+admin.site.register(Note, NoteAdmin)
+
+mysite.register(SubjectImage, SubjectImageAdmin)
 
 
 # Alternative admin views

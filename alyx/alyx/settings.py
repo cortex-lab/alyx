@@ -203,3 +203,6 @@ USE_TZ = False
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
+
+MEDIA_ROOT = '/var/alyx-images/'
+MEDIA_URL = 'http://ibl.flatironinstitute.org/cortexlab/Images/'
