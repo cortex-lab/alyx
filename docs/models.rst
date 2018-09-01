@@ -4,6 +4,7 @@ These models generally correspond one-to-one with tables in the database.
 
 Subjects
 -------------------
+.. image:: _static/subjects_ERD.png
 .. automodule:: subjects.models
    :member-order: bysource
    :show-inheritance:
@@ -11,6 +12,7 @@ Subjects
 
 Actions
 -------------------
+.. image:: _static/actions_ERD.png
 .. automodule:: actions.models
    :member-order: bysource
    :show-inheritance:
@@ -18,41 +20,15 @@ Actions
 
 Data
 -------------------
+.. image:: _static/data_ERD.png
 .. automodule:: data.models
-   :member-order: bysource
-   :show-inheritance:
-   :members:
-
-Equipment
--------------------
-.. automodule:: equipment.models
-   :member-order: bysource
-   :show-inheritance:
-   :members:
-
-Behavior
--------------------
-.. automodule:: behavior.models
-   :member-order: bysource
-   :show-inheritance:
-   :members:
-
-Electrophysiology
--------------------
-.. automodule:: electrophysiology.models
-   :member-order: bysource
-   :show-inheritance:
-   :members:
-
-Imaging
--------------------
-.. automodule:: imaging.models
    :member-order: bysource
    :show-inheritance:
    :members:
 
 Coordinate transforms
 ---------------------
+.. image:: _static/misc_ERD.png
 .. automodule:: misc.models
    :member-order: bysource
    :show-inheritance:
