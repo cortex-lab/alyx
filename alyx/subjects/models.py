@@ -130,11 +130,16 @@ class Project(BaseModel):
         return "<Project %s>" % self.name
 
 
+def get_image_path(instance, filename):
+    date = instance.date_time.strftime('%Y_%m_%d')
+    return '%s/%s_%s' % (instance.subject.nickname, date, filename)
+
+
 class SubjectImage(BaseModel):
     subject = models.ForeignKey(
         'subjects.Subject', null=True, blank=True, on_delete=models.CASCADE)
     image = models.ImageField(
-        upload_to='%Y/%m/%d/', max_length=255, blank=True, null=True)
+        upload_to=get_image_path, max_length=255, blank=True, null=True)
     date_time = models.DateTimeField(
         null=True, blank=True, default=timezone.now)
     user = models.ForeignKey(
