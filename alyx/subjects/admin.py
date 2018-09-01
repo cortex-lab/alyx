@@ -274,6 +274,14 @@ class SubjectImageInline(BaseInlineAdmin):
     readonly_fields = ('image_tag',)
     classes = ['collapse']
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['initial'] = request.user.id
+            return db_field.formfield(**kwargs)
+        return super(SubjectImageInline, self).formfield_for_foreignkey(
+            db_field, request, **kwargs
+        )
+
 
 class SubjectAdmin(BaseAdmin):
     fieldsets = (
