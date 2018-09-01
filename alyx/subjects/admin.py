@@ -270,7 +270,7 @@ class SubjectImageAdmin(BaseAdmin):
 class SubjectImageInline(BaseInlineAdmin):
     model = SubjectImage
     extra = 1
-    fields = ('user', 'date_time', 'image_tag')
+    fields = ('user', 'date_time', 'image', 'image_tag')
     readonly_fields = ('image_tag',)
     classes = ['collapse']
 
