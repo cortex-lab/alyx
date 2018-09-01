@@ -16,6 +16,7 @@ globus-cli
 globus-sdk
 markdown
 matplotlib
+pillow
 python-dateutil
 pytz
 webdavclient3
