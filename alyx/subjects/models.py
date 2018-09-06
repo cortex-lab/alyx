@@ -229,9 +229,10 @@ class Subject(BaseModel):
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user__name', 'lamis_cage')
+    _fields_history = ('nickname', 'responsible_user__username', 'lamis_cage')
     # We track the changes of these fields without saving their history in the JSON.
-    _track_field_changes = ('request', 'litter', 'genotype_date', 'death_date', 'reduced')
+    _track_field_changes = ('request', 'responsible_user', 'litter', 'genotype_date',
+                            'death_date', 'reduced')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
@@ -315,7 +316,7 @@ class Subject(BaseModel):
         if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = timezone.now().date()
         # Update subject request.
-        if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
+        if (self.responsible_user_id and _has_field_changed(self, 'responsible_user__username') and
                 self.line is not None and
                 self.request is None):
             srs = SubjectRequest.objects.filter(user=self.responsible_user,
