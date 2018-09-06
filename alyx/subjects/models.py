@@ -235,6 +235,8 @@ class Subject(BaseModel):
 
     class Meta:
         ordering = ['nickname', '-birth_date']
+        unique_together = ['nickname', 'lab']
+        unique_together = ['nickname', 'responsible_user']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
