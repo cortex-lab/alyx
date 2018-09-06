@@ -229,7 +229,7 @@ class Subject(BaseModel):
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user', 'lamis_cage')
+    _fields_history = ('nickname', 'responsible_user__name', 'lamis_cage')
     # We track the changes of these fields without saving their history in the JSON.
     _track_field_changes = ('request', 'litter', 'genotype_date', 'death_date', 'reduced')
 
