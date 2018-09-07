@@ -316,7 +316,7 @@ class Subject(BaseModel):
         if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = timezone.now().date()
         # Update subject request.
-        if (self.responsible_user_id and _has_field_changed(self, 'responsible_user__username') and
+        if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
                 self.request is None):
             srs = SubjectRequest.objects.filter(user=self.responsible_user,
