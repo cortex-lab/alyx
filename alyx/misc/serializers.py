@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from subjects.models import Subject
+from misc.models import Lab
 from django.contrib.auth import get_user_model
 
 
@@ -15,3 +16,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('id', 'username', 'email', 'subjects_responsible')
+
+
+class LabSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Lab
+        fields = ('name', 'institution', 'address', 'timezone')
+        lookup_field = 'name'
+        extra_kwargs = {'url': {'view_name': 'lab-detail', 'lookup_field': 'name'}}

@@ -60,6 +60,13 @@ urlpatterns = [
          name="project-detail"),
 
 
+    path('labs', mv.LabList.as_view(),
+         name="lab-list"),
+
+    path('labs/<str:name>', mv.LabDetail.as_view(),
+         name="lab-detail"),
+
+
     path('sessions', av.SessionAPIList.as_view(),
          name="session-list"),
 

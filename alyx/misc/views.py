@@ -4,9 +4,10 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
-from rest_framework import permissions
+from rest_framework import generics, permissions
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, LabSerializer
+from .models import Lab
 
 
 @api_view(['GET'])
@@ -24,6 +25,8 @@ def api_root(request, format=None):
         'subjects-url': reverse('subject-list', request=request, format=format),
 
         'sessions-url': reverse('session-list', request=request, format=format),
+        'projects-url': reverse('project-list', request=request, format=format),
+        'labs-url': reverse('lab-list', request=request, format=format),
         'datasets-url': reverse('dataset-list', request=request, format=format),
         'files-url': reverse('filerecord-list', request=request, format=format),
 
@@ -59,3 +62,17 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     lookup_field = 'username'
     permission_classes = (permissions.IsAuthenticated,)
+
+
+class LabList(generics.ListCreateAPIView):
+    queryset = Lab.objects.all()
+    serializer_class = LabSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+class LabDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Lab.objects.all()
+    serializer_class = LabSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
