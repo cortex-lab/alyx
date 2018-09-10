@@ -47,7 +47,7 @@ def _is_foreign_key(obj, field):
 
 def _get_current_field(obj, field):
     if _is_foreign_key(obj, field):
-        return getattr(obj, field + '_id', None)
+        return str(getattr(obj, field + '_id', None))
     else:
         return str(getattr(obj, field, None))
 
@@ -229,7 +229,7 @@ class Subject(BaseModel):
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user__username', 'lamis_cage')
+    _fields_history = ('nickname', 'responsible_user', 'lamis_cage')
     # We track the changes of these fields without saving their history in the JSON.
     _track_field_changes = ('request', 'responsible_user', 'litter', 'genotype_date',
                             'death_date', 'reduced')
