@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import (Allele, Line, Litter, Source, Species, Strain, Subject, Zygosity,
                      Project)
-from actions.serializers import (WeighingListSerializer,
-                                 WaterAdministrationListSerializer,
+from actions.serializers import (WeighingDetailSerializer,
+                                 WaterAdministrationDetailSerializer,
                                  SessionListSerializer,
                                  )
 from django.contrib.auth import get_user_model
@@ -115,8 +115,8 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class SubjectDetailSerializer(SubjectListSerializer):
-    weighings = WeighingListSerializer(many=True, read_only=True)
-    water_administrations = WaterAdministrationListSerializer(many=True, read_only=True)
+    weighings = WeighingDetailSerializer(many=True, read_only=True)
+    water_administrations = WaterAdministrationDetailSerializer(many=True, read_only=True)
     actions_sessions = SessionListSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 

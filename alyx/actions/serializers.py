@@ -120,13 +120,6 @@ class SessionDetailSerializer(BaseActionSerializer):
                   'data_dataset_session_related', 'parent_session')
 
 
-class WeighingListSerializer(serializers.HyperlinkedModelSerializer):
-
-    class Meta:
-        model = Weighing
-        fields = ('date_time', 'weight', 'url')
-
-
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
 
     subject = serializers.SlugRelatedField(
@@ -148,18 +141,14 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
         _log_entry(instance, user)
         return instance
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset.select_related('subject', 'user')
+
     class Meta:
         model = Weighing
         fields = ('subject', 'date_time', 'weight',
                   'user', 'url')
-
-
-class WaterAdministrationListSerializer(serializers.HyperlinkedModelSerializer):
-
-    class Meta:
-        model = WaterAdministration
-        fields = ('date_time', 'water_administered', 'hydrogel', 'url')
-        extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
 
 
 class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
@@ -176,6 +165,10 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         queryset=get_user_model().objects.all(),
         required=False,
     )
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset.select_related('subject', 'user')
 
     def create(self, validated_data):
         user = self.context['request'].user

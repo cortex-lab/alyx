@@ -36,7 +36,7 @@ class APIActionsTests(BaseTests):
         self.assertEqual(d['subject'], self.subject.nickname)
         self.assertEqual(d['water_administered'], 1.23)
 
-    def test_list_water_administration(self):
+    def test_list_water_administration_1(self):
         url = reverse('water-administration-create')
         response = self.client.get(url)
         self.ar(response)
@@ -44,8 +44,31 @@ class APIActionsTests(BaseTests):
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
                              'water_administered', 'hydrogel')) <= set(d))
 
-    def test_list_weighing(self):
+    def test_list_water_administration_filter(self):
+        url = reverse('water-administration-create')
+        data = {'subject': self.subject, 'water_administered': 1.23}
+        response = self.client.post(url, data)
+
+        url = reverse('water-administration-create') + '?nickname=' + self.subject.nickname
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data[0]
+        self.assertTrue(set(('date_time', 'url', 'subject', 'user',
+                             'water_administered', 'hydrogel')) <= set(d))
+
+    def test_list_weighing_1(self):
         url = reverse('weighing-create')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data[0]
+        self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
+
+    def test_list_weighing_filter(self):
+        url = reverse('weighing-create')
+        data = {'subject': self.subject, 'weight': 12.3}
+        response = self.client.post(url, data)
+
+        url = reverse('weighing-create') + '?nickname=' + self.subject.nickname
         response = self.client.get(url)
         self.ar(response)
         d = response.data[0]

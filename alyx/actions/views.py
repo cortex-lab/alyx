@@ -20,9 +20,7 @@ from . import water
 from .models import Session, WaterAdministration, Weighing
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
-                          WaterAdministrationListSerializer,
                           WaterAdministrationDetailSerializer,
-                          WeighingListSerializer,
                           WeighingDetailSerializer,
                           )
 
@@ -126,6 +124,22 @@ class SessionFilter(FilterSet):
         exclude = ['json']
 
 
+class WeighingFilter(FilterSet):
+    nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+
+    class Meta:
+        model = Weighing
+        exclude = ['json']
+
+
+class WaterAdministrationFilter(FilterSet):
+    nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+
+    class Meta:
+        model = WaterAdministration
+        exclude = ['json']
+
+
 class SessionAPIList(generics.ListCreateAPIView):
     """
     List and create sessions - view in summary form
@@ -147,20 +161,6 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class WeighingAPIList(generics.ListAPIView):
-    """
-    Lists all the subject weights, sorted by time/date.
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = WeighingListSerializer
-
-    def get_queryset(self):
-        queryset = Weighing.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs[
-                                   'nickname']).order_by('date_time')
-        return queryset
-
-
 class WeighingAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new weighing.
@@ -168,6 +168,8 @@ class WeighingAPIListCreate(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
+    queryset = WeighingDetailSerializer.setup_eager_loading(queryset)
+    filter_class = WeighingFilter
 
 
 class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
@@ -179,20 +181,6 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     queryset = Weighing.objects.all()
 
 
-class WaterAdministrationAPIList(generics.ListAPIView):
-    """
-    Lists all the subject water administrations, sorted by time/date.
-    """
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = WaterAdministrationListSerializer
-
-    def get_queryset(self):
-        queryset = Weighing.objects.all()
-        queryset = queryset.filter(subject__nickname=self.kwargs[
-                                   'nickname']).order_by('date_time')
-        return queryset
-
-
 class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new water administration.
@@ -200,6 +188,8 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
+    queryset = WaterAdministrationDetailSerializer.setup_eager_loading(queryset)
+    filter_class = WaterAdministrationFilter
 
 
 class WaterAdministrationAPIDetail(generics.RetrieveDestroyAPIView):
