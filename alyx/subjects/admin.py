@@ -10,7 +10,7 @@ from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
 
-from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, MyAdminSite, get_admin_url,
+from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url,
                        _iter_history_changes, list_images, show_images)
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
@@ -1132,13 +1132,7 @@ class LabMemberAdmin(UserAdmin):
 # Reorganize admin index
 # ------------------------------------------------------------------------------------------------
 
-mysite = MyAdminSite()
-mysite.site_header = 'Alyx'
-mysite.site_title = 'Alyx'
-mysite.site_url = None
-mysite.index_title = 'Welcome to Alyx'
-
-admin.site = mysite
+mysite = admin.site
 
 mysite.register(LabMember, LabMemberAdmin)
 mysite.register(Group)

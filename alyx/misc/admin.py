@@ -19,7 +19,8 @@ class LabMembershipAdmin(BaseAdmin):
 
 
 class LabLocationAdmin(BaseAdmin):
-    fields = ['name']
+    fields = ['name', 'lab']
+    list_display = fields
 
 
 class NoteAdmin(BaseAdmin):
