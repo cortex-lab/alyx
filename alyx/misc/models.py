@@ -51,6 +51,7 @@ class LabLocation(BaseModel):
     This could be a room, a bench, a rig, etc.
     """
     name = models.CharField(max_length=255)
+    lab = models.ForeignKey(Lab, null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name

@@ -146,6 +146,9 @@ ADMIN_PAGES = [('Common', ['Subjects',
                ('IT admin', ['Tokens',
                              'Groups',
                              'Lab members',
+                             'Labs',
+                             'Lab locations',
+                             'Lab memberships',
                              ]),
                ]
 
@@ -303,3 +306,12 @@ def show_images(images):
         for url in images)
     out = '<div style="display: flex; flex-flow: row wrap;">' + out + '</div>'
     return format_html(out)
+
+
+mysite = MyAdminSite()
+mysite.site_header = 'Alyx'
+mysite.site_title = 'Alyx'
+mysite.site_url = None
+mysite.index_title = 'Welcome to Alyx'
+
+admin.site = mysite
