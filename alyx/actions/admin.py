@@ -160,8 +160,9 @@ class BaseActionAdmin(BaseAdmin):
         if db_field.name == 'subject':
             subject_id = self._get_last_subject(request)
             if subject_id:
-                subject = Subject.objects.get(id=subject_id)
-                kwargs['initial'] = subject
+                subject = Subject.objects.filter(id=subject_id).first()
+                if subject:
+                    kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(
             db_field, request, **kwargs
         )
