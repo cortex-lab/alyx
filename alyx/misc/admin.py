@@ -1,9 +1,10 @@
 from django import forms
 from django.db import models
+from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 
-from .models import Note
+from .models import Note, Lab, LabMembership, LabLocation
 from alyx.base import BaseAdmin
 
 
@@ -53,3 +54,9 @@ class NoteInline(GenericTabularInline):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+admin.site.register(Lab, LabAdmin)
+admin.site.register(LabMembership, LabMembershipAdmin)
+admin.site.register(LabLocation, LabLocationAdmin)
+admin.site.register(Note, NoteAdmin)
