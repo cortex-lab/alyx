@@ -1,14 +1,21 @@
+from datetime import datetime
+from io import BytesIO
+import os.path as op
 import uuid
+import sys
+
+from PIL import Image
 
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
 from alyx.base import BaseModel
-from alyx.settings import TIME_ZONE
+from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH
 
 
 class LabMember(AbstractUser):
@@ -57,12 +64,39 @@ class LabLocation(BaseModel):
         return self.name
 
 
+def get_image_path(instance, filename):
+    date = datetime.now().strftime('%Y/%m/%d')
+    pk = instance.object_id
+    base, ext = op.splitext(filename)
+    return '%s/%s.%s%s' % (date, base, pk, ext)
+
+
 class Note(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_time = models.DateTimeField(default=timezone.now)
     text = models.TextField(blank=True)
+    image = models.ImageField(upload_to=get_image_path, blank=True, null=True)
 
     # Generic foreign key to arbitrary model instances.
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.UUIDField()
     content_object = GenericForeignKey()
+
+    def save(self):
+        if self.image:
+            # Resize image
+            with Image.open(self.image) as im:
+                with BytesIO() as output:
+                    # Compute new size by keeping the aspect ratio.
+                    width = UPLOADED_IMAGE_WIDTH
+                    wpercent = width / float(im.size[0])
+                    height = int((float(im.size[1]) * float(wpercent)))
+                    im.thumbnail((width, height))
+                    im.save(output, format=im.format, quality=70)
+                    output.seek(0)
+                    self.image = InMemoryUploadedFile(
+                        output, 'ImageField', self.image.name,
+                        im.format, sys.getsizeof(output), None)
+                    super(Note, self).save()
+        else:
+            super(Note, self).save()
