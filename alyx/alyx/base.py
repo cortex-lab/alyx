@@ -15,7 +15,6 @@ from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors
-from django.utils.html import format_html
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
