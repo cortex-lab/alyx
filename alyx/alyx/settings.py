@@ -11,13 +11,6 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 import os
 from django.conf.locale.en import formats as en_formats
 
-# WebDAV server is used to store images. This is a WIP feature.
-# Will be overriden by settings_secret.
-WEBDAV_URL = ''
-WEBDAV_LOGIN = ''
-WEBDAV_PASSWORD = ''
-
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 try:
     from .settings_secret import *  # noqa
@@ -203,3 +196,7 @@ USE_TZ = False
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
+
+MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
+MEDIA_URL = '/uploaded/'
+UPLOADED_IMAGE_WIDTH = 800

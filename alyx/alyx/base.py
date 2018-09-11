@@ -4,8 +4,6 @@ from polymorphic.models import PolymorphicModel
 import uuid
 import sys
 
-import webdav3.client as wc
-
 from django import forms
 from django.db import models
 from django.db import connection
@@ -274,38 +272,6 @@ class BaseTests(APITestCase):
 
     def ar(self, r, code=200):
         self.assertTrue(r.status_code == code, r.data)
-
-
-WEBDAV_OPTIONS = {
-    'webdav_hostname': settings.WEBDAV_URL,
-    'webdav_login': settings.WEBDAV_LOGIN,
-    'webdav_password': settings.WEBDAV_PASSWORD,
-}
-WEBDAV_CLIENT = wc.Client(WEBDAV_OPTIONS)
-
-
-def list_images(nickname, class_name=None, date=None):
-    if class_name and date:
-        path = '/%s/%s/%s' % (nickname, class_name, date)
-    else:
-        path = '/%s' % nickname
-    try:
-        images = WEBDAV_CLIENT.list(path)[1:]
-    except Exception as e:
-        logger.warn(e)
-        return []
-    images = [name for name in images if name.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    return [settings.WEBDAV_URL[:-1] + path + '/' + name for name in images]
-
-
-def show_images(images):
-    out = ''.join((
-        '<div><a href="{url}" target="_blank">'
-        '<img src="{url}" style="max-width: 400px; margin: 10px;" />'
-        '</a></div>').format(url=url)
-        for url in images)
-    out = '<div style="display: flex; flex-flow: row wrap;">' + out + '</div>'
-    return format_html(out)
 
 
 mysite = MyAdminSite()
