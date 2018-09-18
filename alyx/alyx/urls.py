@@ -1,5 +1,5 @@
 from django.conf.urls import include
-from django.urls import path
+from django.urls import path, re_path
 from django.contrib import admin
 from rest_framework.authtoken import views as authv
 from rest_framework.documentation import include_docs_urls
@@ -31,6 +31,7 @@ urlpatterns = [
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('auth-token', authv.obtain_auth_token),
 
+    re_path('^uploaded/(?P<img_url>.*)', mv.UploadedView.as_view(), name='uploaded'),
 
     path('weighings', av.WeighingAPIListCreate.as_view(),
          name="weighing-create"),

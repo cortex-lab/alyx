@@ -10,7 +10,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
-                       get_admin_url, list_images, show_images)
+                       get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing,
                      )
@@ -353,8 +353,7 @@ class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
     list_select_related = ('subject',)
 
-    fields = BaseActionAdmin.fields + ['outcome_type', 'images']
-    readonly_fields = ['images']
+    fields = BaseActionAdmin.fields + ['outcome_type']
     list_display_links = ['date']
     search_fields = ('subject__nickname',)
     list_filter = [SubjectAliveListFilter,
@@ -362,10 +361,7 @@ class SurgeryAdmin(BaseActionAdmin):
                    ('subject__line', RelatedDropdownFilter),
                    ]
     ordering = ['-start_time']
-
-    def images(self, obj):
-        images = list_images(obj.subject.nickname, 'Surgery', self.date(obj))
-        return show_images(images)
+    inlines = [NoteInline]
 
     def date(self, obj):
         return obj.start_time.date()
@@ -395,7 +391,6 @@ class SessionAdmin(BaseActionAdmin):
                     'dataset_types', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
-    inlines = [NoteInline]
     fields = BaseActionAdmin.fields + ['project', 'type', 'number']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
@@ -403,7 +398,7 @@ class SessionAdmin(BaseActionAdmin):
                    ]
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
-    inlines = [DatasetInline]
+    inlines = [DatasetInline, NoteInline]
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(

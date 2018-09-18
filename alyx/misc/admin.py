@@ -1,6 +1,7 @@
 from django import forms
 from django.db import models
 from django.contrib import admin
+from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 
@@ -23,16 +24,42 @@ class LabLocationAdmin(BaseAdmin):
     list_display = fields
 
 
-class NoteAdmin(BaseAdmin):
-    list_display = ['user', 'date_time', 'content_object', 'text']
+class AdminImageWidget(AdminFileWidget):
+    def render(self, name, value, attrs=None, renderer=None):
+        output = []
+        if value and getattr(value, "url", None):
+            image_url = value.url
+            file_name = str(value)
+            output.append(('<a href="%s" target="_blank">'
+                           '<img src="%s" width="400" alt="%s" /></a><br>') %
+                          (image_url, image_url, file_name))
+        output.append(super(AdminFileWidget, self).render(name, value, attrs, renderer))
+        return ''.join(output)
+
+
+class ImageWidgetAdmin(BaseAdmin):
+    image_fields = []
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name in self.image_fields:
+            request = kwargs.pop("request", None)  # noqa
+            kwargs['widget'] = AdminImageWidget
+            return db_field.formfield(**kwargs)
+        return super(ImageWidgetAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+
+
+class NoteAdmin(ImageWidgetAdmin):
+    list_display = ['user', 'date_time', 'content_object', 'text', 'image']
     list_display_links = ['date_time']
-    fields = ['user', 'date_time', 'text', 'content_type', 'object_id']
+    image_fields = ['image']
+    fields = ['user', 'date_time', 'text', 'image', 'content_type', 'object_id']
 
 
 class NoteInline(GenericTabularInline):
     model = Note
     extra = 1
-    fields = ('user', 'date_time', 'text')
+    fields = ('user', 'date_time', 'text', 'image')
+    image_fields = ('image',)
     classes = ['collapse']
 
     formfield_overrides = {
@@ -52,6 +79,13 @@ class NoteInline(GenericTabularInline):
         return super(NoteInline, self).formfield_for_foreignkey(
             db_field, request, **kwargs
         )
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        if db_field.name in self.image_fields:
+            request = kwargs.pop("request", None)  # noqa
+            kwargs['widget'] = AdminImageWidget
+            return db_field.formfield(**kwargs)
+        return super(NoteInline, self).formfield_for_dbfield(db_field, **kwargs)
 
     def has_delete_permission(self, request, obj=None):
         return False

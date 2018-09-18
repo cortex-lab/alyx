@@ -18,5 +18,6 @@ markdown
 matplotlib
 pillow
 python-dateutil
+python-magic
 pytz
 webdavclient3

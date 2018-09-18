@@ -1,6 +1,10 @@
-from django.contrib.auth import get_user_model
+import os.path as op
 
-from rest_framework import viewsets
+import magic
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+
+from rest_framework import viewsets, views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
@@ -8,6 +12,7 @@ from rest_framework import generics, permissions
 
 from .serializers import UserSerializer, LabSerializer
 from .models import Lab
+from alyx.settings import MEDIA_ROOT
 
 
 @api_view(['GET'])
@@ -76,3 +81,14 @@ class LabDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LabSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
+
+
+class UploadedView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, format=None, img_url=''):
+        path = op.join(MEDIA_ROOT, img_url)
+        mime = magic.from_file(path, mime=True)
+        with open(path, 'rb') as f:
+            data = f.read()
+        return HttpResponse(data, content_type=mime)
