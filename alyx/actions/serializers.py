@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from .models import (ProcedureType, Session, WaterAdministration, Weighing)
 from subjects.models import Subject
 from data.models import Dataset, DatasetType, DataFormat
-from misc.models import LabLocation
+from misc.models import LabLocation, Lab
 
 
 def _log_entry(instance, user):
@@ -54,6 +54,13 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         allow_null=True,
         required=False,
     )
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        many=False,
+        required=False,)
 
 
 class SessionDatasetsSerializer(serializers.ModelSerializer):

@@ -8,6 +8,7 @@ from actions.serializers import (WeighingDetailSerializer,
 from django.contrib.auth import get_user_model
 from actions import water
 from data.models import DataRepository
+from misc.models import Lab
 
 
 class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
@@ -94,8 +95,14 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='name',
         queryset=Project.objects.all(),
         many=True,
-        required=False,
-    )
+        required=False,)
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        many=False,
+        required=False,)
 
     @staticmethod
     def setup_eager_loading(queryset):
