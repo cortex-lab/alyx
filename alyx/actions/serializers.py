@@ -122,7 +122,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures',
+        fields = ('subject', 'users', 'location', 'procedures', 'lab',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
                   'data_dataset_session_related', 'parent_session')
 
