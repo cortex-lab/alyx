@@ -3,15 +3,17 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from alyx.base import BaseModel
+from alyx.base import BaseModel, modify_fields
 from misc.models import Lab, LabLocation
 
 
+@modify_fields(name={
+    'blank': False,
+})
 class ProcedureType(BaseModel):
     """
     A procedure to be performed on a subject.
     """
-    name = models.CharField(max_length=255, help_text="Short procedure name")
     description = models.TextField(blank=True,
                                    help_text="Detailed description "
                                    "of the procedure")

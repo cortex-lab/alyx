@@ -51,9 +51,9 @@ class Command(BaseCommand):
                     seq0 = k[0]
                     res0 = r[seq0]
                     kwargs = dict(
-                        line=Line.objects.get(auto_name=l),
-                        allele=Allele.objects.get(informal_name=a),
-                        sequence0=Sequence.objects.get(informal_name=seq0),
+                        line=Line.objects.get(nickname=l),
+                        allele=Allele.objects.get(nickname=a),
+                        sequence0=Sequence.objects.get(name=seq0),
                         sequence0_result=res0,
                         zygosity=zygosity
                     )
@@ -61,7 +61,7 @@ class Command(BaseCommand):
                         seq1 = k[1]
                         res1 = r[seq1]
                         kwargs.update(dict(
-                            sequence1=Sequence.objects.get(informal_name=seq1),
+                            sequence1=Sequence.objects.get(name=seq1),
                             sequence1_result=res1
                         ))
                     ZygosityRule.objects.create(**kwargs)

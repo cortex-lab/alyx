@@ -41,7 +41,7 @@ class ZygosityListSerializer(serializers.ModelSerializer):
     zygosity = serializers.ChoiceField(choices=ZYGOSITY_TYPES)
     allele = serializers.SlugRelatedField(
         read_only=False,
-        slug_field='informal_name',
+        slug_field='nickname',
         queryset=Allele.objects.all(),
         required=False)
 
@@ -63,14 +63,14 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
     species = serializers.SlugRelatedField(
         read_only=False,
-        slug_field='display_name',
+        slug_field='nickname',
         queryset=Species.objects.all(),
         allow_null=True,
         required=False)
 
     strain = serializers.SlugRelatedField(
         read_only=False,
-        slug_field='descriptive_name',
+        slug_field='name',
         queryset=Strain.objects.all(),
         allow_null=True,
         required=False)
@@ -84,7 +84,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
     litter = serializers.SlugRelatedField(
         read_only=False,
-        slug_field='descriptive_name',
+        slug_field='name',
         queryset=Litter.objects.all(),
         allow_null=True,
         required=False)

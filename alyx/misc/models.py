@@ -14,7 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
-from alyx.base import BaseModel
+from alyx.base import BaseModel, modify_fields
 from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH
 
 
@@ -50,12 +50,14 @@ class LabMembership(BaseModel):
         return "%s %s in %s" % (self.user, self.role, self.lab)
 
 
+@modify_fields(name={
+    'blank': False,
+})
 class LabLocation(BaseModel):
     """
     The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
     """
-    name = models.CharField(max_length=255)
     lab = models.ForeignKey(Lab, null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):

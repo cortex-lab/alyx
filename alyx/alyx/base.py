@@ -58,11 +58,21 @@ class QueryPrintingMiddleware:
 
 class BaseModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, blank=True, help_text="Long name")
     json = JSONField(null=True, blank=True,
                      help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         abstract = True
+
+
+def modify_fields(**kwargs):
+    def wrap(cls):
+        for field, prop_dict in kwargs.items():
+            for prop, val in prop_dict.items():
+                setattr(cls._meta.get_field(field), prop, val)
+        return cls
+    return wrap
 
 
 class BasePolymorphicModel(PolymorphicModel):

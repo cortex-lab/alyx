@@ -605,7 +605,7 @@ class SubjectInline(BaseInlineAdmin):
 
 class LitterInline(BaseInlineAdmin):
     model = Litter
-    fields = ['descriptive_name', 'breeding_pair', 'birth_date', 'description']
+    fields = ['name', 'breeding_pair', 'birth_date', 'description']
     extra = 1
     show_change_link = True
 
@@ -765,9 +765,9 @@ class LitterForm(forms.ModelForm):
 
 
 class LitterAdmin(BaseAdmin):
-    list_display = ['descriptive_name', 'breeding_pair', 'birth_date']
+    list_display = ['name', 'breeding_pair', 'birth_date']
     list_select_related = ('breeding_pair',)
-    fields = ['line', 'descriptive_name',
+    fields = ['line', 'name',
               'breeding_pair', 'birth_date',
               'description',
               ]
@@ -880,20 +880,20 @@ class LineFilter(DefaultListFilter):
 
 
 class LineAdmin(BaseAdmin):
-    fields = ['name', 'auto_name', 'target_phenotype', 'is_active',
+    fields = ['name', 'nickname', 'target_phenotype', 'is_active',
               'strain', 'species', 'description',
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
               'source', 'source_identifier', 'source_url', 'expression_data_url'
               ]
-    list_display = ['name', 'auto_name', 'target_phenotype', 'strain',
+    list_display = ['name', 'nickname', 'target_phenotype', 'strain',
                     'source_link', 'expression', 'is_active']
     list_select_related = ('strain',)
-    ordering = ['auto_name']
+    ordering = ['nickname']
     list_filter = [LineFilter]
     list_editable = ['is_active']
-    search_fields = ('auto_name',)
+    search_fields = ('nickname',)
 
     inlines = [SubjectRequestInline, SequencesInline, AllelesInline, BreedingPairInline]
 
@@ -1056,20 +1056,20 @@ class SpeciesAdmin(BaseAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return self.readonly_fields + ['binomial']
+            return self.readonly_fields + ['name']
         return self.readonly_fields
 
-    fields = ['binomial', 'display_name']
-    list_display = ['binomial', 'display_name']
+    fields = ['name', 'nickname']
+    list_display = ['name', 'nickname']
     readonly_fields = []
 
 
 class StrainAdmin(BaseAdmin):
-    fields = ['descriptive_name', 'description']
+    fields = ['name', 'description']
 
 
 class AlleleAdmin(BaseAdmin):
-    fields = ['standard_name', 'informal_name']
+    fields = ['nickname', 'name']
     search_fields = fields
 
 
@@ -1078,7 +1078,7 @@ class SourceAdmin(BaseAdmin):
 
 
 class SequenceAdmin(BaseAdmin):
-    fields = ['base_pairs', 'informal_name', 'description']
+    fields = ['base_pairs', 'name', 'description']
     search_fields = fields
 
 
@@ -1097,7 +1097,7 @@ class ZygosityAdmin(BaseAdmin):
     list_display = fields
     list_editable = ('allele', 'zygosity')
     ordering = ('subject', 'allele')
-    search_fields = ('subject__nickname', 'allele__informal_name')
+    search_fields = ('subject__nickname', 'allele__name')
     list_filter = (('allele', RelatedDropdownFilter),)
     list_select_related = ('subject', 'allele')
 
@@ -1107,7 +1107,7 @@ class GenotypeTestAdmin(BaseAdmin):
     list_display = fields
     list_editable = ('sequence', 'test_result')
     ordering = ('subject', 'sequence')
-    search_fields = ('subject__nickname', 'sequence__informal_name')
+    search_fields = ('subject__nickname', 'sequence__name')
     list_filter = (('sequence', RelatedDropdownFilter),)
     list_select_related = ('subject', 'sequence')
 

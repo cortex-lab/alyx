@@ -38,7 +38,7 @@ def used(query):
 
 
 def transgenic(query):
-    return query.exclude(line__auto_name='C57')
+    return query.exclude(line__nickname='C57')
 
 
 @contextlib.contextmanager

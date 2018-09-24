@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel
+from alyx.base import BaseModel, modify_fields
 
 
 def _related_string(field):
@@ -122,11 +122,12 @@ class DataFormat(BaseModel):
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
+
     objects = NameManager()
 
     name = models.CharField(
         max_length=255, unique=True,
-        help_text="short identifying nickname, e..g 'npy'.")
+        help_text="short identifying name, e.g. 'npy'")
 
     description = models.CharField(
         max_length=255, blank=True,
@@ -163,10 +164,12 @@ class DatasetType(BaseModel):
     movie as mj2", etc. Normally each DatasetType will correspond to a specific 3-part alf name
     (for individual files) or the first word of the alf names (for DataCollections)
     """
+
     objects = NameManager()
 
-    name = models.CharField(max_length=255, unique=True,
-                            blank=True, help_text="Short identifying nickname, e.g. 'spikes'")
+    name = models.CharField(
+        max_length=255, unique=True, blank=True,
+        help_text="Short identifying nickname, e.g. 'spikes'")
 
     created_by = models.ForeignKey(
         AUTH_USER_MODEL, blank=True, null=True,
@@ -261,6 +264,9 @@ class DatasetManager(models.Manager):
         return qs
 
 
+@modify_fields(name={
+    'blank': False,
+})
 class Dataset(BaseExperimentalData):
     """
     A chunk of data that is stored outside the database, most often a rectangular binary array.
@@ -270,8 +276,6 @@ class Dataset(BaseExperimentalData):
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
     """
     objects = DatasetManager()
-
-    name = models.CharField(max_length=255)
 
     file_size = models.IntegerField(blank=True, null=True, help_text="Size in bytes")
 

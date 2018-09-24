@@ -11,7 +11,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from alyx.base import BaseModel, alyx_mail
+from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.models import WaterRestriction
 from actions.water import last_water_restriction, today
 from misc.models import Lab
@@ -93,11 +93,8 @@ class SubjectManager(models.Manager):
         return self.get(nickname=name)
 
 
-def _default_source():
-    s = Source.objects.filter(name=settings.DEFAULT_SOURCE)
-    if s:
-        return s[0]
-    return None
+def default_source():
+    return Source.objects.filter(name=settings.DEFAULT_SOURCE).first()
 
 
 def default_responsible():
@@ -106,13 +103,13 @@ def default_responsible():
 
 def default_species():
     return Species.objects.get_or_create(
-        display_name='Laboratory mouse', binomial="Mus musculus")[0].pk
+        name="Mus musculus",
+        nickname='Laboratory mouse',
+        pk='60f915ba-bdf4-444a-ada0-be7ebd3c1826')[0].pk
 
 
 class Project(BaseModel):
-    name = models.CharField(
-        max_length=255, unique=True, blank=True, help_text="Project name")
-
+    name = models.CharField(max_length=255, unique=True)
     description = models.CharField(
         max_length=1023, blank=True, help_text="Description of the project")
 
@@ -150,10 +147,9 @@ class Subject(BaseModel):
                                                    "Nicknames must only contain letters, "
                                                    "numbers, or any of -._~.")
 
-    nickname = models.CharField(max_length=255,
+    nickname = models.CharField(max_length=64,
                                 default='-',
-                                help_text="Easy-to-remember, unique name "
-                                          "(e.g. 'Hercules').",
+                                help_text="Easy-to-remember name (e.g. 'Hercules').",
                                 validators=[nickname_validator])
     species = models.ForeignKey('Species', null=True, blank=True, on_delete=models.SET_NULL,
                                 default=default_species)
@@ -166,7 +162,7 @@ class Subject(BaseModel):
     genotype = models.ManyToManyField('Allele', through='Zygosity')
     genotype_test = models.ManyToManyField('Sequence', through='GenotypeTest')
     source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL,
-                               default=_default_source)
+                               default=default_source)
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
@@ -259,7 +255,7 @@ class Subject(BaseModel):
         return all(z.zygosity == 0 for z in Zygosity.objects.filter(subject=self))
 
     def genotype_test_string(self):
-        tests = GenotypeTest.objects.filter(subject=self).order_by('sequence__informal_name')
+        tests = GenotypeTest.objects.filter(subject=self).order_by('sequence__name')
         return ','.join('%s%s' % ('-' if test.test_result == 0 else '', str(test.sequence))
                         for test in tests)
 
@@ -398,13 +394,16 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
 
 class LitterManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(descriptive_name=name)
+        return self.get(name=name)
 
 
+@modify_fields(name={
+    'blank': False,
+    'default': '-'
+})
 class Litter(BaseModel):
     """A litter, containing a mother, father, and children with a
     shared date of birth."""
-    descriptive_name = models.CharField(max_length=255, default='-')
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
@@ -417,18 +416,18 @@ class Litter(BaseModel):
     objects = LitterManager()
 
     def natural_key(self):
-        return (self.descriptive_name,)
+        return (self.name,)
 
     class Meta:
-        ordering = ['descriptive_name', '-birth_date']
+        ordering = ['name', '-birth_date']
 
     def save(self, *args, **kwargs):
-        if self.line and self.descriptive_name in (None, '', '-'):
+        if self.line and self.name in (None, '', '-'):
             self.line.set_autoname(self)
         return super(Litter, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.descriptive_name
+        return self.name
 
 
 class BreedingPairManager(models.Manager):
@@ -436,9 +435,12 @@ class BreedingPairManager(models.Manager):
         return self.get(name=name)
 
 
+@modify_fields(name={
+    'blank': False,
+    'default': '-',
+    'help_text': 'Leave to - to autofill.'
+})
 class BreedingPair(BaseModel):
-    name = models.CharField(max_length=255, default='-',
-                            help_text='Leave to "-" to autofill.')
     line = models.ForeignKey('Line', null=True, blank=True,
                              on_delete=models.SET_NULL,
                              )
@@ -478,14 +480,16 @@ class BreedingPair(BaseModel):
 
 class LineManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(auto_name=name)
+        return self.get(nickname=name)
 
 
+@modify_fields(name={
+    'blank': False
+})
 class Line(BaseModel):
-    name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     target_phenotype = models.CharField(max_length=1023)
-    auto_name = models.CharField(max_length=255, unique=True)
+    nickname = models.CharField(max_length=255, unique=True)
     sequences = models.ManyToManyField('Sequence')
     alleles = models.ManyToManyField('Allele')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
@@ -503,35 +507,35 @@ class Line(BaseModel):
     objects = LineManager()
 
     def natural_key(self):
-        return (self.auto_name,)
+        return (self.nickname,)
 
     class Meta:
         ordering = ['name']
 
     def __str__(self):
-        return self.auto_name
+        return self.nickname
 
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
         self.save()
-        return '%s_BP_%03d' % (self.auto_name, self.breeding_pair_autoname_index)
+        return '%s_BP_%03d' % (self.nickname, self.breeding_pair_autoname_index)
 
     def new_litter_autoname(self):
         self.litter_autoname_index = self.litter_autoname_index + 1
         self.save()
-        return '%s_L_%03d' % (self.auto_name, self.litter_autoname_index)
+        return '%s_L_%03d' % (self.nickname, self.litter_autoname_index)
 
     def new_subject_autoname(self):
         self.subject_autoname_index = self.subject_autoname_index + 1
         self.save()
-        return '%s_%04d' % (self.auto_name, self.subject_autoname_index)
+        return '%s_%04d' % (self.nickname, self.subject_autoname_index)
 
     def set_autoname(self, obj):
         if isinstance(obj, BreedingPair):
             field = 'name'
             m = self.new_breeding_pair_autoname
         elif isinstance(obj, Litter):
-            field = 'descriptive_name'
+            field = 'name'
             m = self.new_litter_autoname
         elif isinstance(obj, Subject):
             field = 'nickname'
@@ -542,24 +546,24 @@ class Line(BaseModel):
 
 class SpeciesManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(display_name=name)
+        return self.get(nickname=name)
 
 
+@modify_fields(name={
+    'blank': False,
+    'help_text': 'Binomial name, e.g. "mus musculus"'
+})
 class Species(BaseModel):
-    """A single species, identified uniquely by its binomial name."""
-    binomial = models.CharField(max_length=255,
-                                help_text="Binomial name, "
-                                "e.g. \"mus musculus\"")
-    display_name = models.CharField(max_length=255, unique=True,
-                                    help_text="common name, e.g. \"mouse\"")
+    nickname = models.CharField(max_length=255, unique=True,
+                                help_text="common name, e.g. \"mouse\"")
 
     objects = SpeciesManager()
 
     def natural_key(self):
-        return (self.display_name,)
+        return (self.nickname,)
 
     def __str__(self):
-        return self.display_name
+        return self.nickname
 
     class Meta:
         verbose_name_plural = "species"
@@ -567,26 +571,27 @@ class Species(BaseModel):
 
 class StrainManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(descriptive_name=name)
+        return self.get(name=name)
 
 
+@modify_fields(name={
+    'help_text': "Standard descriptive name E.g. \"C57BL/6J\", "
+                 "http://www.informatics.jax.org/mgihome/nomen/",
+})
 class Strain(BaseModel):
     """A strain with a standardised name. """
-    descriptive_name = models.CharField(max_length=255, unique=True,
-                                        help_text="Standard descriptive name E.g. \"C57BL/6J\", "
-                                        "http://www.informatics.jax.org/mgihome/nomen/")
     description = models.TextField(blank=True)
 
     objects = StrainManager()
 
     def natural_key(self):
-        return (self.descriptive_name,)
+        return (self.name,)
 
     class Meta:
-        ordering = ['descriptive_name']
+        ordering = ['name']
 
     def __str__(self):
-        return self.descriptive_name
+        return self.name
 
 
 class SourceManager(models.Manager):
@@ -594,9 +599,11 @@ class SourceManager(models.Manager):
         return self.get(name=name)
 
 
+@modify_fields(name={
+    'blank': False
+})
 class Source(BaseModel):
     """A supplier / source of subjects."""
-    name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
 
     objects = SourceManager
@@ -648,7 +655,7 @@ class ZygosityFinder(object):
     def _existing_alleles(self, subject):
         if not subject:
             return []
-        return set([allele.informal_name for allele in subject.genotype.all()])
+        return set([allele.nickname for allele in subject.genotype.all()])
 
     def _alleles_in_line(self, line):
         return (zr.allele for zr in ZygosityRule.objects.filter(line=line))
@@ -666,13 +673,13 @@ class ZygosityFinder(object):
                 return rule.zygosity
 
     def _get_allele_rules(self, line, allele):
-        return ZygosityRule.objects.filter(line__auto_name=line, allele__informal_name=allele)
+        return ZygosityRule.objects.filter(line__nickname=line, allele__nickname=allele)
 
     def _get_tests(self, subject):
         return GenotypeTest.objects.filter(subject=subject)
 
     def _get_allele(self, name):
-        return Allele.objects.get_or_create(informal_name=name)[0]
+        return Allele.objects.get_or_create(nickname=name)[0]
 
     def _create_zygosity(self, subject, allele_name, symbol, force=True):
         if symbol is not None:
@@ -703,7 +710,7 @@ class ZygosityFinder(object):
         if not subject.line:
             return
         logger.debug("Genotype from rules for subject %s", subject.nickname)
-        line = subject.line.auto_name
+        line = subject.line.nickname
         alleles_in_line = set(self._alleles_in_line(subject.line))
         tests = self._get_tests(subject)
         for allele in alleles_in_line:
@@ -722,7 +729,7 @@ class ZygosityFinder(object):
             parent = getattr(subject, which_parent)()
             if parent is not None:
                 zygosities = Zygosity.objects.filter(subject=parent,
-                                                     allele__informal_name=allele,
+                                                     allele__nickname=allele,
                                                      )
                 if zygosities:
                     z = zygosities[0]
@@ -792,28 +799,31 @@ def delete_zygosity_rule(sender, instance, **kwargs):
 
 class AlleleManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(informal_name=name)
+        return self.get(nickname=name)
 
 
+@modify_fields(name={
+    'help_text': "MGNC-standard genotype name e.g. "
+                 "Pvalb<tm1(cre)Arbr>, "
+                 "http://www.informatics.jax.org/mgihome/nomen/",
+    'max_length': 1023,
+    'blank': False
+})
 class Allele(BaseModel):
     """A single allele."""
-    standard_name = models.CharField(max_length=1023,
-                                     help_text="MGNC-standard genotype name e.g. "
-                                     "Pvalb<tm1(cre)Arbr>, "
-                                     "http://www.informatics.jax.org/mgihome/nomen/")
-    informal_name = models.CharField(max_length=255, unique=True,
-                                     help_text="informal name in lab, e.g. Pvalb-Cre")
+    nickname = models.CharField(max_length=255, unique=True,
+                                help_text="informal name in lab, e.g. Pvalb-Cre")
 
     objects = AlleleManager()
 
     def natural_key(self):
-        return (self.informal_name,)
+        return (self.nickname,)
 
     class Meta:
-        ordering = ['informal_name']
+        ordering = ['nickname']
 
     def __str__(self):
-        return self.informal_name
+        return self.nickname
 
 
 class Zygosity(BaseModel):
@@ -843,28 +853,28 @@ class Zygosity(BaseModel):
 
 class SequenceManager(models.Manager):
     def get_by_natural_key(self, name):
-        return self.get(informal_name=name)
+        return self.get(name=name)
 
 
 class Sequence(BaseModel):
     """A genetic sequence that you run a genotyping test for."""
+    name = models.CharField(
+        max_length=255, unique=True, help_text="informal name in lab, e.g. ROSA-WT")
     base_pairs = models.TextField(
         help_text="the actual sequence of base pairs in the test")
     description = models.CharField(max_length=1023,
                                    help_text="any other relevant information about this test")
-    informal_name = models.CharField(max_length=255, unique=True,
-                                     help_text="informal name in lab, e.g. ROSA-WT")
 
     objects = SequenceManager()
 
     def natural_key(self):
-        return (self.informal_name,)
+        return (self.name,)
 
     class Meta:
-        ordering = ['informal_name']
+        ordering = ['name']
 
     def __str__(self):
-        return self.informal_name
+        return self.name
 
 
 class GenotypeTest(BaseModel):

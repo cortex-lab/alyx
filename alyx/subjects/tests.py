@@ -115,9 +115,9 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
     def test_zygosities_1(self):
         from subjects import models as m
-        sequence = m.Sequence.objects.create(informal_name='sequence')
-        allele = m.Allele.objects.create(informal_name='allele')
-        line = m.Line.objects.create(auto_name='line')
+        sequence = m.Sequence.objects.create(name='sequence')
+        allele = m.Allele.objects.create(nickname='allele')
+        line = m.Line.objects.create(nickname='line')
         line.alleles.add(allele)
         subject = m.Subject.objects.create(nickname='subject', line=line)
         assert len(subject.genotype.all()) == 0
@@ -142,9 +142,9 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
     def test_zygosities_2(self):
         from subjects import models as m
-        sequence = m.Sequence.objects.create(informal_name='sequence')
-        allele = m.Allele.objects.create(informal_name='allele')
-        line = m.Line.objects.create(auto_name='line')
+        sequence = m.Sequence.objects.create(name='sequence')
+        allele = m.Allele.objects.create(nickname='allele')
+        line = m.Line.objects.create(nickname='line')
         line.alleles.add(allele)
 
         # Create the parents.
@@ -189,10 +189,10 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
     def test_zygosities_3(self):
         from subjects import models as m
-        sequence = m.Sequence.objects.create(informal_name='sequence')
-        allele = m.Allele.objects.create(informal_name='allele')
-        allele_bis = m.Allele.objects.create(informal_name='allele_bis')
-        line = m.Line.objects.create(auto_name='line')
+        sequence = m.Sequence.objects.create(name='sequence')
+        allele = m.Allele.objects.create(nickname='allele')
+        allele_bis = m.Allele.objects.create(nickname='allele_bis')
+        line = m.Line.objects.create(nickname='line')
         line.alleles.add(allele)
 
         # Create the parents.

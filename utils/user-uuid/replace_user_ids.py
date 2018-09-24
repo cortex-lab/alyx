@@ -9,8 +9,8 @@ import re
 
 
 if len(sys.argv) > 1 and sys.argv[1] == 'test':
-    path = '../data/all_dumped_anon.json'
-    out = '../data/all_dumped_anon.uuid.json'
+    path = '../../data/all_dumped_anon.json'
+    out = '../../data/all_dumped_anon.uuid.json'
 else:
     path = 'dump.json'
     out = 'dump.uuid.json'
@@ -123,6 +123,35 @@ for item in db:
     item['fields'].pop('weighing_scale', None)
     item['fields'].pop('brain_location', None)
     item['fields'].pop('timescale', None)
+
+
+# Renames.
+"""
+Species.binomial_name => name
+Litter.descriptive_name ==> name
+Strain.descriptive_name => name
+Sequence.informal_name => name
+Allele.standard_name => name
+
+Species.display_name => nickname
+Line.auto_name => nickname
+Allele.informal_name => nickname
+"""
+renames = [
+    ('species', 'binomial', 'name'),
+    ('litter', 'descriptive_name', 'name'),
+    ('strain', 'descriptive_name', 'name'),
+    ('sequence', 'informal_name', 'name'),
+    ('allele', 'standard_name', 'name'),
+    ('species', 'display_name', 'nickname'),
+    ('line', 'auto_name', 'nickname'),
+    ('allele', 'informal_name', 'nickname')
+]
+
+for item in db:
+    for model, old, new in renames:
+        if item['model'] == 'subjects.%s' % model and old in item['fields']:
+            item['fields'][new] = item['fields'].pop(old)
 
 
 # Integrity check: remove non-existing foreign keys.
