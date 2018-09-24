@@ -14,7 +14,7 @@ colorlog
 django-admin-list-filter-dropdown
 globus-cli
 globus-sdk
-markdown
+git+https://github.com/Python-Markdown/markdown
 matplotlib
 pillow
 python-dateutil
