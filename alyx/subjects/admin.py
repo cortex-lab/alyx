@@ -273,7 +273,7 @@ class SubjectAdmin(BaseAdmin):
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
-                                'lamis_cage', 'lamis_cage_changes',),
+                                'cage', 'cage_changes',),
                      'classes': ('collapse',),
                      }),
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
@@ -296,18 +296,18 @@ class SubjectAdmin(BaseAdmin):
                     'breeding_pair_l', 'line_l', 'litter_l',
                     'zygosities',
                     'alive', 'responsible_user',
-                    'lamis_cage', 'description'
+                    'cage', 'description'
                     ]
     list_select_related = ('line', 'litter', 'litter__breeding_pair', 'responsible_user')
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
                      'responsible_user__username',
-                     'lamis_cage',
+                     'cage',
                      ]
     readonly_fields = ('age_days', 'zygosities',
                        'breeding_pair_l', 'litter_l', 'line_l',
-                       'lamis_cage_changes',
+                       'cage_changes',
                        'last_water_restriction',
                        'reference_weighing_f',
                        'current_weighing_f',
@@ -396,8 +396,8 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<img src="{url}" /><br /><a href="{url_h}">Water history</a>',
                            url=url, url_h=url_h)
 
-    def lamis_cage_changes(self, obj):
-        return format_html('<br />\n'.join(_iter_history_changes(obj, 'lamis_cage')))
+    def cage_changes(self, obj):
+        return format_html('<br />\n'.join(_iter_history_changes(obj, 'cage')))
 
     def get_queryset(self, request):
         return super(SubjectAdmin, self).get_queryset(request).select_related(
@@ -535,7 +535,7 @@ class SubjectInline(BaseInlineAdmin):
     extra = 1
     fields = ('nickname', 'birth_date', 'alive', 'wean_date', 'genotype_date', 'to_be_genotyped',
               'age_weeks', 'sex', 'line',
-              'litter', 'lamis_cage',
+              'litter', 'cage',
               'sequence0', 'result0',
               'sequence1', 'result1',
               'sequence2', 'result2',
@@ -543,7 +543,7 @@ class SubjectInline(BaseInlineAdmin):
     readonly_fields = ('age_weeks', 'alive',
                        'sequence0', 'sequence1', 'sequence2',
                        )
-    list_editable = ('lamis_cage',)
+    list_editable = ('cage',)
     show_change_link = True
     form = SubjectInlineForm
     _parent_instance = None
@@ -656,24 +656,24 @@ def _bp_subjects(line, sex):
 
 
 class BreedingPairAdminForm(forms.ModelForm):
-    lamis_cage = forms.CharField(required=False)
+    cage = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
             p = getattr(self.instance, w, None)
-            if p and p.lamis_cage:
-                self.fields['lamis_cage'].initial = p.lamis_cage
+            if p and p.cage:
+                self.fields['cage'].initial = p.cage
             self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
     def save(self, commit=True):
-        lamis_cage = self.cleaned_data.get('lamis_cage')
-        if lamis_cage:
+        cage = self.cleaned_data.get('cage')
+        if cage:
             for w in ('father', 'mother1', 'mother2'):
                 p = getattr(self.instance, w, None)
                 if p:
-                    p.lamis_cage = int(lamis_cage)
+                    p.cage = int(cage)
                     p.save()
         return super(BreedingPairAdminForm, self).save(commit=commit)
 
@@ -684,19 +684,19 @@ class BreedingPairAdminForm(forms.ModelForm):
 
 class BreedingPairAdmin(BaseAdmin):
     form = BreedingPairAdminForm
-    list_display = ['name', 'lamis_cage', 'line_l', 'start_date', 'end_date',
+    list_display = ['name', 'cage', 'line_l', 'start_date', 'end_date',
                     'father_l', 'mother1_l', 'mother2_l']
     list_select_related = ('line', 'father', 'mother1', 'mother2')
     fields = ['name', 'line', 'start_date', 'end_date',
-              'father', 'mother1', 'mother2', 'lamis_cage', 'description']
+              'father', 'mother1', 'mother2', 'cage', 'description']
     autocomplete_fields = ('father', 'mother1', 'mother2')
     list_filter = [BreedingPairFilter,
                    ('line', LineDropdownFilter),
                    ]
     inlines = [LitterInline]
 
-    def lamis_cage(self, obj):
-        return obj.father.lamis_cage if obj.father else None
+    def cage(self, obj):
+        return obj.father.cage if obj.father else None
 
     def line_l(self, obj):
         url = get_admin_url(obj.line)
@@ -1208,7 +1208,7 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'birth_date', 'sex_f',
                     'ear_mark', 'line', 'zygosities',
-                    'lamis_cage', 'responsible_user',
+                    'cage', 'responsible_user',
                     'death_date', 'to_be_culled', 'reduced',
                     ]
     ordering = ['-birth_date', '-nickname']

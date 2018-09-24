@@ -161,6 +161,13 @@ with open(out, 'w') as f:
     json.dump(db, f, indent=1)
 
 
+# Replace lamis_cage by cage
+with open(out, 'r') as f:
+    contents = f.read().replace('lamis_cage', 'cage')
+with open(out, 'w') as f:
+    f.write(contents)
+
+
 '''
 with open('user_keys.json', 'w') as f:
     json.dump(user_keys, f, indent=1)

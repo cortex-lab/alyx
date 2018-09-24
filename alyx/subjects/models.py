@@ -184,7 +184,7 @@ class Subject(BaseModel):
         Project, blank=True,
         help_text='Project associated to this session')
 
-    lamis_cage = models.IntegerField(null=True, blank=True)
+    cage = models.CharField(max_length=64, null=True, blank=True)
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)
     implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
@@ -205,7 +205,7 @@ class Subject(BaseModel):
     objects = SubjectManager()
 
     # We save the history of these fields.
-    _fields_history = ('nickname', 'responsible_user', 'lamis_cage')
+    _fields_history = ('nickname', 'responsible_user', 'cage')
     # We track the changes of these fields without saving their history in the JSON.
     _track_field_changes = ('request', 'litter', 'genotype_date', 'death_date', 'reduced')
 
