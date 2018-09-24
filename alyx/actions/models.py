@@ -167,7 +167,6 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-# WE ARE CONSIDERING RENAMING SESSION TO EXPERIMENT.
 class Session(BaseAction):
     """
     A recording or training session performed on a subject. There is normally only one of

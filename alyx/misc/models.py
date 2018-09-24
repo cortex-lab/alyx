@@ -51,8 +51,6 @@ class LabMembership(BaseModel):
 
 
 class LabLocation(BaseModel):
-    # minor but can we change this to Location or LabLocation? Because it could
-    # also be a room in the animal house
     """
     The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
