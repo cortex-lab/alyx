@@ -6,7 +6,7 @@ from data import transfers
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 
 
-logging.getLogger(__name__).setLevel(logging.INFO)
+logging.getLogger(__name__).setLevel(logging.WARNING)
 
 
 def _iter_datasets(dataset_id=None, limit=None, user=None):
@@ -70,7 +70,6 @@ class Command(BaseCommand):
 
         if action == 'sync':
             _create_missing_file_records()
-
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
                 self.stdout.write("Synchronizing file status of %s" % str(dataset))
                 if not dry:
