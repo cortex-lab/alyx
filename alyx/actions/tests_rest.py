@@ -4,6 +4,7 @@ from django.utils.timezone import now
 
 from alyx.base import BaseTests
 from subjects.models import Subject
+from misc.models import Lab
 
 
 class APIActionsTests(BaseTests):
@@ -12,6 +13,8 @@ class APIActionsTests(BaseTests):
         self.superuser2 = get_user_model().objects.create_superuser('test2', 'test2', 'test2')
         self.client.login(username='test', password='test')
         self.subject = Subject.objects.all().first()
+        self.lab01 = Lab.objects.create(name='superlab')
+        self.lab02 = Lab.objects.create(name='awesomelab')
         # Set an implant weight.
         self.subject.implant_weight = 4.56
         self.subject.save()
@@ -100,7 +103,8 @@ class APIActionsTests(BaseTests):
                     'end_time': '2018-07-09T12:34:57',
                     'type': 'Base',
                     'number': '1',
-                    'parent_session': ''}
+                    'parent_session': '',
+                    'lab': self.lab01}
         # Test the session creation
         r = self.client.post(reverse('session-list'), ses_dict)
         self.ar(r, 201)
@@ -108,6 +112,7 @@ class APIActionsTests(BaseTests):
         ses_dict['start_time'] = '2018-07-11T12:34:56'
         ses_dict['end_time'] = '2018-07-11T12:34:57'
         ses_dict['users'] = [self.superuser, self.superuser2]
+        ses_dict['lab'] = self.lab02
         r = self.client.post(reverse('session-list'), ses_dict)
         s2 = r.data
         # Test the date range filter
@@ -118,4 +123,7 @@ class APIActionsTests(BaseTests):
         self.assertTrue(len(r.data) == 2)
         # This should return only one session
         r = self.client.get(reverse('session-list') + '?users=test2')
+        self.assertEqual(r.data[0], s2)
+        # This should return only one session
+        r = self.client.get(reverse('session-list') + '?lab=awesomelab')
         self.assertEqual(r.data[0], s2)

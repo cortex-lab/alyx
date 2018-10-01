@@ -94,6 +94,7 @@ class SessionFilter(FilterSet):
     users = django_filters.CharFilter(field_name='users__username', method=('filter_users'))
     date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
     type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
+    lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
