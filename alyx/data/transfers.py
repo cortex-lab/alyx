@@ -4,6 +4,7 @@ import os
 import os.path as op
 import re
 
+from django.db.models import Case, When, Count, Q
 import globus_sdk
 
 from alyx import settings
@@ -85,7 +86,16 @@ def _get_absolute_path(file_record):
 
 
 def _incomplete_dataset_ids():
-    return FileRecord.objects.filter(exists=False).values_list('dataset', flat=True).distinct()
+    # a dataset is incomplete if
+    # -     there is no file on the flatiron Globus
+    # and/or
+    # -     none of globus personnal endpoints have a file
+    q1 = Q(file_records__exists=False) & Q(file_records__data_repository__globus_is_personal=False)
+    noremote = Dataset.objects.filter(q1)
+    q2 = Q(file_records__exists=True) & Q(file_records__data_repository__globus_is_personal=True)
+    nolocal = Dataset.objects.annotate(numok=Count(Case(When(q2, then=1)))).filter(numok=0)
+    return nolocal.values_list('id').union(noremote.values_list('id')).distinct()
+#    return FileRecord.objects.filter(exists=False).values_list('dataset', flat=True).distinct()
 
 
 def _add_uuid_to_filename(fn, uuid):
@@ -118,7 +128,7 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     tc = globus_transfer_client()
     tdata = globus_sdk.TransferData(
         tc, source_id, destination_id, verify_checksum=True, sync_level='checksum',
-        label=label,
+        label=label[0: min(len(label), 128)],
     )
     tdata.add_item(source_path, destination_path)
 
@@ -302,8 +312,8 @@ def transfers_required(dataset):
             # the source repository is personal.
             if (missing_file.data_repository.globus_is_personal and
                     existing_file.data_repository.globus_is_personal):
-                logger.warn("Our globus subscription does not support file transfer between two "
-                            "personal servers.")
+                # logger.warn("Our globus subscription does not support file transfer between two "
+                #             "personal servers.")
                 continue
             yield {
                 'source_data_repository': existing_file.data_repository.name,

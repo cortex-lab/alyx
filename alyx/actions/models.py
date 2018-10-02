@@ -195,6 +195,8 @@ class Session(BaseAction):
         # Default project is the subject's project.
         if not self.project_id:
             self.project = self.subject.projects.first()
+        if not self.lab:
+            self.lab = self.subject.lab
         return super(Session, self).save(*args, **kwargs)
 
     def __str__(self):

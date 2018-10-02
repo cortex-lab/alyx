@@ -160,8 +160,9 @@ class BaseActionAdmin(BaseAdmin):
         if db_field.name == 'subject':
             subject_id = self._get_last_subject(request)
             if subject_id:
-                subject = Subject.objects.get(id=subject_id)
-                kwargs['initial'] = subject
+                subject = Subject.objects.filter(id=subject_id).first()
+                if subject:
+                    kwargs['initial'] = subject
         return super(BaseActionAdmin, self).formfield_for_foreignkey(
             db_field, request, **kwargs
         )
@@ -196,9 +197,12 @@ class WaterAdministrationForm(forms.ModelForm):
                order_by('subject__nickname')]
         if getattr(self, 'last_subject_id', None):
             ids += [self.last_subject_id]
-        # These ids first in the list of subjects.
-        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-        self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
+        # These ids first in the list of subjects, if any ids
+        if ids:
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
+        else:
+            self.fields['subject'].queryset = Subject.objects.order_by('nickname')
         self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 

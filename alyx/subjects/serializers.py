@@ -8,6 +8,7 @@ from actions.serializers import (WeighingDetailSerializer,
 from django.contrib.auth import get_user_model
 from actions import water
 from data.models import DataRepository
+from misc.models import Lab
 
 
 class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
@@ -94,8 +95,14 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='name',
         queryset=Project.objects.all(),
         many=True,
-        required=False,
-    )
+        required=False,)
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        many=False,
+        required=False,)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -108,7 +115,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'line', 'description',
+                  'species', 'sex', 'litter', 'strain', 'line', 'description', 'lab',
                   'genotype', 'alive', 'projects')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
@@ -147,7 +154,7 @@ class SubjectDetailSerializer(SubjectListSerializer):
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
-                  'projects',
+                  'projects', 'lab',
                   'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
                   'description', 'actions_sessions', 'weighings', 'water_administrations',
                   'genotype', 'water_requirement_total', 'water_requirement_remaining')

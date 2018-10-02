@@ -46,7 +46,7 @@ def _is_foreign_key(obj, field):
 
 def _get_current_field(obj, field):
     if _is_foreign_key(obj, field):
-        return getattr(obj, field + '_id', None)
+        return str(getattr(obj, field + '_id', None))
     else:
         return str(getattr(obj, field, None))
 
@@ -203,10 +203,13 @@ class Subject(BaseModel):
     # We save the history of these fields.
     _fields_history = ('nickname', 'responsible_user', 'cage')
     # We track the changes of these fields without saving their history in the JSON.
-    _track_field_changes = ('request', 'litter', 'genotype_date', 'death_date', 'reduced')
+    _track_field_changes = ('request', 'responsible_user', 'litter', 'genotype_date',
+                            'death_date', 'reduced')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
+        unique_together = ['nickname', 'lab']
+        unique_together = ['nickname', 'responsible_user']
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)

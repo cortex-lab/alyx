@@ -6,7 +6,6 @@ alyx-backups
 alyx/alyx/settings_secret.py
 docs/_build
 docs/_templates
-docs/_static
 *.tsv
 bin
 experimental
