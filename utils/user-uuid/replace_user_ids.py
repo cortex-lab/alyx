@@ -145,7 +145,8 @@ renames = [
     ('allele', 'standard_name', 'name'),
     ('species', 'display_name', 'nickname'),
     ('line', 'auto_name', 'nickname'),
-    ('allele', 'informal_name', 'nickname')
+    ('allele', 'informal_name', 'nickname'),
+    ('datarepository', 'dns', 'hostname'),
 ]
 
 for item in db:

@@ -82,12 +82,12 @@ class DataRepository(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     repository_type = models.ForeignKey(
         DataRepositoryType, null=True, blank=True, on_delete=models.CASCADE)
-    dns = models.CharField(
+    hostname = models.CharField(
         max_length=200, blank=True,
         validators=[RegexValidator(r'^[a-zA-Z0-9\.\-\_]+$',
-                                   message='Invalid DNS',
-                                   code='invalid_dns')],
-        help_text="DNS of the network drive")
+                                   message='Invalid hostname',
+                                   code='invalid_hostname')],
+        help_text="Host name of the network drive")
     data_url = models.URLField(
         blank=True, null=True,
         help_text="URL of the data repository, if it is accessible via HTTP")

@@ -32,7 +32,7 @@ class DataRepositoryTypeAdmin(BaseAdmin):
 
 
 class DataRepositoryAdmin(BaseAdmin):
-    fields = ('name', 'repository_type', 'timezone', 'dns', 'data_url', 'globus_path',
+    fields = ('name', 'repository_type', 'timezone', 'hostname', 'data_url', 'globus_path',
               'globus_endpoint_id', 'globus_is_personal')
     list_display = fields
     ordering = ('name',)

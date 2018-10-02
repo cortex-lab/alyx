@@ -14,7 +14,7 @@ class APIDataTests(BaseTests):
 
         # Create some static data.
         self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
-        self.client.post(reverse('datarepository-list'), {'name': 'dr', 'dns': 'dns'})
+        self.client.post(reverse('datarepository-list'), {'name': 'dr', 'hostname': 'hostname'})
         self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
         self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
 
@@ -169,7 +169,7 @@ class APIDataTests(BaseTests):
 
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
                 'filenames': 'a.b.e1,a.c.e2',
-                'dns': 'dns',
+                'hostname': 'hostname',
                 'projects': 'tp',
                 }
         r = self.client.post(reverse('register-file'), data)

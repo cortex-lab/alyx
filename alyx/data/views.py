@@ -210,17 +210,17 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             user = get_user_model().objects.get(username=user)
         else:
             user = request.user
-        dns = request.data.get('dns', None)
-        if not dns:
-            raise ValueError("The dns argument is required.")
-        repo = DataRepository.objects.get(dns=dns)
+        hostname = request.data.get('hostname', None)
+        if not hostname:
+            raise ValueError("The hostname argument is required.")
+        repo = DataRepository.objects.get(hostname=hostname)
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
         if not rel_dir_path:
             raise ValueError("The path argument is required.")
 
-        # Extract the data repository from the DNS, the subject, the directory path.
+        # Extract the data repository from the hostname, the subject, the directory path.
         rel_dir_path = rel_dir_path.replace('\\', '/')
         rel_dir_path = rel_dir_path.replace('//', '/')
         subject, date, session_number = _parse_path(rel_dir_path)
