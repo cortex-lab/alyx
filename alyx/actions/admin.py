@@ -249,15 +249,18 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(WaterRestrictionAdmin, self).get_form(request, obj, **kwargs)
-        iw = getattr(getattr(obj, 'subject', None), 'implant_weight', None)
+        subject = getattr(obj, 'subject', None)
+        iw = getattr(subject, 'implant_weight', None)
+        date = getattr(obj, 'start_time')
         form.base_fields['implant_weight'].initial = iw
+        form.base_fields['reference_weight'].initial = water.reference_weighing(subject, date=date)
         return form
 
     form = WaterRestrictionForm
 
     fields = ['subject', 'implant_weight', 'start_time', 'end_time', 'users', 'narrative']
     list_display = ['subject_w', 'start_time_l',
-                    'reference_weighing', 'current_weighing', 'percentage_weighing',
+                    'reference_weight', 'current_weighing', 'percentage_weighing',
                     'water_requirement_total',
                     'water_requirement_today',
                     'water_requirement_remaining',
@@ -265,7 +268,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
                     ]
     list_select_related = ('subject',)
     list_display_links = ('start_time_l',)
-    readonly_fields = ['reference_weighing', 'current_weighing',
+    readonly_fields = ['current_weighing',
                        'water_requirement_total', 'water_requirement_remaining',
                        'is_active',
                        ]
@@ -289,7 +292,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         if not obj.subject:
             return
         w = water.reference_weighing(obj.subject)
-        return w.weight if w else None
+        return w.weight if w else obj.reference_weight
     reference_weighing.short_description = 'ref weigh'
 
     def current_weighing(self, obj):

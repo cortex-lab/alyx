@@ -208,6 +208,10 @@ class WaterRestriction(BaseAction):
     Water restriction.
     """
 
+    reference_weight = models.FloatField(
+        validators=[MinValueValidator(limit_value=0)],
+        help_text="Weight in grams")
+
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 
