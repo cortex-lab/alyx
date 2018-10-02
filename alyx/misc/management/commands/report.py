@@ -6,6 +6,7 @@ import logging
 from operator import itemgetter
 from textwrap import dedent
 
+from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -155,13 +156,14 @@ class Command(BaseCommand):
                                              )
         subject_ids = [_[0] for _ in wr.values_list('subject').distinct()]
         text = ''
+        threshold = settings.WEIGHT_THRESHOLD
         for subject_id in subject_ids:
             weighings = Weighing.objects.filter(subject_id=subject_id).order_by('-date_time')
             if not weighings:
                 continue
             w = weighings.first()
             expected = w.expected()
-            if w.weight < (expected * .75):
+            if w.weight < (expected * threshold):
                 subject = Subject.objects.get(pk=subject_id)
                 text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
                          'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
@@ -173,7 +175,7 @@ class Command(BaseCommand):
                              percentage=(100 * w.weight / expected),
                              date=w.date_time,
                 )
-        text = 'Mice under the 75% weight limit:\n\n' + text
+        text = 'Mice under the {t}% weight limit:\n\n'.format(t=int(100 * threshold)) + text
         return text
 
     def make_surgery(self, user):
