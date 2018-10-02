@@ -104,6 +104,81 @@ for i in sorted(to_remove, reverse=True):
     db.pop(i)
 
 
+# sequences: line => allele
+line_to_alleles = {
+    '0aa6b854-9261-4b4f-b77b-6529ac83f1b9': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '2ec63f31-2f9f-4da9-8181-1027a50bf2d2'},
+ 'cf771190-b55e-4920-ac44-5e79dc1a016e': {'4135407f-4535-4862-97e6-b21ab55a667b',
+  'b839312c-6908-436b-9195-2ab639eac4fd'},
+ '6a177a19-4787-461f-932b-a93cffe55f7c': {'0ff9cfbd-4e28-4319-87ef-67cdaa250c40',
+  '4135407f-4535-4862-97e6-b21ab55a667b',
+  '814ead25-6990-46be-96ea-bd56bb04166c',
+  'b839312c-6908-436b-9195-2ab639eac4fd'},
+ 'cded6522-2c55-4e33-81d1-085436c7f511': {'2ec63f31-2f9f-4da9-8181-1027a50bf2d2'},
+ '42b404ed-d20c-4457-aa4b-dce20d7d85d9': {'0ff9cfbd-4e28-4319-87ef-67cdaa250c40',
+  '7554c30e-3e74-4476-8997-79a5636bf296'},
+ 'f902be83-7b4e-47e0-a789-a0cef85a7a79': {'20de452f-5a1c-47d6-b36a-0d432e836892',
+  '43c64799-b59b-4b22-a01e-bdac9cfc61d7'},
+ '94263b41-384f-46f2-9f56-f71cc9df91be': {'1879d9d2-cb7c-4fb0-b6de-5ee14a9fc5bb'},
+ '48120ef8-7381-4b5e-b6c0-3dc9205f88d4': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '0ff9cfbd-4e28-4319-87ef-67cdaa250c40',
+  '814ead25-6990-46be-96ea-bd56bb04166c'},
+ '9b059774-c7bf-4888-90d6-94155233da9d': {'0ff9cfbd-4e28-4319-87ef-67cdaa250c40',
+  'b839312c-6908-436b-9195-2ab639eac4fd'},
+ '920060f1-b55a-4e58-973c-5a7451d6df70': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '0ff9cfbd-4e28-4319-87ef-67cdaa250c40'},
+ '8359b881-8948-40b7-8dce-44ae27eb2497': {'20de452f-5a1c-47d6-b36a-0d432e836892',
+  '7554c30e-3e74-4476-8997-79a5636bf296'},
+ 'a22a3316-8d09-462b-8dfb-c296a7a3c322': {'db8845d8-809a-40ef-b352-a38c3f13afab'},
+ '1abeda95-9b48-480e-847b-4da11fbecfb1': {'7554c30e-3e74-4476-8997-79a5636bf296'},
+ '80744e78-9297-4b58-a57a-c08a2fb2d059': {'b9b08320-b53d-4a3a-9591-a79433f13d2f'},
+ '31031ec7-0516-45de-930b-cab33f37c321': {'3dec4319-be93-4d8b-b16f-c8222c603d55',
+  '4135407f-4535-4862-97e6-b21ab55a667b'},
+ '1632a84a-05d5-4128-9c06-2e29d8f5404b': {'47c625d9-76f4-4335-aa03-0601038288aa'},
+ '2df44036-e54c-47cd-a43e-de53407d91a2': {'42a32fea-a17b-49a6-ba29-44fbac7fd849'},
+ '5aca8c93-d7cb-4979-89a4-c6515cb014b2': {'20de452f-5a1c-47d6-b36a-0d432e836892',
+  '43c64799-b59b-4b22-a01e-bdac9cfc61d7'},
+ '0775ddf7-2622-4d8e-bc26-90f1b542d864': {'58063067-2a42-446a-a4bc-7fa2bd037484'},
+ '2f50a372-8b22-49a1-aab3-d077a92fc233': {'8afc54ff-cefc-4184-8c9e-fb2d32b7bc50'},
+ '50486c14-67b3-424a-8029-970fb482770c': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '20de452f-5a1c-47d6-b36a-0d432e836892'},
+ '15944d06-9066-4341-8cd9-c050f26f151f': {'55cd9bbf-6736-419b-be96-36e3723def9d',
+  'db8845d8-809a-40ef-b352-a38c3f13afab'},
+ '729192b9-b505-426b-9b55-ba712a902d03': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '8afc54ff-cefc-4184-8c9e-fb2d32b7bc50'},
+ '14d5d7f8-3794-4a91-a73b-f1cfa8764ddd': {'dd962692-d2fa-4486-a926-510a91996e2a'},
+ '012bc9c2-a805-424b-bd61-80c764574786': {'0ff9cfbd-4e28-4319-87ef-67cdaa250c40',
+  '43c64799-b59b-4b22-a01e-bdac9cfc61d7',
+  'b839312c-6908-436b-9195-2ab639eac4fd'},
+ 'f648102e-9308-4b2a-8ee9-cf6f4e5b4874': {'b839312c-6908-436b-9195-2ab639eac4fd'},
+ '689bd1a8-3256-48a3-b1ba-6da5710c7f35': {'43c64799-b59b-4b22-a01e-bdac9cfc61d7'},
+ 'e8c66ecf-6693-442f-9999-46816457890b': {'8afc54ff-cefc-4184-8c9e-fb2d32b7bc50'},
+ '6fc8ff15-493e-45c1-8c1d-7642cf26bc20': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
+  '2ec63f31-2f9f-4da9-8181-1027a50bf2d2'},
+ '99e6971c-0a3c-4a16-b9cf-3d0b02041ad4': {'2ec63f31-2f9f-4da9-8181-1027a50bf2d2'},
+ 'ae0dd798-89d7-4c3f-aa90-d3a317dd8789': {'8afc54ff-cefc-4184-8c9e-fb2d32b7bc50',
+  'dd962692-d2fa-4486-a926-510a91996e2a'},
+ '52fa8b8e-8b43-4fbf-af80-223de2874bf6': {'e4f5be9c-1df4-4495-9d44-821fc433016a'},
+ '57077617-2a58-4472-b494-cdc7756590c8': {'6854013c-76b4-47be-ace2-3ae7cf6f8946'}}
+
+
+line_to_sequences = {}
+for item in db:
+    if item['model'] == 'subjects.line':
+        line_to_sequences[item['pk']] = item['fields'].pop('sequences', [])
+        item['fields']['alleles'] = list(line_to_alleles.get(item['pk'], []))
+
+
+# Set allele.sequences
+for item in db:
+    if item['model'] == 'subjects.allele':
+        # Search the line.
+        for line, alleles in line_to_alleles.items():
+            if item['pk'] in alleles:
+                item['fields']['sequences'] = line_to_sequences.get(line, [])
+                break
+
+
 # Check the change worked.
 for item in db:
     for field, value in item['fields'].items():

@@ -493,7 +493,6 @@ class Line(BaseModel):
     description = models.TextField(blank=True)
     target_phenotype = models.CharField(max_length=1023)
     nickname = models.CharField(max_length=255, unique=True)
-    sequences = models.ManyToManyField('Sequence')
     alleles = models.ManyToManyField('Allele')
     strain = models.ForeignKey('Strain', null=True, blank=True, on_delete=models.SET_NULL)
     source = models.ForeignKey('Source', null=True, blank=True, on_delete=models.SET_NULL)
@@ -508,6 +507,15 @@ class Line(BaseModel):
     is_active = models.BooleanField(default=True)
 
     objects = LineManager()
+
+    @property
+    def sequences(self):
+        out = []
+        for al in self.alleles:
+            for seq in al.sequences:
+                if seq not in out:
+                    out.append(seq)
+        return out
 
     def natural_key(self):
         return (self.nickname,)
@@ -816,6 +824,7 @@ class Allele(BaseModel):
     """A single allele."""
     nickname = models.CharField(max_length=255, unique=True,
                                 help_text="informal name in lab, e.g. Pvalb-Cre")
+    sequences = models.ManyToManyField('Sequence')
 
     objects = AlleleManager()
 

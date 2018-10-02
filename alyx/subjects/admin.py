@@ -494,12 +494,12 @@ class SubjectInlineForm(forms.ModelForm):
         line = subject.line
         if not line:
             return
-        self.sequences = line.sequences.all()
+        self.sequences = line.sequences
         # Set the label of the columns in subject inline.
         for i in range(min(3, len(self.sequences))):
             self.fields['result%d' % i].label = str(self.sequences[i])
         # Set the initial data of the genotype tests for the inline subjects.
-        line_seqs = list(line.sequences.all())
+        line_seqs = list(line.sequences)
         tests = GenotypeTest.objects.filter(subject=subject)
         for test in tests:
             if test.sequence in line_seqs:
@@ -573,7 +573,7 @@ class SubjectInline(BaseInlineAdmin):
         else:
             line = None
         if line:
-            sequences = line.sequences.all()
+            sequences = line.sequences
             if i < len(sequences):
                 return sequences[i]
 
@@ -826,7 +826,7 @@ class SubjectRequestInline(BaseInlineAdmin):
 
 
 class SequencesInline(BaseInlineAdmin):
-    model = Line.sequences.through
+    model = Allele.sequences.through
     extra = 1
     fields = ['sequence']
 
@@ -895,7 +895,7 @@ class LineAdmin(BaseAdmin):
     list_editable = ['is_active']
     search_fields = ('nickname',)
 
-    inlines = [SubjectRequestInline, SequencesInline, AllelesInline, BreedingPairInline]
+    inlines = [SubjectRequestInline, AllelesInline, BreedingPairInline]
 
     def source_link(self, obj):
         return format_html('<a href="{source_url}">{source_text}</a>',
@@ -1071,6 +1071,8 @@ class StrainAdmin(BaseAdmin):
 class AlleleAdmin(BaseAdmin):
     fields = ['nickname', 'name']
     search_fields = fields
+
+    inlines = [SequencesInline]
 
 
 class SourceAdmin(BaseAdmin):
