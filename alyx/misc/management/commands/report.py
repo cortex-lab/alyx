@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date
 import inspect
 from itertools import groupby
 import json
@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from alyx.base import alyx_mail
-from actions.models import Surgery, Weighing, WaterRestriction, WaterAdministration
+from actions.models import Surgery, Weighing, WaterRestriction, WaterAdministration, Session
 from actions import water
 from subjects.models import Subject
 
@@ -200,6 +200,26 @@ class Command(BaseCommand):
                                        action_time__date=yesterday,
                                        ).order_by('action_time')
         return 'Your actions yesterday:\n\n' + '\n'.join('* ' + _repr_log_entry(l) for l in logs)
+
+    def make_training(self, user):
+        """Send training report to the specified user."""
+        wr = WaterRestriction.objects.filter(
+            start_time__isnull=False, end_time__isnull=True,
+        ).order_by('subject__responsible_user__username', 'subject__nickname')
+        last_monday = date.today() - timedelta(days=date.today().weekday() + 5)
+        next_monday = last_monday + timedelta(days=7)
+        text = "Sessions between %s and %s:\n\n" % (last_monday, next_monday)
+        for w in wr:
+            sessions = Session.objects.filter(
+                subject=w.subject, start_time__gte=last_monday, start_time__lt=next_monday)
+            dates = sorted(set([_[0] for _ in sessions.order_by('start_time').
+                                values_list('start_time__date')]))
+            if len(dates) < 5:
+                text += '* %s (%s) was trained %d days: %s\n' % (
+                    w.subject.nickname, w.subject.responsible_user.username, len(dates),
+                    ', '.join(d.strftime('%a %d %b') for d in dates)
+                )
+        return text
 
     def make_todo(self):
         tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')
