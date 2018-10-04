@@ -210,6 +210,7 @@ class WaterRestriction(BaseAction):
 
     reference_weight = models.FloatField(
         validators=[MinValueValidator(limit_value=0)],
+        default=0,
         help_text="Weight in grams")
 
     def is_active(self):
