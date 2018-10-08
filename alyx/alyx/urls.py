@@ -75,6 +75,13 @@ urlpatterns = [
          name="session-detail"),
 
 
+    path('water-type', av.WaterTypeList.as_view(),
+         name="watertype-list"),
+
+    path('water-type/<str:name>', av.WaterTypeList.as_view(),
+         name="watertype-detail"),
+
+
     path('data-repository-type', dv.DataRepositoryTypeList.as_view(),
          name="datarepositorytype-list"),
 

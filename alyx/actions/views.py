@@ -17,11 +17,12 @@ from rest_framework.views import APIView
 from alyx.base import Bunch
 from subjects.models import Subject
 from . import water
-from .models import Session, WaterAdministration, Weighing
+from .models import Session, WaterAdministration, Weighing, WaterType
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
+                          WaterTypeDetailSerializer,
                           )
 
 
@@ -56,11 +57,18 @@ class WaterHistoryListView(ListView):
         weighings = {w.date_time.date(): w.weight for w in weighings}
 
         # Sum all water administrations for any given day.
-        was = {boo: WaterAdministration.objects.filter(subject=subject, hydrogel=boo).
-               annotate(date=TruncDate('date_time')).values('date').
-               annotate(sum=Sum('water_administered')).order_by('date')
-               for boo in (False, True)
-               }
+        was = {}
+        was[True] = (WaterAdministration.objects.filter(
+            subject=subject, water_type__name='Hydrogel').
+            annotate(date=TruncDate('date_time')).values('date').
+            annotate(sum=Sum('water_administered')).order_by('date')
+        )
+        was[False] = (WaterAdministration.objects.filter(
+            subject=subject).exclude(water_type__name='Hydrogel').
+            annotate(date=TruncDate('date_time')).values('date').
+            annotate(sum=Sum('water_administered')).order_by('date')
+        )
+
         # Do it for hydrogel and no hydrogel.
         for boo in (False, True):
             was[boo] = {w['date']: w['sum'] for w in was[boo]}
@@ -182,6 +190,13 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     queryset = Weighing.objects.all()
 
 
+class WaterTypeList(generics.ListCreateAPIView):
+    queryset = WaterType.objects.all()
+    serializer_class = WaterTypeDetailSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
 class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new water administration.
@@ -228,7 +243,7 @@ class WaterRequirement(APIView):
         was = WaterAdministration.objects.filter(subject__nickname=nickname,
                                                  date_time__date__gte=start_date,
                                                  date_time__date__lte=end_date,
-                                                 ).order_by('date_time', 'hydrogel')
+                                                 ).order_by('date_time', 'water_type__name')
         wl = [{'date': w.date_time.date(),
                'weight_measured': w.weight or None,
                } for w in ws]

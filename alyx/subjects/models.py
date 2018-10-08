@@ -208,8 +208,9 @@ class Subject(BaseModel):
 
     class Meta:
         ordering = ['nickname', '-birth_date']
-        unique_together = ['nickname', 'lab']
-        unique_together = ['nickname', 'responsible_user']
+        unique_together = [('nickname', 'lab'),
+                           ('nickname', 'responsible_user')
+                           ]
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
@@ -511,8 +512,8 @@ class Line(BaseModel):
     @property
     def sequences(self):
         out = []
-        for al in self.alleles:
-            for seq in al.sequences:
+        for al in self.alleles.all():
+            for seq in al.sequences.all():
                 if seq not in out:
                     out.append(seq)
         return out

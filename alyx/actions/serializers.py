@@ -3,7 +3,7 @@ from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
-from .models import (ProcedureType, Session, WaterAdministration, Weighing)
+from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType)
 from subjects.models import Subject
 from data.models import Dataset, DatasetType, DataFormat
 from misc.models import LabLocation, Lab
@@ -158,6 +158,13 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
                   'user', 'url')
 
 
+class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = WaterType
+        fields = ('__all__')
+        extra_kwargs = {'url': {'view_name': 'watertype-detail', 'lookup_field': 'name'}}
+
+
 class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
 
     subject = serializers.SlugRelatedField(
@@ -173,6 +180,13 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         required=False,
     )
 
+    water_type = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=WaterType.objects.all(),
+        required=False,
+    )
+
     @staticmethod
     def setup_eager_loading(queryset):
         return queryset.select_related('subject', 'user')
@@ -185,5 +199,5 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
     class Meta:
         model = WaterAdministration
-        fields = ('subject', 'date_time', 'water_administered', 'hydrogel', 'user', 'url')
+        fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}

@@ -104,6 +104,27 @@ for i in sorted(to_remove, reverse=True):
     db.pop(i)
 
 
+# Hydrogel and water type
+water = {
+    'model': 'actions.watertype',
+    'pk': '2127f637-0770-4639-8c22-3d73a94eecc3',
+    'fields': {'name': 'Water', 'json': None}
+}
+hydrogel = {
+    'model': 'actions.watertype',
+    'pk': 'c68ed3b4-8a3d-47e2-a010-de7b9c027439',
+    'fields': {'name': 'Hydrogel', 'json': None}
+}
+db.extend([water, hydrogel])
+
+for item in db:
+    if item['model'] == 'actions.wateradministration':
+        if item['fields'].pop('hydrogel', None):
+            item['fields']['water_type'] = hydrogel['pk']
+        else:
+            item['fields']['water_type'] = water['pk']
+
+
 # sequences: line => allele
 line_to_alleles = {
     '0aa6b854-9261-4b4f-b77b-6529ac83f1b9': {'0e6e433a-f495-44eb-b39c-2ae0971cbeef',
@@ -213,20 +234,20 @@ Line.auto_name => nickname
 Allele.informal_name => nickname
 """
 renames = [
-    ('species', 'binomial', 'name'),
-    ('litter', 'descriptive_name', 'name'),
-    ('strain', 'descriptive_name', 'name'),
-    ('sequence', 'informal_name', 'name'),
-    ('allele', 'standard_name', 'name'),
-    ('species', 'display_name', 'nickname'),
-    ('line', 'auto_name', 'nickname'),
-    ('allele', 'informal_name', 'nickname'),
-    ('datarepository', 'dns', 'hostname'),
+    ('subjects.species', 'binomial', 'name'),
+    ('subjects.litter', 'descriptive_name', 'name'),
+    ('subjects.strain', 'descriptive_name', 'name'),
+    ('subjects.sequence', 'informal_name', 'name'),
+    ('subjects.allele', 'standard_name', 'name'),
+    ('subjects.species', 'display_name', 'nickname'),
+    ('subjects.line', 'auto_name', 'nickname'),
+    ('subjects.allele', 'informal_name', 'nickname'),
+    ('data.datarepository', 'dns', 'hostname'),
 ]
 
 for item in db:
     for model, old, new in renames:
-        if item['model'] == 'subjects.%s' % model and old in item['fields']:
+        if item['model'] == model and old in item['fields']:
             item['fields'][new] = item['fields'].pop(old)
 
 

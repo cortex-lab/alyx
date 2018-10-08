@@ -210,8 +210,8 @@ class WaterAdministrationForm(forms.ModelForm):
 class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
-    fields = ['subject', 'date_time', 'water_administered', 'hydrogel', 'user']
-    list_display = ['subject_l', 'water_administered', 'date_time', 'hydrogel']
+    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'user']
+    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type']
     list_display_links = ('water_administered',)
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
@@ -251,14 +251,15 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         form = super(WaterRestrictionAdmin, self).get_form(request, obj, **kwargs)
         subject = getattr(obj, 'subject', None)
         iw = getattr(subject, 'implant_weight', None)
-        date = getattr(obj, 'start_time')
+        date = getattr(obj, 'start_time', None)
         form.base_fields['implant_weight'].initial = iw
         form.base_fields['reference_weight'].initial = water.reference_weighing(subject, date=date)
         return form
 
     form = WaterRestrictionForm
 
-    fields = ['subject', 'implant_weight', 'start_time', 'end_time', 'users', 'narrative']
+    fields = ['subject', 'implant_weight', 'reference_weight',
+              'start_time', 'end_time', 'users', 'narrative']
     list_display = ['subject_w', 'start_time_l',
                     'reference_weight', 'current_weighing', 'percentage_weighing',
                     'water_requirement_total',

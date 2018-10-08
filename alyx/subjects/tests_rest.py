@@ -69,7 +69,7 @@ class APISubjectsTests(BaseTests):
         self.assertTrue('water_administrations' in d)
         self.assertTrue(d['water_administrations'])
         wa = set(d['water_administrations'][0])
-        self.assertTrue(set(('date_time', 'water_administered', 'hydrogel', 'url')) <= wa)
+        self.assertTrue(set(('date_time', 'water_administered', 'water_type', 'url')) <= wa)
 
     def test_subject_weighing(self):
         subject = Weighing.objects.first().subject
