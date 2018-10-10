@@ -64,6 +64,13 @@ class Command(BaseCommand):
         user = options.get('user')
         dry = options.get('dry')
 
+        if action == 'bulksync':
+            #_create_missing_file_records()
+            transfers.bulk_sync()
+
+        if action == 'bulktransfer':
+            transfers.bulk_transfer(dry_run=dry)
+
         if action == 'login':
             transfers.create_globus_token()
             self.stdout.write(self.style.SUCCESS("Login successful."))

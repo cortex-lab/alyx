@@ -6,15 +6,16 @@ import re
 
 from django.db.models import Case, When, Count, Q
 import globus_sdk
+import numpy as np
 
 from alyx import settings
-from data.models import FileRecord, Dataset, DatasetType, DataFormat
+from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
 
 logger = logging.getLogger(__name__)
 
-
 # Login
 # ------------------------------------------------------------------------------------------------
+
 
 def get_config_path(path=''):
     path = op.expanduser(op.join('~/.alyx', path))
@@ -323,3 +324,115 @@ def transfers_required(dataset):
                 'source_file_record': str(existing_file.pk),
                 'destination_file_record': str(missing_file.pk),
             }
+
+
+def bulk_sync():
+    """
+    updates the Alyx database file records field 'exists' by looking at each Globus repository.
+    Only the files belonging to a dataset for which one main repository as a missing file are
+    checked on the Globus endpoints (a main repository is a repository with the
+    globus_is_personnal field set to False). Also fills dataset size if non-existent.
+    This is meant to be launched before the transfer() function
+    """
+    gc = globus_transfer_client()
+    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    # get all the datasets concerned and then back down to get all files for all those datasets
+    dsets = Dataset.objects.filter(pk__in=dfs.values_list('dataset').distinct())
+    all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records'))
+
+    # loop over all files concerned by a transfer and update the exists and filesize fields
+    files_to_ls = all_files.order_by('data_repository__globus_endpoint_id', 'relative_path')
+    _last_ep = None
+    _last_path = None
+    nfiles = files_to_ls.count()
+    c = 0
+    for qf in files_to_ls:
+        c += 1
+        # if the last endpoint has already been queried, do not repeat the query
+        if _last_ep != qf.data_repository.globus_endpoint_id:
+            _last_ep = qf.data_repository.globus_endpoint_id
+            ep_info = gc.get_endpoint(_last_ep)
+        # if the endpoint is not connected skip
+        if not ep_info['DATA'][0]['is_connected']:
+            logger.warning('UNREACHABLE Endpoint "' + ep_info['display_name'] +
+                           '" (' + str(_last_ep) + ') ' + qf.relative_path)
+            continue
+        # if we already listed the current path of the endpoint, do not repeat the rest ls command
+        cpath, fil = os.path.split(qf.relative_path)
+        fil_uuid = _add_uuid_to_filename(fil, qf.dataset_id)
+        cpath = qf.data_repository.globus_path + cpath
+        if _last_path != cpath:
+            _last_path = cpath
+            try:
+                logger.info(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
+                ls_result = gc.operation_ls(_last_ep, path=_last_path)
+            except globus_sdk.exc.TransferAPIError:
+                ls_result = []
+        # compare the current file against the ls list, update the file_size if necessary
+        exists = False
+        for ind, gfil in enumerate(ls_result):
+            if gfil['name'] in (fil_uuid, fil):
+                exists = True
+                if qf.dataset.file_size != gfil['size']:
+                    qf.dataset.file_size = gfil['size']
+                break
+        # update the filerecord exists field if needed
+        if qf.exists != exists:
+            qf.exists = exists
+            qf.save()
+            logger.info(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
+                        qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
+
+
+def _filename_from_file_record(fr, add_uuid=False):
+    fn = fr.data_repository.globus_path + fr.relative_path
+    if add_uuid:
+        fn = _add_uuid_to_filename(fn, fr.dataset.pk)
+    return fn
+
+
+def bulk_transfer(dry_run=False):
+    """
+    uploads files from a local Globus repository to a main repository if the file on the main
+    repository does not exist.
+    should be launched after bulk_sync() function
+    """
+    gc = globus_transfer_client()
+    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
+    pri_repos = DataRepository.objects.filter(globus_is_personal=False)
+    sec_repos = DataRepository.objects.filter(globus_is_personal=True)
+    tm = np.zeros([pri_repos.count(), sec_repos.count()], dtype=object)
+    nfiles = dfs.count()
+    c = 0
+    # create the tasks
+    for ds in dfs:
+        c += 1
+        ipri = [ind for ind, cr in enumerate(pri_repos) if cr == ds.data_repository][0]
+        src_file = ds.dataset.file_records.filter(exists=True).first()
+        if not src_file:
+            logger.warning(str(ds.data_repository.name) + ':' + ds.relative_path +
+                           ' is nowhere to ' + 'be found in local AND remote repositories')
+            continue
+        isec = [ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository][0]
+        # if the transfer doesn't exist, create it:
+        if tm[ipri][isec] is 0:
+            label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
+            tm[ipri][isec] = globus_sdk.TransferData(
+                gc,
+                source_endpoint=sec_repos[isec].globus_endpoint_id,
+                destination_endpoint=pri_repos[ipri].globus_endpoint_id,
+                verify_checksum=True,
+                sync_level='checksum',
+                label=label)
+        # add the transfer to the current task
+        destination_file = _filename_from_file_record(ds, add_uuid=True)
+        source_file = _filename_from_file_record(src_file)
+        tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
+        logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
+    # launch the transfer tasks
+    if ~dry_run:
+        for t in tm.flatten():
+            if t is 0:
+                continue
+            gc.submit_transfer(t)
