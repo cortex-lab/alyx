@@ -375,6 +375,7 @@ def bulk_sync():
                 exists = True
                 if qf.dataset.file_size != gfil['size']:
                     qf.dataset.file_size = gfil['size']
+                    qf.dataset.save()
                 break
         # update the filerecord exists field if needed
         if qf.exists != exists:
