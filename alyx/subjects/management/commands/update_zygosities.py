@@ -64,7 +64,10 @@ class Command(BaseCommand):
                             sequence1=Sequence.objects.get_or_create(name=seq1)[0],
                             sequence1_result=res1
                         ))
-                    ZygosityRule.objects.create(**kwargs)
+                    try:
+                        ZygosityRule.objects.create(**kwargs)
+                    except Exception as e:
+                        print(e)
             return
 
         zf = ZygosityFinder()
