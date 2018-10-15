@@ -651,6 +651,10 @@ class ZygosityRule(BaseModel):
     sequence1_result = models.IntegerField(choices=TEST_RESULTS, null=True, blank=True)
     zygosity = models.IntegerField(choices=ZYGOSITY_TYPES)
 
+    class Meta:
+        unique_together = [
+            ('line', 'allele', 'sequence0', 'sequence0_result', 'sequence1', 'sequence1_result')]
+
     def save(self, *args, **kwargs):
         super(ZygosityRule, self).save(*args, **kwargs)
         _update_zygosities(self.line, self.sequence0)
