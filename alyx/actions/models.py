@@ -53,6 +53,9 @@ class Weighing(BaseModel):
 class WaterType(BaseModel):
     name = models.CharField(max_length=128, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 def _default_water_type():
     s = WaterType.objects.filter(name='Water')
