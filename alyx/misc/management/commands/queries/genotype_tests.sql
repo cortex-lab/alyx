@@ -1,5 +1,5 @@
 SELECT subjects_subject.nickname AS subject_name,
-subjects_sequence.informal_name AS sequence_name,
+subjects_sequence.name AS sequence_name,
 subjects_genotypetest.test_result,
 subjects_genotypetest.json,
 subjects_genotypetest.id

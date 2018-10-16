@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 import glob
 import logging
+import math
 import os
 import os.path as op
 import sys
@@ -66,14 +67,20 @@ def upload_table(doc, path):
     ws.update_cells(header_list)
 
     # Write table.
-    cell_list = ws.range('A2:%s%d' % (last_col, n_rows + 1))
-    for cell in cell_list:
-        row, col = cell.row - 2, cell.col - 1
-        if 0 <= row < len(items):
-            item = items[row]
-            if 0 <= col < len(item):
-                cell.value = item[col]
-    ws.update_cells(cell_list)
+    page_length = 100
+    n_pages = int(math.ceil(n_rows / page_length))
+    for page in range(n_pages):
+        first_row = 2 + page_length * page
+        last_row = min(n_rows + 1, first_row + page_length)
+        assert first_row <= last_row
+        cell_list = ws.range('A%d:%s%d' % (first_row, last_col, last_row))
+        for cell in cell_list:
+            row, col = cell.row - 2, cell.col - 1
+            if 0 <= row < len(items):
+                item = items[row]
+                if 0 <= col < len(item):
+                    cell.value = item[col]
+        ws.update_cells(cell_list)
 
     return n_rows
 
