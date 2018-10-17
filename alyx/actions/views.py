@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import timedelta
+from datetime import timedelta, datetime
 import itertools
 from operator import itemgetter
 
@@ -28,7 +28,7 @@ from .serializers import (SessionListSerializer,
 
 def date_range(start_date, end_date):
     for n in range(int((end_date - start_date).days) + 1):
-        yield (start_date + timedelta(n)).date()
+        yield (start_date + timedelta(n))
 
 
 class WaterHistoryListView(ListView):
@@ -53,7 +53,7 @@ class WaterHistoryListView(ListView):
         if not weighings:
             return []
         weighings = list(weighings)
-        start, end = weighings[0].date_time, weighings[-1].date_time
+        start, end = weighings[0].date_time.date(), datetime.now().date()
         weighings = {w.date_time.date(): w.weight for w in weighings}
 
         # Sum all water administrations for any given day.
