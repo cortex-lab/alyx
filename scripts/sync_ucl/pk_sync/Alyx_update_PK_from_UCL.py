@@ -1,12 +1,16 @@
 from subjects.models import Sequence
-from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType
+from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType, Dataset
 import json
 
 
-FILE_UCL_JSON_DUMP = '/var/www/alyx-dev/scripts/sync_ucl/cortexlab.json'
-FILE_IBL_JSON_DUMP = '/var/www/alyx-dev/scripts/sync_ucl/ibl-alyx-dev.json'
-FILE_IBL_JSON_DUMP_OUT = '/var/www/alyx-dev/scripts/sync_ucl/ibl-alyx-dev-pkucl.json'
+FILE_UCL_JSON_DUMP_INP = '../scripts/sync_ucl/cortexlab.json'
+FILE_IBL_JSON_DUMP_INP = '../scripts/sync_ucl/ibl-alyx-pkupdate-before.json'
+FILE_IBL_JSON_DUMP_OUT = '../scripts/sync_ucl/ibl-alyx-pkupdate-after.json'
 CHECK_UCL_PK = True
+
+# remove dataset belonging
+Dataset.objects.exclude(dataset_type__name__contains='_ibl_').exclude(dataset_type__name__contains='_rigbox_').delete()
+DatasetType.objects.exclude(name__contains='_ibl_').exclude(name__contains='_rigbox_').delete()
 
 pk_ibl2ucl_ = {
     '74d7a9d0-a031-4af0-93d1-61d98816c226':  '1fcc07ff-b17b-47bf-9eb6-e6d40ae3e1c9',  # Vglut1 WT subjects.sequence
@@ -44,10 +48,12 @@ pk_ibl2ucl_ = {
     '359e3057-96b8-438f-b40a-26fdfa9de9bf':  'dea53510-d3e0-4b94-9739-2fe548a6f898',  # _ibl_wheelMoves.intervals data.datasettype
     'db5daf52-56c8-48c9-ac8c-d567f3f21d9f':  'e1542d34-9618-4369-aab7-0489484f6a12',  # _ibl_wheel.velocity data.datasettype
     '1010e897-e4fb-4732-8927-11bb8d2f9494':  'f7dbfad8-1cfc-459e-874f-4065cf9def86',  # _ibl_trials.goCue_times data.datasettype
+    '4e0adb67-a6be-49c0-85a8-bb14945f8b09':  'bbfffec3-4633-423d-8592-3f99c5f88022',  # data.datarepository zubjects.cortexlab.net
+    '5bc28d72-5199-441c-bab3-d2a9782c072e':  '2617d56f-eb6a-4652-99ee-435acdc4e160',  # data.datarepository zserver.cortexlab.net
 }
 
 # Load the database dump.
-with open(FILE_UCL_JSON_DUMP, 'r') as f:
+with open(FILE_UCL_JSON_DUMP_INP, 'r') as f:
     DB_UCL = json.load(f)
 
 if CHECK_UCL_PK:
@@ -57,7 +63,6 @@ if CHECK_UCL_PK:
     pk_ibl2ucl={}
     for item in DB_UCL:
         if item['model'] == 'subjects.sequence':
-            print(item)
             dbitem = Sequence.objects.filter(name=item['fields']['name'])
             if dbitem.count() == 0: continue
             if item['pk'] != str(dbitem[0].pk):
@@ -88,14 +93,13 @@ if CHECK_UCL_PK:
                 print('data.datasettype ' + str(item['pk']) + '  ' + str(dbitem[0].pk) + '  ' + item['fields']['name'])
                 pk_ibl2ucl[str(dbitem[0].pk)] = item['pk']
 
-    assert(sorted(pk_ibl2ucl) == sorted(pk_ibl2ucl_))  # strict comparison
+    assert(not set(pk_ibl2ucl).difference(pk_ibl2ucl_))  # strict comparison
 
-# Regexp de sagouin this is not scalable 3 years down the road will have to split the file
-# hopefully this PK conflict won't happen then
-with open(FILE_IBL_JSON_DUMP) as f:
+## Now regexp into the json files the PK
+with open(FILE_IBL_JSON_DUMP_INP) as f:
     text = f.read()
 
-for k in (pk_ibl2ucl_):
+for k in pk_ibl2ucl_:
     text = text.replace(k, pk_ibl2ucl_[k])
 
 with open(FILE_IBL_JSON_DUMP_OUT, "w") as f:

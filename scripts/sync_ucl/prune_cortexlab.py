@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-import json
-
 from django.core.management import call_command
 
 from subjects.models import Subject, Project
 from actions.models import Session
 from misc.models import Lab
-json_file = '/var/www/alyx-dev/scripts/sync_ucl/cortexlab_pruned.json'
+from data.models import Dataset, DatasetType
+json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 # remove all the database that is not related to IBL
 Subject.objects.using('cortexlab').exclude(projects__name__icontains='ibl').delete()
@@ -30,32 +29,40 @@ else:
     lab = Lab.objects.using('cortexlab').get(name='cortexlab')
 ses.update(lab=lab)
 
+# we want to make sure that no other dataset type than those defined in IBL are imported
+dtypes = [dt[0] for dt in DatasetType.objects.all().values_list('name')]
+Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete()
+Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
+
+##
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
 # they share primary keys accross databases but not necessarily the other fields
-init_fixtures = ['actions.proceduretype',
-                #'actions.watertype',
-                'data.dataformat',
-                'data.datarepositorytype',
-                # 'data.datasettype',
-                'misc.lab',
-                'subjects.project']
+init_fixtures = [# 'actions.proceduretype',
+                 # 'actions.watertype',
+                 'data.dataformat',
+                 'data.datarepositorytype',
+                 # 'data.datasettype',
+                 'misc.lab',
+                 'subjects.project']
 
 # those are system fixtures and should not be migrated
 system_excludes = ['admin.logentry',
-            'auth.group',
-            'authtoken.token',
-            'contenttypes',
-            'auth.permission',
-            'reversion.version',
-            'reversion.revision',
-            'sessions.session']
+                   'auth.group',
+                   'authtoken.token',
+                   'contenttypes',
+                   'auth.permission',
+                   'reversion.version',
+                   'reversion.revision',
+                   'sessions.session']
 
 excludes = []
 excludes.extend(init_fixtures)
 excludes.extend(system_excludes)
 
-with open(json_file, 'w') as out:  # Point stdout at a file for dumping data to.
+with open(json_file_out, 'w') as out:  # Point stdout at a file for dumping data to.
     call_command('dumpdata', format='json', indent=1, stdout=out, database='cortexlab',
                  exclude=excludes)
-# ./manage.py dumpdata -e contenttypes -e auth.permission -e reversion.version -e reversion.revision -e admin.logentry -e authtoken.token -e auth.group --indent 1 --database cortexlab -o ../scripts/sync_ucl/cortexlab.json
+# ./manage.py dumpdata -e contenttypes -e auth.permission -e reversion.version
+# -e reversion.revision -e admin.logentry -e authtoken.token -e auth.group --indent 1
+# --database cortexlab -o ../scripts/sync_ucl/cortexlab.json
