@@ -38,13 +38,14 @@ Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
 # they share primary keys accross databases but not necessarily the other fields
-init_fixtures = [# 'actions.proceduretype',
-                 # 'actions.watertype',
-                 'data.dataformat',
+init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
-                 # 'data.datasettype',
+                 'data.datasettype',
                  'misc.lab',
-                 'subjects.project']
+                 'subjects.project',
+                 #  'actions.proceduretype',
+                 #  'actions.watertype',
+                 ]
 
 # those are system fixtures and should not be migrated
 system_excludes = ['admin.logentry',
