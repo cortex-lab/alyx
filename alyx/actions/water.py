@@ -41,6 +41,9 @@ def expected_weighing_mean_std(sex, age_w):
 
 
 def to_weeks(birth_date, dt):
+    if not birth_date:
+        logger.warn("No birth date specified!")
+        return 0
     if not dt:
         return 0
     if isinstance(dt, datetime.datetime):

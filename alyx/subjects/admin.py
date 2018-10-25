@@ -506,7 +506,8 @@ class SubjectInlineForm(forms.ModelForm):
                 i = line_seqs.index(test.sequence)
                 name = 'result%d' % i
                 value = test.test_result
-                self.fields[name].initial = value
+                if name in self.fields:
+                    self.fields[name].initial = value
 
     def save(self, commit=True):
         # Save the genotype tests.
