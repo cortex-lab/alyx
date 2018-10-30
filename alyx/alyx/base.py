@@ -116,6 +116,7 @@ def alyx_mail(to, subject, text=''):
 
 
 ADMIN_PAGES = [('Common', ['Subjects',
+                           'Sessions',
                            'Surgeries',
                            'Breeding pairs',
                            'Litters',
@@ -146,8 +147,7 @@ ADMIN_PAGES = [('Common', ['Subjects',
                  'Other actions',
                  'Procedure types',
                  ]),
-               ('Other', ['Sessions',
-                          'Genotype tests',
+               ('Other', ['Genotype tests',
                           'Zygosities',
                           ]),
                ('IT admin', ['Tokens',
