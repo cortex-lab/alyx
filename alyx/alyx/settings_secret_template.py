@@ -17,3 +17,9 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+EMAIL_HOST = 'mail.superserver.net'
+EMAIL_HOST_USER = 'alyx@awesomedomain.org'
+EMAIL_HOST_PASSWORD = 'UnbreakablePassword'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
