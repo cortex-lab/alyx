@@ -1121,6 +1121,7 @@ class LabMemberAdmin(UserAdmin):
                     'groups_l',
                     'is_staff', 'is_superuser', 'is_stock_manager',
                     ]
+    list_editable = ['is_stock_manager']
 
     def groups_l(self, obj):
         return ', '.join(map(str, obj.groups.all()))
