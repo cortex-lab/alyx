@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from django.core.management import call_command
 
-from subjects.models import Subject, Project
+from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session
 from misc.models import Lab
 from data.models import Dataset, DatasetType
+
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 # remove all the database that is not related to IBL
@@ -12,6 +13,9 @@ Subject.objects.using('cortexlab').exclude(projects__name__icontains='ibl').dele
 
 # then remove base Sessions
 Session.objects.using('cortexlab').filter(type='Base').delete()
+
+# remove the subject requests
+SubjectRequest.objects.using('cortexlab').all().delete()
 
 # the sessions should have a proper project name labeled
 ses = Session.objects.using('cortexlab').all()
