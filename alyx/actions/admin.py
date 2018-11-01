@@ -12,7 +12,7 @@ from rangefilter.filter import DateRangeFilter
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
-                     WaterAdministration, WaterRestriction, Weighing,
+                     WaterAdministration, WaterRestriction, Weighing, WaterType,
                      )
 from data.models import Dataset
 from misc.admin import NoteInline
@@ -259,13 +259,14 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     form = WaterRestrictionForm
 
     fields = ['subject', 'implant_weight', 'reference_weight',
-              'start_time', 'end_time', 'users', 'narrative']
+              'start_time', 'end_time', 'users', 'narrative', 'adlib_drink']
     list_display = ['subject_w', 'start_time_l',
                     'reference_weight', 'current_weighing', 'percentage_weighing',
                     'water_requirement_total',
                     'water_requirement_today',
                     'water_requirement_remaining',
                     'is_active',
+                    'adlib_drink',
                     ]
     list_select_related = ('subject',)
     list_display_links = ('start_time_l',)
@@ -353,6 +354,13 @@ class WeighingAdmin(BaseActionAdmin):
     form = WeighingForm
 
 
+class WaterTypeAdmin(BaseActionAdmin):
+    list_display = ['name', 'json']
+    fields = ['name', 'json']
+    ordering = ('name',)
+    list_display_links = ('name',)
+
+
 class SurgeryAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
     list_select_related = ('subject',)
@@ -434,3 +442,4 @@ admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
 admin.site.register(Surgery, SurgeryAdmin)
+admin.site.register(WaterType, WaterTypeAdmin)
