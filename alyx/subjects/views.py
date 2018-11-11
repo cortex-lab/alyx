@@ -24,17 +24,18 @@ class SubjectFilter(FilterSet):
 
     def filter_water_restricted(self, queryset, name, value):
         if value is True:
-            return queryset.extra(where=['''
+            qs = queryset.extra(where=['''
                 subjects_subject.id IN
                 (SELECT subject_id FROM actions_waterrestriction
                 WHERE end_time IS NULL)
                 '''])
         else:
-            return queryset.extra(where=['''
+            qs = queryset.extra(where=['''
                 subjects_subject.id NOT IN
                 (SELECT subject_id FROM actions_waterrestriction
                 WHERE end_time IS NULL)
                 '''])
+        return qs.filter(death_date=None)
 
     class Meta:
         model = Subject

@@ -83,6 +83,31 @@ class APISubjectsTests(BaseTests):
         w = set(d['weighings'][0])
         self.assertTrue(set(('date_time', 'weight', 'url')) <= w)
 
+    def test_subject_filter_water_restricted(self):
+        # first makes sure the endpoint only returns alive subjects
+        url = reverse('subject-list') + '?water_restricted=True'
+        response = self.client.get(url)
+        self.ar(response)
+        swr = response.data
+        self.assertTrue([d['alive'] for d in swr])
+        url = reverse('subject-list') + '?water_restricted=False'
+        non_swr = self.client.get(url).data
+        self.assertTrue([d['alive'] for d in non_swr])
+        # paranoid: query dead subjects, alive subjects and make sure all wr subjects are
+        # within the alive set but excluded from the dead set
+        url = reverse('subject-list') + '?alive=False'
+        dead = self.client.get(url).data
+        url = reverse('subject-list') + '?alive=True'
+        alive = self.client.get(url).data
+        id_alive = set([d['id'] for d in alive])
+        id_dead = set([d['id'] for d in dead])
+        id_swr = set([d['id'] for d in swr])
+        id_nonswr = set([d['id'] for d in non_swr])
+        self.assertEqual(id_swr.intersection(id_alive), id_swr)
+        self.assertTrue(len(id_swr.intersection(id_dead)) == 0)
+        self.assertEqual(id_nonswr.intersection(id_alive), id_nonswr)
+        self.assertTrue(len(id_nonswr.intersection(id_dead)) == 0)
+
     def test_subject_restricted(self):
         url = reverse('water-restricted-subject-list')
         response = self.client.get(url)
