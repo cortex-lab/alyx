@@ -102,7 +102,7 @@ class SessionListSerializer(BaseActionSerializer):
         model = Session
         fields = ('subject', 'users', 'location', 'procedures', 'lab',
                   'type', 'number', 'parent_session', 'data_dataset_session_related',
-                  'narrative', 'start_time', 'end_time', 'url')
+                  'narrative', 'start_time', 'end_time', 'url', 'n_correct_trials', 'n_trials')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
@@ -124,7 +124,7 @@ class SessionDetailSerializer(BaseActionSerializer):
         model = Session
         fields = ('subject', 'users', 'location', 'procedures', 'lab',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'data_dataset_session_related', 'parent_session')
+                  'data_dataset_session_related', 'parent_session', 'n_correct_trials', 'n_trials')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):

@@ -104,7 +104,9 @@ class APIActionsTests(BaseTests):
                     'type': 'Base',
                     'number': '1',
                     'parent_session': '',
-                    'lab': self.lab01}
+                    'lab': self.lab01,
+                    'n_trials': 100,
+                    'n_correct_trials': 75}
         # Test the session creation
         r = self.client.post(reverse('session-list'), ses_dict)
         self.ar(r, 201)
@@ -113,6 +115,7 @@ class APIActionsTests(BaseTests):
         ses_dict['end_time'] = '2018-07-11T12:34:57'
         ses_dict['users'] = [self.superuser, self.superuser2]
         ses_dict['lab'] = self.lab02
+        ses_dict['n_correct_trials'] = 37
         r = self.client.post(reverse('session-list'), ses_dict)
         s2 = r.data
         # Test the date range filter
@@ -127,3 +130,10 @@ class APIActionsTests(BaseTests):
         # This should return only one session
         r = self.client.get(reverse('session-list') + '?lab=awesomelab')
         self.assertEqual(r.data[0], s2)
+        # Test performance: gte, lte and ensures null performances not included
+        r = self.client.get(reverse('session-list') + '?performance_gte=50')
+        self.assertEqual(r.data[0]['url'], s1['url'])
+        self.assertTrue(len(r.data) == 1)
+        r = self.client.get(reverse('session-list') + '?performance_lte=50')
+        self.assertEqual(r.data[0]['url'], s2['url'])
+        self.assertTrue(len(r.data) == 1)

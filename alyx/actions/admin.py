@@ -403,7 +403,7 @@ class SessionAdmin(BaseActionAdmin):
                     'dataset_types', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
-    fields = BaseActionAdmin.fields + ['project', 'type', 'number']
+    fields = BaseActionAdmin.fields + ['project', 'type', 'number', 'n_correct_trials', 'n_trials']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),

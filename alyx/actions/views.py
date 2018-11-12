@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import itertools
 from operator import itemgetter
 
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, F, ExpressionWrapper, FloatField
 from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.views.generic.list import ListView
@@ -99,6 +99,10 @@ class SessionFilter(FilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
                                               method='filter_dataset_types')
+    performance_gte = django_filters.NumberFilter(field_name='performance',
+                                                  method=('filter_performance_gte'))
+    performance_lte = django_filters.NumberFilter(field_name='performance',
+                                                  method=('filter_performance_lte'))
     users = django_filters.CharFilter(field_name='users__username', method=('filter_users'))
     date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
     type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
@@ -127,6 +131,20 @@ class SessionFilter(FilterSet):
             dtypes_count=Count('data_dataset_session_related__dataset_type'))
         queryset = queryset.filter(dtypes_count__gte=len(dtypes))
         return queryset
+
+    def filter_performance_gte(self, queryset, name, perf):
+        queryset = queryset.exclude(n_trials__isnull=True)
+        pf = ExpressionWrapper(100 * F('n_correct_trials') / F('n_trials'),
+                               output_field=FloatField())
+        queryset = queryset.annotate(performance=pf)
+        return queryset.filter(performance__gte=float(perf))
+
+    def filter_performance_lte(self, queryset, name, perf):
+        queryset = queryset.exclude(n_trials__isnull=True)
+        pf = ExpressionWrapper(100 * F('n_correct_trials') / F('n_trials'),
+                               output_field=FloatField())
+        queryset = queryset.annotate(performance=pf)
+        return queryset.filter(performance__lte=float(perf))
 
     class Meta:
         model = Session
