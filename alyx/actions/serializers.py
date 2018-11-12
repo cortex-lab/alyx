@@ -80,9 +80,22 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'dataset_type', 'data_url', 'data_format', 'url')
 
 
+class SessionWaterAdminSerializer(serializers.ModelSerializer):
+
+    water_type = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='water_type',
+        queryset=WaterType.objects.all(),
+    )
+
+    class Meta:
+        model = WaterType
+        fields = ('id', 'name', 'water_type', 'water_administered')
+
+
 class SessionListSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
+    wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -95,19 +108,22 @@ class SessionListSerializer(BaseActionSerializer):
             'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
+            'wateradmin_session_related',
         )
         return queryset
 
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures', 'lab',
-                  'type', 'number', 'parent_session', 'data_dataset_session_related',
-                  'narrative', 'start_time', 'end_time', 'url', 'n_correct_trials', 'n_trials')
+                  'type', 'number', 'parent_session', 'narrative', 'start_time',
+                  'end_time', 'url', 'n_correct_trials', 'n_trials',
+                  'wateradmin_session_related', 'data_dataset_session_related')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
+    wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -117,6 +133,7 @@ class SessionDetailSerializer(BaseActionSerializer):
             'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
+            'wateradmin_session_related',
         )
         return queryset
 
@@ -124,7 +141,8 @@ class SessionDetailSerializer(BaseActionSerializer):
         model = Session
         fields = ('subject', 'users', 'location', 'procedures', 'lab',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'data_dataset_session_related', 'parent_session', 'n_correct_trials', 'n_trials')
+                  'parent_session', 'n_correct_trials', 'n_trials',
+                  'wateradmin_session_related', 'data_dataset_session_related')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):

@@ -398,6 +398,12 @@ class DatasetInline(BaseInlineAdmin):
     fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
 
 
+class WaterAdminInline(BaseInlineAdmin):
+    model = WaterAdministration
+    extra = 1
+    fields = ('name', 'water_administered', 'water_type')
+
+
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'project_list',
                     'dataset_types', 'user_list']
@@ -410,7 +416,7 @@ class SessionAdmin(BaseActionAdmin):
                    ]
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
-    inlines = [DatasetInline, NoteInline]
+    inlines = [WaterAdminInline, DatasetInline, NoteInline]
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(

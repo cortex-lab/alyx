@@ -77,7 +77,8 @@ class WaterAdministration(BaseModel):
                                 help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
                                      default=timezone.now)
-    session = models.ForeignKey('Session', null=True, blank=True, on_delete=models.SET_NULL)
+    session = models.ForeignKey('Session', null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name='wateradmin_session_related')
     water_administered = models.FloatField(validators=[MinValueValidator(limit_value=0)],
                                            help_text="Water administered, in millilitres")
     water_type = models.ForeignKey(WaterType, default=_default_water_type,
