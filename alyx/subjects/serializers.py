@@ -3,7 +3,6 @@ from .models import (Allele, Line, Litter, Source, Species, Strain, Subject, Zyg
                      Project)
 from actions.serializers import (WeighingDetailSerializer,
                                  WaterAdministrationDetailSerializer,
-                                 SessionListSerializer,
                                  )
 from django.contrib.auth import get_user_model
 from actions import water
@@ -11,11 +10,7 @@ from data.models import DataRepository
 from misc.models import Lab
 
 
-class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerializer):
-
-    water_requirement_total = serializers.SerializerMethodField()
-    water_requirement_remaining = serializers.SerializerMethodField()
-    # days_since_joined = serializers.SerializerMethodField()
+class _WaterRestrictionBaseSerializer(serializers.HyperlinkedModelSerializer):
 
     def get_water_requirement_total(self, obj):
         return water.water_requirement_total(obj)
@@ -23,9 +18,25 @@ class WaterRestrictedSubjectListSerializer(serializers.HyperlinkedModelSerialize
     def get_water_requirement_remaining(self, obj):
         return water.water_requirement_remaining(obj)
 
+    def get_reference_weight(self, obj):
+        w = water.reference_weighing(subject=obj)
+        if w:
+            return w.weight
+
+    def get_last_water_restriction(self, obj):
+        return water.last_water_restriction(subject=obj)
+
+
+class WaterRestrictedSubjectListSerializer(_WaterRestrictionBaseSerializer):
+    water_requirement_total = serializers.SerializerMethodField()
+    water_requirement_remaining = serializers.SerializerMethodField()
+    reference_weight = serializers.SerializerMethodField()
+    last_water_restriction = serializers.SerializerMethodField()
+
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'water_requirement_total', 'water_requirement_remaining')
+        fields = ('nickname', 'url', 'water_requirement_total', 'water_requirement_remaining',
+                  'reference_weight', 'last_water_restriction')
 
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
@@ -121,10 +132,9 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
 
-class SubjectDetailSerializer(SubjectListSerializer):
+class SubjectDetailSerializer(SubjectListSerializer, _WaterRestrictionBaseSerializer):
     weighings = WeighingDetailSerializer(many=True, read_only=True)
     water_administrations = WaterAdministrationDetailSerializer(many=True, read_only=True)
-    actions_sessions = SessionListSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
     projects = serializers.SlugRelatedField(
@@ -137,6 +147,8 @@ class SubjectDetailSerializer(SubjectListSerializer):
 
     water_requirement_total = serializers.SerializerMethodField()
     water_requirement_remaining = serializers.SerializerMethodField()
+    reference_weight = serializers.SerializerMethodField()
+    last_water_restriction = serializers.SerializerMethodField()
 
     def get_water_requirement_total(self, obj):
         return water.water_requirement_total(obj)
@@ -156,8 +168,9 @@ class SubjectDetailSerializer(SubjectListSerializer):
         fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
                   'projects', 'lab',
                   'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
-                  'description', 'actions_sessions', 'weighings', 'water_administrations',
-                  'genotype', 'water_requirement_total', 'water_requirement_remaining')
+                  'description', 'weighings', 'water_administrations',
+                  'genotype', 'water_requirement_total', 'water_requirement_remaining',
+                  'reference_weight', 'last_water_restriction')
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
