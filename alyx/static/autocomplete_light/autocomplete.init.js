@@ -33,6 +33,41 @@ element was cloned with data - which should be the case.
         return '';
     }
 
+    $.fn.getFormPrefixes = function() {
+        /*
+         * Get the form prefixes for a field, from the most specific to the least.
+         *
+         * For example:
+         *
+         *      $(':input[name$=owner]').getFormPrefixes()
+         *
+         * Would return:
+         * - [''] for an input named 'owner'.
+         * - ['inline_model-0-', ''] for an input named 'inline_model-0-owner' (i.e. nested with a nested inline).
+         * - ['sections-0-items-0-', 'sections-0-', ''] for an input named 'sections-0-items-0-product'
+         *   (i.e. nested multiple time with django-nested-admin).
+         */
+        var parts = $(this).attr('name').split('-').slice(0, -1);
+        var prefixes = [];
+
+        for (i = 0; i < parts.length; i += 2) {
+            var testPrefix = parts.slice(0, -i || parts.length).join('-');
+            if (!testPrefix.length)
+                continue;
+
+            testPrefix += '-';
+
+            var result = $(':input[name^=' + testPrefix + ']')
+
+            if (result.length)
+                prefixes.push(testPrefix);
+        }
+
+        prefixes.push('');
+
+        return prefixes;
+    }
+
     var initialized = [];
 
     function initialize(element) {
@@ -47,15 +82,18 @@ element was cloned with data - which should be the case.
         $(element).trigger('autocompleteLightInitialize');
         initialized.push(element);
     }
-    window.__dal__initialize = initialize;
 
-    $(document).ready(function() {
-        $('[data-autocomplete-light-function]:not([id*="__prefix__"])').each(initialize);
-    });
+    if (!window.__dal__initialize) {
+        window.__dal__initialize = initialize;
 
-    $(document).bind('DOMNodeInserted', function(e) {
-        $(e.target).find('[data-autocomplete-light-function]').each(initialize);
-    });
+        $(document).ready(function () {
+            $('[data-autocomplete-light-function=select2]:not([id*="__prefix__"])').each(initialize);
+        });
+
+        $(document).bind('DOMNodeInserted', function (e) {
+            $(e.target).find('[data-autocomplete-light-function=select2]:not([id*="__prefix__"])').each(initialize);
+        });
+    }
 
     // using jQuery
     function getCookie(name) {
@@ -75,4 +113,50 @@ element was cloned with data - which should be the case.
     }
 
     document.csrftoken = getCookie('csrftoken');
+    if (document.csrftoken === null) {
+        // Try to get CSRF token from DOM when cookie is missing
+        var $csrf = $('form :input[name="csrfmiddlewaretoken"]');
+        if ($csrf.length > 0) {
+            document.csrftoken = $csrf[0].value;
+        }
+    }
 })(yl.jQuery);
+
+// Does the same thing as django's admin/js/autocomplete.js, but uses yl.jQuery.
+(function($) {
+    'use strict';
+    var init = function($element, options) {
+        var settings = $.extend({
+            ajax: {
+                data: function(params) {
+                    return {
+                        term: params.term,
+                        page: params.page
+                    };
+                }
+            }
+        }, options);
+        $element.select2(settings);
+    };
+
+    $.fn.djangoAdminSelect2 = function(options) {
+        var settings = $.extend({}, options);
+        $.each(this, function(i, element) {
+            var $element = $(element);
+            init($element, settings);
+        });
+        return this;
+    };
+
+    $(function() {
+        // Initialize all autocomplete widgets except the one in the template
+        // form used when a new formset is added.
+        $('.admin-autocomplete').not('[name*=__prefix__]').djangoAdminSelect2();
+    });
+
+    $(document).on('formset:added', (function() {
+        return function(event, $newFormset) {
+            return $newFormset.find('.admin-autocomplete').djangoAdminSelect2();
+        };
+    })(this));
+}(yl.jQuery));
