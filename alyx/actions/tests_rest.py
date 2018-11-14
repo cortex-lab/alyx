@@ -92,8 +92,9 @@ class APIActionsTests(BaseTests):
         d = response.data
         self.assertEqual(d['subject'], self.subject.nickname)
         self.assertEqual(d['implant_weight'], 4.56)
-        self.assertTrue(set(('date', 'weight', 'expected_weight', 'expected_water',
-                             'given_water_liquid', 'given_water_hydrogel',)) <= set(d['records'][0]))
+        self.assertTrue(
+            set(('date', 'weight', 'expected_weight', 'expected_water',
+                 'given_water_liquid', 'given_water_hydrogel',)) <= set(d['records'][0]))
 
     def test_sessions(self):
         ses_dict = {'subject': self.subject,
