@@ -13,8 +13,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from alyx.base import alyx_mail
-from actions.models import Surgery, Weighing, WaterRestriction, WaterAdministration, Session
-from actions import water
+from actions.models import Surgery, WaterRestriction, Session
 from subjects.models import Subject
 
 logger = logging.getLogger(__name__)
@@ -116,29 +115,29 @@ class Command(BaseCommand):
         # Hench since 2017-04-20. Weight yesterday 27.2g (expected 30.0g, 90.7%).
         # Yesterday given 1.02mL (min 0.96mL, excess 0.06mL). Today requires 0.97mL.
         for w in wr:
+            s = w.subject
+            wc = s.water_control
             sn = w.subject.nickname
             sd = w.start_time.date()
             today = timezone.now()
             yesterday = (today - timedelta(days=1)).date()
             # Weight yesterday.
-            wy = Weighing.objects.filter(subject=w.subject, date_time__date__lte=yesterday)
-            wy = wy.order_by('-date_time').first()
+            wy = wc.last_weighing_before(date=yesterday)
             if wy is None:
                 continue
             # Last date with weighing, might be yesterday or earlier.
-            last_date = wy.date_time.date()
+            last_date = wy[0].date()
             # Number of days ago.
             n = (today.date() - last_date).days
-            wy = getattr(wy, 'weight', 0)
-            # Expected weight yesterday.
-            wye = water.expected_weighing(w.subject, date=last_date)
-            wyep = 100. * wy / wye
-            way = WaterAdministration.objects.filter(subject=w.subject,
-                                                     date_time__date=last_date)
-            way = sum(_.water_administered or 0 for _ in way)
-            waym = water.water_requirement_total(w.subject, date=last_date)
-            waye = way - waym
-            wr = water.water_requirement_total(w.subject)
+            wy = wy[1]
+            # Expected weight at the last date.
+            wye = wc.expected_weight(date=last_date)
+            wyep = wc.percentage_weight(date=last_date)
+            # Water
+            way = wc.given_water_total(date=last_date)
+            waym = wc.expected_water(date=last_date)
+            waye = wc.excess_water(date=last_date)
+            wr = wc.remaining_water(date=last_date)
             s = '''
                 * {sn} since {sd}.
                 Weight {n} day(s) ago: {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).
@@ -158,22 +157,25 @@ class Command(BaseCommand):
         text = ''
         threshold = settings.WEIGHT_THRESHOLD
         for subject_id in subject_ids:
-            weighings = Weighing.objects.filter(subject_id=subject_id).order_by('-date_time')
-            if not weighings:
-                continue
-            w = weighings.first()
-            expected = w.expected()
-            if w.weight < (expected * threshold):
-                subject = Subject.objects.get(pk=subject_id)
+            subject = Subject.objects.get(pk=subject_id)
+            wc = subject.water_control
+            w = wc.weight()
+            e = wc.expected_weight()
+            p = wc.percentage_weight()
+            last_weighing = wc.last_weighing_before()
+            if not last_weighing:
+                return
+            date = last_weighing[0]
+            if w < threshold * e:
                 text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
                          'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
                              subject=subject,
                              user=subject.responsible_user,
                              email=subject.responsible_user.email,
-                             weight=w.weight,
-                             expected=expected,
-                             percentage=(100 * w.weight / expected),
-                             date=w.date_time,
+                             weight=w,
+                             expected=e,
+                             percentage=p,
+                             date=date,
                 )
         text = 'Mice under the {t}% weight limit:\n\n'.format(t=int(100 * threshold)) + text
         return text

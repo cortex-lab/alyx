@@ -247,6 +247,12 @@ class WaterRestriction(BaseAction):
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 
+    def save(self, *args, **kwargs):
+        if not self.reference_weight and self.subject:
+            w = self.subject.water_control.reference_weighing_at(self.start_time)
+            self.reference_weight = w[1]
+        return super(WaterRestriction, self).save(*args, **kwargs)
+
 
 class OtherAction(BaseAction):
     """

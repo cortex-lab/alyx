@@ -8,13 +8,15 @@
     <tr>
         <th>date</th>
         <th>weight</th>
-        <th>80% weight</th>
+        <th>weight ref</th>
+        <th>weight exp</th>
         <th>weight pct</th>
-        <th>water</th>
-        <th>hydrogel</th>
-        <th>total</th>
-        <th>min water</th>
-        <th>excess</th>
+        <th>weight min</th>
+        <th>water liq</th>
+        <th>water hgel</th>
+        <th>water tot</th>
+        <th>water exp</th>
+        <th>water excess</th>
     </tr>
 </thead>
 <tbody>
@@ -22,13 +24,15 @@
     <tr>
         <td>{{ obj.date | date }}</td>
         <td>{{ obj.weight | floatformat:1 }}</td>
-        <td>{{ obj.expected_80 | floatformat:1 }}</td>
-        <td>{{ obj.percentage | floatformat:1 }}</td>
-        <td>{{ obj.water | floatformat:2 }}</td>
-        <td>{{ obj.hydrogel | floatformat:2 }}</td>
-        <td>{{ obj.total | floatformat:2 }}</td>
-        <td>{{ obj.required | floatformat:2 }}</td>
-        <td>{{ obj.excess | floatformat:2 }}</td>
+        <td>{{ obj.reference_weight | floatformat:1 }}</td>
+        <td>{{ obj.expected_weight | floatformat:1 }}</td>
+        <td>{{ obj.percentage_weight | floatformat:1 }}</td>
+        <td>{{ obj.min_weight | floatformat:1 }}</td>
+        <td>{{ obj.given_water_liquid | floatformat:2 }}</td>
+        <td>{{ obj.given_water_hydrogel | floatformat:2 }}</td>
+        <td>{{ obj.given_water_total | floatformat:2 }}</td>
+        <td>{{ obj.expected_water | floatformat:2 }}</td>
+        <td>{{ obj.excess_water | floatformat:2 }}</td>
     </tr>
 {% endfor %}
 </tbody>
@@ -38,4 +42,8 @@
 <img src="{{ plot_url }}" />
 </div>
 
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
 {% endblock %}
