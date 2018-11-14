@@ -4,6 +4,8 @@
 {% block admin_change_form_document_ready %}
 {{ block.super }}
 
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+
 <script>
 $(document).keydown(function(e) {
     switch(e.which) {
@@ -24,8 +26,34 @@ $(document).keydown(function(e) {
     e.preventDefault();
 });
 
-$(document).ready(function() {
+
+
+function getShownFieldsets() {
+    return $("fieldset > h2 > a.collapse-toggle:not(:contains(S))").map(
+        function () { return this.id; }).get();
+}
+
+
+function getFieldsetCookieName() {
+    var url = window.location.pathname;
+    return "shownFieldsets_" + url;
+};
+
+
+$(window).bind('beforeunload', function(){
+    var fieldsetsIds = getShownFieldsets();
+    Cookies.set(getFieldsetCookieName(), fieldsetsIds);
+});
+
+
+$(window).on("load", function() {
     $(":input").attr("autocomplete", "off");
+
+    var fieldsetsIds = Cookies.getJSON(getFieldsetCookieName());
+    if (!fieldsetsIds) { return; }
+    for (let id of fieldsetsIds) {
+        $("#" + id).parent().parent().removeClass("collapsed");
+    }
 });
 
 </script>
