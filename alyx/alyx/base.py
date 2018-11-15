@@ -53,6 +53,9 @@ class QueryPrintingMiddleware:
             # runserver just prints its output to sys.stderr, so follow suite
             sys.stderr.write(output)
 
+            # for q in connection.queries:
+            #     print(q['sql'])
+
         return response
 
 

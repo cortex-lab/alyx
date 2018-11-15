@@ -5,38 +5,38 @@ from actions.serializers import (WeighingDetailSerializer,
                                  WaterAdministrationDetailSerializer,
                                  )
 from django.contrib.auth import get_user_model
-from actions import water
 from data.models import DataRepository
 from misc.models import Lab
 
 
 class _WaterRestrictionBaseSerializer(serializers.HyperlinkedModelSerializer):
+    def get_expected_water(self, obj):
+        return obj.water_control.expected_water()
 
-    def get_water_requirement_total(self, obj):
-        return water.water_requirement_total(obj)
-
-    def get_water_requirement_remaining(self, obj):
-        return water.water_requirement_remaining(obj)
+    def get_remaining_water(self, obj):
+        return obj.water_control.remaining_water()
 
     def get_reference_weight(self, obj):
-        w = water.reference_weighing(subject=obj)
-        if w:
-            return w.weight
+        return obj.water_control.reference_weight()
 
     def get_last_water_restriction(self, obj):
-        return water.last_water_restriction(subject=obj)
+        return obj.water_control.water_restriction_at()
 
-
-class WaterRestrictedSubjectListSerializer(_WaterRestrictionBaseSerializer):
-    water_requirement_total = serializers.SerializerMethodField()
-    water_requirement_remaining = serializers.SerializerMethodField()
+    expected_water = serializers.SerializerMethodField()
+    remaining_water = serializers.SerializerMethodField()
     reference_weight = serializers.SerializerMethodField()
     last_water_restriction = serializers.SerializerMethodField()
 
+
+class WaterRestrictedSubjectListSerializer(_WaterRestrictionBaseSerializer):
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'water_requirement_total', 'water_requirement_remaining',
-                  'reference_weight', 'last_water_restriction')
+        fields = ('nickname', 'url',
+                  'expected_water',
+                  'remaining_water',
+                  'reference_weight',
+                  'last_water_restriction',
+                  )
 
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
@@ -145,17 +145,6 @@ class SubjectDetailSerializer(SubjectListSerializer, _WaterRestrictionBaseSerial
         required=False,
     )
 
-    water_requirement_total = serializers.SerializerMethodField()
-    water_requirement_remaining = serializers.SerializerMethodField()
-    reference_weight = serializers.SerializerMethodField()
-    last_water_restriction = serializers.SerializerMethodField()
-
-    def get_water_requirement_total(self, obj):
-        return water.water_requirement_total(obj)
-
-    def get_water_requirement_remaining(self, obj):
-        return water.water_requirement_remaining(obj)
-
     source = serializers.SlugRelatedField(
         read_only=False,
         slug_field='name',
@@ -166,11 +155,15 @@ class SubjectDetailSerializer(SubjectListSerializer, _WaterRestrictionBaseSerial
     class Meta:
         model = Subject
         fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
-                  'projects', 'lab',
                   'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
-                  'description', 'weighings', 'water_administrations',
-                  'genotype', 'water_requirement_total', 'water_requirement_remaining',
-                  'reference_weight', 'last_water_restriction')
+                  'projects', 'lab', 'genotype', 'description',
+                  'weighings',
+                  'water_administrations',
+                  'reference_weight',
+                  'last_water_restriction',
+                  'expected_water',
+                  'remaining_water',
+                  )
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
