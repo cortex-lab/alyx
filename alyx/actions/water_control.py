@@ -320,6 +320,8 @@ class WaterControl(object):
         return out
 
     def plot(self, start=None, end=None):
+        import matplotlib
+        matplotlib.use('AGG')
         import matplotlib.pyplot as plt
         import matplotlib.dates as mpld
 
