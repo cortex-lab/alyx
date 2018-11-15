@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 
 from alyx.base import BaseTests
-from subjects.models import Subject
+from subjects.models import Subject, Project
 from misc.models import Lab
 
 
@@ -15,6 +15,7 @@ class APIActionsTests(BaseTests):
         self.subject = Subject.objects.all().first()
         self.lab01 = Lab.objects.create(name='superlab')
         self.lab02 = Lab.objects.create(name='awesomelab')
+        self.projectX = Project.objects.create(name='projectX')
         # Set an implant weight.
         self.subject.implant_weight = 4.56
         self.subject.save()
@@ -99,6 +100,7 @@ class APIActionsTests(BaseTests):
     def test_sessions(self):
         ses_dict = {'subject': self.subject,
                     'users': self.superuser,
+                    'project': self.projectX.name,
                     'narrative': 'auto-generated-session, test',
                     'start_time': '2018-07-09T12:34:56',
                     'end_time': '2018-07-09T12:34:57',

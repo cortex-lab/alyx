@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType)
-from subjects.models import Subject
+from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType, DataFormat
 from misc.models import LabLocation, Lab
 
@@ -97,10 +97,13 @@ class SessionListSerializer(BaseActionSerializer):
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
 
+    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
+                                           queryset=Project.objects.all(), required=False)
+
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'location', 'parent_session', 'lab')
+        queryset = queryset.select_related('subject', 'location', 'parent_session', 'lab', 'project')
         queryset = queryset.prefetch_related(
             'users', 'procedures',
             'data_dataset_session_related',
@@ -124,6 +127,9 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
+
+    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
+                                           queryset=Project.objects.all(), required=False)
 
     @staticmethod
     def setup_eager_loading(queryset):
