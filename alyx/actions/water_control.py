@@ -277,7 +277,7 @@ class WaterControl(object):
         return 100 * (w - iw) / (e - iw) if (e - iw) > 0 else 0.
 
     def min_weight(self, date=None):
-        """Minimum weight for othe mouse."""
+        """Minimum weight for the mouse."""
         date = date or today()
         return self.expected_weight(date=date) * self.expected_weight_percent
 
