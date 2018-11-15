@@ -72,6 +72,19 @@ def to_weeks(birth_date, dt):
     return (dt - birth_date).days // 7
 
 
+def restrict_dates(dates, start, end, *arrs):
+    ind = (dates >= start) & (dates <= end)
+    return [dates[ind]] + [arr[ind] for arr in arrs]
+
+
+def find_color(w, e, thresholds):
+    """Find the color of a weight, given the expected weight and the list of thresholds."""
+    for t, bgc, fgc, ls in thresholds:
+        if w < e * t:
+            return bgc
+    return PALETTE['green']
+
+
 def return_figure(f):
     buf = io.BytesIO()
     f.savefig(buf, format='png')
@@ -99,8 +112,20 @@ class WaterControl(object):
         self.thresholds = []
 
     def first_date(self):
-        return min(min(d for d, _, _ in self.water_administrations),
-                   min(d for d, _ in self.weighings)).date()
+        dwa = dwe = None
+        if self.water_administrations:
+            dwa = min(d for d, _, _ in self.water_administrations).date()
+        if self.weighings:
+            dwe = min(d for d, _ in self.weighings).date()
+        if not dwa and not dwe:
+            return self.birth_date
+        elif dwa and dwe:
+            return min(dwa, dwe)
+        elif dwa:
+            return dwa
+        elif dwe:
+            return dwe
+        assert 0
 
     def _check_water_restrictions(self):
         """Make sure all past water restrictions (except the current one) are finished."""
@@ -151,14 +176,13 @@ class WaterControl(object):
         the start of that water restriction."""
         date = date or today()
         date = date.date() if isinstance(date, datetime) else date
-        #print(date, type(date))
         water_restrictions_before = [
             (s, e) for (s, e) in self.water_restrictions if s.date() <= date]
         if not water_restrictions_before:
             return
         s, e = water_restrictions_before[-1]
         # Return None if the mouse was not under water restriction at the specified date.
-        if e is not None and date > e:
+        if e is not None and date > e.date():
             return None
         assert e is None or e.date() >= date
         assert s.date() <= date
@@ -341,31 +365,30 @@ class WaterControl(object):
         expected_weights = np.array([self.expected_weight(date) for date in weighing_dates])
 
         # spans is a list of pairs (date, color) where there are changes of background colors.
-        spans = [(start, None)]
-        for d, w, e in zip(weighing_dates, weights, expected_weights):
-            # Skip periods of no water restriction.
-            if not self.water_restriction_at(d):
-                color = None
-            else:
-                # Find the color.
-                color = PALETTE['green']
-                for t, bgc, fgc, ls in self.thresholds:
-                    if w < e * t:
-                        color = bgc
-                        break
-            # Skip identical consecutive colors.
-            if color == spans[-1][1]:
-                continue
-            spans.append((d, color))
-        spans.append((end, None))
-        for (d0, c), (d1, _) in zip(spans, spans[1:]):
-            if c is not None:
-                ax.axvspan(d0, d1, color=c)
+        for start_wr, end_wr in self.water_restrictions:
+            end_wr = end_wr or end
+            # Get the dates and weights for the current water restriction.
+            ds, ws, es = restrict_dates(
+                weighing_dates, start_wr, end_wr, weights, expected_weights)
 
-        # Plot weights.
-        for p, bgc, fgc, ls in self.thresholds:
-            ax.plot(weighing_dates, p * expected_weights, ls, color=fgc, lw=2)
-        ax.plot(weighing_dates, weights, '-ok', lw=2)
+            # Plot background colors.
+            spans = [(start_wr, None)]
+            for d, w, e in zip(ds, ws, es):
+                c = find_color(w, e, self.thresholds)
+                # Skip identical consecutive colors.
+                if c == spans[-1][1]:
+                    continue
+                spans.append((d, c))
+            spans.append((end_wr, None))
+            for (d0, c), (d1, _) in zip(spans, spans[1:]):
+                ax.axvspan(d0, d1, color=c or 'w')
+
+            # Plot weight thresholds.
+            for p, bgc, fgc, ls in self.thresholds:
+                ax.plot(ds, p * es, ls, color=fgc, lw=2)
+
+            # Plot weights.
+            ax.plot(ds, ws, '-ok', lw=2)
 
         # Axes and legends.
         ax.set_xlim(start, end)
@@ -412,7 +435,7 @@ def water_control(subject):
     if last_wr and last_wr.reference_weight:
         wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
     for wr in wrs:
-        wc.add_water_restriction(wr.start_time)
+        wc.add_water_restriction(wr.start_time, wr.end_time)
 
     # Water administrations.
     was = am.WaterAdministration.objects.filter(subject=subject)
