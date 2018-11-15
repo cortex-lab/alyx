@@ -114,7 +114,7 @@ class SessionListSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab',
+        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
                   'type', 'number', 'parent_session', 'narrative', 'start_time',
                   'end_time', 'url', 'n_correct_trials', 'n_trials',
                   'wateradmin_session_related', 'data_dataset_session_related')
@@ -139,7 +139,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab',
+        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
                   'parent_session', 'n_correct_trials', 'n_trials',
                   'wateradmin_session_related', 'data_dataset_session_related')
