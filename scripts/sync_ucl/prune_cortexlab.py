@@ -3,7 +3,7 @@ from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session
-from misc.models import Lab
+from misc.models import Lab, LabMember
 from data.models import Dataset, DatasetType
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
@@ -29,6 +29,7 @@ if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
     lab.save()
 else:
     lab = Lab.objects.using('cortexlab').get(name='cortexlab')
+ses = Session.objects.using('cortexlab').all()
 ses.update(lab=lab)
 
 # we want to make sure that no other dataset type than those defined in IBL are imported
@@ -36,7 +37,11 @@ dtypes = [dt[0] for dt in DatasetType.objects.all().values_list('name')]
 Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 
-##
+# only imports users that are relevant to IBL
+users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier']
+LabMember.objects.using('cortexlab').exclude(username__in=['']).delete()
+
+
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
 # they share primary keys accross databases but not necessarily the other fields

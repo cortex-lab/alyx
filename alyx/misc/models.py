@@ -25,6 +25,12 @@ class LabMember(AbstractUser):
     class Meta:
         ordering = ['username']
 
+    @property
+    def lab(self, date=datetime.now().date()):
+        lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
+        lms = lms.exclude(end_date__lt=date)
+        return [str(ln[0]) for ln in lms.values_list('lab__name').distinct()]
+
 
 class Lab(BaseModel):
     name = models.CharField(max_length=255, unique=True)
@@ -43,7 +49,7 @@ class LabMembership(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
     role = models.CharField(max_length=255, blank=True)
-    start_date = models.DateField(blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True, default=datetime.now().date())
     end_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
