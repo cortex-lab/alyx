@@ -95,8 +95,8 @@ def return_figure(f):
 class WaterControl(object):
     def __init__(self, nickname=None, birth_date=None, sex=None,
                  implant_weight=None,
-                 expected_weight_computation=None,
-                 expected_weight_percent=.8,
+                 reference_weight_pct=0.,
+                 zscore_weight_pct=0.,
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname
@@ -107,8 +107,8 @@ class WaterControl(object):
         self.water_administrations = []
         self.weighings = []
         self.reference_weighing = None
-        self.expected_weight_computation = expected_weight_computation
-        self.expected_weight_percent = expected_weight_percent
+        self.reference_weight_pct = reference_weight_pct
+        self.zscore_weight_pct = zscore_weight_pct
         self.thresholds = []
 
     def first_date(self):
@@ -224,6 +224,7 @@ class WaterControl(object):
         rw = self.reference_weighing_at(date=date)
         if rw:
             return rw[1]
+        return 0.
 
     def last_weighing_before(self, date=None):
         """Return the last known weight of the subject before the specified date."""
@@ -243,16 +244,13 @@ class WaterControl(object):
         cw = self.last_weighing_before(date=date)
         return cw[1] if cw else 0
 
-    def expected_weight(self, date=None):
-        """Return the expected weight at the specified date."""
+    def zscore_weight(self, date=None):
+        """Return the expected zscored weight at the specified date."""
         date = date or today()
         rw = self.reference_weighing_at(date=date)
         if not rw:
             return 0
         ref_date, ref_weight = rw
-        # Support for multiple computation rules for the expected weight.
-        if self.expected_weight_computation == 'reference_weight':
-            return ref_weight
         iw = self.implant_weight
         if not self.birth_date:
             logger.warning("The birth date of %s has not been specified.", self.nickname)
@@ -268,6 +266,13 @@ class WaterControl(object):
         mrw_date, srw_date = expected_weighing_mean_std(self.sex, age_date)
         return (srw_date * zscore) + mrw_date + iw
 
+    def expected_weight(self, date=None):
+        """Expected weight of the mouse at the specified date, either the reference weight
+        if the reference_weight_pct is >0, or the zscore weight."""
+        return (self.reference_weight(date=date)
+                if self.reference_weight_pct > 0
+                else self.zscore_weight(date=date))
+
     def percentage_weight(self, date=None):
         """Percentage of the weight relative to the expected weight."""
         date = date or today()
@@ -279,7 +284,8 @@ class WaterControl(object):
     def min_weight(self, date=None):
         """Minimum weight for the mouse."""
         date = date or today()
-        return self.expected_weight(date=date) * self.expected_weight_percent
+        return (self.zscore_weight(date=date) * self.zscore_weight_pct +
+                self.reference_weight(date=date) * self.reference_weight_pct)
 
     def expected_water(self, date=None):
         """Return the expected water for the specified date."""
@@ -293,7 +299,7 @@ class WaterControl(object):
     def given_water(self, date=None, hydrogel=None):
         """Return the amount of water given at a specified date."""
         date = date or today()
-        return sum(w for (d, w, h) in self.water_administrations
+        return sum(w or 0 for (d, w, h) in self.water_administrations
                    if d.date() == date and (hydrogel is None or h == hydrogel))
 
     def given_water_liquid(self, date=None):
@@ -320,8 +326,8 @@ class WaterControl(object):
     _columns = ('date', 'weight',
                 'reference_weight',
                 'expected_weight',
-                'percentage_weight',
                 'min_weight',
+                'percentage_weight',
                 'given_water_liquid',
                 'given_water_hydrogel',
                 'given_water_total',
@@ -354,15 +360,16 @@ class WaterControl(object):
         ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
 
         # Data arrays.
-        self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
-        weighing_dates, weights = zip(*self.weighings)
-        weighing_dates = np.array(weighing_dates, dtype=datetime)
-        weights = np.array(weights)
-        start = start or weighing_dates.min()
-        end = end or weighing_dates.max()
-        # w_min, w_max = weights.min(), weights.max()
-
-        expected_weights = np.array([self.expected_weight(date) for date in weighing_dates])
+        if self.weighings:
+            self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
+            weighing_dates, weights = zip(*self.weighings)
+            weighing_dates = np.array(weighing_dates, dtype=datetime)
+            weights = np.array(weights, dtype=np.float64)
+            start = start or weighing_dates.min()
+            end = end or weighing_dates.max()
+            expected_weights = np.array(
+                [self.expected_weight(date) for date in weighing_dates],
+                dtype=np.float64) if weighing_dates.size else []
 
         # spans is a list of pairs (date, color) where there are changes of background colors.
         for start_wr, end_wr in self.water_restrictions:
@@ -404,26 +411,19 @@ class WaterControl(object):
 def water_control(subject):
     from actions import models as am
     assert subject is not None
-
-    # HACK: currently, all labs except UCL cortexlab use a 80% reference weight
-    # rule for the expected weight.
-
-    # UCL alyx, or UCL on IBL alyx
-    if subject.lab is None or subject.lab.name == 'cortexlab':
-        # Computation for the expected weight, and weight must be >= 80% expected weight
-        expected_weight_computation = None
-        expected_weight_percent = .8
-    # Non-UCL labs
+    lab = subject.lab
+    if lab is None:
+        logger.warning("The subject lab is not set")
+        rw_pct = zw_pct = 0
     else:
-        # Weight must be >= 85% reference weight
-        expected_weight_computation = 'reference_weight'
-        expected_weight_percent = .85
+        rw_pct = lab.reference_weight_pct
+        zw_pct = lab.zscore_weight_pct
 
     # Create the WaterControl instance.
     wc = WaterControl(
         nickname=subject.nickname, birth_date=subject.birth_date, sex=subject.sex,
-        expected_weight_computation=expected_weight_computation,
-        expected_weight_percent=expected_weight_percent,
+        reference_weight_pct=rw_pct,
+        zscore_weight_pct=zw_pct,
     )
     wc.add_threshold(percentage=.8, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699')

@@ -80,9 +80,11 @@ class WaterAdministration(BaseModel):
     session = models.ForeignKey('Session', null=True, blank=True, on_delete=models.SET_NULL,
                                 related_name='wateradmin_session_related')
     water_administered = models.FloatField(validators=[MinValueValidator(limit_value=0)],
-                                           help_text="Water administered, in millilitres")
+                                           null=True, blank=True,
+                                           help_text="Water administered, in milliliters")
     water_type = models.ForeignKey(WaterType, default=_default_water_type,
                                    on_delete=models.SET_DEFAULT)
+    adlib = models.BooleanField(default=False)
 
     def expected(self):
         from .water import water_requirement_total
@@ -93,9 +95,12 @@ class WaterAdministration(BaseModel):
         return self.water_type.name == 'Hydrogel'
 
     def __str__(self):
-        return 'Water %.2fg for %s' % (self.water_administered,
-                                       str(self.subject),
-                                       )
+        if self.water_administered:
+            return 'Water %.2fg for %s' % (self.water_administered,
+                                           str(self.subject),
+                                           )
+        else:
+            return 'Water adlib for %s' % str(self.subject)
 
 
 class BaseAction(BaseModel):
@@ -190,10 +195,6 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-class TaskProtocol(BaseAction):
-    name = models.CharField(max_length=255, unique=True)
-
-
 class Session(BaseAction):
     """
     A recording or training session performed on a subject. There is normally only one of
@@ -215,8 +216,7 @@ class Session(BaseAction):
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,
                                  help_text="Optional session number for this level")
-    task_protocol = models.ForeignKey(TaskProtocol, null=True, blank=True,
-                                      on_delete=models.SET_NULL)
+    task_protocol = models.CharField(max_length=1023, blank=True, default='')
     n_trials = models.IntegerField(blank=True, null=True)
     n_correct_trials = models.IntegerField(blank=True, null=True)
 
@@ -236,8 +236,6 @@ class WaterRestriction(BaseAction):
     """
     Water restriction.
     """
-
-    adlib_drink = models.ForeignKey(WaterType, null=True, blank=True, on_delete=models.SET_NULL)
 
     reference_weight = models.FloatField(
         validators=[MinValueValidator(limit_value=0)],

@@ -10,7 +10,8 @@ from alyx.base import BaseAdmin
 
 
 class LabAdmin(BaseAdmin):
-    fields = ['name', 'institution', 'address', 'timezone']
+    fields = ['name', 'institution', 'address', 'timezone',
+              'reference_weight_pct', 'zscore_weight_pct']
     list_display = fields
 
 
