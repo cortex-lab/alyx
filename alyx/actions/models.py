@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -85,12 +87,12 @@ class WaterAdministration(BaseModel):
                                    on_delete=models.SET_DEFAULT)
 
     def expected(self):
-        from .water import water_requirement_total
-        return water_requirement_total(self.subject, date=self.date_time)
+        wc = self.subject.water_control
+        return wc.expected_water(date=self.date_time.date())
 
     @property
     def hydrogel(self):
-        return self.water_type.name == 'Hydrogel'
+        return 'hydrogel' in self.water_type.name.lower()
 
     def __str__(self):
         return 'Water %.2fg for %s' % (self.water_administered,
@@ -249,8 +251,10 @@ class WaterRestriction(BaseAction):
 
     def save(self, *args, **kwargs):
         if not self.reference_weight and self.subject:
-            w = self.subject.water_control.reference_weighing_at(self.start_time)
+            w = self.subject.water_control.last_weighing_before(self.start_time.date())
             self.reference_weight = w[1]
+            # makes sure the closest weighing is one week around, break if not
+            assert(abs(w[0] - self.start_time) < timedelta(days=7))
         return super(WaterRestriction, self).save(*args, **kwargs)
 
 
