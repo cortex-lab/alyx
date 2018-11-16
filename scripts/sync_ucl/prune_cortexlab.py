@@ -17,11 +17,9 @@ Session.objects.using('cortexlab').filter(type='Base').delete()
 # remove the subject requests
 SubjectRequest.objects.using('cortexlab').all().delete()
 
-# the sessions should have a proper project name labeled
-ses = Session.objects.using('cortexlab').all()
-pk_proj = Project.objects.get(name='ibl_cortexlab').pk
-proj = Project.objects.using('cortexlab').get(pk=pk_proj)
-ses.update(project=proj)
+# remove all sessions that are not part of IBL project
+pk_proj_ibl = Project.objects.get(name='ibl_cortexlab').pk
+Session.objects.using('cortexlab').exclude(project=pk_proj_ibl).delete()
 
 # the sessions should also have the cortexlab lab field properly labeled before import
 if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
