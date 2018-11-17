@@ -41,6 +41,16 @@ class Lab(BaseModel):
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
+    reference_weight_pct = models.FloatField(
+        default=0.,
+        help_text="The minimum mouse weight is a linear combination of "
+        "the reference weight and the zscore weight.")
+
+    zscore_weight_pct = models.FloatField(
+        default=0.,
+        help_text="The minimum mouse weight is a linear combination of "
+        "the reference weight and the zscore weight.")
+
     def __str__(self):
         return self.name
 

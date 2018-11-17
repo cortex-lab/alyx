@@ -210,8 +210,8 @@ class WaterAdministrationForm(forms.ModelForm):
 class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
-    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'user']
-    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type']
+    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user']
+    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type', 'adlib']
     list_display_links = ('water_administered',)
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
@@ -259,8 +259,9 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     form = WaterRestrictionForm
 
     fields = ['subject', 'implant_weight', 'reference_weight',
-              'start_time', 'end_time', 'users', 'narrative', 'adlib_drink']
-    list_display = ('subject_w', 'start_time_l') + WaterControl._columns[1:] + ('adlib_drink',)
+              'start_time', 'end_time', 'users', 'narrative']
+    list_display = (
+        'subject_w', 'start_time_l', 'weight', 'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
     list_display_links = ('start_time_l',)
     readonly_fields = ('weight',)  # WaterControl._columns[1:]
@@ -284,13 +285,12 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         if not obj.subject:
             return
         return '%.1f' % obj.subject.water_control.weight()
-    weight.short_description = 'weight ref'
+    weight.short_description = 'weight'
 
-    def reference_weight(self, obj):
+    def weight_ref(self, obj):
         if not obj.subject:
             return
         return '%.1f' % obj.subject.water_control.reference_weight()
-    reference_weight.short_description = 'weight ref'
 
     def expected_weight(self, obj):
         if not obj.subject:

@@ -21,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
 class LabSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Lab
-        fields = ('name', 'institution', 'address', 'timezone')
+        fields = ('name', 'institution', 'address', 'timezone',
+                  'reference_weight_pct', 'zscore_weight_pct')
         lookup_field = 'name'
         extra_kwargs = {'url': {'view_name': 'lab-detail', 'lookup_field': 'name'}}
