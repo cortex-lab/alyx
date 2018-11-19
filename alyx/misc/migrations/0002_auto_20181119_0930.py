@@ -23,6 +23,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='labmembership',
             name='start_date',
-            field=models.DateField(auto_now_add=True, null=True),
+            field=models.DateField(auto_now=True, null=True),
         ),
     ]
