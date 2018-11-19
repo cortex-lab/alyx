@@ -59,7 +59,7 @@ class LabMembership(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
     role = models.CharField(max_length=255, blank=True)
-    start_date = models.DateField(blank=True, null=True, auto_now=True)
+    start_date = models.DateField(blank=True, null=True, default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
 
     def __str__(self):

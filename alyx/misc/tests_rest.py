@@ -22,7 +22,7 @@ class APIActionsTests(BaseTests):
         # create a membership
         lm = LabMembership.objects.create(user=self.superuser, lab=self.lab)
         # date should be populated as default
-        self.assertTrue(lm.start_date == datetime.now().date())
+        self.assertTrue(lm.start_date.date() == datetime.now().date())
         self.assertTrue(self.superuser.lab == [self.lab.name])
         # create an expired membership, should change output
         lm = LabMembership.objects.create(user=self.superuser,
