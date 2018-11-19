@@ -356,11 +356,12 @@ class WaterControl(object):
         import matplotlib.dates as mpld
 
         f, ax = plt.subplots(1, 1, figsize=(8, 3))
-        ax.xaxis.set_major_locator(mpld.AutoDateLocator(maxticks=8, interval_multiples=False))
-        ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
 
         # Data arrays.
         if self.weighings:
+            ax.xaxis.set_major_locator(mpld.AutoDateLocator(maxticks=8, interval_multiples=False))
+            ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
+
             self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
             weighing_dates, weights = zip(*self.weighings)
             weighing_dates = np.array(weighing_dates, dtype=datetime)
@@ -369,7 +370,7 @@ class WaterControl(object):
             end = end or weighing_dates.max()
             expected_weights = np.array(
                 [self.expected_weight(date) for date in weighing_dates],
-                dtype=np.float64) if weighing_dates.size else []
+                dtype=np.float64)
 
         # spans is a list of pairs (date, color) where there are changes of background colors.
         for start_wr, end_wr in self.water_restrictions:
@@ -404,7 +405,6 @@ class WaterControl(object):
         ax.set_ylabel('Weight (g)')
         ax.grid(True)
         f.tight_layout()
-
         return return_figure(f)
 
 
