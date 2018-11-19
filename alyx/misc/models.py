@@ -25,6 +25,12 @@ class LabMember(AbstractUser):
     class Meta:
         ordering = ['username']
 
+    @property
+    def lab(self, date=datetime.now().date()):
+        lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
+        lms = lms.exclude(end_date__lt=date)
+        return [str(ln[0]) for ln in lms.values_list('lab__name').distinct()]
+
 
 class Lab(BaseModel):
     name = models.CharField(max_length=255, unique=True)
@@ -35,6 +41,16 @@ class Lab(BaseModel):
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
+    reference_weight_pct = models.FloatField(
+        default=0.,
+        help_text="The minimum mouse weight is a linear combination of "
+        "the reference weight and the zscore weight.")
+
+    zscore_weight_pct = models.FloatField(
+        default=0.,
+        help_text="The minimum mouse weight is a linear combination of "
+        "the reference weight and the zscore weight.")
+
     def __str__(self):
         return self.name
 
@@ -43,7 +59,7 @@ class LabMembership(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
     role = models.CharField(max_length=255, blank=True)
-    start_date = models.DateField(blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True, default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
 
     def __str__(self):

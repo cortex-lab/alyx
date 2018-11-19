@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType)
-from subjects.models import Subject
+from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType, DataFormat
 from misc.models import LabLocation, Lab
 
@@ -80,14 +80,31 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'dataset_type', 'data_url', 'data_format', 'url')
 
 
+class SessionWaterAdminSerializer(serializers.ModelSerializer):
+
+    water_type = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='water_type',
+        queryset=WaterType.objects.all(),
+    )
+
+    class Meta:
+        model = WaterType
+        fields = ('id', 'name', 'water_type', 'water_administered')
+
+
 class SessionListSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
+    wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
+
+    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
+                                           queryset=Project.objects.all(), required=False)
 
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'location', 'parent_session', 'lab')
+        queryset = queryset.select_related(
+            'subject', 'location', 'parent_session', 'lab', 'project')
         queryset = queryset.prefetch_related(
             'users', 'procedures',
             'data_dataset_session_related',
@@ -95,19 +112,25 @@ class SessionListSerializer(BaseActionSerializer):
             'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
+            'wateradmin_session_related',
         )
         return queryset
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab',
-                  'type', 'number', 'parent_session', 'data_dataset_session_related',
-                  'narrative', 'start_time', 'end_time', 'url', 'n_correct_trials', 'n_trials')
+        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
+                  'type', 'number', 'parent_session', 'narrative', 'start_time',
+                  'end_time', 'url', 'n_correct_trials', 'n_trials',
+                  'wateradmin_session_related', 'data_dataset_session_related')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
+    wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
+
+    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
+                                           queryset=Project.objects.all(), required=False)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -117,14 +140,16 @@ class SessionDetailSerializer(BaseActionSerializer):
             'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
+            'wateradmin_session_related',
         )
         return queryset
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab',
+        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
                   'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'data_dataset_session_related', 'parent_session', 'n_correct_trials', 'n_trials')
+                  'parent_session', 'n_correct_trials', 'n_trials',
+                  'wateradmin_session_related', 'data_dataset_session_related')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):

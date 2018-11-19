@@ -1,6 +1,5 @@
 from django.urls import path
-from .plot import weighing_plot
-from .views import WaterHistoryListView
+from .views import WaterHistoryListView, weighing_plot
 
 
 urlpatterns = [

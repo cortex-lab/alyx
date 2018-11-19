@@ -47,8 +47,8 @@ class APISubjectsTests(BaseTests):
         d = response.data
 
         self.assertTrue(set(('nickname', 'id', 'responsible_user', 'death_date', 'line', 'litter',
-                             'sex', 'genotype', 'url', 'water_requirement_total',
-                             'water_requirement_remaining', 'weighings', 'projects',
+                             'sex', 'genotype', 'url', 'expected_water',
+                             'remaining_water', 'weighings', 'projects',
                              'water_administrations')) <= set(d))
 
     def test_list_projects(self):
@@ -114,5 +114,5 @@ class APISubjectsTests(BaseTests):
         self.ar(response)
         d = response.data
 
-        self.assertTrue(set(('nickname', 'water_requirement_total',
-                             'water_requirement_remaining')) <= set(d[0]))
+        self.assertTrue(set(('nickname', 'expected_water',
+                             'remaining_water')) <= set(d[0]))

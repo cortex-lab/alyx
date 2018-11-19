@@ -1,11 +1,11 @@
-from collections import defaultdict
-from datetime import timedelta, datetime
+from datetime import timedelta
 import itertools
 from operator import itemgetter
 
-from django.db.models import Sum, Count, Q, F, ExpressionWrapper, FloatField
-from django.db.models.functions import TruncDate
+from django.db.models import Count, Q, F, ExpressionWrapper, FloatField
+from django.http import HttpResponse
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 
 import django_filters
@@ -14,9 +14,8 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from alyx.base import Bunch
 from subjects.models import Subject
-from . import water
+from .water_control import water_control
 from .models import Session, WaterAdministration, Weighing, WaterType
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
@@ -37,62 +36,28 @@ class WaterHistoryListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(WaterHistoryListView, self).get_context_data(**kwargs)
         subject = Subject.objects.get(pk=self.kwargs['subject_id'])
-        context['title'] = 'Water history of %s' % subject.nickname
+        context['title'] = mark_safe(
+            'Water history of <a href="%s">%s</a>' % (
+                reverse('admin:subjects_subject_change',
+                        args=[subject.id]),
+                subject.nickname))
         context['site_header'] = 'Alyx'
         url = reverse('weighing-plot', kwargs={'subject_id': subject.id})
         context['plot_url'] = url
         return context
 
     def get_queryset(self):
-        """
-        date, weight, 80% weight, weight percentage, water, hydrogel, total, min water, excess
-        """
         subject = Subject.objects.get(pk=self.kwargs['subject_id'])
-        weighings = Weighing.objects.filter(subject=subject,
-                                            date_time__isnull=False).order_by('date_time')
-        if not weighings:
-            return []
-        weighings = list(weighings)
-        start, end = weighings[0].date_time.date(), datetime.now().date()
-        weighings = {w.date_time.date(): w.weight for w in weighings}
+        return water_control(subject).to_jsonable()[::-1]
 
-        # Sum all water administrations for any given day.
-        was = {}
-        was[True] = (WaterAdministration.objects.filter(
-            subject=subject, water_type__name='Hydrogel').
-            annotate(date=TruncDate('date_time')).values('date').
-            annotate(sum=Sum('water_administered')).order_by('date')
-        )
-        was[False] = (WaterAdministration.objects.filter(
-            subject=subject).exclude(water_type__name='Hydrogel').
-            annotate(date=TruncDate('date_time')).values('date').
-            annotate(sum=Sum('water_administered')).order_by('date')
-        )
 
-        # Do it for hydrogel and no hydrogel.
-        for boo in (False, True):
-            was[boo] = {w['date']: w['sum'] for w in was[boo]}
-
-        out = []
-        for date in list(date_range(start, end))[::-1]:
-            b = Bunch()
-            b.date = date
-            rw = water.reference_weighing(subject, date=date)
-            b.required = water.water_requirement_total(subject, date=date)
-            b.weight = weighings.get(date, 0.)
-            b.expected = water.expected_weighing(subject, date=date, rw=rw)
-            b.expected_80 = .8 * b.expected
-            b.percentage = b.weight / b.expected * 100 if b.expected else None
-            b.water = was[False].get(date, 0.)
-            b.hydrogel = was[True].get(date, 0.)
-            b.total = b.water + b.hydrogel
-            b.excess = b.total - b.required
-            if b.weight == 0.:
-                b.weight = None
-            if b.percentage == 0.:
-                b.percentage = None
-            out.append(b)
-        return out
+def weighing_plot(request, subject_id=None):
+    if not request.user.is_authenticated:
+        return HttpResponse('')
+    if subject_id in (None, 'None'):
+        return HttpResponse('')
+    wc = water_control(Subject.objects.get(pk=subject_id))
+    return wc.plot()
 
 
 class SessionFilter(FilterSet):
@@ -251,42 +216,9 @@ class WaterRequirement(APIView):
 
     def get(self, request, format=None, nickname=None):
         assert nickname
-        start_date = request.query_params.get('start_date', None)
-        end_date = request.query_params.get('end_date', None)
+        # start_date = request.query_params.get('start_date', None)
+        # end_date = request.query_params.get('end_date', None)
         subject = Subject.objects.get(nickname=nickname)
-        ws = Weighing.objects.filter(subject__nickname=nickname,
-                                     date_time__date__gte=start_date,
-                                     date_time__date__lte=end_date,
-                                     )
-        was = WaterAdministration.objects.filter(subject__nickname=nickname,
-                                                 date_time__date__gte=start_date,
-                                                 date_time__date__lte=end_date,
-                                                 ).order_by('date_time', 'water_type__name')
-        wl = [{'date': w.date_time.date(),
-               'weight_measured': w.weight or None,
-               } for w in ws]
-        was = [{'date': wa.date_time.date(),
-                'hydrogel': wa.hydrogel,
-                'administered': wa.water_administered or None,
-                } for wa in was]
-        was_out = {}
-        # Group by date and hydrogel and make the sum of the water administered.
-        for wa in was:
-            date = wa['date']
-            if date not in was_out:
-                was_out[date] = defaultdict(float)
-            h = wa['hydrogel']
-            name = 'hydrogel_given' if h else 'water_given'
-            was_out[date][name] += (wa['administered'] or 0.)
-            was_out[date]['date'] = date
-        was_out = [was_out[d] for d in sorted(was_out.keys())]
-        records = _merge_lists_dicts(wl, was_out, 'date')
-        for r in records:
-            r['water_expected'] = water.water_requirement_total(subject, r['date'])
-            r['weight_expected'] = water.expected_weighing(subject, r['date'])
-            if 'water_given' not in r:
-                r['water_given'] = 0.
-            if 'hydrogel_given' not in r:
-                r['hydrogel_given'] = 0.
+        records = subject.water_control.to_jsonable()
         data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
         return Response(data)

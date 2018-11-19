@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -77,24 +79,30 @@ class WaterAdministration(BaseModel):
                                 help_text="The subject to which water was administered")
     date_time = models.DateTimeField(null=True, blank=True,
                                      default=timezone.now)
-    session = models.ForeignKey('Session', null=True, blank=True, on_delete=models.SET_NULL)
+    session = models.ForeignKey('Session', null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name='wateradmin_session_related')
     water_administered = models.FloatField(validators=[MinValueValidator(limit_value=0)],
-                                           help_text="Water administered, in millilitres")
+                                           null=True, blank=True,
+                                           help_text="Water administered, in milliliters")
     water_type = models.ForeignKey(WaterType, default=_default_water_type,
                                    on_delete=models.SET_DEFAULT)
+    adlib = models.BooleanField(default=False)
 
     def expected(self):
-        from .water import water_requirement_total
-        return water_requirement_total(self.subject, date=self.date_time)
+        wc = self.subject.water_control
+        return wc.expected_water(date=self.date_time.date())
 
     @property
     def hydrogel(self):
-        return self.water_type.name == 'Hydrogel'
+        return 'hydrogel' in self.water_type.name.lower()
 
     def __str__(self):
-        return 'Water %.2fg for %s' % (self.water_administered,
-                                       str(self.subject),
-                                       )
+        if self.water_administered:
+            return 'Water %.2fg for %s' % (self.water_administered,
+                                           str(self.subject),
+                                           )
+        else:
+            return 'Water adlib for %s' % str(self.subject)
 
 
 class BaseAction(BaseModel):
@@ -189,10 +197,6 @@ class Surgery(BaseAction):
         return super(Surgery, self).save(*args, **kwargs)
 
 
-class TaskProtocol(BaseAction):
-    name = models.CharField(max_length=255, unique=True)
-
-
 class Session(BaseAction):
     """
     A recording or training session performed on a subject. There is normally only one of
@@ -214,8 +218,7 @@ class Session(BaseAction):
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,
                                  help_text="Optional session number for this level")
-    task_protocol = models.ForeignKey(TaskProtocol, null=True, blank=True,
-                                      on_delete=models.SET_NULL)
+    task_protocol = models.CharField(max_length=1023, blank=True, default='')
     n_trials = models.IntegerField(blank=True, null=True)
     n_correct_trials = models.IntegerField(blank=True, null=True)
 
@@ -236,8 +239,6 @@ class WaterRestriction(BaseAction):
     Water restriction.
     """
 
-    adlib_drink = models.ForeignKey(WaterType, null=True, blank=True, on_delete=models.SET_NULL)
-
     reference_weight = models.FloatField(
         validators=[MinValueValidator(limit_value=0)],
         default=0,
@@ -245,6 +246,14 @@ class WaterRestriction(BaseAction):
 
     def is_active(self):
         return self.start_time is not None and self.end_time is None
+
+    def save(self, *args, **kwargs):
+        if not self.reference_weight and self.subject:
+            w = self.subject.water_control.last_weighing_before(self.start_time.date())
+            self.reference_weight = w[1]
+            # makes sure the closest weighing is one week around, break if not
+            assert(abs(w[0] - self.start_time) < timedelta(days=7))
+        return super(WaterRestriction, self).save(*args, **kwargs)
 
 
 class OtherAction(BaseAction):

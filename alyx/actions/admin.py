@@ -17,7 +17,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
 from data.models import Dataset
 from misc.admin import NoteInline
 from subjects.models import Subject
-from . import water
+from .water_control import WaterControl
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +210,8 @@ class WaterAdministrationForm(forms.ModelForm):
 class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
-    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'user']
-    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type']
+    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user']
+    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type', 'adlib']
     list_display_links = ('water_administered',)
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
@@ -251,29 +251,20 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         form = super(WaterRestrictionAdmin, self).get_form(request, obj, **kwargs)
         subject = getattr(obj, 'subject', None)
         iw = getattr(subject, 'implant_weight', None)
-        date = getattr(obj, 'start_time', None)
-        form.base_fields['implant_weight'].initial = iw
-        form.base_fields['reference_weight'].initial = water.reference_weighing(subject, date=date)
+        rw = subject.water_control.weight() if subject else None
+        form.base_fields['implant_weight'].initial = iw or 0
+        form.base_fields['reference_weight'].initial = rw or 0
         return form
 
     form = WaterRestrictionForm
 
     fields = ['subject', 'implant_weight', 'reference_weight',
-              'start_time', 'end_time', 'users', 'narrative', 'adlib_drink']
-    list_display = ['subject_w', 'start_time_l',
-                    'reference_weight', 'current_weighing', 'percentage_weighing',
-                    'water_requirement_total',
-                    'water_requirement_today',
-                    'water_requirement_remaining',
-                    'is_active',
-                    'adlib_drink',
-                    ]
+              'start_time', 'end_time', 'users', 'narrative']
+    list_display = (
+        'subject_w', 'start_time_l', 'weight', 'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
     list_display_links = ('start_time_l',)
-    readonly_fields = ['current_weighing',
-                       'water_requirement_total', 'water_requirement_remaining',
-                       'is_active',
-                       ]
+    readonly_fields = ('weight',)  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter,
@@ -290,49 +281,69 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         return obj.start_time.date()
     start_time_l.short_description = 'start time'
 
-    def reference_weighing(self, obj):
+    def weight(self, obj):
         if not obj.subject:
             return
-        w = water.reference_weighing(obj.subject)
-        return w.weight if w else obj.reference_weight
-    reference_weighing.short_description = 'ref weigh'
+        return '%.1f' % obj.subject.water_control.weight()
+    weight.short_description = 'weight'
 
-    def current_weighing(self, obj):
+    def weight_ref(self, obj):
         if not obj.subject:
             return
-        w = water.current_weighing(obj.subject)
-        return w.weight if w else None
-    current_weighing.short_description = 'cur weigh'
+        return '%.1f' % obj.subject.water_control.reference_weight()
 
-    def percentage_weighing(self, obj):
+    def expected_weight(self, obj):
         if not obj.subject:
             return
-        return '%.1f%%' % ((self.current_weighing(obj) or 0) /
-                           (self.reference_weighing(obj) or 1) * 100)
-    percentage_weighing.short_description = 'perc'
+        return '%.1f' % obj.subject.water_control.expected_weight()
+    expected_weight.short_description = 'weight exp'
 
-    def water_requirement_total(self, obj):
+    def percentage_weight(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % water.water_requirement_total(obj.subject)
-    water_requirement_total.short_description = 'wat req tot'
+        return '%.1f' % obj.subject.water_control.percentage_weight()
+    percentage_weight.short_description = 'weight pct'
 
-    def water_requirement_today(self, obj):
+    def min_weight(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % (water.water_requirement_total(obj.subject) -
-                         water.water_requirement_remaining(obj.subject))
-    water_requirement_today.short_description = 'wat req tod'
+        return '%.1f' % obj.subject.water_control.min_weight()
+    min_weight.short_description = 'weight min'
 
-    def water_requirement_remaining(self, obj):
+    def given_water_liquid(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % water.water_requirement_remaining(obj.subject)
-    water_requirement_remaining.short_description = 'wat req rem'
+        return '%.2f' % obj.subject.water_control.given_water_liquid()
+    given_water_liquid.short_description = 'water liq'
 
-    def is_active(self, obj):
+    def given_water_hydrogel(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % obj.subject.water_control.given_water_hydrogel()
+    given_water_hydrogel.short_description = 'water hgel'
+
+    def given_water_total(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % obj.subject.water_control.given_water_total()
+    given_water_total.short_description = 'water tot'
+
+    def expected_water(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % obj.subject.water_control.expected_water()
+    expected_water.short_description = 'water exp'
+
+    def excess_water(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % obj.subject.water_control.excess_water()
+    excess_water.short_description = 'water excess'
+
+    def is_water_restricted(self, obj):
         return obj.is_active()
-    is_active.boolean = True
+    is_water_restricted.short_description = 'is active'
+    is_water_restricted.boolean = True
 
 
 class WeighingForm(BaseActionForm):
@@ -398,6 +409,12 @@ class DatasetInline(BaseInlineAdmin):
     fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
 
 
+class WaterAdminInline(BaseInlineAdmin):
+    model = WaterAdministration
+    extra = 1
+    fields = ('name', 'water_administered', 'water_type')
+
+
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'project_list',
                     'dataset_types', 'user_list']
@@ -410,7 +427,7 @@ class SessionAdmin(BaseActionAdmin):
                    ]
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
-    inlines = [DatasetInline, NoteInline]
+    inlines = [WaterAdminInline, DatasetInline, NoteInline]
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(

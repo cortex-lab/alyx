@@ -17,7 +17,6 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
-from actions import water
 from misc.models import LabMember
 from misc.admin import NoteInline
 
@@ -279,13 +278,14 @@ class SubjectAdmin(BaseAdmin):
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
                       'classes': ('collapse',),
                       }),
-        ('WEIGHINGS/WATER', {'fields': ('last_water_restriction',
-                                        'reference_weighing_f',
-                                        'current_weighing_f',
-                                        'weight_zscore_f',
-                                        'implant_weight',
-                                        'water_requirement_total_f',
-                                        'water_requirement_remaining_f',
+        ('WEIGHINGS/WATER', {'fields': ('implant_weight',
+                                        'current_weight',
+                                        'reference_weight',
+                                        'expected_weight',
+                                        'given_water',
+                                        'expected_water',
+                                        'remaining_water',
+                                        'water_history_link',
                                         'weighing_plot',
                                         ),
                              'classes': ('collapse',),
@@ -308,14 +308,7 @@ class SubjectAdmin(BaseAdmin):
     readonly_fields = ('age_days', 'zygosities',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes',
-                       'last_water_restriction',
-                       'reference_weighing_f',
-                       'current_weighing_f',
-                       'weight_zscore_f',
-                       'water_requirement_total_f',
-                       'water_requirement_remaining_f',
-                       'weighing_plot',
-                       )
+                       ) + fieldsets[3][1]['fields'][1:]  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
     list_filter = [ResponsibleUserListFilter,
@@ -365,36 +358,38 @@ class SubjectAdmin(BaseAdmin):
     def zygosities(self, obj):
         return '; '.join(obj.zygosity_strings())
 
-    def reference_weighing_f(self, obj):
-        res = water.reference_weighing(obj)
-        return '%.2f' % res.weight if res else '0'
-    reference_weighing_f.short_description = 'reference weighing'
+    def reference_weight(self, obj):
+        res = obj.water_control.reference_weighing_at()
+        return '%.2f' % res[1] if res else '0'
 
-    def current_weighing_f(self, obj):
-        res = water.current_weighing(obj)
-        return '%.2f' % res.weight if res else '0'
-    current_weighing_f.short_description = 'current weighing'
+    def current_weight(self, obj):
+        res = obj.water_control.current_weighing()
+        return '%.2f' % res[1] if res else '0'
 
-    def weight_zscore_f(self, obj):
-        res = water.weight_zscore(obj)
+    def expected_weight(self, obj):
+        res = obj.water_control.expected_weight()
         return '%.2f' % res if res else '0'
-    weight_zscore_f.short_description = 'weight z-score'
 
-    def water_requirement_total_f(self, obj):
-        return '%.2f' % water.water_requirement_total(obj)
-    water_requirement_total_f.short_description = 'water requirement total'
+    def expected_water(self, obj):
+        return '%.2f' % obj.water_control.expected_water()
 
-    def water_requirement_remaining_f(self, obj):
-        return '%.2f' % water.water_requirement_remaining(obj)
-    water_requirement_remaining_f.short_description = 'water requirement remaining'
+    def given_water(self, obj):
+        return '%.2f' % obj.water_control.given_water()
+
+    def remaining_water(self, obj):
+        return '%.2f' % obj.water_control.remaining_water()
 
     def weighing_plot(self, obj):
         if not obj or not obj.id:
             return
         url = reverse('weighing-plot', kwargs={'subject_id': obj.id})
-        url_h = reverse('water-history', kwargs={'subject_id': obj.id})
-        return format_html('<img src="{url}" /><br /><a href="{url_h}">Water history</a>',
-                           url=url, url_h=url_h)
+        return format_html('<img src="{url}" />', url=url)
+
+    def water_history_link(self, obj):
+        if not obj or not obj.id:
+            return
+        url = reverse('water-history', kwargs={'subject_id': obj.id})
+        return format_html('<a href="{url}">Go to the water history page</a>', url=url)
 
     def cage_changes(self, obj):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'cage')))

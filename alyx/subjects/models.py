@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.models import WaterRestriction
-from actions.water import last_water_restriction, today
+from actions.water_control import water_control
 from misc.models import Lab
 
 logger = logging.getLogger(__name__)
@@ -214,6 +214,7 @@ class Subject(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super(Subject, self).__init__(*args, **kwargs)
+        self._water_control = None
         # Initialize the history of some fields.
         init_old_fields(self, self._fields_history + self._track_field_changes)
 
@@ -247,8 +248,11 @@ class Subject(BaseModel):
         if self.litter:
             return self.litter.breeding_pair.father
 
-    def last_water_restriction(self):
-        return last_water_restriction(self, today())
+    @property
+    def water_control(self):
+        if self._water_control is None:
+            self._water_control = water_control(self)
+        return self._water_control
 
     def zygosity_strings(self):
         alleles = self.line.alleles.all() if self.line else Allele.objects.all()
