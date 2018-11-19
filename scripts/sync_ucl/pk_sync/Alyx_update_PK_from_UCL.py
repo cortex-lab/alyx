@@ -1,4 +1,3 @@
-from subjects.models import Sequence
 from django.core.management import call_command
 from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType, Dataset
 import json
@@ -14,19 +13,18 @@ Dataset.objects.exclude(dataset_type__name__contains='_ibl_').exclude(
     dataset_type__name__contains='_rigbox_').delete()
 DatasetType.objects.exclude(name__contains='_ibl_').exclude(name__contains='_rigbox_').delete()
 
+print('dump full IBL')
+with open(FILE_IBL_JSON_DUMP_INP, 'w') as out:  # Point stdout at a file for dumping data to.
+    call_command('dumpdata', format='json', indent=1, stdout=out, database='default')
+
 excludes = ['admin.logentry',
             'authtoken.token',
             'contenttypes',
             'auth.permission',
             'reversion.version',
-            'reversion.revision',
-            'sessions.session']
-
-print('dump full IBL')
-with open(FILE_IBL_JSON_DUMP_INP, 'w') as out:  # Point stdout at a file for dumping data to.
-    call_command('dumpdata', format='json', indent=1, stdout=out, database='default',
-                 exclude=excludes)
-excludes.append('auth.group')
+            'reversion.revision',0
+            'sessions.session',
+            'auth.group']
 
 print('dump full Cortexlab')
 with open(FILE_UCL_JSON_DUMP_INP, 'w') as out:  # Point stdout at a file for dumping data to.
