@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
 from misc.models import Lab
+from actions.models import Session, WaterType
 
 
 class APIActionsTests(BaseTests):
@@ -32,13 +33,18 @@ class APIActionsTests(BaseTests):
 
     def test_create_water_administration(self):
         url = reverse('water-administration-create')
-        data = {'subject': self.subject, 'water_administered': 1.23}
+        ses_uuid = Session.objects.last().id
+        water_type = WaterType.objects.last().name
+        data = {'subject': self.subject, 'water_administered': 1.23,
+                'session': ses_uuid, 'water_type': water_type}
         response = self.client.post(url, data)
         self.ar(response, 201)
         d = response.data
         self.assertTrue(d['date_time'])
         self.assertEqual(d['subject'], self.subject.nickname)
         self.assertEqual(d['water_administered'], 1.23)
+        self.assertEqual(d['water_type'], water_type)
+        self.assertEqual(d['session'], ses_uuid)
 
     def test_list_water_administration_1(self):
         url = reverse('water-administration-create')

@@ -212,9 +212,16 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         required=False,
     )
 
+    session = serializers.SlugRelatedField(
+        read_only=False,
+        required=False,
+        slug_field='id',
+        queryset=Session.objects.all(),
+    )
+
     @staticmethod
     def setup_eager_loading(queryset):
-        return queryset.select_related('subject', 'user')
+        return queryset.select_related('subject', 'user', 'session')
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -224,5 +231,6 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
     class Meta:
         model = WaterAdministration
-        fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url')
+        fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url',
+                  'session')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}

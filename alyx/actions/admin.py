@@ -210,14 +210,16 @@ class WaterAdministrationForm(forms.ModelForm):
 class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
-    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user']
-    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type', 'adlib']
-    list_display_links = ('water_administered',)
+    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user',
+              'session']
+    list_display = ['subject_l', 'water_administered', 'user', 'date_time', 'water_type',
+                    'adlib', 'session']
+    list_display_links = ('water_administered', 'session')
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
-    list_filter = [ResponsibleUserListFilter,
-                   ('subject', RelatedDropdownFilter)]
+    list_filter = [ResponsibleUserListFilter, ('subject', RelatedDropdownFilter)]
+    readonly_fields = ['session']
 
 
 class WaterRestrictionForm(forms.ModelForm):
