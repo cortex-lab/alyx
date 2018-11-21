@@ -1,5 +1,6 @@
 from django.core.management import call_command
 from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType, Dataset
+from subjects.models import Sequence
 import json
 
 
@@ -22,7 +23,7 @@ excludes = ['admin.logentry',
             'contenttypes',
             'auth.permission',
             'reversion.version',
-            'reversion.revision',0
+            'reversion.revision',
             'sessions.session',
             'auth.group']
 

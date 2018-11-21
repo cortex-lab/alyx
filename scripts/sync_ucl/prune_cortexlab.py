@@ -38,7 +38,8 @@ Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete
 Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 
 # only imports users that are relevant to IBL
-users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier', 'Karolina_Socha']
+users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
+                   'Karolina_Socha', 'Hamish', 'laura']
 LabMember.objects.using('cortexlab').exclude(username__in=['']).delete()
 
 

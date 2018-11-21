@@ -7,3 +7,4 @@
 ./manage.py dumpdata misc.lab --indent 1 -o ../data/init-fixtures/misc.lab.json
 ./manage.py dumpdata subjects.project --indent 1 -o ../data/init-fixtures/subjects.project.json
 ./manage.py dumpdata subjects.source --indent 1 -o ../data/init-fixtures/subjects.source.json
+./manage.py dumpdata actions.watertype --indent 1 -o ../data/init-fixtures/actions.watertype.json
