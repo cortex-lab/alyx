@@ -20,6 +20,7 @@ class APIActionsTests(BaseTests):
         # Set an implant weight.
         self.subject.implant_weight = 4.56
         self.subject.save()
+        self.test_protocol = 'test_passoire'
 
     def test_create_weighing(self):
         url = reverse('weighing-create')
@@ -115,11 +116,15 @@ class APIActionsTests(BaseTests):
                     'parent_session': '',
                     'lab': self.lab01,
                     'n_trials': 100,
-                    'n_correct_trials': 75}
+                    'n_correct_trials': 75,
+                    'task_protocol': self.test_protocol}
         # Test the session creation
         r = self.client.post(reverse('session-list'), ses_dict)
         self.ar(r, 201)
         s1 = r.data
+        # makes sure the task_protocol is returned
+        self.assertEqual(self.test_protocol, s1['task_protocol'])
+        # create another session for further testing
         ses_dict['start_time'] = '2018-07-11T12:34:56'
         ses_dict['end_time'] = '2018-07-11T12:34:57'
         ses_dict['users'] = [self.superuser, self.superuser2]

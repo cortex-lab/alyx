@@ -422,7 +422,8 @@ class SessionAdmin(BaseActionAdmin):
                     'dataset_types', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
-    fields = BaseActionAdmin.fields + ['project', 'type', 'number', 'n_correct_trials', 'n_trials']
+    fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
+                                       'n_correct_trials', 'n_trials']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
@@ -430,6 +431,7 @@ class SessionAdmin(BaseActionAdmin):
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
+    readonly_fields = ['task_protocol']
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(
