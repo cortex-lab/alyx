@@ -9,6 +9,13 @@ from alyx.base import BaseModel, modify_fields
 from misc.models import Lab, LabLocation
 
 
+def _default_water_type():
+    s = WaterType.objects.filter(name='Water')
+    if s:
+        return s[0].pk
+    return None
+
+
 @modify_fields(name={
     'blank': False,
 })
@@ -59,13 +66,6 @@ class WaterType(BaseModel):
         return self.name
 
 
-def _default_water_type():
-    s = WaterType.objects.filter(name='Water')
-    if s:
-        return s[0].pk
-    return None
-
-
 class WaterAdministration(BaseModel):
     """
     For keeping track of water for subjects not on free water.
@@ -84,9 +84,18 @@ class WaterAdministration(BaseModel):
     water_administered = models.FloatField(validators=[MinValueValidator(limit_value=0)],
                                            null=True, blank=True,
                                            help_text="Water administered, in milliliters")
-    water_type = models.ForeignKey(WaterType, default=_default_water_type,
-                                   on_delete=models.SET_DEFAULT)
+    water_type = models.ForeignKey(WaterType, null=True, blank=True, on_delete=models.SET_NULL)
     adlib = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.water_type:
+            wr = WaterRestriction.objects.filter(subject=self.subject).\
+                order_by('start_time').last()
+            if wr:
+                self.water_type = wr.water_type
+            else:
+                self.water_type = WaterType.objects.get(pk=_default_water_type())
+        return super(WaterAdministration, self).save(*args, **kwargs)
 
     def expected(self):
         wc = self.subject.water_control
@@ -243,6 +252,9 @@ class WaterRestriction(BaseAction):
         validators=[MinValueValidator(limit_value=0)],
         default=0,
         help_text="Weight in grams")
+    water_type = models.ForeignKey(WaterType, null=True, blank=True,
+                                   default=_default_water_type, on_delete=models.SET_NULL,
+                                   help_text='Default Water Type when creating water admin')
 
     def is_active(self):
         return self.start_time is not None and self.end_time is None
