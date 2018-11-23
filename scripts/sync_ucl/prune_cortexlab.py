@@ -2,14 +2,16 @@
 from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
-from actions.models import Session
+from actions.models import Session, Surgery
 from misc.models import Lab, LabMember
 from data.models import Dataset, DatasetType
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
-# remove all the database that is not related to IBL
-Subject.objects.using('cortexlab').exclude(projects__name__icontains='ibl').delete()
+# remove all subjects that never had anything to do with IBL
+ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
+sub_ibl = ses.values_list('subject', flat=True).distinct()
+Subject.objects.using('cortexlab').exclude(pk__in=sub_ibl).delete()
 
 # then remove base Sessions
 Session.objects.using('cortexlab').filter(type='Base').delete()
@@ -39,9 +41,21 @@ Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 
 # only imports users that are relevant to IBL
 users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
-                   'Karolina_Socha', 'Hamish', 'laura']
-LabMember.objects.using('cortexlab').exclude(username__in=['']).delete()
+                   'Karolina_Socha', 'Hamish', 'laura', 'niccolo']
+users_to_leave = LabMember.objects.using('cortexlab').exclude(username__in=users_to_import)
+users_to_keep = Dataset.objects.using('cortexlab').values_list('created_by', flat=True).distinct()
+users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
+users_to_keep = Session.objects.using('cortexlab').values_list('users', flat=True)
+users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
+users_to_keep = Subject.objects.using('cortexlab').values_list('responsible_user', flat=True)
+users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
+users_to_keep = Surgery.objects.using('cortexlab').values_list('users', flat=True)
+users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
 
+# for usr in users_to_leave.values_list('username', flat=True):
+#     print(usr)
+
+users_to_leave.delete()
 
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
