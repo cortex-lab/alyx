@@ -23,6 +23,11 @@ SubjectRequest.objects.using('cortexlab').all().delete()
 pk_proj_ibl = Project.objects.get(name='ibl_cortexlab').pk
 Session.objects.using('cortexlab').exclude(project=pk_proj_ibl).delete()
 
+# also if cortexlab sessions have been removed on the server, remove them
+ses_ucl = Session.objects.using('cortexlab').all().values_list('pk', flat=True)
+ses_loc2remove = Session.objects.filter(project=pk_proj_ibl).exclude(pk__in=list(ses_ucl))
+ses_loc2remove.delete()
+
 # the sessions should also have the cortexlab lab field properly labeled before import
 if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
     lab_dict = {'pk': '4027da48-7be3-43ec-a222-f75dffe36872',
@@ -38,6 +43,7 @@ ses.update(lab=lab)
 dtypes = [dt[0] for dt in DatasetType.objects.all().values_list('name')]
 Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
+Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
 
 # only imports users that are relevant to IBL
 users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
@@ -63,6 +69,7 @@ users_to_leave.delete()
 init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
                  'data.datasettype',
+                 'data.filerecord',
                  'misc.lab',
                  'subjects.project',
                  #  'actions.proceduretype',
