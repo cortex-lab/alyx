@@ -69,7 +69,6 @@ users_to_leave.delete()
 init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
                  'data.datasettype',
-                 'data.filerecord',
                  'misc.lab',
                  'subjects.project',
                  #  'actions.proceduretype',

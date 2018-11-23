@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ALYX_PATH="/var/www/alyx-dev/"
+ALYX_PATH="/var/www/alyx-main/"
 
 set -e
 echo "Downloading the cortexlab database backup"

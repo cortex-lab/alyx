@@ -1,6 +1,5 @@
 from django.core.management import call_command
-from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType, Dataset,\
-    FileRecord
+from data.models import DataRepositoryType, DataRepository, DataFormat, DatasetType, Dataset
 from subjects.models import Sequence, Project
 from actions.models import Session
 import json

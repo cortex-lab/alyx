@@ -1,7 +1,7 @@
 #!/bin/bash
 
-IBL_DATABASE="ibl_dev"
-ALYX_PATH="/var/www/alyx-dev/"
+IBL_DATABASE="ibl"
+ALYX_PATH="/var/www/alyx-main/"
 
 set -e
 echo "Downloading the cortexlab database backup"
