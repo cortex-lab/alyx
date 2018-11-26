@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='waterrestriction',
             name='water_type',
-            field=models.ForeignKey(blank=True, default=actions.models._default_water_type, null=True, on_delete=django.db.models.deletion.SET_NULL, to='actions.WaterType'),
+            field=models.ForeignKey(blank=True, default=actions.models._default_water_type, help_text='Default Water Type when creating water admin', null=True, on_delete=django.db.models.deletion.SET_NULL, to='actions.WaterType'),
         ),
         migrations.AlterField(
             model_name='wateradministration',
