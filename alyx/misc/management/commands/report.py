@@ -137,7 +137,7 @@ class Command(BaseCommand):
             way = wc.given_water_total(date=last_date)
             waym = wc.expected_water(date=last_date)
             waye = wc.excess_water(date=last_date)
-            wr = wc.remaining_water(date=last_date)
+            wr = wc.remaining_water()  # remaining water TODAY
             s = '''
                 * {sn} since {sd}.
                 Weight {n} day(s) ago: {wy:.1f}g (expected {wye:.1f}g, {wyep:.1f}%).

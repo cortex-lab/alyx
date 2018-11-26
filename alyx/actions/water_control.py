@@ -413,7 +413,6 @@ def water_control(subject):
     assert subject is not None
     lab = subject.lab
     if lab is None:
-        logger.warning("The subject lab is not set")
         rw_pct = zw_pct = 0
     else:
         rw_pct = lab.reference_weight_pct

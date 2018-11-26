@@ -8,6 +8,12 @@ from django.contrib.auth import get_user_model
 from data.models import DataRepository
 from misc.models import Lab
 
+SUBJECT_LIST_SERIALIZER_FIELDS = ('nickname', 'url', 'id', 'responsible_user', 'birth_date',
+                                  'age_weeks', 'death_date', 'species', 'sex', 'litter', 'strain',
+                                  'source', 'line', 'projects', 'lab', 'genotype', 'description',
+                                  'alive', 'reference_weight', 'last_water_restriction',
+                                  'expected_water', 'remaining_water')
+
 
 class _WaterRestrictionBaseSerializer(serializers.HyperlinkedModelSerializer):
     def get_expected_water(self, obj):
@@ -62,7 +68,7 @@ class ZygosityListSerializer(serializers.ModelSerializer):
         fields = ('allele', 'zygosity')
 
 
-class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
+class SubjectListSerializer(_WaterRestrictionBaseSerializer):
     genotype = serializers.ListField(
         source='zygosity_strings',
         required=False)
@@ -108,6 +114,13 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         required=False,)
 
+    source = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Source.objects.all(),
+        allow_null=True,
+        required=False)
+
     lab = serializers.SlugRelatedField(
         read_only=False,
         slug_field='name',
@@ -125,9 +138,7 @@ class SubjectListSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Subject
-        fields = ('nickname', 'id', 'url', 'responsible_user', 'birth_date', 'death_date',
-                  'species', 'sex', 'litter', 'strain', 'line', 'description', 'lab',
-                  'genotype', 'alive', 'projects')
+        fields = SUBJECT_LIST_SERIALIZER_FIELDS
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 
@@ -137,33 +148,10 @@ class SubjectDetailSerializer(SubjectListSerializer, _WaterRestrictionBaseSerial
     water_administrations = WaterAdministrationDetailSerializer(many=True, read_only=True)
     genotype = ZygosityListSerializer(source='zygosity_set', many=True, read_only=True)
 
-    projects = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='name',
-        queryset=Project.objects.all(),
-        many=True,
-        required=False,
-    )
-
-    source = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='name',
-        queryset=Source.objects.all(),
-        allow_null=True,
-        required=False)
-
     class Meta:
         model = Subject
-        fields = ('nickname', 'url', 'id', 'responsible_user', 'birth_date', 'age_weeks',
-                  'death_date', 'species', 'sex', 'litter', 'strain', 'source', 'line',
-                  'projects', 'lab', 'genotype', 'description',
-                  'weighings',
-                  'water_administrations',
-                  'reference_weight',
-                  'last_water_restriction',
-                  'expected_water',
-                  'remaining_water',
-                  )
+        fields = list(SUBJECT_LIST_SERIALIZER_FIELDS)
+        fields.extend(['weighings', 'water_administrations'])
         lookup_field = 'nickname'
         extra_kwargs = {'url': {'view_name': 'subject-detail', 'lookup_field': 'nickname'}}
 

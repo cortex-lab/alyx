@@ -22,13 +22,23 @@ class WaterControlTests(TestCase):
             WaterAdministration.objects.create(
                 water_administered=0.98,
                 subject=self.sub,
-                water_type=WaterType.objects.get(name='Water'),
                 date_time=date_w)
+        # first test assert that water administrations previously created have the correct default
+        wa = WaterAdministration.objects.filter(subject=self.sub)
+        self.assertTrue(wa.values_list('water_type__name').distinct()[0][0] == 'Water')
 
     def test_00_create_first_water_restriction(self):
         # Create an initial Water Restriction
         start_wr = self.start_date + datetime.timedelta(days=5)
-        WaterRestriction.objects.create(subject=self.sub, start_time=start_wr)
+        water_type = WaterType.objects.get(name='CA 5% Hydrogel')
+        WaterRestriction.objects.create(subject=self.sub, start_time=start_wr,
+                                        water_type=water_type)
+        # from now on new water administrations should have water_type as default
+        wa = WaterAdministration.objects.create(
+            water_administered=1.02,
+            subject=self.sub,
+            date_time=datetime.datetime.now())
+        self.assertEqual(water_type, wa.water_type)
 
     def test_water_administration_expected(self):
         wc = self.sub.water_control

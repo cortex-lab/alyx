@@ -119,7 +119,7 @@ class SessionListSerializer(BaseActionSerializer):
     class Meta:
         model = Session
         fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
-                  'type', 'number', 'parent_session', 'narrative', 'start_time',
+                  'type', 'task_protocol', 'number', 'parent_session', 'narrative', 'start_time',
                   'end_time', 'url', 'n_correct_trials', 'n_trials',
                   'wateradmin_session_related', 'data_dataset_session_related')
 
@@ -146,8 +146,8 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
-                  'narrative', 'start_time', 'end_time', 'url', 'json',
+        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
+                  'task_protocol', 'narrative', 'start_time', 'end_time', 'url', 'json',
                   'parent_session', 'n_correct_trials', 'n_trials',
                   'wateradmin_session_related', 'data_dataset_session_related')
 
@@ -212,9 +212,16 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         required=False,
     )
 
+    session = serializers.SlugRelatedField(
+        read_only=False,
+        required=False,
+        slug_field='id',
+        queryset=Session.objects.all(),
+    )
+
     @staticmethod
     def setup_eager_loading(queryset):
-        return queryset.select_related('subject', 'user')
+        return queryset.select_related('subject', 'user', 'session')
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -224,5 +231,6 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
     class Meta:
         model = WaterAdministration
-        fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url')
+        fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url',
+                  'session')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}

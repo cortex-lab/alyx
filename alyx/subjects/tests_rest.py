@@ -2,12 +2,16 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from alyx.base import BaseTests
 from actions.models import WaterAdministration, Weighing
+from subjects.models import Subject, Project
+from misc.models import Lab
 
 
 class APISubjectsTests(BaseTests):
     def setUp(self):
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
+        self.lab = Lab.objects.create(name='awesome_lab')
+        self.project = Project.objects.create(name='my_proj')
 
     def test_list_subjects(self):
         url = reverse('subject-list')
@@ -57,7 +61,7 @@ class APISubjectsTests(BaseTests):
         response = self.client.get(url)
         self.ar(response)
         d = response.data
-        self.assertEqual(d[0]['name'], 'test_project')
+        self.assertTrue('test_project' in [p['name'] for p in d])
 
     def test_subject_water_administration(self):
         subject = WaterAdministration.objects.first().subject
@@ -83,8 +87,30 @@ class APISubjectsTests(BaseTests):
         w = set(d['weighings'][0])
         self.assertTrue(set(('date_time', 'weight', 'url')) <= w)
 
-    def test_subject_filter_water_restricted(self):
-        # first makes sure the endpoint only returns alive subjects
+    def test_subject_filters_lab(self):
+        # test subjects lab filter
+        sub = Subject.objects.first()
+        sub.lab = self.lab
+        sub.save()
+        url = reverse('subject-list') + '?lab=' + self.lab.name
+        response = self.client.get(url)
+        self.ar(response)
+        self.assertTrue(len(response.data) == 1)
+        self.assertEqual(response.data[0]['id'], str(sub.pk))
+
+    def test_subject_filters_project(self):
+        # test subjects lab filter
+        sub = Subject.objects.all()[1]
+        sub.projects.set([self.project])
+        sub.save()
+        url = reverse('subject-list') + '?project=' + self.project.name
+        response = self.client.get(url)
+        self.ar(response)
+        self.assertTrue(len(response.data) == 1)
+        self.assertEqual(response.data[0]['id'], str(sub.pk))
+
+    def test_subject_filters_water_restriction(self):
+        #  makes sure the endpoint only returns alive subjects
         url = reverse('subject-list') + '?water_restricted=True'
         response = self.client.get(url)
         self.ar(response)
@@ -113,6 +139,5 @@ class APISubjectsTests(BaseTests):
         response = self.client.get(url)
         self.ar(response)
         d = response.data
-
         self.assertTrue(set(('nickname', 'expected_water',
                              'remaining_water')) <= set(d[0]))

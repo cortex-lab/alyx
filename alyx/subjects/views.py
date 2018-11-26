@@ -15,6 +15,8 @@ class SubjectFilter(FilterSet):
     responsible_user = django_filters.CharFilter('responsible_user__username')
     stock = django_filters.BooleanFilter('responsible_user', method='filter_stock')
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
+    lab = django_filters.CharFilter('lab__name')
+    project = django_filters.CharFilter('projects__name')
 
     def filter_stock(self, queryset, name, value):
         if value is True:

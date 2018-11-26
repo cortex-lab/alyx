@@ -210,14 +210,16 @@ class WaterAdministrationForm(forms.ModelForm):
 class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
-    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user']
-    list_display = ['subject_l', 'water_administered', 'date_time', 'water_type', 'adlib']
-    list_display_links = ('water_administered',)
+    fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user',
+              'session']
+    list_display = ['subject_l', 'water_administered', 'user', 'date_time', 'water_type',
+                    'adlib', 'session']
+    list_display_links = ('water_administered', 'session')
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
-    list_filter = [ResponsibleUserListFilter,
-                   ('subject', RelatedDropdownFilter)]
+    list_filter = [ResponsibleUserListFilter, ('subject', RelatedDropdownFilter)]
+    readonly_fields = ['session']
 
 
 class WaterRestrictionForm(forms.ModelForm):
@@ -420,7 +422,8 @@ class SessionAdmin(BaseActionAdmin):
                     'dataset_types', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
-    fields = BaseActionAdmin.fields + ['project', 'type', 'number', 'n_correct_trials', 'n_trials']
+    fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
+                                       'n_correct_trials', 'n_trials']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
@@ -428,6 +431,7 @@ class SessionAdmin(BaseActionAdmin):
     search_fields = ('subject__nickname',)
     ordering = ('-start_time',)
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
+    readonly_fields = ['task_protocol']
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(
