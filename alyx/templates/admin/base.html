@@ -7,14 +7,25 @@
 {% endblock %}
 
 {% block extrastyle %}
-<!-- CHANGE HEADER COLOR ON ALYX-DEV -->
-{% if request.META.HTTP_HOST == "alyx-dev.cortexlab.net" %}
+<!-- CHANGE HEADER COLOR ON LOCALHOST -->
+{% if "localhost" in request.META.HTTP_HOST %}
 <style>
 div#header {
-    background-color: #E46A60;
+    background-color: #403738;
 }
 div.breadcrumbs {
-    background-color: #FF9D95;
+    background-color: #94858b;
+}
+</style>
+{% endif %}
+<!-- CHANGE HEADER COLOR ON ALYX-DEV -->
+{% if "dev" in request.META.HTTP_HOST %}
+<style>
+div#header {
+background-color: #E46A60;
+}
+div.breadcrumbs {
+background-color: #FF9D95;
 }
 </style>
 {% endif %}
