@@ -29,7 +29,7 @@ def today():
 
 
 def date(s):
-    return datetime.strptime(s, '%Y-%M-%d').date()
+    return datetime.strptime(s, '%Y-%m-%d').date()
 
 
 def date_range(start_date, end_date):
@@ -336,15 +336,17 @@ class WaterControl(object):
                 'is_water_restricted',
                 )
 
-    def to_jsonable(self):
+    def to_jsonable(self, start_date=None, end_date=None):
+        start_date = date(start_date) if start_date else self.first_date()
+        end_date = date(end_date) if end_date else today()
         out = []
-        for date in date_range(self.first_date(), today()):
+        for d in date_range(start_date, end_date):
             obj = {}
             for col in self._columns:
                 if col == 'date':
-                    obj['date'] = date
+                    obj['date'] = d
                 else:
-                    obj[col] = getattr(self, col)(date=date)
+                    obj[col] = getattr(self, col)(date=d)
             out.append(obj)
         # return json.dumps(out, cls=DjangoJSONEncoder)
         return out
