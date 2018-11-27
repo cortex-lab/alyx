@@ -5,7 +5,7 @@ from django.utils.timezone import now
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
 from misc.models import Lab
-from actions.models import Session, WaterType
+from actions.models import Session, WaterType, WaterAdministration
 
 
 class APIActionsTests(BaseTests):
@@ -151,3 +151,10 @@ class APIActionsTests(BaseTests):
         r = self.client.get(reverse('session-list') + '?performance_lte=50')
         self.assertEqual(r.data[0]['url'], s2['url'])
         self.assertTrue(len(r.data) == 1)
+        # test the Session serializer wateradmin related field
+        ses = Session.objects.get(subject=self.subject, users=self.superuser,
+                                  project=self.projectX, start_time__date='2018-07-09')
+        WaterAdministration.objects.create(subject=self.subject, session=ses, water_administered=1)
+        r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
+        self.ar(r)
+        self.assertEqual(r.data[0]['wateradmin_session_related'][0]['water_administered'], 1)

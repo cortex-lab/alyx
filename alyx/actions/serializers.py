@@ -83,12 +83,12 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
     water_type = serializers.SlugRelatedField(
-        read_only=False, required=False, slug_field='water_type',
+        read_only=False, required=False, slug_field='name',
         queryset=WaterType.objects.all(),
     )
 
     class Meta:
-        model = WaterType
+        model = WaterAdministration
         fields = ('id', 'name', 'water_type', 'water_administered')
 
 
