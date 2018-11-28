@@ -66,7 +66,7 @@ class APIActionsTests(BaseTests):
         self.ar(response)
         d = response.data[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
-                             'water_administered', 'water_type')) <= set(d))
+                             'water_administered', 'water_type', 'adlib')) <= set(d))
 
     def test_list_weighing_1(self):
         url = reverse('weighing-create')
