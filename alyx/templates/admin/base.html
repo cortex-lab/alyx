@@ -2,6 +2,11 @@
 {% load i18n admin_urls static admin_list %}
 
 {% block userlinks %}
+    go to
+    <a href="/admin/subjects">subjects</a> /
+    <a href="/admin/actions">actions</a> /
+    <a href="/admin/data">data</a> /
+    <a href="/admin/misc">misc</a> /
     {{ block.super }} /
     <a href="https://github.com/cortex-lab/alyx/issues">{% trans 'Report a problem' %}</a>
 {% endblock %}
