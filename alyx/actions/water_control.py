@@ -329,7 +329,7 @@ class WaterControl(object):
         """Amount of water that was given in excess at the specified date."""
         return -self.remaining_water(date=date)
 
-    _columns = ('date', 'weighing_at',
+    _columns = ('date', 'weight', 'weighing_at',
                 'reference_weight',
                 'expected_weight',
                 'min_weight',
@@ -408,7 +408,8 @@ class WaterControl(object):
 
         # Axes and legends.
         ax.set_xlim(start, end)
-        eq = 'weight > %.1f*ref + %.1f*zscore' % (self.reference_weight_pct, self.zscore_weight_pct)
+        eq = 'weight > %.1f*ref + %.1f*zscore' % (
+            self.reference_weight_pct, self.zscore_weight_pct)
         ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
