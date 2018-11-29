@@ -408,9 +408,11 @@ class WaterControl(object):
 
         # Axes and legends.
         ax.set_xlim(start, end)
-        ax.set_title("Weighings for %s" % self.nickname)
+        eq = 'weight > %.1f*ref + %.1f*zscore' % (self.reference_weight_pct, self.zscore_weight_pct)
+        ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
+        ax.legend(['%d%%' % (100 * t[0]) for t in self.thresholds], loc=2)
         ax.grid(True)
         f.tight_layout()
         return return_figure(f)
@@ -432,8 +434,8 @@ def water_control(subject):
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
     )
-    wc.add_threshold(percentage=.8, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
-    wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699')
+    wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
+    wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
 
     # Water restrictions.
     wrs = am.WaterRestriction.objects.filter(subject=subject).order_by('start_time')
