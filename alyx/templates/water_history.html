@@ -7,7 +7,7 @@
 <div>
 <img src="{{ plot_url }}" />
 </div>
-    
+
 <table>
 <thead>
     <tr>
@@ -28,7 +28,7 @@
 {% for obj in object_list %}
     <tr>
         <td>{{ obj.date | date }}</td>
-        <td>{{ obj.weight | floatformat:1 }}</td>
+        <td>{{ obj.weighing_at | floatformat:1 }}</td>
         <td>{{ obj.reference_weight | floatformat:1 }}</td>
         <td>{{ obj.expected_weight | floatformat:1 }}</td>
         <td>{{ obj.percentage_weight | floatformat:1 }}</td>

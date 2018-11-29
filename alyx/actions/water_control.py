@@ -235,6 +235,12 @@ class WaterControl(object):
         if weighings_before:
             return weighings_before[-1]
 
+    def weighing_at(self, date=None):
+        """Return the weight of the subject at the specified date."""
+        date = date or today()
+        weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date]
+        return weighings_at[0][1] if weighings_at else None
+
     def current_weighing(self):
         """Return the last known weight."""
         return self.last_weighing_before(date=today())
@@ -323,7 +329,7 @@ class WaterControl(object):
         """Amount of water that was given in excess at the specified date."""
         return -self.remaining_water(date=date)
 
-    _columns = ('date', 'weight',
+    _columns = ('date', 'weighing_at',
                 'reference_weight',
                 'expected_weight',
                 'min_weight',
