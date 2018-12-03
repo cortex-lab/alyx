@@ -232,5 +232,5 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
     class Meta:
         model = WaterAdministration
         fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url',
-                  'session')
+                  'session', 'adlib')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}

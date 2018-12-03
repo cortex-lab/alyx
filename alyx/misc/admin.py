@@ -9,7 +9,33 @@ from .models import Note, Lab, LabMembership, LabLocation
 from alyx.base import BaseAdmin
 
 
+class LabForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(LabForm, self).__init__(*args, **kwargs)
+        self.fields['reference_weight_pct'].help_text =\
+            'Threshold ratio triggers a warning using the Reference Weight method (0-1)'
+        self.fields['reference_weight_pct'].label = 'Reference Weight Ratio'
+        self.fields['zscore_weight_pct'].help_text =\
+            'Threshold ratio triggers a warning is raised using the Z-Score method (0-1)'
+        self.fields['zscore_weight_pct'].label = 'Reference Weight Ratio'
+
+    def clean_reference_weight_pct(self):
+        ref = self.cleaned_data['reference_weight_pct']
+        ref = max(ref, 0)
+        if ref > 1:
+            ref = ref / 100
+        return ref
+
+    def clean_zscore_weight_pct(self):
+        ref = self.cleaned_data['zscore_weight_pct']
+        ref = max(ref, 0)
+        if ref > 1:
+            ref = ref / 100
+        return ref
+
+
 class LabAdmin(BaseAdmin):
+    form = LabForm
     fields = ['name', 'institution', 'address', 'timezone',
               'reference_weight_pct', 'zscore_weight_pct']
     list_display = fields

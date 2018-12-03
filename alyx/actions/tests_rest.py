@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
+from datetime import timedelta
 
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
@@ -65,7 +66,7 @@ class APIActionsTests(BaseTests):
         self.ar(response)
         d = response.data[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
-                             'water_administered', 'water_type')) <= set(d))
+                             'water_administered', 'water_type', 'adlib')) <= set(d))
 
     def test_list_weighing_1(self):
         url = reverse('weighing-create')
@@ -95,7 +96,11 @@ class APIActionsTests(BaseTests):
         url = reverse('water-requirement', kwargs={'nickname': self.subject.nickname})
 
         date = now().date()
-        response = self.client.get(url + '?start_date=%s&end_date=%s' % (date, date))
+        start_date = date - timedelta(days=2)
+        end_date = date + timedelta(days=2)
+        response = self.client.get(
+            url + '?start_date=%s&end_date=%s' % (
+                start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
         self.ar(response)
         d = response.data
         self.assertEqual(d['subject'], self.subject.nickname)
@@ -103,6 +108,11 @@ class APIActionsTests(BaseTests):
         self.assertTrue(
             set(('date', 'weight', 'expected_weight', 'expected_water',
                  'given_water_liquid', 'given_water_hydrogel',)) <= set(d['records'][0]))
+        dates = sorted(_['date'] for _ in d['records'])
+        assert len(dates) == 5
+        assert dates[0] == start_date
+        assert dates[-1] == end_date
+        assert dates[2] == date
 
     def test_sessions(self):
         ses_dict = {'subject': self.subject,

@@ -29,7 +29,7 @@ def today():
 
 
 def date(s):
-    return datetime.strptime(s, '%Y-%M-%d').date()
+    return datetime.strptime(s, '%Y-%m-%d').date()
 
 
 def date_range(start_date, end_date):
@@ -235,6 +235,12 @@ class WaterControl(object):
         if weighings_before:
             return weighings_before[-1]
 
+    def weighing_at(self, date=None):
+        """Return the weight of the subject at the specified date."""
+        date = date or today()
+        weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date]
+        return weighings_at[0][1] if weighings_at else None
+
     def current_weighing(self):
         """Return the last known weight."""
         return self.last_weighing_before(date=today())
@@ -323,7 +329,7 @@ class WaterControl(object):
         """Amount of water that was given in excess at the specified date."""
         return -self.remaining_water(date=date)
 
-    _columns = ('date', 'weight',
+    _columns = ('date', 'weight', 'weighing_at',
                 'reference_weight',
                 'expected_weight',
                 'min_weight',
@@ -336,15 +342,17 @@ class WaterControl(object):
                 'is_water_restricted',
                 )
 
-    def to_jsonable(self):
+    def to_jsonable(self, start_date=None, end_date=None):
+        start_date = date(start_date) if start_date else self.first_date()
+        end_date = date(end_date) if end_date else today()
         out = []
-        for date in date_range(self.first_date(), today()):
+        for d in date_range(start_date, end_date):
             obj = {}
             for col in self._columns:
                 if col == 'date':
-                    obj['date'] = date
+                    obj['date'] = d
                 else:
-                    obj[col] = getattr(self, col)(date=date)
+                    obj[col] = getattr(self, col)(date=d)
             out.append(obj)
         # return json.dumps(out, cls=DjangoJSONEncoder)
         return out
@@ -400,9 +408,12 @@ class WaterControl(object):
 
         # Axes and legends.
         ax.set_xlim(start, end)
-        ax.set_title("Weighings for %s" % self.nickname)
+        eq = 'weight > %.1f*ref + %.1f*zscore' % (
+            self.reference_weight_pct, self.zscore_weight_pct)
+        ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
+        ax.legend(['%d%%' % (100 * t[0]) for t in self.thresholds], loc=2)
         ax.grid(True)
         f.tight_layout()
         return return_figure(f)
@@ -424,8 +435,8 @@ def water_control(subject):
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
     )
-    wc.add_threshold(percentage=.8, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
-    wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699')
+    wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
+    wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
 
     # Water restrictions.
     wrs = am.WaterRestriction.objects.filter(subject=subject).order_by('start_time')

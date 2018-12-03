@@ -529,7 +529,7 @@ class Line(BaseModel):
         ordering = ['name']
 
     def __str__(self):
-        return self.nickname
+        return self.name
 
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1

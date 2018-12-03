@@ -216,9 +216,9 @@ class WaterRequirement(APIView):
 
     def get(self, request, format=None, nickname=None):
         assert nickname
-        # start_date = request.query_params.get('start_date', None)
-        # end_date = request.query_params.get('end_date', None)
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
         subject = Subject.objects.get(nickname=nickname)
-        records = subject.water_control.to_jsonable()
+        records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
         data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
         return Response(data)
