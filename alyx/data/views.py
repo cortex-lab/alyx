@@ -265,3 +265,7 @@ class SyncViewSet(viewsets.GenericViewSet):
     def sync(self, request):
         bulk_sync()
         return Response("ok", status=200)
+
+    def sync_status(self, request):
+        rep = bulk_sync(dry_run=True)
+        return Response(rep, status=200)

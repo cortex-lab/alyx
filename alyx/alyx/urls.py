@@ -14,7 +14,8 @@ register_file = dv.RegisterFileViewSet.as_view({
     'post': 'create'
 })
 sync_file_status = dv.SyncViewSet.as_view({
-    'post': 'sync'
+    'post': 'sync',
+    'get': 'sync_status'
 })
 
 user_list = mv.UserViewSet.as_view({
