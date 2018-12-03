@@ -23,7 +23,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
                           )
-from .transfers import _get_repositories_for_projects, _create_dataset_file_records
+from .transfers import (
+    _get_repositories_for_projects, _create_dataset_file_records, bulk_sync)
 
 logger = logging.getLogger(__name__)
 
@@ -255,3 +256,12 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             response.append(out)
 
         return Response(response, status=201)
+
+
+class SyncViewSet(viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
+    def sync(self, request):
+        bulk_sync()
+        return Response("ok", status=200)
