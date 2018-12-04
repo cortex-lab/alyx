@@ -340,7 +340,10 @@ def bulk_sync(dry_run=False):
     all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
         'dataset__created_datetime')
     if dry_run:
-        return all_files.values_list('relative_path', flat=True).distinct()
+        fvals = all_files.values_list('relative_path', flat=True).distinct()
+        for l in list(fvals):
+            print(l)
+        return fvals
 
     gc = globus_transfer_client()
     # loop over all files concerned by a transfer and update the exists and filesize fields
