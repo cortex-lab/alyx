@@ -200,6 +200,8 @@ class Subject(BaseModel):
 
     objects = SubjectManager()
 
+    unique_together = (('nickname', 'lab'),)
+
     # We save the history of these fields.
     _fields_history = ('nickname', 'responsible_user', 'cage')
     # We track the changes of these fields without saving their history in the JSON.
