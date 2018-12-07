@@ -359,7 +359,7 @@ def bulk_sync(dry_run=False):
             _last_ep = qf.data_repository.globus_endpoint_id
             ep_info = gc.get_endpoint(_last_ep)
         # if the endpoint is not connected skip
-        if not ep_info['DATA'][0]['is_connected']:
+        if not ep_info['gcp_connected']:
             logger.warning('UNREACHABLE Endpoint "' + ep_info['display_name'] +
                            '" (' + str(_last_ep) + ') ' + qf.relative_path)
             continue
