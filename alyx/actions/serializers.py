@@ -8,6 +8,11 @@ from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType, DataFormat
 from misc.models import LabLocation, Lab
 
+SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
+                  'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
+                  'parent_session', 'n_correct_trials', 'n_trials', 'url', 'json',
+                  'wateradmin_session_related', 'data_dataset_session_related')
+
 
 def _log_entry(instance, user):
     if instance.pk:
@@ -118,10 +123,7 @@ class SessionListSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project',
-                  'type', 'task_protocol', 'number', 'parent_session', 'narrative', 'start_time',
-                  'end_time', 'url', 'n_correct_trials', 'n_trials',
-                  'wateradmin_session_related', 'data_dataset_session_related')
+        fields = SESSION_FIELDS
 
 
 class SessionDetailSerializer(BaseActionSerializer):
@@ -146,10 +148,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
-                  'task_protocol', 'narrative', 'start_time', 'end_time', 'url', 'json',
-                  'parent_session', 'n_correct_trials', 'n_trials',
-                  'wateradmin_session_related', 'data_dataset_session_related')
+        fields = SESSION_FIELDS
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
