@@ -191,7 +191,7 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     filter_class = WaterAdministrationFilter
 
 
-class WaterAdministrationAPIDetail(generics.RetrieveDestroyAPIView):
+class WaterAdministrationAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
