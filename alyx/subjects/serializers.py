@@ -126,7 +126,7 @@ class SubjectListSerializer(_WaterRestrictionBaseSerializer):
         slug_field='name',
         queryset=Lab.objects.all(),
         many=False,
-        required=False,)
+        required=True,)
 
     @staticmethod
     def setup_eager_loading(queryset):

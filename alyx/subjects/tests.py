@@ -41,12 +41,15 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         # Fail on warning.
         # warnings.simplefilter("error")
 
+        from misc.models import Lab
         self.site = mysite
         self.factory = RequestFactory()
         request = self.factory.get('/')
         request.csrf_processing_done = True
         self.request = request
         self.users = [user for user in get_user_model().objects.filter(is_superuser=True)]
+        self.lab = Lab.objects.first()
+        assert self.lab is not None
 
     def tearDown(self):
         warnings.simplefilter('default')
@@ -117,9 +120,9 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         from subjects import models as m
         sequence = m.Sequence.objects.create(name='sequence')
         allele = m.Allele.objects.create(nickname='allele')
-        line = m.Line.objects.create(nickname='line')
+        line = m.Line.objects.create(nickname='line', lab=self.lab)
         line.alleles.add(allele)
-        subject = m.Subject.objects.create(nickname='subject', line=line)
+        subject = m.Subject.objects.create(nickname='subject', line=line, lab=self.lab)
         assert len(subject.genotype.all()) == 0
 
         # Create a rule and a genotype test ; the subject should be automatically genotyped.
@@ -144,14 +147,14 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         from subjects import models as m
         sequence = m.Sequence.objects.create(name='sequence')
         allele = m.Allele.objects.create(nickname='allele')
-        line = m.Line.objects.create(nickname='line')
+        line = m.Line.objects.create(nickname='line', lab=self.lab)
         line.alleles.add(allele)
 
         # Create the parents.
         father = m.Subject.objects.create(
-            nickname='father', sex='M', line=line)
+            nickname='father', sex='M', line=line, lab=self.lab)
         mother = m.Subject.objects.create(
-            nickname='mother', sex='F', line=line)
+            nickname='mother', sex='F', line=line, lab=self.lab)
 
         # Create the parents genotypes.
         m.Zygosity.objects.create(subject=father, allele=allele, zygosity=2)
@@ -163,7 +166,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
         # Create the subject.
         subject = m.Subject.objects.create(
-            nickname='subject', line=line, litter=litter)
+            nickname='subject', line=line, litter=litter, lab=self.lab)
         z = m.Zygosity.objects.filter(subject=subject).first()
         assert z.zygosity == 2  # from parents
 
@@ -192,14 +195,14 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         sequence = m.Sequence.objects.create(name='sequence')
         allele = m.Allele.objects.create(nickname='allele')
         allele_bis = m.Allele.objects.create(nickname='allele_bis')
-        line = m.Line.objects.create(nickname='line')
+        line = m.Line.objects.create(nickname='line', lab=self.lab)
         line.alleles.add(allele)
 
         # Create the parents.
         father = m.Subject.objects.create(
-            nickname='father', sex='M', line=line)
+            nickname='father', sex='M', line=line, lab=self.lab)
         mother = m.Subject.objects.create(
-            nickname='mother', sex='F', line=line)
+            nickname='mother', sex='F', line=line, lab=self.lab)
 
         # Create the parents genotypes.
         m.Zygosity.objects.create(subject=father, allele=allele_bis, zygosity=2)
@@ -211,7 +214,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 
         # Create the subject.
         subject = m.Subject.objects.create(
-            nickname='subject', line=line, litter=litter)
+            nickname='subject', line=line, litter=litter, lab=self.lab)
         z = m.Zygosity.objects.filter(subject=subject)  # noqa
         return
         # TODO
