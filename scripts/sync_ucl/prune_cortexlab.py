@@ -3,7 +3,7 @@ from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery
-from misc.models import Lab, LabMember
+from misc.models import Lab, LabMember, LabLocation
 from data.models import Dataset, DatasetType
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
@@ -38,6 +38,9 @@ else:
     lab = Lab.objects.using('cortexlab').get(name='cortexlab')
 ses = Session.objects.using('cortexlab').all()
 ses.update(lab=lab)
+
+# the lablocations should have the lab field set to cortexlab
+LabLocation.objects.using('cortexlab').update(lab=lab)
 
 # we want to make sure that no other dataset type than those defined in IBL are imported
 dtypes = [dt[0] for dt in DatasetType.objects.all().values_list('name')]
