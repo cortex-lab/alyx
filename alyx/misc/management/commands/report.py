@@ -6,7 +6,6 @@ import logging
 from operator import itemgetter
 from textwrap import dedent
 
-from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -155,7 +154,6 @@ class Command(BaseCommand):
                                              )
         subject_ids = [_[0] for _ in wr.values_list('subject').distinct()]
         text = ''
-        threshold = settings.WEIGHT_THRESHOLD
         for subject_id in subject_ids:
             subject = Subject.objects.get(pk=subject_id)
             wc = subject.water_control
@@ -164,9 +162,10 @@ class Command(BaseCommand):
             p = wc.percentage_weight()
             last_weighing = wc.last_weighing_before()
             if not last_weighing:
-                return
+                continue
             date = last_weighing[0]
-            if w < threshold * e:
+            threshold = max(wc.zscore_weight_pct, wc.reference_weight_pct)
+            if w < (threshold * e):
                 text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
                          'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
                              subject=subject,
