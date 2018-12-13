@@ -58,10 +58,12 @@ class Command(BaseCommand):
                             help="List of available reports")
         parser.add_argument('--no-email', action='store_true', default=False,
                             help="Show report without sending an email")
+        parser.add_argument('--lab', help='Lab for which to run the report')
 
     def handle(self, *args, **options):
         # Sort the list of pairs (user, text) by user to collate all emails for every user.
         # This is because groupby() requires the items to be already sorted.
+        self.lab = options.get('lab')
         tuples = list(self._generate_email(*args, **options))
         tuples = sorted(tuples, key=lambda k: k[0].username)
         for user, texts in groupby(tuples, itemgetter(0)):
@@ -152,6 +154,8 @@ class Command(BaseCommand):
         wr = WaterRestriction.objects.filter(start_time__isnull=False,
                                              end_time__isnull=True,
                                              )
+        if self.lab:
+            wr = wr.filter(subject__lab__name=self.lab)
         subject_ids = [_[0] for _ in wr.values_list('subject').distinct()]
         text = ''
         for subject_id in subject_ids:
@@ -165,7 +169,7 @@ class Command(BaseCommand):
                 continue
             date = last_weighing[0]
             threshold = max(wc.zscore_weight_pct, wc.reference_weight_pct)
-            if w < (threshold * e):
+            if wc.weight_status() > 0:
                 text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
                          'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
                              subject=subject,
