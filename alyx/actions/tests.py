@@ -3,6 +3,7 @@ import numpy as np
 from django.test import TestCase
 
 from actions.models import WaterAdministration, WaterRestriction, WaterType, Weighing
+from misc.models import Lab
 from subjects.models import Subject
 
 
@@ -13,7 +14,8 @@ class WaterControlTests(TestCase):
         for wt in wtypes:
             WaterType.objects.create(name=wt)
         # create a subject
-        self.sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01')
+        lab = Lab.objects.create(name='lab')
+        self.sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=lab)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)
         for n, w in enumerate(np.linspace(25, 20, 50)):
