@@ -292,7 +292,7 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'sex_l', 'ear_mark_',
                     'breeding_pair_l', 'line_l', 'litter_l',
                     'zygosities',
                     'alive', 'responsible_user',
@@ -324,6 +324,21 @@ class SubjectAdmin(BaseAdmin):
                SessionInline, OtherActionInline,
                NoteInline,
                ]
+
+    def weight_percent(self, obj):
+        status = obj.water_control.weight_status()
+        pct_wei = obj.water_control.percentage_weight()
+        colour_code = '008000'
+        if status == 1:  # orange colour code for reminders
+            colour_code = 'FFA500'
+        if status == 2:  # red colour code for errors
+            colour_code = 'FF0000'
+        if pct_wei == 0:
+            return '-'
+        else:
+            return format_html(
+                '<b><span style="color: #{};">{}%</span>',
+                colour_code, '{:2.1f}'.format(pct_wei))
 
     def ear_mark_(self, obj):
         return obj.ear_mark
@@ -464,9 +479,9 @@ class SubjectAdmin(BaseAdmin):
             instance.save()
         formset.save_m2m()
 
-
 # Subject inline
 # ------------------------------------------------------------------------------------------------
+
 
 class SubjectInlineForm(forms.ModelForm):
     TEST_RESULTS = (

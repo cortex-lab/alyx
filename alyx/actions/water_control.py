@@ -280,7 +280,9 @@ class WaterControl(object):
                 else self.zscore_weight(date=date))
 
     def percentage_weight(self, date=None):
-        """Percentage of the weight relative to the expected weight."""
+        """Percentage of the weight relative to the expected weight.
+        Expected weight is the reference weight or the zscore weight depending on the water
+        restriction fields"""
         date = date or today()
         iw = self.implant_weight or 0.
         w = self.weight(date=date)
@@ -341,6 +343,19 @@ class WaterControl(object):
                 'excess_water',
                 'is_water_restricted',
                 )
+
+    def weight_status(self):
+        threshold = max(self.zscore_weight_pct, self.reference_weight_pct)
+        thresh_remind = threshold + 0.02
+        w = self.percentage_weight()
+        if w == 0:
+            return 0
+        elif (w / 100) < threshold:
+            return 2
+        elif (w / 100) < thresh_remind:
+            return 1
+        else:
+            return 0
 
     def to_jsonable(self, start_date=None, end_date=None):
         start_date = date(start_date) if start_date else self.first_date()
