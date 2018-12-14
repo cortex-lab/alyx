@@ -3,6 +3,7 @@ import logging
 from operator import attrgetter
 import urllib
 
+import pytz
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
@@ -247,6 +248,14 @@ class Subject(BaseModel):
     def father(self):
         if self.litter:
             return self.litter.breeding_pair.father
+
+    def timezone(self):
+        if not self.lab:
+            return timezone.get_default_timezone()
+        elif not self.lab.timezone:
+            return timezone.get_default_timezone()
+        else:
+            return pytz.timezone(self.lab.timezone)
 
     @property
     def water_control(self):

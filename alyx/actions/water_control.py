@@ -2,12 +2,10 @@ import csv
 from datetime import datetime, timedelta
 import functools
 import io
-# import json
 import logging
 from operator import itemgetter
 import os.path as op
 
-# from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -92,11 +90,18 @@ def return_figure(f):
     return HttpResponse(buf.read(), content_type="image/png")
 
 
+def tzone_convert(date_t, tz):
+    date_t = timezone.make_aware(date_t, timezone.get_default_timezone())
+    date_t = timezone.localtime(date_t, tz)
+    return timezone.make_naive(date_t)
+
+
 class WaterControl(object):
     def __init__(self, nickname=None, birth_date=None, sex=None,
                  implant_weight=None,
                  reference_weight_pct=0.,
                  zscore_weight_pct=0.,
+                 timezone=timezone.get_default_timezone(),
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname
@@ -110,6 +115,7 @@ class WaterControl(object):
         self.reference_weight_pct = reference_weight_pct
         self.zscore_weight_pct = zscore_weight_pct
         self.thresholds = []
+        self.timezone = timezone
 
     def first_date(self):
         dwa = dwe = None
@@ -190,14 +196,14 @@ class WaterControl(object):
 
     def add_weighing(self, date, weighing):
         """Add a weighing."""
-        self.weighings.append((date, weighing))
+        self.weighings.append((tzone_convert(date, self.timezone), weighing))
 
     def set_reference_weight(self, date, weight):
         """Set a non-default reference weight."""
         self.reference_weighing = (date, weight)
 
     def add_water_administration(self, date, volume, hydrogel=False):
-        self.water_administrations.append((date, volume, hydrogel))
+        self.water_administrations.append((tzone_convert(date, self.timezone), volume, hydrogel))
 
     def add_threshold(self, percentage=None, bgcolor=None, fgcolor=None, line_style=None):
         """Add a threshold for the plot."""
@@ -449,6 +455,7 @@ def water_control(subject):
         nickname=subject.nickname, birth_date=subject.birth_date, sex=subject.sex,
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
+        timezone=subject.timezone(),
     )
     wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')

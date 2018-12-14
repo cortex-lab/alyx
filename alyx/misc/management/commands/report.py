@@ -180,7 +180,7 @@ class Command(BaseCommand):
                              percentage=p,
                              date=date,
                 )
-        text = 'Mice under the {t}% weight limit:\n\n'.format(t=int(100 * threshold)) + text
+        text = 'Mice under the {t}% +2% weight limit:\n\n'.format(t=int(100 * threshold)) + text
         return text
 
     def make_surgery(self, user):
