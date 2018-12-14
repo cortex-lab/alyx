@@ -92,8 +92,7 @@ def return_figure(f):
 
 def tzone_convert(date_t, tz):
     date_t = timezone.make_aware(date_t, timezone.get_default_timezone())
-    date_t = timezone.localtime(date_t, tz)
-    return timezone.make_naive(date_t)
+    return timezone.make_naive(date_t, tz)
 
 
 class WaterControl(object):
