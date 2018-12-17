@@ -430,6 +430,7 @@ class Litter(BaseModel):
 
     class Meta:
         ordering = ['name', '-birth_date']
+        unique_together = [('name',)]
 
     def save(self, *args, **kwargs):
         if self.line and self.name in (None, '', '-'):

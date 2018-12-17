@@ -769,6 +769,7 @@ class LitterAdmin(BaseAdmin):
               ]
     list_filter = [('line', LineDropdownFilter),
                    ]
+    search_fields = ['name']
     form = LitterForm
 
     inlines = [SubjectInline]
