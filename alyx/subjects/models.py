@@ -408,7 +408,7 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
                 )
     subject = "Subject %s was assigned to %s" % (instance.nickname, instance.responsible_user)
     # Send the mail to the new responsible user, but also to the stock managers.
-    to = stock_managers_emails() + [instance.responsible_user.emai]
+    to = stock_managers_emails() + [instance.responsible_user.email]
     alyx_mail(to, subject)
 
 
