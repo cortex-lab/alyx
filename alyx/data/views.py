@@ -211,10 +211,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             user = get_user_model().objects.get(username=user)
         else:
             user = request.user
+
+        # get the concerned repository using the name/hostname combination
+        name = request.data.get('name', None)
         hostname = request.data.get('hostname', None)
-        if not hostname:
-            raise ValueError("The hostname argument is required.")
-        repo = DataRepository.objects.get(hostname=hostname)
+        if name:
+            repo = DataRepository.objects.get(name=name)
+        elif hostname:
+            repo = DataRepository.objects.get(hostname=hostname)
+        else:
+            raise ValueError("At least one argument between 'hostname' or 'name' is required.")
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
