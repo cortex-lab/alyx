@@ -40,6 +40,7 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='username',
         queryset=get_user_model().objects.all(),
         required=False,
+        default=serializers.CurrentUserDefault(),
     )
 
     location = serializers.SlugRelatedField(
@@ -164,6 +165,7 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='username',
         queryset=get_user_model().objects.all(),
         required=False,
+        default=serializers.CurrentUserDefault(),
     )
 
     def create(self, validated_data):
@@ -202,6 +204,7 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         slug_field='username',
         queryset=get_user_model().objects.all(),
         required=False,
+        default=serializers.CurrentUserDefault(),
     )
 
     water_type = serializers.SlugRelatedField(

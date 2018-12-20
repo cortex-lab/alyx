@@ -77,7 +77,8 @@ class SubjectListSerializer(_WaterRestrictionBaseSerializer):
         read_only=False,
         slug_field='username',
         queryset=get_user_model().objects.all(),
-        required=False)
+        required=False,
+        default=serializers.CurrentUserDefault())
 
     species = serializers.SlugRelatedField(
         read_only=False,
@@ -162,7 +163,8 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='username',
         queryset=get_user_model().objects.all(),
         many=True,
-        required=False)
+        required=False,
+        default=serializers.CurrentUserDefault(),)
 
     repositories = serializers.SlugRelatedField(
         read_only=False,
