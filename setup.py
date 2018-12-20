@@ -71,14 +71,6 @@ _psql("ALTER USER {DBUSER} WITH SUPERUSER;", DBUSER=DBUSER)
 _psql("ALTER USER {DBUSER} WITH CREATEDB;", DBUSER=DBUSER)
 
 
-# Remove all migration files, that are specific to the cortexlab production server.
-_system('rm alyx/*/migrations/0*.py')
-
-
-# Make sure the virtual environment exists.
-_system('virtualenv alyxvenv')
-
-
 repl = {
     '%SECRET_KEY%': SECRET_KEY,
     '%DBNAME%': DBNAME,
@@ -106,15 +98,11 @@ _replace_in_file('scripts/templates/dump_db.sh', 'scripts/dump_db.sh',
                  replacements=repl, chmod=0o755)
 
 
-# Install the Python requirements in the virtual environment.
-_system('alyxvenv/bin/pip install -r requirements.txt')
-
-
 # Set up the database.
 _system('alyxvenv/bin/python alyx/manage.py makemigrations')
 _system('alyxvenv/bin/python alyx/manage.py migrate')
 
 
-_system('''echo "from django.contrib.auth.models import User;'''
-        '''User.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''
+_system('''echo "from misc.models import LabMember;'''
+        '''LabMember.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''
         '''| alyxvenv/bin/python alyx/manage.py shell''')
