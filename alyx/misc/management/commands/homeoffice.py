@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import os
 import sys
 
 from django.core.management.base import BaseCommand
@@ -19,6 +20,10 @@ def assigned_to_no_one():
     return Q(responsible_user__isnull=True)
 
 
+def born(start_date, end_date):
+    return Q(birth_date__gte=start_date, birth_date__lte=end_date)
+
+
 def killed(start_date, end_date):
     return Q(death_date__gte=start_date, death_date__lte=end_date)
 
@@ -28,13 +33,11 @@ def genotyped(start_date, end_date):
 
 
 def not_used(query):
-    return query.filter(assigned_to_stock_managers() |
-                        assigned_to_no_one()).exclude(protocol_number='3')
+    return query.filter(Q(actions_surgerys__isnull=True)).distinct()
 
 
 def used(query):
-    return (query.filter(protocol_number='3') |
-            query.exclude(assigned_to_stock_managers() | assigned_to_no_one()))
+    return query.filter(actions_surgerys__isnull=False).distinct()
 
 
 def transgenic(query):
@@ -50,21 +53,28 @@ def redirect_stdout(stream):
 
 
 def display(title, query):
-    with open('homeoffice/%s.txt' % title, 'w') as f:
+    os.makedirs('homeoffice', exist_ok=True)
+    path = 'homeoffice/%s.txt' % title
+    with open(path, 'w') as f:
         with redirect_stdout(f):
             print("%s: %d subjects." % (title, len(query)))
-            print('\t'.join(('#   ', 'user       ', 'prot.', 'death    ',
-                             'genotyped', 'EM', 'nickname')))
+            print('\t'.join(('#   ', 'user       ', 'prot.',
+                             'born     ',
+                             'genotyped',
+                             'died     ',
+                             'EM', 'nickname')))
             for i, subj in enumerate(query):
                 print('\t'.join(('%04d' % (i + 1),
                                  '{0: <12}'.format(subj.responsible_user.username),
                                  subj.protocol_number,
-                                 str(subj.death_date or ' ' * 10),
+                                 str(subj.birth_date or ' ' * 10),
                                  str(subj.genotype_date or ' ' * 10),
+                                 str(subj.death_date or ' ' * 10),
                                  subj.ear_mark,
                                  subj.nickname,
                                  )))
             print('\n\n')
+    os.system('expand -t 4 "%s" | sponge "%s"' % (path, path))
 
 
 class Command(BaseCommand):
@@ -82,15 +92,19 @@ class Command(BaseCommand):
 
         k = Subject.objects.filter(killed(start_date, end_date)).order_by('death_date')
         g = Subject.objects.filter(genotyped(start_date, end_date)).order_by('genotype_date')
+        tkg = transgenic(k & g)
 
         print("Between %s and %s" % (start_date, end_date))
 
-        display("Killed and not used", not_used(k))
-        display("Genotyped and not used", not_used(g))
+        display("All animals", Subject.objects.all().order_by('nickname'))
         display("Transgenic killed", transgenic(k))
         display("Killed and used", used(k))
+
+        display("Transgenic killed and genotyped", tkg)
+        display("Transgenic killed and genotyped (negative)", [s for s in tkg if s.is_negative()])
+        display("Transgenic killed and genotyped (not used)", not_used(tkg))
+
         display("Genotyped and used", used(g))
-        display("Negative genotyped and used", [s for s in used(g) if s.is_negative()])
-        display("Genotyped, killed, and not used", not_used(g & k))
-        display("Transgenic killed, not genotyped, and not used",
-                transgenic(not_used(k)).exclude(genotyped(start_date, end_date)))
+
+        tkng = transgenic(k).exclude(genotyped(start_date, end_date))
+        display("Transgenic killed and not genotyped", tkng)
