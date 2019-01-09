@@ -449,7 +449,7 @@ def water_control(subject):
         if len(Lab.objects.all()) == 1:
             lab = Lab.objects.first()
     if lab is None:
-        logger.warn("Subject %s has no lab, no reference weight percentages considered.")
+        logger.warn("Subject %s has no lab, no reference weight percentages considered.", subject)
         rw_pct = zw_pct = 0
     else:
         rw_pct = lab.reference_weight_pct
