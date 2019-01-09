@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+from dateutil.rrule import HOURLY
 import functools
 import io
 import logging
@@ -387,7 +388,9 @@ class WaterControl(object):
 
         # Data arrays.
         if self.weighings:
-            ax.xaxis.set_major_locator(mpld.AutoDateLocator(maxticks=8, interval_multiples=False))
+            loc = mpld.AutoDateLocator(maxticks=8, interval_multiples=False)
+            loc.intervald[HOURLY] = [1]
+            ax.xaxis.set_major_locator(loc)
             ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
 
             self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
