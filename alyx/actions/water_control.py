@@ -443,7 +443,13 @@ def water_control(subject):
     from actions import models as am
     assert subject is not None
     lab = subject.lab
+    # By default, if there is only one lab, use it for the subject.
     if lab is None:
+        from misc.models import Lab
+        if len(Lab.objects.all()) == 1:
+            lab = Lab.objects.first()
+    if lab is None:
+        logger.warn("Subject %s has no lab, no reference weight percentages considered.")
         rw_pct = zw_pct = 0
     else:
         rw_pct = lab.reference_weight_pct
