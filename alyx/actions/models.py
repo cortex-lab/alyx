@@ -5,8 +5,12 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from alyx.base import BaseModel, modify_fields
-from misc.models import Lab, LabLocation
+from alyx.base import BaseModel, modify_fields, alyx_mail
+from misc.models import Lab, LabLocation, LabMember
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _default_water_type():
@@ -50,8 +54,8 @@ class Weighing(BaseModel):
 
     def expected(self):
         """Expected weighing."""
-        from .water import expected_weighing
-        return expected_weighing(self.subject, self.date_time)
+        wc = self.subject.water_control
+        return wc.expected_weight(self.date_time)
 
     def __str__(self):
         return 'Weighing %.2f g for %s' % (self.weight,
@@ -103,7 +107,7 @@ class WaterAdministration(BaseModel):
 
     @property
     def hydrogel(self):
-        return 'hydrogel' in self.water_type.name.lower()
+        return 'hydrogel' in self.water_type.name.lower() if self.water_type else None
 
     def __str__(self):
         if self.water_administered:
@@ -262,9 +266,10 @@ class WaterRestriction(BaseAction):
     def save(self, *args, **kwargs):
         if not self.reference_weight and self.subject:
             w = self.subject.water_control.last_weighing_before(self.start_time.date())
-            self.reference_weight = w[1]
-            # makes sure the closest weighing is one week around, break if not
-            assert(abs(w[0] - self.start_time) < timedelta(days=7))
+            if w:
+                self.reference_weight = w[1]
+                # makes sure the closest weighing is one week around, break if not
+                assert(abs(w[0] - self.start_time) < timedelta(days=7))
         return super(WaterRestriction, self).save(*args, **kwargs)
 
 
@@ -273,3 +278,165 @@ class OtherAction(BaseAction):
     Another type of action.
     """
     pass
+
+
+# Notifications
+# ---------------------------------------------------------------------------------
+
+NOTIFICATION_TYPES = (
+    ('responsible_user_change', 'responsible user has changed'),
+    ('mouse_underweight', 'mouse is underweight'),
+    ('mouse_water', 'water to give to mouse'),
+)
+
+
+def responsible_user_changed(subject, old_user, new_user):
+    """Send a notification when a responsible user changes."""
+    msg = 'Responsible user of %s changed from %s to %s' % (subject, old_user, new_user)
+    notif = Notification.objects.create(
+        notification_type='responsible_user_change',
+        title=msg,
+        message=msg,
+        subject=subject,
+    )
+    notif.users.add(old_user, new_user)
+    notif.send_if_needed()
+
+
+def check_weighing(subject, date=None):
+    """Called when a weighing is added."""
+    # Reinit the water_control instance to make sure the just-added
+    # weighing is taken into account
+    wc = subject.reinit_water_control()
+    u = subject.responsible_user
+    perc = wc.percentage_weight(date=date)
+    min_perc = wc.min_percentage(date=date)
+    if perc <= min_perc + 2:
+        header = 'WARNING' if perc <= min_perc else 'Warning'
+        msg = "%s: %s weight is %.1f%%" % (header, subject, perc)
+        notif = Notification.objects.create(
+            notification_type='mouse_underweight',
+            title=msg,
+            message=msg,
+            subject=subject,
+        )
+        if u:
+            notif.users.add(u)
+        notif.send_if_needed()
+
+
+def check_water_administration(subject, date=None):
+    date = date or timezone.now()
+    wc = subject.reinit_water_control()
+    remaining = wc.remaining_water(date=date)
+    wa = wc.last_water_administration_at(date=date)
+    delay = date - wa[0]
+    if remaining > 0 and delay.total_seconds() > 23 * 3600:
+        msg = "%.1f mL remaining for %s" % (remaining, subject)
+        notif = Notification.objects.create(
+            notification_type='mouse_water',
+            title=msg,
+            message=msg,
+            subject=subject,
+        )
+        if subject.responsible_user:
+            notif.users.add(subject.responsible_user)
+        notif.send_if_needed()
+
+
+def send_pending_emails():
+    """Send all pending notifications."""
+    notifications = Notification.objects.filter(status='to-send', date_time__lte=timezone.now())
+    for notification in notifications:
+        notification.send_if_needed()
+
+
+def check_scope(user, subject, scope):
+    if subject is None:
+        return True
+    assert scope in (None, 'none', 'mine', 'lab', 'all')
+    if scope == 'mine':
+        return subject.responsible_user == user
+    elif scope == 'lab':
+        return subject.lab == user.lab
+    elif scope == 'all':
+        return True
+    elif scope == 'none':
+        return False
+    elif scope is None:
+        # no scope? send anyway.
+        return True
+
+
+class Notification(BaseModel):
+    STATUS_TYPES = (
+        ('no-send', 'do not send'),
+        ('to-send', 'to send'),
+        ('sent', 'sent'),
+    )
+
+    send_at = models.DateTimeField(default=timezone.now)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    notification_type = models.CharField(max_length=32, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=255)
+    message = models.TextField(blank=True)
+    subject = models.ForeignKey(
+        'subjects.Subject', null=True, blank=True, on_delete=models.SET_NULL)
+    users = models.ManyToManyField(LabMember)
+    status = models.CharField(max_length=16, default='to-send', choices=STATUS_TYPES)
+
+    def ready_to_send(self):
+        return (
+            self.status == 'to-send' and
+            self.send_at <= timezone.now()
+        )
+
+    def recipients(self):
+        """Recipients of the email, computed from the notification rules."""
+        rules = NotificationRule.objects.filter(
+            notification_type=self.notification_type,
+            user__in=self.users.all()
+        )
+        default_rules = {user: None for user in self.users.all()}
+        default_rules.update({rule.user: rule.subjects_scope for rule in rules})
+        out = []
+        for user, scope in default_rules.items():
+            if check_scope(user, self.subject, scope) and user.email:
+                out.append(user.email)
+        return out
+
+    def send_if_needed(self):
+        """Send the email if needed and change the status to 'sent'"""
+        if self.status == 'sent':
+            logger.warning("Email already sent at %s.", self.sent_at)
+            return False
+        if not self.ready_to_send():
+            logger.warning("Email not ready to send.")
+            return False
+        if alyx_mail(self.recipients(), self.title, self.message):
+            self.status = 'sent'
+            self.sent_at = timezone.now()
+            self.save()
+            return True
+
+    def __str__(self):
+        return "<Notification '%s' (%s) %s>" % (self.title, self.status, self.send_at.date())
+
+
+class NotificationRule(BaseModel):
+    """For each user and notification type, send the notifications for
+    a given set of mice (none, all, mine, lab)."""
+
+    SUBJECT_SCOPES = (
+        ('none', 'none'),
+        ('all', 'all'),
+        ('mine', 'mine'),
+        ('lab', 'lab')
+    )
+
+    user = models.ForeignKey(LabMember, on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=32, choices=NOTIFICATION_TYPES)
+    subjects_scope = models.CharField(max_length=16, choices=SUBJECT_SCOPES)
+
+    class Meta:
+        unique_together = [('user', 'notification_type')]

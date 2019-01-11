@@ -24,6 +24,7 @@ from rest_framework.test import APITestCase
 logger = logging.getLogger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
+DISABLE_MAIL = False  # used for testing
 
 
 class QueryPrintingMiddleware:
@@ -102,6 +103,9 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 
 def alyx_mail(to, subject, text=''):
+    if DISABLE_MAIL:
+        logger.warning("Mails are disabled by DISABLE_MAIL.")
+        return
     if not to:
         return
     if not isinstance(to, (list, tuple)):

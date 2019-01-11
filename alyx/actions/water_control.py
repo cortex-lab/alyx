@@ -1,13 +1,12 @@
 import csv
 from datetime import datetime, timedelta
+from dateutil.rrule import HOURLY
 import functools
 import io
-# import json
 import logging
 from operator import itemgetter
 import os.path as op
 
-# from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -92,11 +91,17 @@ def return_figure(f):
     return HttpResponse(buf.read(), content_type="image/png")
 
 
+def tzone_convert(date_t, tz):
+    date_t = timezone.make_aware(date_t, timezone.get_default_timezone(), is_dst=False)
+    return timezone.make_naive(date_t, tz)
+
+
 class WaterControl(object):
     def __init__(self, nickname=None, birth_date=None, sex=None,
                  implant_weight=None,
                  reference_weight_pct=0.,
                  zscore_weight_pct=0.,
+                 timezone=timezone.get_default_timezone(),
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname
@@ -110,6 +115,11 @@ class WaterControl(object):
         self.reference_weight_pct = reference_weight_pct
         self.zscore_weight_pct = zscore_weight_pct
         self.thresholds = []
+        self.timezone = timezone
+
+    def today(self):
+        """The date at the timezone if the current subject."""
+        return tzone_convert(today(), self.timezone)
 
     def first_date(self):
         dwa = dwe = None
@@ -154,7 +164,7 @@ class WaterControl(object):
         if e is not None:
             logger.warning("The mouse %s is not currently under water restriction.", self.nickname)
             return
-        self.water_restrictions[-1] = (s, today())
+        self.water_restrictions[-1] = (s, self.today())
 
     def current_water_restriction(self):
         """Return the date of the current water restriction if there is one, or None."""
@@ -174,7 +184,7 @@ class WaterControl(object):
     def water_restriction_at(self, date=None):
         """If the subject was under water restriction at the specified date, return
         the start of that water restriction."""
-        date = date or today()
+        date = date or self.today()
         date = date.date() if isinstance(date, datetime) else date
         water_restrictions_before = [
             (s, e) for (s, e) in self.water_restrictions if s.date() <= date]
@@ -190,14 +200,14 @@ class WaterControl(object):
 
     def add_weighing(self, date, weighing):
         """Add a weighing."""
-        self.weighings.append((date, weighing))
+        self.weighings.append((tzone_convert(date, self.timezone), weighing))
 
     def set_reference_weight(self, date, weight):
         """Set a non-default reference weight."""
         self.reference_weighing = (date, weight)
 
     def add_water_administration(self, date, volume, hydrogel=False):
-        self.water_administrations.append((date, volume, hydrogel))
+        self.water_administrations.append((tzone_convert(date, self.timezone), volume, hydrogel))
 
     def add_threshold(self, percentage=None, bgcolor=None, fgcolor=None, line_style=None):
         """Add a threshold for the plot."""
@@ -209,7 +219,7 @@ class WaterControl(object):
         """Return the reference weighing at the specified date, or today."""
         if date is None and self.reference_weighing:
             return self.reference_weighing
-        date = date or today()
+        date = date or self.today()
         wr = self.water_restriction_at(date)
         if not wr:
             return
@@ -228,7 +238,9 @@ class WaterControl(object):
 
     def last_weighing_before(self, date=None):
         """Return the last known weight of the subject before the specified date."""
-        date = date or today()
+        date = date or self.today()
+        if isinstance(date, datetime):
+            date = date.date()
         # Sort the weighings.
         self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
         weighings_before = [(d, w) for (d, w) in self.weighings if d.date() <= date]
@@ -237,13 +249,13 @@ class WaterControl(object):
 
     def weighing_at(self, date=None):
         """Return the weight of the subject at the specified date."""
-        date = date or today()
+        date = date or self.today()
         weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date]
         return weighings_at[0][1] if weighings_at else None
 
     def current_weighing(self):
         """Return the last known weight."""
-        return self.last_weighing_before(date=today())
+        return self.last_weighing_before(date=self.today())
 
     def weight(self, date=None):
         """Return the current weight."""
@@ -252,7 +264,7 @@ class WaterControl(object):
 
     def zscore_weight(self, date=None):
         """Return the expected zscored weight at the specified date."""
-        date = date or today()
+        date = date or self.today()
         rw = self.reference_weighing_at(date=date)
         if not rw:
             return 0
@@ -280,8 +292,10 @@ class WaterControl(object):
                 else self.zscore_weight(date=date))
 
     def percentage_weight(self, date=None):
-        """Percentage of the weight relative to the expected weight."""
-        date = date or today()
+        """Percentage of the weight relative to the expected weight.
+        Expected weight is the reference weight or the zscore weight depending on the water
+        restriction fields"""
+        date = date or self.today()
         iw = self.implant_weight or 0.
         w = self.weight(date=date)
         e = self.expected_weight(date=date)
@@ -289,13 +303,27 @@ class WaterControl(object):
 
     def min_weight(self, date=None):
         """Minimum weight for the mouse."""
-        date = date or today()
+        date = date or self.today()
         return (self.zscore_weight(date=date) * self.zscore_weight_pct +
                 self.reference_weight(date=date) * self.reference_weight_pct)
 
+    def min_percentage(self, date=None):
+        return self.thresholds[-1][0] * 100
+
+    def last_water_administration_at(self, date=None):
+        """Return the last known water administration of the subject before the specified date."""
+        date = date or self.today()
+        if isinstance(date, datetime):
+            date = date.date()
+        # Sort the water administrations.
+        self.water_administrations[:] = sorted(self.water_administrations, key=itemgetter(0))
+        wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d.date() <= date]
+        if wa_before:
+            return wa_before[-1]
+
     def expected_water(self, date=None):
         """Return the expected water for the specified date."""
-        date = date or today()
+        date = date or self.today()
         iw = self.implant_weight or 0.
         weight = self.last_weighing_before(date=date)
         weight = weight[1] if weight else 0.
@@ -304,7 +332,7 @@ class WaterControl(object):
 
     def given_water(self, date=None, hydrogel=None):
         """Return the amount of water given at a specified date."""
-        date = date or today()
+        date = date or self.today()
         return sum(w or 0 for (d, w, h) in self.water_administrations
                    if d.date() == date and (hydrogel is None or h == hydrogel))
 
@@ -322,7 +350,7 @@ class WaterControl(object):
 
     def remaining_water(self, date=None):
         """Amount of water that remains to be given at the specified date."""
-        date = date or today()
+        date = date or self.today()
         return self.expected_water(date=date) - self.given_water(date=date)
 
     def excess_water(self, date=None):
@@ -342,9 +370,22 @@ class WaterControl(object):
                 'is_water_restricted',
                 )
 
+    def weight_status(self):
+        threshold = max(self.zscore_weight_pct, self.reference_weight_pct)
+        thresh_remind = threshold + 0.02
+        w = self.percentage_weight()
+        if w == 0:
+            return 0
+        elif (w / 100) < threshold:
+            return 2
+        elif (w / 100) < thresh_remind:
+            return 1
+        else:
+            return 0
+
     def to_jsonable(self, start_date=None, end_date=None):
         start_date = date(start_date) if start_date else self.first_date()
-        end_date = date(end_date) if end_date else today()
+        end_date = date(end_date) if end_date else self.today()
         out = []
         for d in date_range(start_date, end_date):
             obj = {}
@@ -367,7 +408,9 @@ class WaterControl(object):
 
         # Data arrays.
         if self.weighings:
-            ax.xaxis.set_major_locator(mpld.AutoDateLocator(maxticks=8, interval_multiples=False))
+            loc = mpld.AutoDateLocator(maxticks=8, interval_multiples=False)
+            loc.intervald[HOURLY] = [1]
+            ax.xaxis.set_major_locator(loc)
             ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
 
             self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
@@ -423,7 +466,14 @@ def water_control(subject):
     from actions import models as am
     assert subject is not None
     lab = subject.lab
+    # By default, if there is only one lab, use it for the subject.
     if lab is None:
+        from misc.models import Lab
+        if len(Lab.objects.all()) == 1:
+            lab = Lab.objects.first()
+    if lab is None:
+        logger.warning("Subject %s has no lab, no reference weight percentages considered.",
+                       subject)
         rw_pct = zw_pct = 0
     else:
         rw_pct = lab.reference_weight_pct
@@ -434,6 +484,7 @@ def water_control(subject):
         nickname=subject.nickname, birth_date=subject.birth_date, sex=subject.sex,
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
+        timezone=subject.timezone(),
     )
     wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')

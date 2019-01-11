@@ -1,9 +1,14 @@
 import datetime
 import numpy as np
 from django.test import TestCase
+from django.utils import timezone
 
-from actions.models import WaterAdministration, WaterRestriction, WaterType, Weighing
+from alyx import base
 from misc.models import Lab
+from actions.water_control import date
+from actions.models import (
+    WaterAdministration, WaterRestriction, WaterType, Weighing,
+    Notification, check_weighing, check_water_administration)
 from subjects.models import Subject
 
 
@@ -48,3 +53,66 @@ class WaterControlTests(TestCase):
         # the method from the wa model should return the expectation at the corresponding date
         self.assertTrue(wa[0].expected() == wc.expected_water(date=wa[0].date_time.date()))
         self.assertTrue(wa[40].expected() == wc.expected_water(date=wa[40].date_time.date()))
+
+
+class NotificationTests(TestCase):
+    def setUp(self):
+        base.DISABLE_MAIL = True
+        self.lab = Lab.objects.create(name='testlab', reference_weight_pct=.85)
+        self.subject = Subject.objects.create(
+            nickname='test', birth_date=date('2018-01-01'), lab=self.lab)
+        Weighing.objects.create(
+            subject=self.subject, weight=10,
+            date_time=timezone.datetime(2018, 6, 1, 12, 0, 0)
+        )
+        self.water_restriction = WaterRestriction.objects.create(
+            subject=self.subject,
+            start_time=timezone.datetime(2018, 6, 2, 12, 0, 0),
+            reference_weight=10.,
+        )
+        self.water_administration = WaterAdministration.objects.create(
+            subject=self.subject,
+            date_time=timezone.datetime(2018, 6, 3, 12, 0, 0),
+            water_administered=10,
+        )
+        self.date = date('2018-06-10')
+
+    def tearDown(self):
+        base.DISABLE_MAIL = False
+
+    def test_notif_0(self):
+        Weighing.objects.create(
+            subject=self.subject, weight=9,
+            date_time=timezone.datetime(2018, 6, 9, 8, 0, 0)
+        )
+        check_weighing(self.subject, date=self.date)
+        self.assertTrue(len(Notification.objects.all()) == 0)
+
+    def test_notif_1(self):
+        Weighing.objects.create(
+            subject=self.subject, weight=7,
+            date_time=timezone.datetime(2018, 6, 9, 12, 0, 0)
+        )
+        check_weighing(self.subject, date=self.date)
+        notif = Notification.objects.last()
+        self.assertTrue(notif.title.startswith('WARNING'))
+
+    def test_notif_2(self):
+        Weighing.objects.create(
+            subject=self.subject, weight=8.6,
+            date_time=timezone.datetime(2018, 6, 9, 16, 0, 0)
+        )
+        check_weighing(self.subject, date=self.date)
+        notif = Notification.objects.last()
+        self.assertTrue(notif.title.startswith('Warning'))
+
+    def test_water_1(self):
+        date = timezone.datetime(2018, 6, 3, 16, 0, 0)
+        check_water_administration(self.subject, date=date)
+        notif = Notification.objects.last()
+        self.assertTrue(notif is None)
+
+        date = timezone.datetime(2018, 6, 4, 12, 0, 0)
+        check_water_administration(self.subject, date=date)
+        notif = Notification.objects.last()
+        self.assertTrue(notif is not None)
