@@ -160,7 +160,7 @@ def globus_file_exists(file_record):
     try:
         existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=dir_path)
     except globus_sdk.exc.TransferAPIError as e:
-        logger.warn(e)
+        logger.warning(e)
         return False
     for existing_file in existing:
         if existing_file['name'] in (name, name_uuid) and existing_file['size'] > 0:
@@ -248,7 +248,7 @@ def iter_registered_directories(data_repository=None, tc=None, path=None):
     try:
         contents = tc.operation_ls(data_repository.globus_endpoint_id, path=path)
     except globus_sdk.exc.TransferAPIError as e:
-        logger.warn(e)
+        logger.warning(e)
         return
     contents = contents['DATA']
     subdirs = [file['name'] for file in contents if file['type'] == 'dir']
@@ -273,7 +273,7 @@ def update_file_exists(dataset):
             logger.info(
                 "File %s exists on %s.", file.relative_path, file.data_repository.name)
         elif file_exists_db and not file_exists_globus:
-            logger.warn(
+            logger.warning(
                 "File %s exists on %s in the database but not in globus.",
                 file.relative_path, file.data_repository.name)
             file.exists = False
@@ -313,8 +313,6 @@ def transfers_required(dataset):
             # the source repository is personal.
             if (missing_file.data_repository.globus_is_personal and
                     existing_file.data_repository.globus_is_personal):
-                # logger.warn("Our globus subscription does not support file transfer between two "
-                #             "personal servers.")
                 continue
             yield {
                 'source_data_repository': existing_file.data_repository.name,

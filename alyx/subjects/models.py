@@ -727,11 +727,11 @@ class ZygosityFinder(object):
                 zygosity = zygosity[0]
                 if z != zygosity.zygosity:
                     if force:
-                        logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
-                                    subject, zygosity, symbol)
+                        logger.warning("Zygosity mismatch for %s: was %s, now set to %s.",
+                                       subject, zygosity, symbol)
                     else:
-                        logger.warn("Zygosity mismatch for %s: was %s, would have been set "
-                                    "to %s but aborting now.", subject, zygosity, symbol)
+                        logger.warning("Zygosity mismatch for %s: was %s, would have been set "
+                                       "to %s but aborting now.", subject, zygosity, symbol)
                         return
                 zygosity.zygosity = z
             else:

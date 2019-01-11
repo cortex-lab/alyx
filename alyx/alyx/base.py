@@ -114,8 +114,10 @@ def alyx_mail(to, subject, text=''):
                   fail_silently=True,
                   )
         logger.debug("Mail sent to %s.", ', '.join(to))
+        return True
     except Exception as e:
-        logger.warn("Mail failed: %s", e)
+        logger.warning("Mail failed: %s", e)
+        return False
 
 
 ADMIN_PAGES = [('Common', ['Subjects',
