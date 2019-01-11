@@ -92,6 +92,10 @@ def return_figure(f):
 
 
 def tzone_convert(date_t, tz):
+    # Cannot convert a date object to a timezone.
+    from datetime import date as date_
+    if isinstance(date_t, date_):
+        return date_t
     date_t = timezone.make_aware(date_t, timezone.get_default_timezone(), is_dst=False)
     return timezone.make_naive(date_t, tz)
 
