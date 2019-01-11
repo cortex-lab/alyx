@@ -84,8 +84,8 @@ class SessionFilter(FilterSet):
     def filter_date_range(self, queryset, name, value):
         drange = value.split(',')
         queryset = queryset.filter(
-            Q(start_time__date__gte=drange[0]) | Q(end_time__date__gte=drange[0]),
-            Q(start_time__date__lte=drange[1]) | Q(end_time__date__lte=drange[1]),
+            Q(start_time__date__gte=drange[0]),
+            Q(start_time__date__lte=drange[1]),
         )
         return queryset
 
