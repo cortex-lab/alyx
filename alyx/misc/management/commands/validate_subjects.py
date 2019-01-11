@@ -1,7 +1,4 @@
-import contextlib
 import logging
-import os
-import sys
 
 from django.core.management.base import BaseCommand
 
