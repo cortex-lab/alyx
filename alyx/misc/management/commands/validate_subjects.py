@@ -14,12 +14,19 @@ class Command(BaseCommand):
         super(Command, self).add_arguments(parser)
 
     def handle(self, *args, **options):
-        subjects = Subject.objects.filter(reduced_date__isnull=False, reduced=False)
+        subjects = Subject.objects.filter(
+            reduced_date__isnull=False, reduced=False).order_by('nickname')
         n = len(subjects)
+        print("Check 'reduced' of %s subjects." % n)
+        for s in subjects:
+            print(" ", s)
         subjects.update(reduced=True)
-        self.stdout.write("Check 'reduced' of %s subjects." % n)
+        print()
 
-        subjects = Subject.objects.filter(death_date__isnull=False, to_be_culled=True)
+        subjects = Subject.objects.filter(
+            death_date__isnull=False, to_be_culled=True).order_by('nickname')
         n = len(subjects)
+        print("Check 'to_be_culled' of %s subjects." % n)
+        for s in subjects:
+            print(" ", s)
         subjects.update(to_be_culled=False)
-        self.stdout.write("Check 'to_be_culled' of %s subjects." % n)
