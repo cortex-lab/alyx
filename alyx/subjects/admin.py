@@ -480,6 +480,14 @@ class SubjectAdmin(BaseAdmin):
             instance.save()
         formset.save_m2m()
 
+    def save_model(self, request, obj, form, change):
+        if obj.reduced_date is not None and not obj.reduced:
+            obj.reduced = True
+        if obj.death_date is not None and obj.to_be_culled:
+            obj.to_be_culled = False
+        super(SubjectAdmin, self).save_model(request, obj, form, change)
+
+
 # Subject inline
 # ------------------------------------------------------------------------------------------------
 
