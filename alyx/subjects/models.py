@@ -3,6 +3,7 @@ import logging
 from operator import attrgetter
 import urllib
 
+import pytz
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
@@ -248,6 +249,14 @@ class Subject(BaseModel):
         if self.litter:
             return self.litter.breeding_pair.father
 
+    def timezone(self):
+        if not self.lab:
+            return timezone.get_default_timezone()
+        elif not self.lab.timezone:
+            return timezone.get_default_timezone()
+        else:
+            return pytz.timezone(self.lab.timezone)
+
     @property
     def water_control(self):
         if self._water_control is None:
@@ -349,14 +358,18 @@ class SubjectRequest(BaseModel):
         )
 
 
+def stock_managers_emails():
+    return [sm.email for sm in get_user_model().objects.filter(
+            is_stock_manager=True, email__isnull=False)]
+
+
 @receiver(post_save, sender=SubjectRequest)
 def send_subject_request_mail_new(sender, instance=None, **kwargs):
     """Send en email when a subject request is created."""
     if not instance or not kwargs['created']:
         return
     subject = "%s requested: %s" % (instance.user, str(instance))
-    to = [sm.email for sm in get_user_model().objects.filter(
-          is_stock_manager=True, email__isnull=False)]
+    to = stock_managers_emails()
     alyx_mail(to, subject, instance.description)
 
 
@@ -393,8 +406,10 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
                 _get_old_field(instance, 'responsible_user'),
                 instance.responsible_user,
                 )
-    subject = "Subject %s was assigned to you" % instance.nickname
-    alyx_mail(instance.responsible_user.email, subject)
+    subject = "Subject %s was assigned to %s" % (instance.nickname, instance.responsible_user)
+    # Send the mail to the new responsible user, but also to the stock managers.
+    to = stock_managers_emails() + [instance.responsible_user.email]
+    alyx_mail(to, subject)
 
 
 # Other
@@ -712,11 +727,11 @@ class ZygosityFinder(object):
                 zygosity = zygosity[0]
                 if z != zygosity.zygosity:
                     if force:
-                        logger.warn("Zygosity mismatch for %s: was %s, now set to %s.",
-                                    subject, zygosity, symbol)
+                        logger.warning("Zygosity mismatch for %s: was %s, now set to %s.",
+                                       subject, zygosity, symbol)
                     else:
-                        logger.warn("Zygosity mismatch for %s: was %s, would have been set "
-                                    "to %s but aborting now.", subject, zygosity, symbol)
+                        logger.warning("Zygosity mismatch for %s: was %s, would have been set "
+                                       "to %s but aborting now.", subject, zygosity, symbol)
                         return
                 zygosity.zygosity = z
             else:

@@ -1,13 +1,12 @@
 import csv
 from datetime import datetime, timedelta
+from dateutil.rrule import HOURLY
 import functools
 import io
-# import json
 import logging
 from operator import itemgetter
 import os.path as op
 
-# from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -92,11 +91,17 @@ def return_figure(f):
     return HttpResponse(buf.read(), content_type="image/png")
 
 
+def tzone_convert(date_t, tz):
+    date_t = timezone.make_aware(date_t, timezone.get_default_timezone())
+    return timezone.make_naive(date_t, tz)
+
+
 class WaterControl(object):
     def __init__(self, nickname=None, birth_date=None, sex=None,
                  implant_weight=None,
                  reference_weight_pct=0.,
                  zscore_weight_pct=0.,
+                 timezone=timezone.get_default_timezone(),
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname
@@ -110,6 +115,7 @@ class WaterControl(object):
         self.reference_weight_pct = reference_weight_pct
         self.zscore_weight_pct = zscore_weight_pct
         self.thresholds = []
+        self.timezone = timezone
 
     def first_date(self):
         dwa = dwe = None
@@ -190,14 +196,14 @@ class WaterControl(object):
 
     def add_weighing(self, date, weighing):
         """Add a weighing."""
-        self.weighings.append((date, weighing))
+        self.weighings.append((tzone_convert(date, self.timezone), weighing))
 
     def set_reference_weight(self, date, weight):
         """Set a non-default reference weight."""
         self.reference_weighing = (date, weight)
 
     def add_water_administration(self, date, volume, hydrogel=False):
-        self.water_administrations.append((date, volume, hydrogel))
+        self.water_administrations.append((tzone_convert(date, self.timezone), volume, hydrogel))
 
     def add_threshold(self, percentage=None, bgcolor=None, fgcolor=None, line_style=None):
         """Add a threshold for the plot."""
@@ -280,7 +286,9 @@ class WaterControl(object):
                 else self.zscore_weight(date=date))
 
     def percentage_weight(self, date=None):
-        """Percentage of the weight relative to the expected weight."""
+        """Percentage of the weight relative to the expected weight.
+        Expected weight is the reference weight or the zscore weight depending on the water
+        restriction fields"""
         date = date or today()
         iw = self.implant_weight or 0.
         w = self.weight(date=date)
@@ -342,6 +350,19 @@ class WaterControl(object):
                 'is_water_restricted',
                 )
 
+    def weight_status(self):
+        threshold = max(self.zscore_weight_pct, self.reference_weight_pct)
+        thresh_remind = threshold + 0.02
+        w = self.percentage_weight()
+        if w == 0:
+            return 0
+        elif (w / 100) < threshold:
+            return 2
+        elif (w / 100) < thresh_remind:
+            return 1
+        else:
+            return 0
+
     def to_jsonable(self, start_date=None, end_date=None):
         start_date = date(start_date) if start_date else self.first_date()
         end_date = date(end_date) if end_date else today()
@@ -367,7 +388,9 @@ class WaterControl(object):
 
         # Data arrays.
         if self.weighings:
-            ax.xaxis.set_major_locator(mpld.AutoDateLocator(maxticks=8, interval_multiples=False))
+            loc = mpld.AutoDateLocator(maxticks=8, interval_multiples=False)
+            loc.intervald[HOURLY] = [1]
+            ax.xaxis.set_major_locator(loc)
             ax.xaxis.set_major_formatter(mpld.DateFormatter('%Y-%m-%d'))
 
             self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
@@ -423,7 +446,14 @@ def water_control(subject):
     from actions import models as am
     assert subject is not None
     lab = subject.lab
+    # By default, if there is only one lab, use it for the subject.
     if lab is None:
+        from misc.models import Lab
+        if len(Lab.objects.all()) == 1:
+            lab = Lab.objects.first()
+    if lab is None:
+        logger.warning("Subject %s has no lab, no reference weight percentages considered.",
+                       subject)
         rw_pct = zw_pct = 0
     else:
         rw_pct = lab.reference_weight_pct
@@ -434,6 +464,7 @@ def water_control(subject):
         nickname=subject.nickname, birth_date=subject.birth_date, sex=subject.sex,
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
+        timezone=subject.timezone(),
     )
     wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')

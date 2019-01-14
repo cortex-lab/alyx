@@ -13,6 +13,10 @@ from misc import views as mv
 register_file = dv.RegisterFileViewSet.as_view({
     'post': 'create'
 })
+sync_file_status = dv.SyncViewSet.as_view({
+    'post': 'sync',
+    'get': 'sync_status'
+})
 
 user_list = mv.UserViewSet.as_view({
     'get': 'list'
@@ -126,6 +130,9 @@ urlpatterns = [
 
     path('register-file', register_file,
          name="register-file"),
+
+    path('sync-file-status', sync_file_status,
+         name="sync-file-status"),
 
 
     path('users', user_list,

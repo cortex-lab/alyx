@@ -6,7 +6,6 @@ import logging
 from operator import itemgetter
 from textwrap import dedent
 
-from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -59,10 +58,12 @@ class Command(BaseCommand):
                             help="List of available reports")
         parser.add_argument('--no-email', action='store_true', default=False,
                             help="Show report without sending an email")
+        parser.add_argument('--lab', help='Lab for which to run the report')
 
     def handle(self, *args, **options):
         # Sort the list of pairs (user, text) by user to collate all emails for every user.
         # This is because groupby() requires the items to be already sorted.
+        self.lab = options.get('lab')
         tuples = list(self._generate_email(*args, **options))
         tuples = sorted(tuples, key=lambda k: k[0].username)
         for user, texts in groupby(tuples, itemgetter(0)):
@@ -153,9 +154,10 @@ class Command(BaseCommand):
         wr = WaterRestriction.objects.filter(start_time__isnull=False,
                                              end_time__isnull=True,
                                              )
+        if self.lab:
+            wr = wr.filter(subject__lab__name=self.lab)
         subject_ids = [_[0] for _ in wr.values_list('subject').distinct()]
         text = ''
-        threshold = settings.WEIGHT_THRESHOLD
         for subject_id in subject_ids:
             subject = Subject.objects.get(pk=subject_id)
             wc = subject.water_control
@@ -164,9 +166,10 @@ class Command(BaseCommand):
             p = wc.percentage_weight()
             last_weighing = wc.last_weighing_before()
             if not last_weighing:
-                return
+                continue
             date = last_weighing[0]
-            if w < threshold * e:
+            threshold = max(wc.zscore_weight_pct, wc.reference_weight_pct)
+            if wc.weight_status() > 0:
                 text += ('* {subject} ({user} <{email}>) weighed {weight:.1f}g '
                          'instead of {expected:.1f}g ({percentage:.1f}%) on {date}\n').format(
                              subject=subject,
@@ -177,7 +180,7 @@ class Command(BaseCommand):
                              percentage=p,
                              date=date,
                 )
-        text = 'Mice under the {t}% weight limit:\n\n'.format(t=int(100 * threshold)) + text
+        text = 'Mice under the {t}% +2% weight limit:\n\n'.format(t=int(100 * threshold)) + text
         return text
 
     def make_surgery(self, user):

@@ -15,15 +15,18 @@ Alyx has only been tested on Ubuntu (16.04 and 18.04). It could work on other sy
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib
+$ sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
+$ sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
 $ git clone https://github.com/cortex-lab/alyx.git
 $ cd alyx
+$ virtualenv alyxvenv --python=python3
+$ source ./alyxvenv/bin/activate
+$ pip install -r requirements.tx
 $ python setup.py
 Enter a database name [labdb]:
 Enter a postgres username [labdbuser]:
 Enter a postgres password:
 ...
-$ source alyxvenv/bin/activate
 $ python alyx/manage.py check
 $ python alyx/manage.py runserver
 ```

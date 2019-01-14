@@ -23,7 +23,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
                           )
-from .transfers import _get_repositories_for_projects, _create_dataset_file_records
+from .transfers import (
+    _get_repositories_for_projects, _create_dataset_file_records, bulk_sync)
 
 logger = logging.getLogger(__name__)
 
@@ -210,10 +211,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             user = get_user_model().objects.get(username=user)
         else:
             user = request.user
+
+        # get the concerned repository using the name/hostname combination
+        name = request.data.get('name', None)
         hostname = request.data.get('hostname', None)
-        if not hostname:
-            raise ValueError("The hostname argument is required.")
-        repo = DataRepository.objects.get(hostname=hostname)
+        if name:
+            repo = DataRepository.objects.get(name=name)
+        elif hostname:
+            repo = DataRepository.objects.get(hostname=hostname)
+        else:
+            raise ValueError("At least one argument between 'hostname' or 'name' is required.")
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
@@ -255,3 +262,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             response.append(out)
 
         return Response(response, status=201)
+
+
+class SyncViewSet(viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
+    def sync(self, request):
+        bulk_sync()
+        return Response("ok", status=200)
+
+    def sync_status(self, request):
+        rep = bulk_sync(dry_run=True)
+        return Response(rep, status=200)

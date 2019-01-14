@@ -1,10 +1,11 @@
 import logging
 from django.core.management import BaseCommand
+from django.db.models import Count, Q
 
 from actions.models import Session
 from data import transfers
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
-
+from subjects.models import Project
 
 logging.getLogger(__name__).setLevel(logging.WARNING)
 
@@ -20,7 +21,28 @@ def _iter_datasets(dataset_id=None, limit=None, user=None):
         yield dataset
 
 
-def _create_missing_file_records():
+def _create_missing_file_records_main_globus(dry_run=False):
+    for p in Project.objects.all():
+        repos = p.repositories.filter(globus_is_personal=False)
+        dsets = Dataset.objects.filter(session__project=p)
+        for r in repos:
+            dsr = dsets.annotate(rep_count=Count('file_records',
+                                                 filter=Q(file_records__data_repository=r)))
+            dsr = dsr.order_by('session__start_time')
+            to_create = dsr.filter(rep_count=0)
+            for ds in to_create:
+                if ds.file_records.count():
+                    rel_path = ds.file_records.first().relative_path
+                else:
+                    continue  # we do not want to create filerecords if none exist for a dataset
+                print('create', r.name, rel_path)
+                if not dry_run:
+                    FileRecord.objects.create(dataset=ds,
+                                              relative_path=rel_path,
+                                              data_repository=r)
+
+
+def _create_missing_file_records(dry_run=False):
     # Create missing file records for sessions that have been manually assigned
     # to a project.
     for s in Session.objects.select_related('project').prefetch_related(
@@ -37,10 +59,12 @@ def _create_missing_file_records():
             repos_to_create = expected_repos - actual_repos
             # Create them.
             for dr in repos_to_create:
-                fr = FileRecord.objects.create(dataset=fr.dataset,
-                                               relative_path=fr.relative_path,
-                                               data_repository=dr)
-                print("Created %s" % fr)
+                print('Create', fr.relative_path, ' in', dr.name)
+                if not dry_run:
+                    fr = FileRecord.objects.create(dataset=fr.dataset,
+                                                   relative_path=fr.relative_path,
+                                                   data_repository=dr)
+                    print("Created %s" % fr)
 
 
 class Command(BaseCommand):
@@ -65,8 +89,8 @@ class Command(BaseCommand):
         dry = options.get('dry')
 
         if action == 'bulksync':
-            #_create_missing_file_records()
-            transfers.bulk_sync()
+            _create_missing_file_records_main_globus(dry_run=dry)
+            transfers.bulk_sync(dry_run=dry)
 
         if action == 'bulktransfer':
             transfers.bulk_transfer(dry_run=dry)
@@ -76,7 +100,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Login successful."))
 
         if action == 'sync':
-            _create_missing_file_records()
+            _create_missing_file_records(dry_run=dry)
             for dataset in _iter_datasets(dataset_id, limit=limit, user=user):
                 self.stdout.write("Synchronizing file status of %s" % str(dataset))
                 if not dry:

@@ -211,15 +211,21 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
     fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user',
-              'session']
+              'session_l']
     list_display = ['subject_l', 'water_administered', 'user', 'date_time', 'water_type',
-                    'adlib', 'session']
-    list_display_links = ('water_administered', 'session')
+                    'adlib', 'session_l']
+    list_display_links = ('water_administered', )
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter, ('subject', RelatedDropdownFilter)]
-    readonly_fields = ['session']
+    readonly_fields = ['session_l', ]
+
+    def session_l(self, obj):
+        url = get_admin_url(obj.session)
+        return format_html('<a href="{url}">{session}</a>', session=obj.session or '-', url=url)
+    session_l.short_description = 'Session'
+    session_l.allow_tags = True
 
 
 class WaterRestrictionForm(forms.ModelForm):
