@@ -268,7 +268,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     fields = ['subject', 'implant_weight', 'reference_weight',
               'start_time', 'end_time', 'water_type', 'users', 'narrative']
-    list_display = ('subject_w', 'start_time_l', 'water_type', 'weight',
+    list_display = ('subject_w', 'start_time_l', 'end_time_l', 'water_type', 'weight',
                     'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
     list_display_links = ('start_time_l', 'end_time_l')
