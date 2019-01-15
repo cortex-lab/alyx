@@ -284,10 +284,12 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         url = reverse('water-history', kwargs={'subject_id': obj.subject.id})
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.subject.nickname)
     subject_w.short_description = 'subject'
+    subject_w.admin_order_field = 'subject'
 
     def start_time_l(self, obj):
         return obj.start_time.date()
     start_time_l.short_description = 'start date'
+    start_time_l.admin_order_field = 'start_time'
 
     def end_time_l(self, obj):
         if obj.end_time:
@@ -295,6 +297,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         else:
             return obj.end_time
     end_time_l.short_description = 'end date'
+    end_time_l.admin_order_field = 'end_time'
 
     def weight(self, obj):
         if not obj.subject:
