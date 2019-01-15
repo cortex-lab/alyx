@@ -68,16 +68,16 @@ class ActiveFilter(DefaultListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            (None, 'Active'),
-            ('all', 'All'),
+            (None, 'All'),
+            ('active', 'Active'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() is None:
+        if self.value() == 'active':
             return queryset.filter(start_time__isnull=False,
                                    end_time__isnull=True,
                                    )
-        elif self.value == 'all':
+        elif self.value is None:
             return queryset.all()
 
 
