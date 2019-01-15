@@ -292,11 +292,9 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'weight_percent', 'birth_date', 'sex_l', 'ear_mark_',
-                    'breeding_pair_l', 'line_l', 'litter_l',
-                    'zygosities',
-                    'alive', 'responsible_user',
-                    'cage', 'description'
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user',
+                    'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l', 'line_l', 'litter_l',
+                    'zygosities', 'alive', 'cage', 'description'
                     ]
     list_select_related = ('line', 'litter', 'litter__breeding_pair', 'responsible_user')
     search_fields = ['nickname',
@@ -324,6 +322,10 @@ class SubjectAdmin(BaseAdmin):
                SessionInline, OtherActionInline,
                NoteInline,
                ]
+
+    def session_count(self, sub):
+        return Session.objects.filter(subject=sub).count()
+    session_count.short_description = '# sess'
 
     def weight_percent(self, sub):
         status = sub.water_control.weight_status()
