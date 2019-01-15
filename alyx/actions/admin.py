@@ -271,7 +271,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     list_display = ('subject_w', 'start_time_l', 'water_type', 'weight',
                     'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
-    list_display_links = ('start_time_l',)
+    list_display_links = ('start_time_l', 'end_time_l')
     readonly_fields = ('weight',)  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname']
@@ -287,7 +287,14 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     def start_time_l(self, obj):
         return obj.start_time.date()
-    start_time_l.short_description = 'start time'
+    start_time_l.short_description = 'start date'
+
+    def end_time_l(self, obj):
+        if obj.end_time:
+            return obj.end_time.date()
+        else:
+            return obj.end_time
+    end_time_l.short_description = 'end date'
 
     def weight(self, obj):
         if not obj.subject:
