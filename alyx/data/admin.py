@@ -47,7 +47,7 @@ class DataFormatAdmin(BaseAdmin):
 
 class DatasetTypeAdmin(BaseAdmin):
     fields = ('name', 'description', 'filename_pattern', 'created_by')
-    list_display = fields
+    list_display = ('name', 'fcount', 'description', 'filename_pattern', 'created_by')
     ordering = ('name',)
     search_fields = ('name', 'description', 'filename_pattern', 'created_by__username')
     list_filter = [('created_by', RelatedDropdownFilter)]
@@ -61,6 +61,9 @@ class DatasetTypeAdmin(BaseAdmin):
         if not obj.created_by and 'created_by' not in form.changed_data:
             obj.created_by = request.user
         super(DatasetTypeAdmin, self).save_model(request, obj, form, change)
+
+    def fcount(self, dt):
+        return Dataset.objects.filter(dataset_type=dt).count()
 
 
 class BaseExperimentalDataAdmin(BaseAdmin):
