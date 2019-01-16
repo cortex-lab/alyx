@@ -320,8 +320,10 @@ class SubjectAdmin(BaseAdmin):
                    ]
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, AddSurgeryInline,
-               SessionInline, OtherActionInline,
+               SurgeryInline,
+               AddSurgeryInline,
+               SessionInline,
+               OtherActionInline,
                NoteInline,
                ]
 

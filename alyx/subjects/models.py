@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.models import WaterRestriction
+from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
 from misc.models import Lab
 
@@ -399,21 +400,13 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     """Send en email when a subject's responsible user changes."""
     if not instance:
         return
-    # Only continue if the request has changed.
+    # Only continue if the responsible user has changed.
     if not _has_field_changed(instance, 'responsible_user'):
         return
-    # Only continue if there's an email.
-    if not instance.responsible_user.email:
-        return
-    logger.info("Subject %s was assigned from %s to %s.",
-                instance,
-                _get_old_field(instance, 'responsible_user'),
-                instance.responsible_user,
-                )
-    subject = "Subject %s was assigned to %s" % (instance.nickname, instance.responsible_user)
-    # Send the mail to the new responsible user, but also to the stock managers.
-    to = stock_managers_emails() + [instance.responsible_user.email]
-    alyx_mail(to, subject)
+    from misc.models import LabMember
+    old_user = LabMember.objects.get(pk=_get_old_field(instance, 'responsible_user'))
+    new_user = instance.responsible_user
+    responsible_user_changed(instance, old_user, new_user)
 
 
 # Other

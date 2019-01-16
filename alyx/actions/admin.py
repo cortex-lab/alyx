@@ -13,6 +13,7 @@ from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
+                     Notification, NotificationRule
                      )
 from data.models import Dataset
 from misc.admin import NoteInline
@@ -453,6 +454,50 @@ class SessionAdmin(BaseActionAdmin):
         return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
 
 
+class NotificationUserFilter(DefaultListFilter):
+    title = 'notification users'
+    parameter_name = 'users'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'Me'),
+            ('all', 'All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.filter(users__in=[request.user])
+        elif self.value == 'all':
+            return queryset.all()
+
+
+class NotificationAdmin(BaseAdmin):
+    list_display = ('title', 'subject', 'users_l',
+                    'send_at', 'sent_at',
+                    'status', 'notification_type')
+    search_fields = ('notification_type', 'subject__nickname', 'title')
+    list_filter = (NotificationUserFilter, 'notification_type')
+    fields = ('title', 'notification_type', 'subject', 'message',
+              'users', 'status', 'send_at', 'sent_at')
+    ordering = ('-send_at',)
+
+    def users_l(self, obj):
+        return sorted(map(str, obj.users.all()))
+
+
+class NotificationRuleAdmin(BaseAdmin):
+    list_display = ('notification_type', 'user', 'subjects_scope')
+    search_fields = ('notification_type', 'user__username', 'subject_scope')
+    fields = ('notification_type', 'user', 'subjects_scope')
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'user':
+            kwargs['initial'] = request.user.id
+        return super(NotificationRuleAdmin, self).formfield_for_foreignkey(
+            db_field, request, **kwargs
+        )
+
+
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
@@ -464,3 +509,6 @@ admin.site.register(VirusInjection, BaseActionAdmin)
 
 admin.site.register(Surgery, SurgeryAdmin)
 admin.site.register(WaterType, WaterTypeAdmin)
+
+admin.site.register(Notification, NotificationAdmin)
+admin.site.register(NotificationRule, NotificationRuleAdmin)

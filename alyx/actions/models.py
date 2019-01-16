@@ -1,4 +1,6 @@
 from datetime import timedelta
+import logging
+from math import inf
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -8,7 +10,6 @@ from django.utils import timezone
 from alyx.base import BaseModel, modify_fields, alyx_mail
 from misc.models import Lab, LabLocation, LabMember
 
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,11 @@ class Weighing(BaseModel):
         """Expected weighing."""
         wc = self.subject.water_control
         return wc.expected_weight(self.date_time)
+
+    def save(self, *args, **kwargs):
+        super(Weighing, self).save(*args, **kwargs)
+        from actions.notifications import check_weighing
+        check_weighing(self.subject, date=self.date_time)
 
     def __str__(self):
         return 'Weighing %.2f g for %s' % (self.weight,
@@ -290,58 +296,47 @@ NOTIFICATION_TYPES = (
 )
 
 
-def responsible_user_changed(subject, old_user, new_user):
-    """Send a notification when a responsible user changes."""
-    msg = 'Responsible user of %s changed from %s to %s' % (subject, old_user, new_user)
+# Minimum delay, in seconds, until the same notification can be sent again.
+NOTIFICATION_MIN_DELAYS = {
+    'responsible_user_change': 3600,
+    'mouse_underweight': 3600,
+    'mouse_water': 3600,
+}
+
+
+def delay_since_last_notification(notification_type, title, subject):
+    """Return the delay since the last notification corresponding to the given
+    type, title, subject, in seconds, wheter it was actually sent or not."""
+    last_notif = Notification.objects.filter(
+        notification_type=notification_type,
+        title=title,
+        subject=subject).exclude(status='no-send').order_by('send_at').last()
+    if last_notif:
+        date = last_notif.sent_at or last_notif.send_at
+        return (timezone.now() - date).total_seconds()
+    return inf
+
+
+def create_notification(notification_type, message, subject=None, users=None):
+    delay = delay_since_last_notification(notification_type, message, subject)
+    if delay < NOTIFICATION_MIN_DELAYS.get(notification_type, 0):
+        logger.warning("This notification was sent less than %d seconds ago, skipping.", delay)
+        return
     notif = Notification.objects.create(
-        notification_type='responsible_user_change',
-        title=msg,
-        message=msg,
-        subject=subject,
-    )
-    notif.users.add(old_user, new_user)
+        notification_type=notification_type,
+        title=message,
+        message=message,
+        subject=subject)
+    if users:
+        notif.users.add(*users)
+    elif subject and subject.responsible_user:
+        notif.users.add(subject.responsible_user)
+    logger.debug(
+        "Create notification '%s' for %s (%s %s)",
+        message, ', '.join(map(str, notif.users.all())),
+        notif.status, notif.send_at.strftime('%Y-%m-%d %H:%M'))
     notif.send_if_needed()
-
-
-def check_weighing(subject, date=None):
-    """Called when a weighing is added."""
-    # Reinit the water_control instance to make sure the just-added
-    # weighing is taken into account
-    wc = subject.reinit_water_control()
-    u = subject.responsible_user
-    perc = wc.percentage_weight(date=date)
-    min_perc = wc.min_percentage(date=date)
-    if perc <= min_perc + 2:
-        header = 'WARNING' if perc <= min_perc else 'Warning'
-        msg = "%s: %s weight is %.1f%%" % (header, subject, perc)
-        notif = Notification.objects.create(
-            notification_type='mouse_underweight',
-            title=msg,
-            message=msg,
-            subject=subject,
-        )
-        if u:
-            notif.users.add(u)
-        notif.send_if_needed()
-
-
-def check_water_administration(subject, date=None):
-    date = date or timezone.now()
-    wc = subject.reinit_water_control()
-    remaining = wc.remaining_water(date=date)
-    wa = wc.last_water_administration_at(date=date)
-    delay = date - wa[0]
-    if remaining > 0 and delay.total_seconds() > 23 * 3600:
-        msg = "%.1f mL remaining for %s" % (remaining, subject)
-        notif = Notification.objects.create(
-            notification_type='mouse_water',
-            title=msg,
-            message=msg,
-            subject=subject,
-        )
-        if subject.responsible_user:
-            notif.users.add(subject.responsible_user)
-        notif.send_if_needed()
+    return notif
 
 
 def send_pending_emails():

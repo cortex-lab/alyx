@@ -221,7 +221,9 @@ class WaterControl(object):
 
     def reference_weighing_at(self, date=None):
         """Return the reference weighing at the specified date, or today."""
-        if date is None and self.reference_weighing:
+        if isinstance(date, datetime):
+            date = date.date()
+        if self.reference_weighing and (date is None or date >= self.reference_weighing[0].date()):
             return self.reference_weighing
         date = date or self.today()
         wr = self.water_restriction_at(date)
@@ -298,7 +300,11 @@ class WaterControl(object):
     def percentage_weight(self, date=None):
         """Percentage of the weight relative to the expected weight.
         Expected weight is the reference weight or the zscore weight depending on the water
-        restriction fields"""
+        restriction fields.
+
+        Note: a percentage of 0 means that the expected weight was not available.
+
+        """
         date = date or self.today()
         iw = self.implant_weight or 0.
         w = self.weight(date=date)

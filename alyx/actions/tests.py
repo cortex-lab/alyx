@@ -8,7 +8,9 @@ from misc.models import Lab
 from actions.water_control import date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
-    Notification, check_weighing, check_water_administration)
+    Notification)
+from actions.notifications import check_water_administration
+from misc.models import LabMember
 from subjects.models import Subject
 
 
@@ -20,7 +22,8 @@ class WaterControlTests(TestCase):
             WaterType.objects.create(name=wt)
         # create a subject
         lab = Lab.objects.create(name='lab')
-        self.sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=lab)
+        self.sub = Subject.objects.create(
+            nickname='bigboy', birth_date='2018-09-01', lab=lab)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)
         for n, w in enumerate(np.linspace(25, 20, 50)):
@@ -59,8 +62,13 @@ class NotificationTests(TestCase):
     def setUp(self):
         base.DISABLE_MAIL = True
         self.lab = Lab.objects.create(name='testlab', reference_weight_pct=.85)
+
+        self.user1 = LabMember.objects.create(username='test1')
+        self.user2 = LabMember.objects.create(username='test2')
+
         self.subject = Subject.objects.create(
-            nickname='test', birth_date=date('2018-01-01'), lab=self.lab)
+            nickname='test', birth_date=date('2018-01-01'), lab=self.lab,
+            responsible_user=self.user1)
         Weighing.objects.create(
             subject=self.subject, weight=10,
             date_time=timezone.datetime(2018, 6, 1, 12, 0, 0)
@@ -80,39 +88,46 @@ class NotificationTests(TestCase):
     def tearDown(self):
         base.DISABLE_MAIL = False
 
-    def test_notif_0(self):
+    def test_notif_weighing_0(self):
+        n = len(Notification.objects.all())
         Weighing.objects.create(
             subject=self.subject, weight=9,
             date_time=timezone.datetime(2018, 6, 9, 8, 0, 0)
         )
-        check_weighing(self.subject, date=self.date)
-        self.assertTrue(len(Notification.objects.all()) == 0)
+        # No notification created here.
+        self.assertTrue(len(Notification.objects.all()) == n)
 
-    def test_notif_1(self):
+    def test_notif_weighing_1(self):
         Weighing.objects.create(
             subject=self.subject, weight=7,
             date_time=timezone.datetime(2018, 6, 9, 12, 0, 0)
         )
-        check_weighing(self.subject, date=self.date)
         notif = Notification.objects.last()
-        self.assertTrue(notif.title.startswith('WARNING'))
+        self.assertTrue(notif.title.startswith('WARNING: test weight is 70.0%'))
 
-    def test_notif_2(self):
+    def test_notif_weighing_2(self):
         Weighing.objects.create(
             subject=self.subject, weight=8.6,
             date_time=timezone.datetime(2018, 6, 9, 16, 0, 0)
         )
-        check_weighing(self.subject, date=self.date)
         notif = Notification.objects.last()
         self.assertTrue(notif.title.startswith('Warning'))
 
-    def test_water_1(self):
+    def test_notif_water_1(self):
         date = timezone.datetime(2018, 6, 3, 16, 0, 0)
         check_water_administration(self.subject, date=date)
         notif = Notification.objects.last()
         self.assertTrue(notif is None)
 
+    def test_notif_water_2(self):
         date = timezone.datetime(2018, 6, 4, 12, 0, 0)
         check_water_administration(self.subject, date=date)
         notif = Notification.objects.last()
         self.assertTrue(notif is not None)
+
+    def test_notif_user_change_1(self):
+        self.subject.responsible_user = self.user2
+        self.subject.save()
+        notif = Notification.objects.last()
+        self.assertTrue(notif is not None)
+        self.assertEqual(notif.title, 'Responsible user of test changed from test1 to test2')
