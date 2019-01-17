@@ -408,6 +408,7 @@ def send_subject_responsible_user_mail_change(sender, instance=None, **kwargs):
     new_user = instance.responsible_user
     responsible_user_changed(instance, old_user, new_user)
 
+
 # Other
 # ------------------------------------------------------------------------------------------------
 
