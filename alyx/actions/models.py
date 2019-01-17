@@ -188,6 +188,7 @@ class Surgery(BaseAction):
     OUTCOME_TYPES = (
         ('a', 'Acute'),
         ('r', 'Recovery'),
+        ('n', 'Non-recovery'),
     )
     outcome_type = models.CharField(max_length=1,
                                     choices=OUTCOME_TYPES,
