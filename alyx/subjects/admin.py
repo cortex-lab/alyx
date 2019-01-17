@@ -292,11 +292,9 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'birth_date', 'sex_l', 'ear_mark_',
-                    'breeding_pair_l', 'line_l', 'litter_l',
-                    'zygosities',
-                    'alive', 'responsible_user',
-                    'cage', 'description'
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user',
+                    'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l', 'line_l', 'litter_l',
+                    'zygosities', 'alive', 'cage', 'description'
                     ]
     list_select_related = ('line', 'litter', 'litter__breeding_pair', 'responsible_user')
     search_fields = ['nickname',
@@ -326,6 +324,26 @@ class SubjectAdmin(BaseAdmin):
                OtherActionInline,
                NoteInline,
                ]
+
+    def session_count(self, sub):
+        return Session.objects.filter(subject=sub).count()
+    session_count.short_description = '# sess'
+
+    def weight_percent(self, sub):
+        status = sub.water_control.weight_status()
+        pct_wei = sub.water_control.percentage_weight()
+        colour_code = '008000'
+        if status == 1:  # orange colour code for reminders
+            colour_code = 'FFA500'
+        if status == 2:  # red colour code for errors
+            colour_code = 'FF0000'
+        if pct_wei == 0:
+            return '-'
+        else:
+            url = reverse('water-history', kwargs={'subject_id': sub.id})
+            return format_html(
+                '<b><a href="{url}" style="color: #{};">{}%</a></b>',
+                colour_code, '{:2.1f}'.format(pct_wei), url=url)
 
     def ear_mark_(self, obj):
         return obj.ear_mark
@@ -466,9 +484,17 @@ class SubjectAdmin(BaseAdmin):
             instance.save()
         formset.save_m2m()
 
+    def save_model(self, request, obj, form, change):
+        if obj.reduced_date is not None and not obj.reduced:
+            obj.reduced = True
+        if obj.death_date is not None and obj.to_be_culled:
+            obj.to_be_culled = False
+        super(SubjectAdmin, self).save_model(request, obj, form, change)
+
 
 # Subject inline
 # ------------------------------------------------------------------------------------------------
+
 
 class SubjectInlineForm(forms.ModelForm):
     TEST_RESULTS = (

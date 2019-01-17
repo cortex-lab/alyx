@@ -160,7 +160,7 @@ def globus_file_exists(file_record):
     try:
         existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=dir_path)
     except globus_sdk.exc.TransferAPIError as e:
-        logger.warn(e)
+        logger.warning(e)
         return False
     for existing_file in existing:
         if existing_file['name'] in (name, name_uuid) and existing_file['size'] > 0:
@@ -248,7 +248,7 @@ def iter_registered_directories(data_repository=None, tc=None, path=None):
     try:
         contents = tc.operation_ls(data_repository.globus_endpoint_id, path=path)
     except globus_sdk.exc.TransferAPIError as e:
-        logger.warn(e)
+        logger.warning(e)
         return
     contents = contents['DATA']
     subdirs = [file['name'] for file in contents if file['type'] == 'dir']
@@ -273,7 +273,7 @@ def update_file_exists(dataset):
             logger.info(
                 "File %s exists on %s.", file.relative_path, file.data_repository.name)
         elif file_exists_db and not file_exists_globus:
-            logger.warn(
+            logger.warning(
                 "File %s exists on %s in the database but not in globus.",
                 file.relative_path, file.data_repository.name)
             file.exists = False
@@ -313,8 +313,6 @@ def transfers_required(dataset):
             # the source repository is personal.
             if (missing_file.data_repository.globus_is_personal and
                     existing_file.data_repository.globus_is_personal):
-                # logger.warn("Our globus subscription does not support file transfer between two "
-                #             "personal servers.")
                 continue
             yield {
                 'source_data_repository': existing_file.data_repository.name,
@@ -340,7 +338,10 @@ def bulk_sync(dry_run=False):
     all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
         'dataset__created_datetime')
     if dry_run:
-        return all_files.values_list('relative_path', flat=True).distinct()
+        fvals = all_files.values_list('relative_path', flat=True).distinct()
+        for l in list(fvals):
+            print(l)
+        return fvals
 
     gc = globus_transfer_client()
     # loop over all files concerned by a transfer and update the exists and filesize fields
@@ -356,7 +357,8 @@ def bulk_sync(dry_run=False):
             _last_ep = qf.data_repository.globus_endpoint_id
             ep_info = gc.get_endpoint(_last_ep)
         # if the endpoint is not connected skip
-        if not ep_info['DATA'][0]['is_connected']:
+        # NB: the non-personal endpoints have a None so need to explicitly test for False
+        if ep_info['gcp_connected'] is False:
             logger.warning('UNREACHABLE Endpoint "' + ep_info['display_name'] +
                            '" (' + str(_last_ep) + ') ' + qf.relative_path)
             continue

@@ -69,16 +69,16 @@ class ActiveFilter(DefaultListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            (None, 'Active'),
-            ('all', 'All'),
+            (None, 'All'),
+            ('active', 'Active'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() is None:
+        if self.value() == 'active':
             return queryset.filter(start_time__isnull=False,
                                    end_time__isnull=True,
                                    )
-        elif self.value == 'all':
+        elif self.value is None:
             return queryset.all()
 
 
@@ -212,15 +212,21 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     form = WaterAdministrationForm
 
     fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user',
-              'session']
+              'session_l']
     list_display = ['subject_l', 'water_administered', 'user', 'date_time', 'water_type',
-                    'adlib', 'session']
-    list_display_links = ('water_administered', 'session')
+                    'adlib', 'session_l']
+    list_display_links = ('water_administered', )
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
     search_fields = ['subject__nickname']
     list_filter = [ResponsibleUserListFilter, ('subject', RelatedDropdownFilter)]
-    readonly_fields = ['session']
+    readonly_fields = ['session_l', ]
+
+    def session_l(self, obj):
+        url = get_admin_url(obj.session)
+        return format_html('<a href="{url}">{session}</a>', session=obj.session or '-', url=url)
+    session_l.short_description = 'Session'
+    session_l.allow_tags = True
 
 
 class WaterRestrictionForm(forms.ModelForm):
@@ -263,10 +269,10 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     fields = ['subject', 'implant_weight', 'reference_weight',
               'start_time', 'end_time', 'water_type', 'users', 'narrative']
-    list_display = ('subject_w', 'start_time_l', 'water_type', 'weight',
+    list_display = ('subject_w', 'start_time_l', 'end_time_l', 'water_type', 'weight',
                     'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
-    list_display_links = ('start_time_l',)
+    list_display_links = ('start_time_l', 'end_time_l')
     readonly_fields = ('weight',)  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname']
@@ -279,10 +285,20 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         url = reverse('water-history', kwargs={'subject_id': obj.subject.id})
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.subject.nickname)
     subject_w.short_description = 'subject'
+    subject_w.admin_order_field = 'subject'
 
     def start_time_l(self, obj):
         return obj.start_time.date()
-    start_time_l.short_description = 'start time'
+    start_time_l.short_description = 'start date'
+    start_time_l.admin_order_field = 'start_time'
+
+    def end_time_l(self, obj):
+        if obj.end_time:
+            return obj.end_time.date()
+        else:
+            return obj.end_time
+    end_time_l.short_description = 'end date'
+    end_time_l.admin_order_field = 'end_time'
 
     def weight(self, obj):
         if not obj.subject:
