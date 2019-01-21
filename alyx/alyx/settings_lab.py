@@ -1,5 +1,5 @@
 # ALYX-SPECIFIC
-ALLOWED_HOSTS = ['localhost', 'alyx-dev.cortexlab.net', 'alyx.cortexlab.net']
+ALLOWED_HOSTS = ['localhost']
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'GB'
 GLOBUS_CLIENT_ID = '525cc517-8ccb-4d11-8036-af332da5eafd'

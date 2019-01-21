@@ -68,16 +68,16 @@ class ActiveFilter(DefaultListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            (None, 'Active'),
-            ('all', 'All'),
+            (None, 'All'),
+            ('active', 'Active'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() is None:
+        if self.value() == 'active':
             return queryset.filter(start_time__isnull=False,
                                    end_time__isnull=True,
                                    )
-        elif self.value == 'all':
+        elif self.value is None:
             return queryset.all()
 
 
@@ -268,10 +268,10 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 
     fields = ['subject', 'implant_weight', 'reference_weight',
               'start_time', 'end_time', 'water_type', 'users', 'narrative']
-    list_display = ('subject_w', 'start_time_l', 'water_type', 'weight',
+    list_display = ('subject_w', 'start_time_l', 'end_time_l', 'water_type', 'weight',
                     'weight_ref') + WaterControl._columns[3:]
     list_select_related = ('subject',)
-    list_display_links = ('start_time_l',)
+    list_display_links = ('start_time_l', 'end_time_l')
     readonly_fields = ('weight',)  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname']
@@ -284,10 +284,20 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         url = reverse('water-history', kwargs={'subject_id': obj.subject.id})
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.subject.nickname)
     subject_w.short_description = 'subject'
+    subject_w.admin_order_field = 'subject'
 
     def start_time_l(self, obj):
         return obj.start_time.date()
-    start_time_l.short_description = 'start time'
+    start_time_l.short_description = 'start date'
+    start_time_l.admin_order_field = 'start_time'
+
+    def end_time_l(self, obj):
+        if obj.end_time:
+            return obj.end_time.date()
+        else:
+            return obj.end_time
+    end_time_l.short_description = 'end date'
+    end_time_l.admin_order_field = 'end_time'
 
     def weight(self, obj):
         if not obj.subject:
@@ -449,10 +459,10 @@ class SessionAdmin(BaseActionAdmin):
     user_list.short_description = 'users'
 
     def project_list(self, obj):
-        projects = list(obj.subject.projects.all())
-        if obj.project_id:
-            projects += [obj.project]
-        return ', '.join(p.name for p in projects)
+        projects = tuple(p.name for p in obj.subject.projects.all())
+        if obj.project:
+            projects += (obj.project.name,)
+        return sorted(set(projects))
     project_list.short_description = 'projects'
 
     def dataset_types(self, obj):
