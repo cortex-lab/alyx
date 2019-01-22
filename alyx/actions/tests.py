@@ -74,3 +74,5 @@ class WaterControlTests(TestCase):
         wc = self.sub.water_control
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(wc.expected_weight(), (wc.reference_weight() + zscore) / 2)
+        # test that the thresholds are all above 70%
+        self.assertTrue(all([thrsh[0] > 0.4 for thrsh in wc.thresholds]))

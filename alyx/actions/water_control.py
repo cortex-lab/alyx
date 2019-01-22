@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 PALETTE = {
-    'green': '#C9FFE2',
+    'green': '#E7FFF1',
     'orange': '#FFE2C9',
     'red': '#FFC9D2',
 }
@@ -405,14 +405,20 @@ class WaterControl(object):
             expected_weights = np.array(
                 [self.expected_weight(date) for date in weighing_dates],
                 dtype=np.float64)
+            zscore_weights = np.array(
+                [self.zscore_weight(date) for date in weighing_dates],
+                dtype=np.float64)
+            reference_weights = np.array(
+                [self.reference_weight(date) for date in weighing_dates],
+                dtype=np.float64)
 
         # spans is a list of pairs (date, color) where there are changes of background colors.
         for start_wr, end_wr in self.water_restrictions:
             end_wr = end_wr or end
             # Get the dates and weights for the current water restriction.
-            ds, ws, es = restrict_dates(
-                weighing_dates, start_wr, end_wr, weights, expected_weights)
-
+            ds, ws, es, zw, rw = restrict_dates(weighing_dates, start_wr, end_wr, weights,
+                                                expected_weights, zscore_weights,
+                                                reference_weights)
             # Plot background colors.
             spans = [(start_wr, None)]
             for d, w, e in zip(ds, ws, es):
@@ -424,6 +430,10 @@ class WaterControl(object):
             spans.append((end_wr, None))
             for (d0, c), (d1, _) in zip(spans, spans[1:]):
                 ax.axvspan(d0, d1, color=c or 'w')
+
+            # Plot reference weight and zscore
+            ax.plot(ds, rw, '--', color='b', lw=1)
+            ax.plot(ds, zw, '-.', color='g', lw=1)
 
             # Plot weight thresholds.
             for p, bgc, fgc, ls in self.thresholds:
@@ -439,7 +449,8 @@ class WaterControl(object):
         ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
-        ax.legend(['%d%%' % (100 * t[0]) for t in self.thresholds], loc=2)
+        leg = ['ref weight', 'zscore'] + ['%d%%' % (100 * t[0]) for t in self.thresholds]
+        ax.legend(leg, loc=2)
         ax.grid(True)
         f.tight_layout()
         return return_figure(f)
@@ -465,9 +476,8 @@ def water_control(subject):
         zscore_weight_pct=zw_pct,
         timezone=subject.timezone(),
     )
-    wc.add_threshold(percentage=rw_pct or zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
+    wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
-
     # Water restrictions.
     wrs = am.WaterRestriction.objects.filter(subject=subject).order_by('start_time')
     # Reference weight.
