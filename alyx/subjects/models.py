@@ -259,7 +259,9 @@ class Subject(BaseModel):
 
     @property
     def water_control(self):
-        return water_control(self)
+        if self._water_control is None:
+            self._water_control = water_control(self)
+        return self._water_control
 
     def zygosity_strings(self):
         alleles = self.line.alleles.all() if self.line else Allele.objects.all()
@@ -309,6 +311,7 @@ class Subject(BaseModel):
                 self.request = srs[0]
         # Keep the history of some fields in the JSON.
         save_old_fields(self, self._fields_history)
+        self._water_control = water_control(self)
         return super(Subject, self).save(*args, **kwargs)
 
     def __str__(self):

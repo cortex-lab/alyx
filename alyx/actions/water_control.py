@@ -481,7 +481,7 @@ def water_control(subject):
     lab = subject.lab
     # By default, if there is only one lab, use it for the subject.
     if lab is None:
-        logger.warning("Subject %s has no lab, no reference weight percentages considered.",
+        logger.info("Subject %s has no lab, no reference weight percentages considered.",
                        subject)
         rw_pct = zw_pct = 0
     else:
