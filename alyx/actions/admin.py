@@ -370,7 +370,7 @@ class WeighingForm(BaseActionForm):
 
 
 class WeighingAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'weight', 'date_time']
+    list_display = ['subject_l', 'weight', 'percentage_weight', 'date_time']
     list_select_related = ('subject',)
     fields = ['subject', 'date_time', 'weight', 'user']
     ordering = ('-date_time',)
@@ -380,6 +380,11 @@ class WeighingAdmin(BaseActionAdmin):
                    ('subject', RelatedDropdownFilter)]
 
     form = WeighingForm
+
+    def percentage_weight(self, obj):
+        wc = obj.subject.water_control
+        return wc.percentage_weight_html()
+    percentage_weight.short_description = 'Weight %'
 
 
 class WaterTypeAdmin(BaseActionAdmin):

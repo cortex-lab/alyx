@@ -7,6 +7,8 @@ import logging
 from operator import itemgetter
 import os.path as op
 
+from django.urls import reverse
+from django.utils.html import format_html
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -98,7 +100,7 @@ def tzone_convert(date_t, tz):
 
 class WaterControl(object):
     def __init__(self, nickname=None, birth_date=None, sex=None,
-                 implant_weight=None,
+                 implant_weight=None, subject_id=None,
                  reference_weight_pct=0.,
                  zscore_weight_pct=0.,
                  timezone=timezone.get_default_timezone(),
@@ -108,6 +110,7 @@ class WaterControl(object):
         self.birth_date = birth_date
         self.sex = sex
         self.implant_weight = implant_weight or 0.
+        self.subject_id = subject_id
         self.water_restrictions = []
         self.water_administrations = []
         self.weighings = []
@@ -298,6 +301,22 @@ class WaterControl(object):
         e = self.expected_weight(date=date)
         return 100 * (w - iw) / (e - iw) if (e - iw) > 0 else 0.
 
+    def percentage_weight_html(self):
+        status = self.weight_status()
+        pct_wei = self.percentage_weight()
+        colour_code = '008000'
+        if status == 1:  # orange colour code for reminders
+            colour_code = 'FFA500'
+        if status == 2:  # red colour code for errors
+            colour_code = 'FF0000'
+        if pct_wei == 0:
+            return '-'
+        else:
+            url = reverse('water-history', kwargs={'subject_id': self.subject_id})
+            return format_html(
+                '<b><a href="{url}" style="color: #{};">{}%</a></b>',
+                colour_code, '{:2.1f}'.format(pct_wei), url=url)
+
     def min_weight(self, date=None):
         """Minimum weight for the mouse."""
         date = date or today()
@@ -475,6 +494,7 @@ def water_control(subject):
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
         timezone=subject.timezone(),
+        subject_id=subject.id,
     )
     wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')

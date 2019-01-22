@@ -328,20 +328,9 @@ class SubjectAdmin(BaseAdmin):
     session_count.short_description = '# sess'
 
     def weight_percent(self, sub):
-        status = sub.water_control.weight_status()
-        pct_wei = sub.water_control.percentage_weight()
-        colour_code = '008000'
-        if status == 1:  # orange colour code for reminders
-            colour_code = 'FFA500'
-        if status == 2:  # red colour code for errors
-            colour_code = 'FF0000'
-        if pct_wei == 0:
-            return '-'
-        else:
-            url = reverse('water-history', kwargs={'subject_id': sub.id})
-            return format_html(
-                '<b><a href="{url}" style="color: #{};">{}%</a></b>',
-                colour_code, '{:2.1f}'.format(pct_wei), url=url)
+        wc = sub.water_control
+        return wc.percentage_weight_html()
+    weight_percent.short_description = 'Weight %'
 
     def ear_mark_(self, obj):
         return obj.ear_mark
