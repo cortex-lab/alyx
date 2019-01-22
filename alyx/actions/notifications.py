@@ -33,6 +33,8 @@ def check_water_administration(subject, date=None):
     wc = subject.reinit_water_control()
     remaining = wc.remaining_water(date=date)
     wa = wc.last_water_administration_at(date=date)
+    if not wa:
+        return
     delay = date - wa[0]
     # Notification if water needs to be given more than 23h after the last
     # water administration.

@@ -320,8 +320,10 @@ def delay_since_last_notification(notification_type, title, subject):
 
 def create_notification(notification_type, message, subject=None, users=None):
     delay = delay_since_last_notification(notification_type, message, subject)
-    if delay < NOTIFICATION_MIN_DELAYS.get(notification_type, 0):
-        logger.warning("This notification was sent less than %d seconds ago, skipping.", delay)
+    max_delay = NOTIFICATION_MIN_DELAYS.get(notification_type, 0)
+    if delay < max_delay:
+        logger.warning(
+            "This notification was sent %d s ago (< %d s), skipping.", delay, max_delay)
         return
     notif = Notification.objects.create(
         notification_type=notification_type,

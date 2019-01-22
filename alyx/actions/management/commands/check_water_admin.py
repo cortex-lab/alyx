@@ -1,5 +1,6 @@
 from django.core.management import BaseCommand
-from actions.models import WaterRestriction, check_water_administration
+from actions.models import WaterRestriction
+from actions.notifications import check_water_administration
 
 
 class Command(BaseCommand):
