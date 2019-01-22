@@ -318,10 +318,48 @@ def delay_since_last_notification(notification_type, title, subject):
     return inf
 
 
-def create_notification(notification_type, message, subject=None, users=None):
+def check_scope(user, subject, scope):
+    if subject is None:
+        return True
+    # Default scope: mine.
+    scope = scope or 'mine'
+    assert scope in ('none', 'mine', 'lab', 'all')
+    if scope == 'mine':
+        return subject.responsible_user == user
+    elif scope == 'lab':
+        return subject.lab.name in (user.lab or ())
+    elif scope == 'all':
+        return True
+    elif scope == 'none':
+        return False
+
+
+def get_recipients(notification_type, subject=None, users=None):
+    """Return the list of users that will receive a notification."""
+    # Default: initial list of recipients is the subject's responsible user.
+    if users is None and subject and subject.responsible_user:
+        users = [subject.responsible_user]
+    if users is None:
+        users = []
+    if not subject:
+        return users
+    members = LabMember.objects.all()
+    rules = NotificationRule.objects.filter(notification_type=notification_type)
+    # Dictionary giving the scope of every user in the database.
+    user_rules = {user: None for user in members}
+    user_rules.update({rule.user: rule.subjects_scope for rule in rules})
+    # Remove 'none' users from the specified users.
+    users = [user for user in users if user_rules.get(user, None) != 'none']
+    # Return the selected users, and those who opted in in the notification rules.
+    return users + [member for member in members
+                    if check_scope(member, subject, user_rules.get(member, None)) and
+                    member not in users]
+
+
+def create_notification(notification_type, message, subject=None, users=None, force=None):
     delay = delay_since_last_notification(notification_type, message, subject)
     max_delay = NOTIFICATION_MIN_DELAYS.get(notification_type, 0)
-    if delay < max_delay:
+    if not force and delay < max_delay:
         logger.warning(
             "This notification was sent %d s ago (< %d s), skipping.", delay, max_delay)
         return
@@ -330,10 +368,9 @@ def create_notification(notification_type, message, subject=None, users=None):
         title=message,
         message=message,
         subject=subject)
-    if users:
-        notif.users.add(*users)
-    elif subject and subject.responsible_user:
-        notif.users.add(subject.responsible_user)
+    recipients = get_recipients(notification_type, subject=subject, users=users)
+    if recipients:
+        notif.users.add(*recipients)
     logger.debug(
         "Create notification '%s' for %s (%s %s)",
         message, ', '.join(map(str, notif.users.all())),
@@ -344,26 +381,9 @@ def create_notification(notification_type, message, subject=None, users=None):
 
 def send_pending_emails():
     """Send all pending notifications."""
-    notifications = Notification.objects.filter(status='to-send', date_time__lte=timezone.now())
+    notifications = Notification.objects.filter(status='to-send', send_at__lte=timezone.now())
     for notification in notifications:
         notification.send_if_needed()
-
-
-def check_scope(user, subject, scope):
-    if subject is None:
-        return True
-    assert scope in (None, 'none', 'mine', 'lab', 'all')
-    if scope == 'mine':
-        return subject.responsible_user == user
-    elif scope == 'lab':
-        return subject.lab == user.lab
-    elif scope == 'all':
-        return True
-    elif scope == 'none':
-        return False
-    elif scope is None:
-        # no scope? send anyway.
-        return True
 
 
 class Notification(BaseModel):
@@ -389,20 +409,6 @@ class Notification(BaseModel):
             self.send_at <= timezone.now()
         )
 
-    def recipients(self):
-        """Recipients of the email, computed from the notification rules."""
-        rules = NotificationRule.objects.filter(
-            notification_type=self.notification_type,
-            user__in=self.users.all()
-        )
-        default_rules = {user: None for user in self.users.all()}
-        default_rules.update({rule.user: rule.subjects_scope for rule in rules})
-        out = []
-        for user, scope in default_rules.items():
-            if check_scope(user, self.subject, scope) and user.email:
-                out.append(user.email)
-        return out
-
     def send_if_needed(self):
         """Send the email if needed and change the status to 'sent'"""
         if self.status == 'sent':
@@ -411,7 +417,8 @@ class Notification(BaseModel):
         if not self.ready_to_send():
             logger.warning("Email not ready to send.")
             return False
-        if alyx_mail(self.recipients(), self.title, self.message):
+        emails = [user.email for user in self.users.all() if user.email]
+        if alyx_mail(emails, self.title, self.message):
             self.status = 'sent'
             self.sent_at = timezone.now()
             self.save()

@@ -108,8 +108,11 @@ def alyx_mail(to, subject, text=''):
         return
     if not to:
         return
-    if not isinstance(to, (list, tuple)):
+    if to and not isinstance(to, (list, tuple)):
         to = [to]
+    to = [_ for _ in to if _]
+    if not to:
+        return
     text += '\n\n--\nMessage sent automatically - please do not reply.'
     try:
         send_mail('[alyx] ' + subject, text,
@@ -117,7 +120,7 @@ def alyx_mail(to, subject, text=''):
                   to,
                   fail_silently=True,
                   )
-        logger.debug("Mail sent to %s.", ', '.join(to))
+        logger.info("Mail sent to %s.", ', '.join(to))
         return True
     except Exception as e:
         logger.warning("Mail failed: %s", e)
@@ -287,6 +290,7 @@ class BaseInlineAdmin(admin.TabularInline):
 class BaseTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        globals()['DISABLE_MAIL'] = True
         call_command('loaddata', op.join(DATA_DIR, 'all_dumped_anon.json.gz'), verbosity=1)
 
     def ar(self, r, code=200):

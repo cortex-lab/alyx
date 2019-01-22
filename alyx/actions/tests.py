@@ -8,14 +8,15 @@ from misc.models import Lab
 from actions.water_control import date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
-    Notification)
+    Notification, NotificationRule, create_notification)
 from actions.notifications import check_water_administration
-from misc.models import LabMember
+from misc.models import LabMember, LabMembership
 from subjects.models import Subject
 
 
 class WaterControlTests(TestCase):
     def setUp(self):
+        base.DISABLE_MAIL = True
         # create some water types
         wtypes = ['Water', 'Hydrogel', 'CA 5% Hydrogel', 'CA 5%', 'Sucrose 10%']
         for wt in wtypes:
@@ -36,6 +37,9 @@ class WaterControlTests(TestCase):
         # first test assert that water administrations previously created have the correct default
         wa = WaterAdministration.objects.filter(subject=self.sub)
         self.assertTrue(wa.values_list('water_type__name').distinct()[0][0] == 'Water')
+
+    def tearDown(self):
+        base.DISABLE_MAIL = False
 
     def test_00_create_first_water_restriction(self):
         # Create an initial Water Restriction
@@ -65,6 +69,9 @@ class NotificationTests(TestCase):
 
         self.user1 = LabMember.objects.create(username='test1')
         self.user2 = LabMember.objects.create(username='test2')
+
+        LabMembership.objects.create(user=self.user1, lab=self.lab, start_date='2018-01-01')
+        LabMembership.objects.create(user=self.user2, lab=self.lab, start_date='2018-01-01')
 
         self.subject = Subject.objects.create(
             nickname='test', birth_date=date('2018-01-01'), lab=self.lab,
@@ -131,3 +138,52 @@ class NotificationTests(TestCase):
         notif = Notification.objects.last()
         self.assertTrue(notif is not None)
         self.assertEqual(notif.title, 'Responsible user of test changed from test1 to test2')
+
+    def test_notif_rule_1(self):
+        nt = 'mouse_water'
+        nr = NotificationRule.objects.create(
+            user=self.user1, notification_type=nt)
+
+        def _assert_users(users, expected):
+            n = create_notification(nt, '', subject=self.subject, users=users, force=True)
+            self.assertEqual(list(n.users.all()), expected)
+
+        _assert_users(None, [self.user1])
+
+        nr.subjects_scope = 'none'
+        nr.save()
+        _assert_users(None, [])
+
+        nr.subjects_scope = 'lab'
+        nr.save()
+        _assert_users(None, [self.user1])
+
+        self.subject.responsible_user = self.user2
+        self.subject.save()
+        _assert_users(None, [self.user1, self.user2])
+
+        nr.subjects_scope = 'all'
+        nr.save()
+        _assert_users(None, [self.user1, self.user2])
+
+        nr.subjects_scope = 'mine'
+        nr.save()
+        _assert_users(None, [self.user2])
+
+    def test_notif_rule_2(self):
+        nt = 'mouse_water'
+        nr = NotificationRule.objects.create(
+            user=self.user1, notification_type=nt)
+
+        def _assert_users(users, expected):
+            n = create_notification(nt, '', subject=self.subject, users=users, force=True)
+            self.assertEqual(list(n.users.all()), expected)
+
+        _assert_users([], [self.user1])
+        _assert_users([self.user1], [self.user1])
+        _assert_users([self.user2], [self.user1, self.user2])
+        _assert_users([self.user1, self.user2], [self.user1, self.user2])
+
+        nr.subjects_scope = 'none'
+        nr.save()
+        _assert_users([self.user2], [self.user2])

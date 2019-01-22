@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.timezone import now
 from datetime import timedelta
 
+from alyx import base
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
 from misc.models import Lab
@@ -11,6 +12,7 @@ from actions.models import Session, WaterType, WaterAdministration
 
 class APIActionsTests(BaseTests):
     def setUp(self):
+        base.DISABLE_MAIL = True
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.superuser2 = get_user_model().objects.create_superuser('test2', 'test2', 'test2')
         self.client.login(username='test', password='test')
@@ -22,6 +24,9 @@ class APIActionsTests(BaseTests):
         self.subject.implant_weight = 4.56
         self.subject.save()
         self.test_protocol = 'test_passoire'
+
+    def tearDown(self):
+        base.DISABLE_MAIL = False
 
     def test_create_weighing(self):
         url = reverse('weighing-create')
