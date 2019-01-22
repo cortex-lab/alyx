@@ -247,8 +247,7 @@ class WaterRestrictionForm(forms.ModelForm):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
-            kwargs['queryset'] = Subject.objects.filter(death_date=None,
-                                                        ).order_by('nickname')
+            kwargs['queryset'] = Subject.objects.all().order_by('nickname')
             subject_id = self._get_last_subject(request)
             if subject_id:
                 subject = Subject.objects.get(id=subject_id)
