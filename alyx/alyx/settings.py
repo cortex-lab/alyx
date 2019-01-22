@@ -53,7 +53,8 @@ LOGGING = {
     'formatters': {
         'simple': {
             '()': 'colorlog.ColoredFormatter',
-            'format': '%(log_color)s%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)s} %(message)s',
+            'format': '%(log_color)s%(asctime)s [%(levelname)s] ' +
+                      '{%(filename)s:%(lineno)s} %(message)s',
             'datefmt': '%d/%m %H:%M:%S',
             'log_colors': {
                 'DEBUG': 'cyan',
