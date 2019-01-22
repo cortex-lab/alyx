@@ -259,9 +259,7 @@ class Subject(BaseModel):
 
     @property
     def water_control(self):
-        if self._water_control is None:
-            self._water_control = water_control(self)
-        return self._water_control
+        return water_control(self)
 
     def zygosity_strings(self):
         alleles = self.line.alleles.all() if self.line else Allele.objects.all()

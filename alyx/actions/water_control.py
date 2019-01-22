@@ -281,9 +281,12 @@ class WaterControl(object):
     def expected_weight(self, date=None):
         """Expected weight of the mouse at the specified date, either the reference weight
         if the reference_weight_pct is >0, or the zscore weight."""
-        return (self.reference_weight(date=date)
-                if self.reference_weight_pct > 0
-                else self.zscore_weight(date=date))
+        pct_sum = (self.reference_weight_pct + self.zscore_weight_pct)
+        if pct_sum == 0:
+            return 0
+        pz = self.zscore_weight_pct / pct_sum
+        pr = self.reference_weight_pct / pct_sum
+        return pz * self.zscore_weight(date=date) + pr * self.reference_weight(date=date)
 
     def percentage_weight(self, date=None):
         """Percentage of the weight relative to the expected weight.
@@ -447,10 +450,6 @@ def water_control(subject):
     assert subject is not None
     lab = subject.lab
     # By default, if there is only one lab, use it for the subject.
-    if lab is None:
-        from misc.models import Lab
-        if len(Lab.objects.all()) == 1:
-            lab = Lab.objects.first()
     if lab is None:
         logger.warning("Subject %s has no lab, no reference weight percentages considered.",
                        subject)
