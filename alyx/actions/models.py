@@ -294,6 +294,7 @@ NOTIFICATION_TYPES = (
     ('responsible_user_change', 'responsible user has changed'),
     ('mouse_underweight', 'mouse is underweight'),
     ('mouse_water', 'water to give to mouse'),
+    ('mouse_training', 'check training days'),
 )
 
 
