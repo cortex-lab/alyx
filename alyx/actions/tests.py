@@ -67,21 +67,21 @@ class WaterControlTests(TestCase):
         # test computation on reference weight lab alone
         self.sub.lab = Lab.objects.get(reference_weight_pct=0.85)
         self.sub.save()
-        wc = self.sub.water_control
+        wc = self.sub.reinit_water_control()
         wc.expected_weight()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(self.wei[self.rwind], wc.expected_weight())
         # test computation on zscore weight lab alone
         self.sub.lab = Lab.objects.get(reference_weight_pct=0)
         self.sub.save()
-        wc = self.sub.water_control
+        wc = self.sub.reinit_water_control()
         wc.expected_weight()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         zscore = wc.zscore_weight()
         # test computation on mixed lab
         self.sub.lab = Lab.objects.get(reference_weight_pct=0.425)
         self.sub.save()
-        wc = self.sub.water_control
+        wc = self.sub.reinit_water_control()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(wc.expected_weight(), (wc.reference_weight() + zscore) / 2)
         # test that the thresholds are all above 70%
