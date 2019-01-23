@@ -318,8 +318,10 @@ class SubjectAdmin(BaseAdmin):
                    ]
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, AddSurgeryInline,
-               SessionInline, OtherActionInline,
+               SurgeryInline,
+               AddSurgeryInline,
+               SessionInline,
+               OtherActionInline,
                NoteInline,
                ]
 
@@ -784,6 +786,7 @@ class LitterAdmin(BaseAdmin):
               ]
     list_filter = [('line', LineDropdownFilter),
                    ]
+    search_fields = ['name']
     form = LitterForm
 
     inlines = [SubjectInline]
