@@ -16,7 +16,7 @@ from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.models import WaterRestriction
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
-from misc.models import Lab
+from misc.models import Lab, default_lab
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    lab = models.ForeignKey(Lab, null=True, blank=True, on_delete=models.SET_NULL)
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab())
 
     projects = models.ManyToManyField(
         Project, blank=True,
@@ -523,7 +523,7 @@ class Line(BaseModel):
     breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab())
 
     objects = LineManager()
 
