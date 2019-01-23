@@ -292,7 +292,7 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user',
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user', 'lab',
                     'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l', 'line_l', 'litter_l',
                     'zygosities', 'alive', 'cage', 'description'
                     ]
@@ -302,6 +302,7 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__last_name',
                      'responsible_user__username',
                      'cage',
+                     'lab__name',
                      ]
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
