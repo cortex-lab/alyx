@@ -10,7 +10,7 @@ from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
     Notification, NotificationRule, create_notification)
 from actions.notifications import check_water_administration
-from misc.models import LabMember, LabMembership
+from misc.models import LabMember, LabMembership, Lab
 from subjects.models import Subject
 
 
@@ -21,7 +21,8 @@ class WaterControlTests(TestCase):
         for wt in wtypes:
             WaterType.objects.create(name=wt)
         # create a subject
-        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01')
+        self.lab = Lab.objects.create(name='testlab')
+        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=self.lab)
         self.sub = Subject.objects.get(pk=sub.pk)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)
@@ -65,27 +66,33 @@ class WaterControlTests(TestCase):
 
     def test_water_control_thresholds(self):
         # test computation on reference weight lab alone
-        self.sub.lab = Lab.objects.get(reference_weight_pct=0.85)
+        self.sub.lab = Lab.objects.get(name='rweigh')
         self.sub.save()
         wc = self.sub.reinit_water_control()
         wc.expected_weight()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(self.wei[self.rwind], wc.expected_weight())
         # test computation on zscore weight lab alone
-        self.sub.lab = Lab.objects.get(reference_weight_pct=0)
+        self.sub.lab = Lab.objects.get(name='zscore')
         self.sub.save()
         wc = self.sub.reinit_water_control()
         wc.expected_weight()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         zscore = wc.zscore_weight()
         # test computation on mixed lab
-        self.sub.lab = Lab.objects.get(reference_weight_pct=0.425)
+        self.sub.lab = Lab.objects.get(name='mixed')
         self.sub.save()
         wc = self.sub.reinit_water_control()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(wc.expected_weight(), (wc.reference_weight() + zscore) / 2)
         # test that the thresholds are all above 70%
         self.assertTrue(all([thrsh[0] > 0.4 for thrsh in wc.thresholds]))
+        # if we change the reference weight of the water restriction, this should change in wc too
+        self.assertAlmostEqual(wc.reference_weight(), self.wr.reference_weight)
+        self.wr.reference_weight = self.wr.reference_weight + 1
+        self.wr.save()
+        wc = self.sub.reinit_water_control()
+        self.assertAlmostEqual(wc.reference_weight(), self.wr.reference_weight)
 
 
 class NotificationTests(TestCase):
