@@ -21,8 +21,11 @@ def _iter_datasets(dataset_id=None, limit=None, user=None):
         yield dataset
 
 
-def _create_missing_file_records_main_globus(dry_run=False):
-    for p in Project.objects.all():
+def _create_missing_file_records_main_globus(dry_run=False, project=None):
+    projects = Project.objects.all()
+    if project:
+        projects = projects.filter(name=project)
+    for p in projects:
         repos = p.repositories.filter(globus_is_personal=False)
         dsets = Dataset.objects.filter(session__project=p)
         for r in repos:
@@ -73,6 +76,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('action', help='Action')
         parser.add_argument('dataset', nargs='?', help='Dataset')
+        parser.add_argument('--project', help='Only sync for project')
         parser.add_argument('--dry', action='store_true', help='dry run')
         parser.add_argument('--data-repository', help='data repository')
         parser.add_argument('--path', help='path')
@@ -87,13 +91,14 @@ class Command(BaseCommand):
         limit = options.get('limit')
         user = options.get('user')
         dry = options.get('dry')
+        project = options.get('project')
 
         if action == 'bulksync':
-            _create_missing_file_records_main_globus(dry_run=dry)
-            transfers.bulk_sync(dry_run=dry)
+            _create_missing_file_records_main_globus(dry_run=dry, project=project)
+            transfers.bulk_sync(dry_run=dry, project=project)
 
         if action == 'bulktransfer':
-            transfers.bulk_transfer(dry_run=dry)
+            transfers.bulk_transfer(dry_run=dry, project=project)
 
         if action == 'login':
             transfers.create_globus_token()

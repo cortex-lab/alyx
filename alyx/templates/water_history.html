@@ -8,10 +8,20 @@
 <img src="{{ plot_url }}" />
 </div>
 
+<style>
+    td.nowr {
+    background: #f5ebed;
+    }
+    td.wr {
+        background: #ffffff;
+    }
+</style>
+
 <table>
 <thead>
     <tr>
         <th>date</th>
+        <th>Restricted</th>
         <th>weight</th>
         <th>weight ref</th>
         <th>weight exp</th>
@@ -27,17 +37,33 @@
 <tbody>
 {% for obj in object_list %}
     <tr>
-        <td>{{ obj.date | date }}</td>
-        <td>{{ obj.weighing_at | floatformat:1 }}</td>
-        <td>{{ obj.reference_weight | floatformat:1 }}</td>
-        <td>{{ obj.expected_weight | floatformat:1 }}</td>
-        <td>{{ obj.percentage_weight | floatformat:1 }}</td>
-        <td>{{ obj.min_weight | floatformat:1 }}</td>
-        <td>{{ obj.given_water_liquid | floatformat:2 }}</td>
-        <td>{{ obj.given_water_hydrogel | floatformat:2 }}</td>
-        <td>{{ obj.given_water_total | floatformat:2 }}</td>
-        <td>{{ obj.expected_water | floatformat:2 }}</td>
-        <td>{{ obj.excess_water | floatformat:2 }}</td>
+    {% if obj.is_water_restricted%}
+        <td class="wr">{{ obj.date | date }}</td>
+        <td class="wr"> {{ obj.is_water_restricted }} </td>
+        <td class="wr">{{ obj.weighing_at | floatformat:1 }}</td>
+        <td class="wr">{{ obj.reference_weight | floatformat:1 }}</td>
+        <td class="wr">{{ obj.expected_weight | floatformat:1 }}</td>
+        <td class="wr">{{ obj.percentage_weight | floatformat:1 }}</td>
+        <td class="wr">{{ obj.min_weight | floatformat:1 }}</td>
+        <td class="wr">{{ obj.given_water_liquid | floatformat:2 }}</td>
+        <td class="wr">{{ obj.given_water_hydrogel | floatformat:2 }}</td>
+        <td class="wr">{{ obj.given_water_total | floatformat:2 }}</td>
+        <td class="wr">{{ obj.expected_water | floatformat:2 }}</td>
+        <td class="wr">{{ obj.excess_water | floatformat:2 }}</td>
+    {% else %}
+        <td class="nowr">{{ obj.date | date }}</td>
+        <td class="nowr"> {{ obj.is_water_restricted }} </td>
+        <td class="nowr">{{ obj.weighing_at | floatformat:1 }}</td>
+        <td class="nowr">{{ obj.reference_weight | floatformat:1 }}</td>
+        <td class="nowr">{{ obj.expected_weight | floatformat:1 }}</td>
+        <td class="nowr">{{ obj.percentage_weight | floatformat:1 }}</td>
+        <td class="nowr">{{ obj.min_weight | floatformat:1 }}</td>
+        <td class="nowr">{{ obj.given_water_liquid | floatformat:2 }}</td>
+        <td class="nowr">{{ obj.given_water_hydrogel | floatformat:2 }}</td>
+        <td class="nowr">{{ obj.given_water_total | floatformat:2 }}</td>
+        <td class="nowr">{{ obj.expected_water | floatformat:2 }}</td>
+        <td class="nowr">{{ obj.excess_water | floatformat:2 }}</td>
+    {% endif %}
     </tr>
 {% endfor %}
 </tbody>

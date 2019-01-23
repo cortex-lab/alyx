@@ -248,8 +248,7 @@ class WaterRestrictionForm(forms.ModelForm):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
-            kwargs['queryset'] = Subject.objects.filter(death_date=None,
-                                                        ).order_by('nickname')
+            kwargs['queryset'] = Subject.objects.all().order_by('nickname')
             subject_id = self._get_last_subject(request)
             if subject_id:
                 subject = Subject.objects.get(id=subject_id)
@@ -372,7 +371,7 @@ class WeighingForm(BaseActionForm):
 
 
 class WeighingAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'weight', 'date_time']
+    list_display = ['subject_l', 'weight', 'percentage_weight', 'date_time']
     list_select_related = ('subject',)
     fields = ['subject', 'date_time', 'weight', 'user']
     ordering = ('-date_time',)
@@ -382,6 +381,11 @@ class WeighingAdmin(BaseActionAdmin):
                    ('subject', RelatedDropdownFilter)]
 
     form = WeighingForm
+
+    def percentage_weight(self, obj):
+        wc = obj.subject.water_control
+        return wc.percentage_weight_html()
+    percentage_weight.short_description = 'Weight %'
 
 
 class WaterTypeAdmin(BaseActionAdmin):
@@ -460,10 +464,10 @@ class SessionAdmin(BaseActionAdmin):
     user_list.short_description = 'users'
 
     def project_list(self, obj):
-        projects = list(obj.subject.projects.all())
-        if obj.project_id:
-            projects += [obj.project]
-        return ', '.join(p.name for p in projects)
+        projects = tuple(p.name for p in obj.subject.projects.all())
+        if obj.project:
+            projects += (obj.project.name,)
+        return sorted(set(projects))
     project_list.short_description = 'projects'
 
     def dataset_types(self, obj):
