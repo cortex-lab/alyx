@@ -270,7 +270,7 @@ class SubjectAdmin(BaseAdmin):
                                 'reduced', 'reduced_date',
                                 'ear_mark',
                                 'protocol_number', 'description',
-                                'lab', 'projects', 'json')}),
+                                'lab', 'projects', 'json', 'subject_history')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'cage', 'cage_changes',),
                      'classes': ('collapse',),
@@ -303,7 +303,7 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__username',
                      'cage',
                      ]
-    readonly_fields = ('age_days', 'zygosities',
+    readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes',
                        ) + fieldsets[3][1]['fields'][1:]  # water read only fields
@@ -399,6 +399,12 @@ class SubjectAdmin(BaseAdmin):
             return
         url = reverse('water-history', kwargs={'subject_id': obj.id})
         return format_html('<a href="{url}">Go to the water history page</a>', url=url)
+
+    def subject_history(self, obj):
+        if not obj or not obj.id:
+            return
+        url = reverse('subject-history', kwargs={'subject_id': obj.id})
+        return format_html('<a href="{url}">Go to the subject history page</a>', url=url)
 
     def cage_changes(self, obj):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'cage')))

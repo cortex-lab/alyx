@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+{% block content %}
+
+<table>
+<thead>
+    <tr>
+        <th>date</th>
+        <th>name</th>
+        <th>type</th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+    </tr>
+</thead>
+<tbody>
+{% for obj in object_list %}
+    <tr>
+        <td>{{ obj.date_time }}</td>
+        <td>{{ obj.name }}</td>
+        <td>{{ obj.type }}</td>
+        <td>{{ obj.arg0 }}</td>
+        <td>{{ obj.arg1 }}</td>
+        <td>{{ obj.arg2 }}</td>
+        <td>{{ obj.arg3 }}</td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
+{% endblock %}

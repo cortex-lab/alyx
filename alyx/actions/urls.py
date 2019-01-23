@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import WaterHistoryListView, weighing_plot
+from .views import SubjectHistoryListView, WaterHistoryListView, weighing_plot
 
 
 urlpatterns = [
@@ -11,5 +11,10 @@ urlpatterns = [
     path('water-history/<uuid:subject_id>',
          WaterHistoryListView.as_view(),
          name='water-history',
+         ),
+
+    path('subject-history/<uuid:subject_id>',
+         SubjectHistoryListView.as_view(),
+         name='subject-history',
          ),
 ]
