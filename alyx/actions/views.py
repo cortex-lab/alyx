@@ -3,6 +3,7 @@ import itertools
 from operator import itemgetter
 
 from django.db.models import Count, Q, F, ExpressionWrapper, FloatField
+from django.db.models.deletion import Collector
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -16,13 +17,69 @@ from rest_framework.views import APIView
 
 from subjects.models import Subject
 from .water_control import water_control
-from .models import Session, WaterAdministration, Weighing, WaterType
+from .models import BaseAction, Session, WaterAdministration, Weighing, WaterType
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
                           )
+
+
+class SubjectHistoryListView(ListView):
+    template_name = 'subject_history.html'
+
+    CLASS_FIELDS = {
+        'Session': ('number', 'n_correct_trials', 'n_trials'),
+        'Weighing': ('weight',),
+        'WaterRestriction': (),
+    }
+
+    CLASS_TYPE_FIELD = {
+        'Session': 'type',
+        'WaterRestriction': 'water_type',
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super(SubjectHistoryListView, self).get_context_data(**kwargs)
+        subject = Subject.objects.get(pk=self.kwargs['subject_id'])
+        context['title'] = mark_safe(
+            'Subject history of <a href="%s">%s</a>' % (
+                reverse('admin:subjects_subject_change',
+                        args=[subject.id]),
+                subject.nickname))
+        context['site_header'] = 'Alyx'
+        return context
+
+    def get_queryset(self):
+        subject = Subject.objects.get(pk=self.kwargs['subject_id'])
+        collector = Collector(using="default")
+        collector.collect([subject])
+        out = []
+        for model, instance in collector.instances_with_model():
+            if model._meta.app_label == 'data':
+                continue
+            if not isinstance(instance, BaseAction):
+                continue
+            url = reverse('admin:%s_%s_change' % (instance._meta.app_label,
+                                                  instance._meta.model_name), args=[instance.id])
+            item = {}
+            clsname = instance.__class__.__name__
+            item['url'] = url
+            item['name'] = model.__name__
+            item['type'] = getattr(
+                instance, self.CLASS_TYPE_FIELD.get(clsname, ''), None)
+            item['date_time'] = instance.start_time
+            i = 0
+            for n in self.CLASS_FIELDS.get(clsname, ()):
+                v = getattr(instance, n, None)
+                if v is None:
+                    continue
+                item['arg%d' % i] = '%s: %s' % (n, v)
+                i += 1
+            out.append(item)
+        out = sorted(out, key=itemgetter('date_time'), reverse=True)
+        return out
 
 
 def date_range(start_date, end_date):
