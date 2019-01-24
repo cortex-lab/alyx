@@ -85,7 +85,7 @@ class LabLocation(BaseModel):
     The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
     """
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab())
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     def __str__(self):
         return self.name

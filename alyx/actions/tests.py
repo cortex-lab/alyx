@@ -4,7 +4,6 @@ from django.test import TestCase
 from django.utils import timezone
 
 from alyx import base
-from misc.models import Lab
 from actions.water_control import date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
@@ -21,8 +20,7 @@ class WaterControlTests(TestCase):
         for wt in wtypes:
             WaterType.objects.create(name=wt)
         # create a subject
-        self.lab = Lab.objects.create(name='testlab')
-        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=self.lab)
+        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01')
         self.sub = Subject.objects.get(pk=sub.pk)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)

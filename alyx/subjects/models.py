@@ -176,7 +176,7 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab())
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     projects = models.ManyToManyField(
         Project, blank=True,
@@ -523,7 +523,7 @@ class Line(BaseModel):
     breeding_pair_autoname_index = models.IntegerField(default=0)
     litter_autoname_index = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab())
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     objects = LineManager()
 
