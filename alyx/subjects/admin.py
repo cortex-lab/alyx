@@ -52,7 +52,10 @@ class ResponsibleUserListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(responsible_user=request.user)
+            qs = queryset.filter(responsible_user=request.user)
+            if qs.count() == 0:
+                qs = queryset.all()
+            return qs
         if self.value() == 'stock':
             sms = [sm.pk for sm in get_user_model().objects.filter(is_stock_manager=True)]
             return queryset.filter(responsible_user__in=sms)
