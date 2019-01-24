@@ -15,7 +15,18 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
 from alyx.base import BaseModel, modify_fields
-from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH
+from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH, DEFAULT_LAB_NAME
+
+
+def default_lab():
+    lab = Lab.objects.filter(name=DEFAULT_LAB_NAME)
+    if not lab:
+        lab = Lab.objects.all()
+    if lab.count():
+        lab = lab.first()
+    else:
+        lab = Lab.objects.create(name='defaultlab', pk='20703e30-b81c-4b44-bbf4-d67b388a2f96')
+    return lab.pk
 
 
 class LabMember(AbstractUser):
@@ -74,7 +85,7 @@ class LabLocation(BaseModel):
     The physical location at which an session is performed or appliances are located.
     This could be a room, a bench, a rig, etc.
     """
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     def __str__(self):
         return self.name
