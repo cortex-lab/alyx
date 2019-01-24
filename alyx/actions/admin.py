@@ -468,7 +468,7 @@ class SessionAdmin(BaseActionAdmin):
         if obj.project:
             projects += (obj.project.name,)
         return sorted(set(projects))
-    project_list.short_description = 'projects'
+    project_list.short_description = 'Lab servers'
 
     def dataset_types(self, obj):
         return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
