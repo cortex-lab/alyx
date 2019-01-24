@@ -427,15 +427,19 @@ class SurgeryAdmin(BaseActionAdmin):
 
 
 class DatasetInline(BaseInlineAdmin):
+    show_change_link = True
     model = Dataset
     extra = 1
     fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+    readonly_fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+    ordering = ("name",)
 
 
 class WaterAdminInline(BaseInlineAdmin):
     model = WaterAdministration
-    extra = 1
+    extra = 0
     fields = ('name', 'water_administered', 'water_type')
+    readonly_fields = ('name', 'water_administered', 'water_type')
 
 
 class SessionAdmin(BaseActionAdmin):

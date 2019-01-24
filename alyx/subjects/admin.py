@@ -227,9 +227,10 @@ class AddSurgeryInline(SurgeryInline):
 class SessionInline(BaseInlineAdmin):
     model = Session
     extra = 1
-    fields = ['procedures', 'narrative', 'start_time',
-              'users', 'location']
+    fields = ['procedures', 'narrative', 'start_time', 'users', 'location']
+    readonly_fields = fields
     classes = ['collapse']
+    ordering = ('-start_time',)
 
 
 class OtherActionInline(BaseInlineAdmin):
