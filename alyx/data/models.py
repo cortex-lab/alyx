@@ -290,6 +290,8 @@ class Dataset(BaseExperimentalData):
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
 
+    unique_together = (('dataset_type', 'session'),)
+
     def data_url(self):
         records = self.file_records.all()
         records = [r for r in records if r.data_repository.data_url and r.exists]
@@ -335,6 +337,8 @@ class FileRecord(BaseModel):
 
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )
+
+    unique_together = (('data_repository', 'relative_path'),)
 
     def data_url(self):
         root = self.data_repository.data_url

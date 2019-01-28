@@ -52,7 +52,10 @@ class ResponsibleUserListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(responsible_user=request.user)
+            qs = queryset.filter(responsible_user=request.user)
+            if qs.count() == 0:
+                qs = queryset.all()
+            return qs
         if self.value() == 'stock':
             sms = [sm.pk for sm in get_user_model().objects.filter(is_stock_manager=True)]
             return queryset.filter(responsible_user__in=sms)
@@ -224,9 +227,10 @@ class AddSurgeryInline(SurgeryInline):
 class SessionInline(BaseInlineAdmin):
     model = Session
     extra = 1
-    fields = ['procedures', 'narrative', 'start_time',
-              'users', 'location']
+    fields = ['procedures', 'narrative', 'start_time', 'users', 'location']
+    readonly_fields = fields
     classes = ['collapse']
+    ordering = ('-start_time',)
 
 
 class OtherActionInline(BaseInlineAdmin):
@@ -270,7 +274,7 @@ class SubjectAdmin(BaseAdmin):
                                 'reduced', 'reduced_date',
                                 'ear_mark',
                                 'protocol_number', 'description',
-                                'lab', 'projects', 'json')}),
+                                'lab', 'projects', 'json', 'subject_history')}),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'cage', 'cage_changes',),
                      'classes': ('collapse',),
@@ -292,7 +296,7 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user',
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user', 'lab',
                     'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l', 'line_l', 'litter_l',
                     'zygosities', 'alive', 'cage', 'description'
                     ]
@@ -302,8 +306,9 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__last_name',
                      'responsible_user__username',
                      'cage',
+                     'lab__name',
                      ]
-    readonly_fields = ('age_days', 'zygosities',
+    readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes',
                        ) + fieldsets[3][1]['fields'][1:]  # water read only fields
@@ -318,8 +323,10 @@ class SubjectAdmin(BaseAdmin):
                    ]
     form = SubjectForm
     inlines = [ZygosityInline, GenotypeTestInline,
-               SurgeryInline, AddSurgeryInline,
-               SessionInline, OtherActionInline,
+               SurgeryInline,
+               AddSurgeryInline,
+               SessionInline,
+               OtherActionInline,
                NoteInline,
                ]
 
@@ -328,20 +335,9 @@ class SubjectAdmin(BaseAdmin):
     session_count.short_description = '# sess'
 
     def weight_percent(self, sub):
-        status = sub.water_control.weight_status()
-        pct_wei = sub.water_control.percentage_weight()
-        colour_code = '008000'
-        if status == 1:  # orange colour code for reminders
-            colour_code = 'FFA500'
-        if status == 2:  # red colour code for errors
-            colour_code = 'FF0000'
-        if pct_wei == 0:
-            return '-'
-        else:
-            url = reverse('water-history', kwargs={'subject_id': sub.id})
-            return format_html(
-                '<b><a href="{url}" style="color: #{};">{}%</a></b>',
-                colour_code, '{:2.1f}'.format(pct_wei), url=url)
+        wc = sub.water_control
+        return wc.percentage_weight_html()
+    weight_percent.short_description = 'Weight %'
 
     def ear_mark_(self, obj):
         return obj.ear_mark
@@ -408,6 +404,12 @@ class SubjectAdmin(BaseAdmin):
             return
         url = reverse('water-history', kwargs={'subject_id': obj.id})
         return format_html('<a href="{url}">Go to the water history page</a>', url=url)
+
+    def subject_history(self, obj):
+        if not obj or not obj.id:
+            return
+        url = reverse('subject-history', kwargs={'subject_id': obj.id})
+        return format_html('<a href="{url}">Go to the subject history page</a>', url=url)
 
     def cage_changes(self, obj):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'cage')))
@@ -795,6 +797,7 @@ class LitterAdmin(BaseAdmin):
               ]
     list_filter = [('line', LineDropdownFilter),
                    ]
+    search_fields = ['name']
     form = LitterForm
 
     inlines = [SubjectInline]

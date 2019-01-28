@@ -9,3 +9,4 @@ DEFAULT_PROTOCOL = '1'
 SUPERUSERS = ('charu', 'nick', 'max', 'cyrille')
 STOCK_MANAGERS = ('charu',)
 WEIGHT_THRESHOLD = 0.75
+DEFAULT_LAB_NAME = 'cortexlab'

@@ -17,7 +17,7 @@ class LabForm(forms.ModelForm):
         self.fields['reference_weight_pct'].label = 'Reference Weight Ratio'
         self.fields['zscore_weight_pct'].help_text =\
             'Threshold ratio triggers a warning is raised using the Z-Score method (0-1)'
-        self.fields['zscore_weight_pct'].label = 'Reference Weight Ratio'
+        self.fields['zscore_weight_pct'].label = 'Z-score Weight Ratio'
 
     def clean_reference_weight_pct(self):
         ref = self.cleaned_data['reference_weight_pct']

@@ -8,6 +8,16 @@
 <img src="{{ plot_url }}" />
 </div>
 
+<style>
+
+    tr.nowr {
+        background: #ddd;
+    }
+    tr.wr {
+        background: #fff;
+    }
+</style>
+
 <table>
 <thead>
     <tr>
@@ -26,18 +36,18 @@
 </thead>
 <tbody>
 {% for obj in object_list %}
-    <tr>
+    <tr class="{{ obj.is_water_restricted|yesno:'wr,nowr,' }}">
         <td>{{ obj.date | date }}</td>
-        <td>{{ obj.weighing_at | floatformat:1 }}</td>
-        <td>{{ obj.reference_weight | floatformat:1 }}</td>
-        <td>{{ obj.expected_weight | floatformat:1 }}</td>
-        <td>{{ obj.percentage_weight | floatformat:1 }}</td>
-        <td>{{ obj.min_weight | floatformat:1 }}</td>
-        <td>{{ obj.given_water_liquid | floatformat:2 }}</td>
-        <td>{{ obj.given_water_hydrogel | floatformat:2 }}</td>
-        <td>{{ obj.given_water_total | floatformat:2 }}</td>
-        <td>{{ obj.expected_water | floatformat:2 }}</td>
-        <td>{{ obj.excess_water | floatformat:2 }}</td>
+        <td><strong>{{ obj.weighing_at | floatformat:1 }} {{ obj.weighing_at | yesno:'g,,' }}</strong></td>
+        <td>{{ obj.reference_weight | floatformat:1 }} g</td>
+        <td>{{ obj.expected_weight | floatformat:1 }} g</td>
+        <td>{{ obj.percentage_weight | floatformat:1 }}%</td>
+        <td>{{ obj.min_weight | floatformat:1 }} g</td>
+        <td>{{ obj.given_water_liquid | floatformat:2 }} mL</td>
+        <td>{{ obj.given_water_hydrogel | floatformat:2 }} mL</td>
+        <td><strong>{{ obj.given_water_total | floatformat:2 }} mL</strong></td>
+        <td>{{ obj.expected_water | floatformat:2 }} mL</td>
+        <td>{{ obj.excess_water | floatformat:2 }} mL</td>
     </tr>
 {% endfor %}
 </tbody>
