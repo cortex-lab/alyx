@@ -446,3 +446,7 @@ class NotificationRule(BaseModel):
 
     class Meta:
         unique_together = [('user', 'notification_type')]
+
+    def __str__(self):
+        return "<Notification rule for %s: %s '%s'>" % (
+            self.user, self.notification_type, self.subjects_scope)
