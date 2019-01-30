@@ -48,6 +48,7 @@ class ResponsibleUserListFilter(DefaultListFilter):
             (None, 'Me'),
             ('all', 'All'),
             ('stock', 'Stock'),
+            ('nostock', 'No stock'),
         )
 
     def queryset(self, request, queryset):
@@ -57,8 +58,9 @@ class ResponsibleUserListFilter(DefaultListFilter):
                 qs = queryset.all()
             return qs
         if self.value() == 'stock':
-            sms = [sm.pk for sm in get_user_model().objects.filter(is_stock_manager=True)]
-            return queryset.filter(responsible_user__in=sms)
+            return queryset.filter(responsible_user__is_stock_manager=True)
+        elif self.value() == 'nostock':
+            return queryset.filter(responsible_user__is_stock_manager=False)
         elif self.value == 'all':
             return queryset.all()
 
