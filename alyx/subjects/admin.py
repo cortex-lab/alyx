@@ -208,6 +208,7 @@ class SurgeryInline(BaseInlineAdmin):
     can_delete = False
     verbose_name = "Past surgery"
     verbose_name_plural = "Past surgeries"
+    ordering = ('-start_time',)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -241,6 +242,7 @@ class OtherActionInline(BaseInlineAdmin):
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
     classes = ['collapse']
+    ordering = ('-start_time',)
 
 
 class SubjectForm(forms.ModelForm):
