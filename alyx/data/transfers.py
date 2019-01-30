@@ -426,7 +426,7 @@ def bulk_transfer(dry_run=False, project=None):
             continue
         isec = [ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository][0]
         # if the transfer doesn't exist, create it:
-        if tm[ipri][isec] is 0:
+        if tm[ipri][isec] == 0:
             label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
             tm[ipri][isec] = globus_sdk.TransferData(
                 gc,
@@ -443,6 +443,6 @@ def bulk_transfer(dry_run=False, project=None):
     # launch the transfer tasks
     if ~dry_run:
         for t in tm.flatten():
-            if t is 0:
+            if t == 0:
                 continue
             gc.submit_transfer(t)
