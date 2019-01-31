@@ -61,7 +61,7 @@ class Weighing(BaseModel):
     def save(self, *args, **kwargs):
         super(Weighing, self).save(*args, **kwargs)
         from actions.notifications import check_weighing
-        check_weighing(self.subject, date=self.date_time)
+        check_weighing(self.subject)
 
     def __str__(self):
         return 'Weighing %.2f g for %s' % (self.weight,
