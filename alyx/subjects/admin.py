@@ -1143,13 +1143,31 @@ class GenotypeTestAdmin(BaseAdmin):
     list_select_related = ('subject', 'sequence')
 
 
+class LabMemberAdminForm(forms.ModelForm):
+    class Meta:
+        fields = ('__all__')
+        model = LabMember
+
+    def clean(self):
+        if self.request_user != self.instance:
+            raise forms.ValidationError("You can't change other users.")
+        return super(LabMemberAdminForm, self).clean()
+
+
 class LabMemberAdmin(UserAdmin):
+    form = LabMemberAdminForm
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l',
                     'is_staff', 'is_superuser', 'is_stock_manager',
                     ]
     list_editable = ['is_stock_manager']
+    save_on_top = True
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(LabMemberAdmin, self).get_form(request, obj, **kwargs)
+        form.request_user = request.user
+        return form
 
     def groups_l(self, obj):
         return ', '.join(map(str, obj.groups.all()))
