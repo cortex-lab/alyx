@@ -1,8 +1,9 @@
 import logging
+import os
 import os.path as op
 from polymorphic.models import PolymorphicModel
-import uuid
 import sys
+import uuid
 
 from django import forms
 from django.db import models
@@ -103,7 +104,7 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 
 def alyx_mail(to, subject, text=''):
-    if DISABLE_MAIL:
+    if DISABLE_MAIL or os.getenv('DISABLE_MAIL', None):
         logger.warning("Mails are disabled by DISABLE_MAIL.")
         return
     if not to:

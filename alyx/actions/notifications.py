@@ -22,9 +22,11 @@ def check_weighing(subject, date=None):
     wc = subject.reinit_water_control()
     perc = wc.percentage_weight(date=date)
     min_perc = wc.min_percentage(date=date)
+    lwb = wc.last_weighing_before(date=date)
+    datetime = lwb[0] if lwb else None
     if 0 < perc <= min_perc + 2:
         header = 'WARNING' if perc <= min_perc else 'Warning'
-        msg = "%s: %s weight is %.1f%%" % (header, subject, perc)
+        msg = "%s: %s weight was %.1f%% on %s" % (header, subject, perc, datetime)
         create_notification('mouse_underweight', msg, subject)
 
 

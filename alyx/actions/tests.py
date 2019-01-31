@@ -141,7 +141,7 @@ class NotificationTests(TestCase):
             date_time=timezone.datetime(2018, 6, 9, 12, 0, 0)
         )
         notif = Notification.objects.last()
-        self.assertTrue(notif.title.startswith('WARNING: test weight is 70.0%'))
+        self.assertTrue(notif.title.startswith('WARNING: test weight was 70.0%'))
 
     def test_notif_weighing_2(self):
         Weighing.objects.create(
