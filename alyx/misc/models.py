@@ -15,18 +15,11 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
 from alyx.base import BaseModel, modify_fields
-from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH, DEFAULT_LAB_NAME
+from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH, DEFAULT_LAB_PK
 
 
 def default_lab():
-    lab = Lab.objects.filter(name=DEFAULT_LAB_NAME)
-    if not lab:
-        lab = Lab.objects.all()
-    if lab.count():
-        lab = lab.first()
-    else:
-        lab = Lab.objects.create(name='defaultlab', pk='20703e30-b81c-4b44-bbf4-d67b388a2f96')
-    return lab.pk
+    return DEFAULT_LAB_PK
 
 
 class LabMember(AbstractUser):
@@ -61,6 +54,14 @@ class Lab(BaseModel):
         default=0.,
         help_text="The minimum mouse weight is a linear combination of "
         "the reference weight and the zscore weight.")
+    # those are all the default fields for populating Housing tables
+    cage_name = models.CharField(max_length=64, null=True, blank=True)
+    cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
+    enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
+    food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
+    cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
+    light_cycle = models.IntegerField(choices=((0, 'Normal'),
+                                               (1, 'Inverted'),), null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -127,3 +128,58 @@ class Note(BaseModel):
                     super(Note, self).save()
         else:
             super(Note, self).save()
+
+
+class CageType(BaseModel):
+    description = models.CharField(
+        max_length=1023, blank=True, help_text="Extended description of the cage product/brand")
+
+    def __str__(self):
+        return self.name
+
+
+class Enrichment(BaseModel):
+    name = models.CharField(max_length=255, unique=True,
+                            help_text="Training wheel, treadmill etc..")
+    description = models.CharField(
+        max_length=1023, blank=True, help_text="Extended description of the enrichment, link ...")
+
+    def __str__(self):
+        return self.name
+
+
+class Food(BaseModel):
+    name = models.CharField(max_length=255, unique=True,
+                            help_text="Food brand and content")
+    description = models.CharField(
+        max_length=1023, blank=True, help_text="Extended description of the food, link ...")
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectHousing(BaseModel):
+    """
+    A junction table between Subject and Housing.
+    """
+    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
+    housing = models.ForeignKey('Housing', on_delete=models.CASCADE)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+
+
+class Housing(BaseModel):
+    cage_name = models.CharField(max_length=64, null=True, blank=True)
+    cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
+    enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
+    food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
+    cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
+    light_cycle = models.IntegerField(choices=((0, 'Normal'),
+                                               (1, 'Inverted'),))
+
+    @property
+    def mice_per_cage():
+        pass
+    # TODO logic of the admin interface for creation/update
+    # TODO logic of inheritance from the default lab values.
+    # TODO tests of all of this logic.
