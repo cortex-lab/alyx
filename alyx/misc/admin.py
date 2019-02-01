@@ -7,7 +7,7 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 
-from .models import Note, Lab, LabMembership, LabLocation
+from .models import Note, Lab, LabMembership, LabLocation, CageType, Enrichment, Food, Housing
 from alyx.base import BaseAdmin
 
 
@@ -128,7 +128,37 @@ class NoteInline(GenericTabularInline):
         return False
 
 
+class CageTypeAdmin(BaseAdmin):
+    fields = ('name',)
+    list_display = fields
+    search_fields = ('name',)
+
+
+class EnrichmentAdmin(BaseAdmin):
+    fields = ('name',)
+    list_display = fields
+    search_fields = ('name',)
+
+
+class FoodAdmin(BaseAdmin):
+    fields = ('name',)
+    list_display = fields
+    search_fields = ('name',)
+
+
+class HousingAdmin(BaseAdmin):
+    fields = ('cage_name', 'cage_type', 'enrichment', 'food', 'light_cycle',
+              'cage_cleaning_frequency_days')
+    list_display = fields[1:]
+    list_select_related = ('cage_type',)
+    search_fields = ('subjects__nickname',)
+
+
+admin.register(Housing, HousingAdmin)
 admin.site.register(Lab, LabAdmin)
 admin.site.register(LabMembership, LabMembershipAdmin)
 admin.site.register(LabLocation, LabLocationAdmin)
 admin.site.register(Note, NoteAdmin)
+admin.site.register(CageType, CageTypeAdmin)
+admin.site.register(Enrichment, EnrichmentAdmin)
+admin.site.register(Food, FoodAdmin)
