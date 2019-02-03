@@ -129,6 +129,8 @@ class SessionFilter(FilterSet):
     date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
     type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
+    task_protocol = django_filters.CharFilter(field_name='task_protocol',
+                                              lookup_expr=('icontains'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
