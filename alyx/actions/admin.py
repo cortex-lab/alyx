@@ -452,8 +452,9 @@ class SessionAdmin(BaseActionAdmin):
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
+                   ('lab', RelatedDropdownFilter),
                    ]
-    search_fields = ('subject__nickname',)
+    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username')
     ordering = ('-start_time',)
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['task_protocol']
