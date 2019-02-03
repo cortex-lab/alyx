@@ -5,12 +5,12 @@ from django.contrib.contenttypes.models import ContentType
 
 from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType)
 from subjects.models import Subject, Project
-from data.models import Dataset, DatasetType, DataFormat
+from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
-                  'parent_session', 'n_correct_trials', 'n_trials', 'url', 'json',
+                  'parent_session', 'n_correct_trials', 'n_trials', 'url',
                   'wateradmin_session_related', 'data_dataset_session_related')
 
 
@@ -76,14 +76,9 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         queryset=DatasetType.objects.all(),
     )
 
-    data_format = serializers.SlugRelatedField(
-        read_only=False, required=False, slug_field='name',
-        queryset=DataFormat.objects.all(),
-    )
-
     class Meta:
         model = Dataset
-        fields = ('id', 'name', 'dataset_type', 'data_url', 'data_format', 'url')
+        fields = ('id', 'name', 'dataset_type', 'data_url', 'url')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
@@ -115,7 +110,6 @@ class SessionListSerializer(BaseActionSerializer):
             'users', 'procedures',
             'data_dataset_session_related',
             'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
             'wateradmin_session_related',
@@ -140,7 +134,6 @@ class SessionDetailSerializer(BaseActionSerializer):
         queryset = queryset.prefetch_related(
             'data_dataset_session_related',
             'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__data_format',
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
             'wateradmin_session_related',
@@ -149,7 +142,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = SESSION_FIELDS
+        fields = SESSION_FIELDS + ('json',)
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
