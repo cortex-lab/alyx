@@ -131,6 +131,7 @@ class SessionFilter(FilterSet):
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
+    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
@@ -172,7 +173,7 @@ class SessionFilter(FilterSet):
 
     class Meta:
         model = Session
-        exclude = ['json']
+        exclude = []
 
 
 class WeighingFilter(FilterSet):
