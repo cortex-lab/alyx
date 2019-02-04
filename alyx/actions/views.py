@@ -197,9 +197,14 @@ class SessionAPIList(generics.ListCreateAPIView):
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
-    serializer_class = SessionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SessionFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SessionListSerializer
+        if self.request.method == 'POST':
+            return SessionDetailSerializer
 
 
 class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
