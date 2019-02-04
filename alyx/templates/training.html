@@ -1,0 +1,49 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+{% block content %}
+
+<style>
+.training-bad {
+    background-color: #fee;
+}
+</style>
+
+<div style="margin-bottom: 20px;">
+<a href="{{ prev_url }}" style="margin-right: 50px;">< Previous week</a>
+<a href="{{ today_url }}" style="margin-right: 50px;">Today</a>
+<a href="{{ next_url }}">Next week ></a>
+</div>
+
+<table>
+<thead>
+    <tr>
+        <th>subject</th>
+        <th>user</th>
+        <th>training days</th>
+        <!-- day of week, monday, tuesday, etc. -->
+        {% for wd in wds %}
+            <th>{{ wd | date:"D d M, Y" }}</th>
+        {% endfor %}
+    </tr>
+</thead>
+<tbody>
+{% for obj in object_list %}
+    <tr class="training-{{ obj.training_ok|yesno:"good,bad," }}">
+        <td><a href="{{ obj.url }}">{{ obj.nickname }}</a></td>
+        <td>{{ obj.username }}</td>
+        <td>{{ obj.n_training_days }}</td>
+        {% for trained in obj.training_days %}
+            <td><img src="/static/admin/img/icon-{{ trained|yesno:"yes,no," }}.svg"></td>
+        {% endfor %}
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
+{% endblock %}
