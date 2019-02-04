@@ -1,8 +1,10 @@
+import json
 import logging
+import os
 import os.path as op
 from polymorphic.models import PolymorphicModel
-import uuid
 import sys
+import uuid
 
 from django import forms
 from django.db import models
@@ -103,7 +105,7 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 
 def alyx_mail(to, subject, text=''):
-    if DISABLE_MAIL:
+    if DISABLE_MAIL or os.getenv('DISABLE_MAIL', None):
         logger.warning("Mails are disabled by DISABLE_MAIL.")
         return
     if not to:
@@ -246,14 +248,23 @@ class MyAdminSite(admin.AdminSite):
         return TemplateResponse(request, self.index_template or 'admin/index.html', context)
 
 
+class JsonWidget(forms.Textarea):
+    def __init__(self, *args, **kwargs):
+        kwargs['attrs'] = {'rows': 20, 'cols': 60, 'style': 'font-family: monospace;'}
+        super(JsonWidget, self).__init__(*args, **kwargs)
+
+    def format_value(self, value):
+        out = super(JsonWidget, self).format_value(value)
+        out = json.dumps(json.loads(out), indent=1)
+        return out
+
+
 class BaseAdmin(VersionAdmin):
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
                                   'cols': 60})},
-        JSONField: {'widget': forms.Textarea(
-                    attrs={'rows': 5,
-                           'cols': 50})},
+        JSONField: {'widget': JsonWidget()},
         models.UUIDField: {'widget': forms.TextInput(attrs={'size': 32})},
     }
     list_per_page = 50

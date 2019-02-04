@@ -2,7 +2,7 @@
 from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
-from actions.models import Session, Surgery
+from actions.models import Session, Surgery, NotificationRule, Notification
 from misc.models import Lab, LabMember, LabLocation
 from data.models import Dataset, DatasetType
 
@@ -60,11 +60,12 @@ users_to_keep = Subject.objects.using('cortexlab').values_list('responsible_user
 users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
 users_to_keep = Surgery.objects.using('cortexlab').values_list('users', flat=True)
 users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)
-
-# for usr in users_to_leave.values_list('username', flat=True):
-#     print(usr)
-
 users_to_leave.delete()
+
+# remove notification rules from cortexlab and notifications that haven't been sent yet
+NotificationRule.objects.using('cortexlab').all().delete()
+Notification.objects.using('cortexlab').filter(sent_at__isnull=True).delete()
+
 
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)

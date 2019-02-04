@@ -48,6 +48,7 @@ class ResponsibleUserListFilter(DefaultListFilter):
             (None, 'Me'),
             ('all', 'All'),
             ('stock', 'Stock'),
+            ('nostock', 'No stock'),
         )
 
     def queryset(self, request, queryset):
@@ -57,8 +58,9 @@ class ResponsibleUserListFilter(DefaultListFilter):
                 qs = queryset.all()
             return qs
         if self.value() == 'stock':
-            sms = [sm.pk for sm in get_user_model().objects.filter(is_stock_manager=True)]
-            return queryset.filter(responsible_user__in=sms)
+            return queryset.filter(responsible_user__is_stock_manager=True)
+        elif self.value() == 'nostock':
+            return queryset.filter(responsible_user__is_stock_manager=False)
         elif self.value == 'all':
             return queryset.all()
 
@@ -206,6 +208,7 @@ class SurgeryInline(BaseInlineAdmin):
     can_delete = False
     verbose_name = "Past surgery"
     verbose_name_plural = "Past surgeries"
+    ordering = ('-start_time',)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -239,6 +242,7 @@ class OtherActionInline(BaseInlineAdmin):
     fields = ['procedures', 'narrative', 'start_time',
               'users', 'location']
     classes = ['collapse']
+    ordering = ('-start_time',)
 
 
 class SubjectForm(forms.ModelForm):
@@ -1139,13 +1143,31 @@ class GenotypeTestAdmin(BaseAdmin):
     list_select_related = ('subject', 'sequence')
 
 
+class LabMemberAdminForm(forms.ModelForm):
+    class Meta:
+        fields = ('__all__')
+        model = LabMember
+
+    def clean(self):
+        if self.request_user != self.instance:
+            raise forms.ValidationError("You can't change other users.")
+        return super(LabMemberAdminForm, self).clean()
+
+
 class LabMemberAdmin(UserAdmin):
+    form = LabMemberAdminForm
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l',
                     'is_staff', 'is_superuser', 'is_stock_manager',
                     ]
     list_editable = ['is_stock_manager']
+    save_on_top = True
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(LabMemberAdmin, self).get_form(request, obj, **kwargs)
+        form.request_user = request.user
+        return form
 
     def groups_l(self, obj):
         return ', '.join(map(str, obj.groups.all()))

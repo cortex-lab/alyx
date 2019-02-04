@@ -317,9 +317,9 @@ class WaterControl(object):
         e = self.expected_weight(date=date)
         return 100 * (w - iw) / (e - iw) if (e - iw) > 0 else 0.
 
-    def percentage_weight_html(self):
-        status = self.weight_status()
-        pct_wei = self.percentage_weight()
+    def percentage_weight_html(self, date=None):
+        status = self.weight_status(date=date)
+        pct_wei = self.percentage_weight(date=date)
         colour_code = '008000'
         if status == 1:  # orange colour code for reminders
             colour_code = 'FFA500'
@@ -402,10 +402,10 @@ class WaterControl(object):
                 'is_water_restricted',
                 )
 
-    def weight_status(self):
+    def weight_status(self, date=None):
         threshold = max(self.zscore_weight_pct, self.reference_weight_pct)
         thresh_remind = threshold + 0.02
-        w = self.percentage_weight()
+        w = self.percentage_weight(date=date)
         if w == 0:
             return 0
         elif (w / 100) < threshold:

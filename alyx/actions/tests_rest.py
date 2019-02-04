@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
 from datetime import timedelta
+import json
 
 from alyx import base
 from alyx.base import BaseTests
@@ -120,6 +121,7 @@ class APIActionsTests(BaseTests):
         assert dates[2] == date
 
     def test_sessions(self):
+        a_dict4json = {'String': 'this is not a JSON'}
         ses_dict = {'subject': self.subject,
                     'users': self.superuser,
                     'project': self.projectX.name,
@@ -132,13 +134,21 @@ class APIActionsTests(BaseTests):
                     'lab': self.lab01,
                     'n_trials': 100,
                     'n_correct_trials': 75,
-                    'task_protocol': self.test_protocol}
+                    'task_protocol': self.test_protocol,
+                    'json': json.dumps(a_dict4json)}
         # Test the session creation
         r = self.client.post(reverse('session-list'), ses_dict)
         self.ar(r, 201)
-        s1 = r.data
+        s1_details = r.data
         # makes sure the task_protocol is returned
-        self.assertEqual(self.test_protocol, s1['task_protocol'])
+        self.assertEqual(self.test_protocol, s1_details['task_protocol'])
+        # the json is in the session details
+        r = self.client.get(reverse('session-list') + '/' + s1_details['url'][-36:])
+        self.assertEqual(r.data['json'], a_dict4json)
+        # but not in the session list
+        r = self.client.get(reverse('session-list') + '?id=' + s1_details['url'][-36:])
+        s1 = r.data[0]
+        self.assertFalse('json' in s1)
         # create another session for further testing
         ses_dict['start_time'] = '2018-07-11T12:34:56'
         ses_dict['end_time'] = '2018-07-11T12:34:57'
@@ -147,6 +157,7 @@ class APIActionsTests(BaseTests):
         ses_dict['n_correct_trials'] = 37
         r = self.client.post(reverse('session-list'), ses_dict)
         s2 = r.data
+        s2.pop('json')
         # Test the date range filter
         r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
         self.assertEqual(r.data[0], s1)

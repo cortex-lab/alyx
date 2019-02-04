@@ -61,7 +61,7 @@ class Weighing(BaseModel):
     def save(self, *args, **kwargs):
         super(Weighing, self).save(*args, **kwargs)
         from actions.notifications import check_weighing
-        check_weighing(self.subject, date=self.date_time)
+        check_weighing(self.subject)
 
     def __str__(self):
         return 'Weighing %.2f g for %s' % (self.weight,
@@ -446,3 +446,7 @@ class NotificationRule(BaseModel):
 
     class Meta:
         unique_together = [('user', 'notification_type')]
+
+    def __str__(self):
+        return "<Notification rule for %s: %s '%s'>" % (
+            self.user, self.notification_type, self.subjects_scope)

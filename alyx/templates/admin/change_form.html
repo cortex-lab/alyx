@@ -4,6 +4,19 @@
 {% block admin_change_form_document_ready %}
 {{ block.super }}
 
+<style>
+form#subject_form div.form-row.field-sex label,
+form#subject_form div.form-row.field-birth_date label,
+form#subject_form div.form-row.field-labs label,
+form#subject_form div.form-row.field-projects label,
+form#subject_form div.form-row.field-cage label,
+form#subject_form div.form-row.field-ear_mark label,
+form#subject_form div.form-row.field-strain label
+{
+    color: red;
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
 
 <script>

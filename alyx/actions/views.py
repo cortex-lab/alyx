@@ -129,6 +129,9 @@ class SessionFilter(FilterSet):
     date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
     type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
+    task_protocol = django_filters.CharFilter(field_name='task_protocol',
+                                              lookup_expr=('icontains'))
+    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
@@ -170,7 +173,7 @@ class SessionFilter(FilterSet):
 
     class Meta:
         model = Session
-        exclude = ['json']
+        exclude = []
 
 
 class WeighingFilter(FilterSet):
@@ -195,9 +198,14 @@ class SessionAPIList(generics.ListCreateAPIView):
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
-    serializer_class = SessionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = SessionFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SessionListSerializer
+        if self.request.method == 'POST':
+            return SessionDetailSerializer
 
 
 class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):

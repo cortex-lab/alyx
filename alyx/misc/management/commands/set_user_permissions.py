@@ -31,7 +31,7 @@ class Command(BaseCommand):
         group.permissions.add(Permission.objects.get(codename='delete_subjectrequest'))
 
         # Exclude some permissions.
-        for m in ('labmember', 'group', 'permission'):
+        for m in ('group', 'permission'):
             group.permissions.remove(Permission.objects.get(codename='add_%s' % m))
             group.permissions.remove(Permission.objects.get(codename='change_%s' % m))
 

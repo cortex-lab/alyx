@@ -37,7 +37,7 @@
 <tbody>
 {% for obj in object_list %}
     <tr class="{{ obj.is_water_restricted|yesno:'wr,nowr,' }}">
-        <td>{{ obj.date | date }}</td>
+        <td>{{ obj.date | date:"D d M, Y" }}</td>
         <td><strong>{{ obj.weighing_at | floatformat:1 }} {{ obj.weighing_at | yesno:'g,,' }}</strong></td>
         <td>{{ obj.reference_weight | floatformat:1 }} g</td>
         <td>{{ obj.expected_weight | floatformat:1 }} g</td>
