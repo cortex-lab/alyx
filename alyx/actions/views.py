@@ -202,6 +202,8 @@ class SessionAPIList(generics.ListCreateAPIView):
     filter_class = SessionFilter
 
     def get_serializer_class(self):
+        if not self.request:
+            return SessionListSerializer
         if self.request.method == 'GET':
             return SessionListSerializer
         if self.request.method == 'POST':
