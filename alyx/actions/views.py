@@ -187,6 +187,7 @@ class SessionFilter(FilterSet):
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
     json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')
