@@ -213,8 +213,8 @@ class WaterControl(object):
         """Set a non-default reference weight."""
         self.reference_weighing = (date, weight)
 
-    def add_water_administration(self, date, volume, hydrogel=False):
-        self.water_administrations.append((tzone_convert(date, self.timezone), volume, hydrogel))
+    def add_water_administration(self, date, volume, session=None):
+        self.water_administrations.append((tzone_convert(date, self.timezone), volume, session))
 
     def add_threshold(self, percentage=None, bgcolor=None, fgcolor=None, line_style=None):
         """Add a threshold for the plot."""
@@ -362,19 +362,28 @@ class WaterControl(object):
         expected_weight = self.expected_weight(date=date) or 0.
         return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
 
-    def given_water(self, date=None, hydrogel=None):
+    def given_water(self, date=None, has_session=None):
         """Return the amount of water given at a specified date."""
         date = date or self.today()
-        return sum(w or 0 for (d, w, h) in self.water_administrations
-                   if d.date() == date and (hydrogel is None or h == hydrogel))
+        totw = 0
+        for (d, w, ses) in self.water_administrations:
+            if d.date() != date:
+                continue
+            if has_session is None:
+                totw += w
+            elif has_session and ses:
+                totw += w
+            elif not has_session and not ses:
+                totw += w
+        return totw
 
-    def given_water_liquid(self, date=None):
-        """Amount of liquid water given at the specified date."""
-        return self.given_water(date=date, hydrogel=False)
+    def given_water_reward(self, date=None):
+        """Amount of water given at the specified date as part of a session."""
+        return self.given_water(date=date, has_session=True)
 
-    def given_water_hydrogel(self, date=None):
-        """Amount of hydrogel water given at the specified date."""
-        return self.given_water(date=date, hydrogel=True)
+    def given_water_supplement(self, date=None):
+        """Amount of water given at the specified date not during a session."""
+        return self.given_water(date=date, has_session=False)
 
     def given_water_total(self, date=None):
         """Total amount of water given at the specified date."""
@@ -394,8 +403,8 @@ class WaterControl(object):
                 'expected_weight',
                 'min_weight',
                 'percentage_weight',
-                'given_water_liquid',
-                'given_water_hydrogel',
+                'given_water_reward',
+                'given_water_supplement',
                 'given_water_total',
                 'expected_water',
                 'excess_water',
@@ -541,7 +550,7 @@ def water_control(subject):
     was = am.WaterAdministration.objects.filter(subject=subject)
     was = was.select_related('water_type').order_by('date_time')
     for wa in was:
-        wc.add_water_administration(wa.date_time, wa.water_administered, hydrogel=wa.hydrogel)
+        wc.add_water_administration(wa.date_time, wa.water_administered, session=wa.session_id)
 
     # Weighings
     ws = am.Weighing.objects.filter(subject=subject).order_by('date_time')

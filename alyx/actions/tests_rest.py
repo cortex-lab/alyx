@@ -113,7 +113,7 @@ class APIActionsTests(BaseTests):
         self.assertEqual(d['implant_weight'], 4.56)
         self.assertTrue(
             set(('date', 'weight', 'expected_weight', 'expected_water',
-                 'given_water_liquid', 'given_water_hydrogel',)) <= set(d['records'][0]))
+                 'given_water_reward', 'given_water_supplement',)) <= set(d['records'][0]))
         dates = sorted(_['date'] for _ in d['records'])
         assert len(dates) == 5
         assert dates[0] == start_date
