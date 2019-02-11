@@ -144,7 +144,7 @@ class TrainingListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(TrainingListView, self).get_context_data(**kwargs)
-        reqdate = self.kwargs.get('date', None) or date.today()
+        reqdate = self.kwargs.get('date', None) or date.today().strftime('%Y-%m-%d')
         reqdate = get_date(reqdate)
         monday = last_monday(reqdate=reqdate)
         self.monday = monday

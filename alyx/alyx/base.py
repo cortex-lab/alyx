@@ -224,6 +224,12 @@ def _get_category_list(app_list):
             category_list[0].models.append(models_dict[model_name])
         else:
             category_list[3].models.append(models_dict[model_name])
+    # Add link to training view in 'Common' panel.
+    category_list[0].models.append({
+        'admin_url': reverse('training'),
+        'name': 'Training view',
+        'perms': {},
+    })
     return category_list
 
 
