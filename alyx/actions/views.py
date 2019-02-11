@@ -127,7 +127,7 @@ def training_days(reqdate=None):
         sessions = Session.objects.filter(
             subject=w.subject, start_time__gte=monday, start_time__lt=next_monday)
         dates = sorted(set([_[0] for _ in sessions.order_by('start_time').
-                            values_list('start_time__date')]))
+                            values_list('start_time')]))
         wds = set(date.weekday() for date in dates)
         yield {
             'nickname': w.subject.nickname,
