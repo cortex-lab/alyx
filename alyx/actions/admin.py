@@ -328,17 +328,17 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         return '%.1f' % obj.subject.water_control.min_weight()
     min_weight.short_description = 'weight min'
 
-    def given_water_liquid(self, obj):
+    def given_water_reward(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % obj.subject.water_control.given_water_liquid()
-    given_water_liquid.short_description = 'water liq'
+        return '%.2f' % obj.subject.water_control.given_water_reward()
+    given_water_reward.short_description = 'water reward'
 
-    def given_water_hydrogel(self, obj):
+    def given_water_supplement(self, obj):
         if not obj.subject:
             return
-        return '%.2f' % obj.subject.water_control.given_water_hydrogel()
-    given_water_hydrogel.short_description = 'water hgel'
+        return '%.2f' % obj.subject.water_control.given_water_supplement()
+    given_water_supplement.short_description = 'water suppl'
 
     def given_water_total(self, obj):
         if not obj.subject:

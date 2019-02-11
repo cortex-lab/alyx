@@ -1149,7 +1149,8 @@ class LabMemberAdminForm(forms.ModelForm):
         model = LabMember
 
     def clean(self):
-        if self.request_user != self.instance:
+        current_user = LabMember.objects.get(pk=self.request_user.pk)
+        if self.request_user != self.instance and not current_user.is_superuser:
             raise forms.ValidationError("You can't change other users.")
         return super(LabMemberAdminForm, self).clean()
 

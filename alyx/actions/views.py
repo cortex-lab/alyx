@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date
 import itertools
 from operator import itemgetter
 
@@ -16,8 +16,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from subjects.models import Subject
-from .water_control import water_control
-from .models import BaseAction, Session, WaterAdministration, Weighing, WaterType
+from .water_control import water_control, date as get_date
+from .models import (
+    BaseAction, Session, WaterAdministration, WaterRestriction,
+    Weighing, WaterType)
 from .serializers import (SessionListSerializer,
                           SessionDetailSerializer,
                           WaterAdministrationDetailSerializer,
@@ -108,6 +110,59 @@ class WaterHistoryListView(ListView):
         return water_control(subject).to_jsonable()[::-1]
 
 
+def last_monday(reqdate=None):
+    reqdate = reqdate or date.today()
+    monday = reqdate - timedelta(days=reqdate.weekday())
+    assert monday.weekday() == 0
+    return monday
+
+
+def training_days(reqdate=None):
+    monday = last_monday(reqdate=reqdate)
+    wr = WaterRestriction.objects.filter(
+        start_time__isnull=False, end_time__isnull=True,
+    ).order_by('subject__responsible_user__username', 'subject__nickname')
+    next_monday = monday + timedelta(days=7)
+    for w in wr:
+        sessions = Session.objects.filter(
+            subject=w.subject, start_time__gte=monday, start_time__lt=next_monday)
+        dates = sorted(set([_[0] for _ in sessions.order_by('start_time').
+                            values_list('start_time')]))
+        wds = set(date.weekday() for date in dates)
+        yield {
+            'nickname': w.subject.nickname,
+            'username': w.subject.responsible_user.username,
+            'url': reverse('admin:subjects_subject_change', args=[w.subject.pk]),
+            'n_training_days': len(wds),
+            'training_ok': len(wds) >= 5,
+            'training_days': [wd in wds for wd in range(7)],
+        }
+
+
+class TrainingListView(ListView):
+    template_name = 'training.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(TrainingListView, self).get_context_data(**kwargs)
+        reqdate = self.kwargs.get('date', None) or date.today().strftime('%Y-%m-%d')
+        reqdate = get_date(reqdate)
+        monday = last_monday(reqdate=reqdate)
+        self.monday = monday
+        previous_week = (monday - timedelta(days=7)).strftime('%Y-%m-%d')
+        today = (date.today()).strftime('%Y-%m-%d')
+        next_week = (monday + timedelta(days=7)).strftime('%Y-%m-%d')
+        context['title'] = 'Training history for %s' % monday.strftime('%Y-%m-%d')
+        context['site_header'] = 'Alyx'
+        context['prev_url'] = reverse('training', args=[previous_week])
+        context['today_url'] = reverse('training', args=[today])
+        context['next_url'] = reverse('training', args=[next_week])
+        context['wds'] = [monday + timedelta(days=n) for n in range(7)]
+        return context
+
+    def get_queryset(self):
+        yield from training_days(reqdate=self.monday)
+
+
 def weighing_plot(request, subject_id=None):
     if not request.user.is_authenticated:
         return HttpResponse('')
@@ -132,6 +187,7 @@ class SessionFilter(FilterSet):
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
     json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')

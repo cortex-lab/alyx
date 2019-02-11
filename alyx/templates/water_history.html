@@ -27,8 +27,8 @@
         <th>weight exp</th>
         <th>weight pct</th>
         <th>weight min</th>
-        <th>water liq</th>
-        <th>water hgel</th>
+        <th>water reward</th>
+        <th>water suppl.</th>
         <th>water tot</th>
         <th>water exp</th>
         <th>water excess</th>
@@ -43,8 +43,8 @@
         <td>{{ obj.expected_weight | floatformat:1 }} g</td>
         <td>{{ obj.percentage_weight | floatformat:1 }}%</td>
         <td>{{ obj.min_weight | floatformat:1 }} g</td>
-        <td>{{ obj.given_water_liquid | floatformat:2 }} mL</td>
-        <td>{{ obj.given_water_hydrogel | floatformat:2 }} mL</td>
+        <td>{{ obj.given_water_reward | floatformat:2 }} mL</td>
+        <td>{{ obj.given_water_supplement | floatformat:2 }} mL</td>
         <td><strong>{{ obj.given_water_total | floatformat:2 }} mL</strong></td>
         <td>{{ obj.expected_water | floatformat:2 }} mL</td>
         <td>{{ obj.excess_water | floatformat:2 }} mL</td>
