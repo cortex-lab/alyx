@@ -367,7 +367,7 @@ class WaterControl(object):
         date = date or self.today()
         totw = 0
         for (d, w, ses) in self.water_administrations:
-            if d.date() != date:
+            if d.date() != date or w is None:
                 continue
             if has_session is None:
                 totw += w
