@@ -1,0 +1,58 @@
+[
+{
+ "model": "actions.watertype",
+ "pk": "2127f637-0770-4639-8c22-3d73a94eecc3",
+ "fields": {
+  "json": null,
+  "name": "Water"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "31043cd4-7351-4aff-b69e-34a50b69cc75",
+ "fields": {
+  "json": null,
+  "name": "Water 15% Sucrose"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "38b53089-4b6f-4d05-a051-3befe40cdd10",
+ "fields": {
+  "json": null,
+  "name": "Citric Acid Water 2%"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "511feb0c-cc35-4c42-a7b9-db704833ef16",
+ "fields": {
+  "json": null,
+  "name": "Hydrogel 5% Citric Acid"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "5267f912-8abf-470f-8593-40a02c35bd60",
+ "fields": {
+  "json": null,
+  "name": "Water 10% Sucrose"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "c1135c08-ef13-4dea-a0ea-3f88877eebd1",
+ "fields": {
+  "json": null,
+  "name": "Water 2% Citric Acid"
+ }
+},
+{
+ "model": "actions.watertype",
+ "pk": "c68ed3b4-8a3d-47e2-a010-de7b9c027439",
+ "fields": {
+  "json": null,
+  "name": "Hydrogel"
+ }
+}
+]

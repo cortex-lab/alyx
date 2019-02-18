@@ -1,0 +1,38 @@
+[
+{
+ "model": "subjects.source",
+ "pk": "1bad1f22-6700-4f80-9bcc-64e7d8ebc497",
+ "fields": {
+  "name": "Allen Institute",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "subjects.source",
+ "pk": "66ac5ce0-c988-429d-885c-8f63ce4329de",
+ "fields": {
+  "name": "Cruciform BSU",
+  "json": null,
+  "description": "Subjects born in-house."
+ }
+},
+{
+ "model": "subjects.source",
+ "pk": "a203214f-a34a-4b65-ba19-5ce85e07a005",
+ "fields": {
+  "name": "Charles River",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "subjects.source",
+ "pk": "c2b2242e-fa25-432d-96ec-122208e8b66c",
+ "fields": {
+  "name": "Jax",
+  "json": null,
+  "description": "Jackson labs"
+ }
+}
+]
