@@ -59,7 +59,6 @@ class Lab(BaseModel):
         help_text="The minimum mouse weight is a linear combination of "
         "the reference weight and the zscore weight.")
     # those are all the default fields for populating Housing tables
-    cage_name = models.CharField(max_length=64, null=True, blank=True)
     cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
     enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
     food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
@@ -181,8 +180,11 @@ class Housing(BaseModel):
     light_cycle = models.IntegerField(choices=((0, 'Normal'),
                                                (1, 'Inverted'),))
 
+    def save(self):
+        super(Housing, self).save()
+
     @property
-    def mice_per_cage():
+    def mice_per_cage(self):
         pass
     # TODO logic of the admin interface for creation/update
     # TODO logic of inheritance from the default lab values.

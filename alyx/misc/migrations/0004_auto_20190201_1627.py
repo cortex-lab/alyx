@@ -8,7 +8,7 @@ import uuid
 
 def set_default_lab(apps, schema_editor):
     Lab = apps.get_model('misc', 'Lab')
-    dlab = Lab.objects.filter(pk=settings.DEFAULT_LAB_PK)
+    dlab = Lab.objects.filter(name=settings.DEFAULT_LAB_NAME)
     if dlab.count() == 0:
         Lab.objects.create(pk=settings.DEFAULT_LAB_PK, name=settings.DEFAULT_LAB_NAME)
 
@@ -95,11 +95,6 @@ class Migration(migrations.Migration):
             model_name='lab',
             name='cage_cleaning_frequency_days',
             field=models.IntegerField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='lab',
-            name='cage_name',
-            field=models.CharField(blank=True, max_length=64, null=True),
         ),
         migrations.AddField(
             model_name='lab',
