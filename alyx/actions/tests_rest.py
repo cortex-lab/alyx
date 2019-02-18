@@ -184,3 +184,16 @@ class APIActionsTests(BaseTests):
         r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
         self.ar(r)
         self.assertEqual(r.data[0]['wateradmin_session_related'][0]['water_administered'], 1)
+
+    def test_list_retrieve_water_restrictions(self):
+        url = reverse('water-restriction-list')
+        response = self.client.get(url)
+        self.ar(response)
+        d = response.data[0]
+        self.assertTrue(set(d.keys()) >= set(['reference_weight', 'water_type', 'subject',
+                                              'start_time', 'end_time']))
+        url = url = reverse('water-restriction-list') + '/' + d['subject']
+        response = self.client.get(url)
+        self.ar(response)
+        d2 = response.data
+        self.assertEqual(d, d2)

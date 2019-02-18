@@ -25,6 +25,7 @@ from .serializers import (SessionListSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
+                          WaterRestrictionListSerializer,
                           )
 
 
@@ -345,3 +346,22 @@ class WaterRequirement(APIView):
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
         data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
         return Response(data)
+
+
+class WaterRestrictionList(generics.ListAPIView):
+    """
+    Lists water restriction.
+    """
+    queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
+    serializer_class = WaterRestrictionListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class WaterRestrictionDetail(generics.RetrieveAPIView):
+    """
+    Retrieve water restriction.
+    """
+    queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
+    serializer_class = WaterRestrictionListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'subject__nickname'

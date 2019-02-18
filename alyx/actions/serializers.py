@@ -3,7 +3,8 @@ from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
-from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType)
+from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType,
+                     WaterRestriction)
 from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
@@ -182,6 +183,17 @@ class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
         model = WaterType
         fields = ('__all__')
         extra_kwargs = {'url': {'view_name': 'watertype-detail', 'lookup_field': 'name'}}
+
+
+class WaterRestrictionListSerializer(serializers.HyperlinkedModelSerializer):
+
+    subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
+    water_type = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
+    class Meta:
+        model = WaterRestriction
+        fields = ('subject', 'start_time', 'end_time', 'water_type', 'reference_weight')
+        extra_kwargs = {'url': {'view_name': 'water-restriction-list'}}
 
 
 class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
