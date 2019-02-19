@@ -1,3 +1,5 @@
+from pytz import all_timezones
+
 from django import forms
 from django.db import models
 from django.contrib import admin
@@ -31,6 +33,14 @@ class LabForm(forms.ModelForm):
         ref = max(ref, 0)
         if ref > 1:
             ref = ref / 100
+        return ref
+
+    def clean_timezone(self):
+        ref = self.cleaned_data['timezone']
+        if ref not in all_timezones:
+            raise forms.ValidationError(
+                ("Time Zone is incorrect here is the list (column TZ Database Name):  "
+                 "https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"))
         return ref
 
 
