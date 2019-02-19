@@ -192,8 +192,8 @@ class APIActionsTests(BaseTests):
         d = response.data[0]
         self.assertTrue(set(d.keys()) >= set(['reference_weight', 'water_type', 'subject',
                                               'start_time', 'end_time']))
-        url = url = reverse('water-restriction-list') + '/' + d['subject']
+        url = url = reverse('water-restriction-list') + '?subject=' + d['subject']
         response = self.client.get(url)
         self.ar(response)
-        d2 = response.data
+        d2 = response.data[0]
         self.assertEqual(d, d2)

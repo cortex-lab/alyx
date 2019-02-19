@@ -151,9 +151,6 @@ urlpatterns = [
     path('water-restriction', av.WaterRestrictionList.as_view(),
          name='water-restriction-list'),
 
-    path('water-restriction/<str:subject__nickname>', av.WaterRestrictionDetail.as_view(),
-         name='water-restriction-detail'),
-
     path('admin/', admin.site.urls),
 
     path('admin-subjects/', include('subjects.urls')),

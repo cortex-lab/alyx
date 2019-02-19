@@ -348,6 +348,14 @@ class WaterRequirement(APIView):
         return Response(data)
 
 
+class WaterRestrictionFilter(FilterSet):
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+
+    class Meta:
+        model = WaterRestriction
+        exclude = ['json']
+
+
 class WaterRestrictionList(generics.ListAPIView):
     """
     Lists water restriction.
@@ -355,13 +363,4 @@ class WaterRestrictionList(generics.ListAPIView):
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
     serializer_class = WaterRestrictionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-
-class WaterRestrictionDetail(generics.RetrieveAPIView):
-    """
-    Retrieve water restriction.
-    """
-    queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
-    serializer_class = WaterRestrictionListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'subject__nickname'
+    filter_class = WaterRestrictionFilter
