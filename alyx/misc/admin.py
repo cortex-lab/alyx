@@ -7,8 +7,9 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 
-from .models import Note, Lab, LabMembership, LabLocation, CageType, Enrichment, Food, Housing
-from alyx.base import BaseAdmin
+from subjects.models import Subject
+from misc.models import Note, Lab, LabMembership, LabLocation, CageType, Enrichment, Food, Housing
+from alyx.base import BaseAdmin, BaseInlineAdmin
 
 
 class LabForm(forms.ModelForm):
@@ -46,9 +47,10 @@ class LabForm(forms.ModelForm):
 
 class LabAdmin(BaseAdmin):
     form = LabForm
-    fields = ['name', 'institution', 'address', 'timezone',
-              'reference_weight_pct', 'zscore_weight_pct']
-    list_display = fields
+    list_display = ['name', 'institution', 'address', 'timezone',
+                    'reference_weight_pct', 'zscore_weight_pct']
+    list_select_related = ['cage_type', 'enrichment', 'food']
+    fields = list_display + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle']
 
 
 class LabMembershipAdmin(BaseAdmin):
@@ -129,32 +131,42 @@ class NoteInline(GenericTabularInline):
 
 
 class CageTypeAdmin(BaseAdmin):
-    fields = ('name',)
+    fields = ('name', 'description',)
     list_display = fields
     search_fields = ('name',)
 
 
 class EnrichmentAdmin(BaseAdmin):
-    fields = ('name',)
+    fields = ('name', 'description',)
     list_display = fields
     search_fields = ('name',)
 
 
 class FoodAdmin(BaseAdmin):
-    fields = ('name',)
+    fields = ('name', 'description',)
     list_display = fields
     search_fields = ('name',)
 
 
+class HousingAdminForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        subs = Subject.objects.filter(death_date__isnull=True)
+        self.fields['subjects'].queryset = subs.order_by('lab', 'nickname')
+
+
 class HousingAdmin(BaseAdmin):
-    fields = ('cage_name', 'cage_type', 'enrichment', 'food', 'light_cycle',
-              'cage_cleaning_frequency_days')
-    list_display = fields[1:]
-    list_select_related = ('cage_type',)
-    search_fields = ('subjects__nickname',)
+    form = HousingAdminForm
+    fields = ['subjects',
+              ('start_datetime', 'end_datetime',),
+              ('cage_type', 'cage_name'),
+              ('enrichment', 'light_cycle',),
+              ('food', 'cage_cleaning_frequency_days')]
+    filter_horizontal = ('subjects',)
 
 
-admin.register(Housing, HousingAdmin)
+admin.site.register(Housing, HousingAdmin)
 admin.site.register(Lab, LabAdmin)
 admin.site.register(LabMembership, LabMembershipAdmin)
 admin.site.register(LabLocation, LabLocationAdmin)

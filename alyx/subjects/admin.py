@@ -17,7 +17,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
-from misc.models import LabMember
+from misc.models import LabMember, Housing
 from misc.admin import NoteInline
 
 
@@ -1199,7 +1199,6 @@ mysite.register(Sequence, SequenceAdmin)
 mysite.register(GenotypeTest, GenotypeTestAdmin)
 mysite.register(Zygosity, ZygosityAdmin)
 mysite.register(ZygosityRule, ZygosityRuleAdmin)
-
 
 # Alternative admin views
 # ------------------------------------------------------------------------------------------------

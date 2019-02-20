@@ -161,17 +161,10 @@ class Food(BaseModel):
         return self.name
 
 
-class SubjectHousing(BaseModel):
-    """
-    A junction table between Subject and Housing.
-    """
-    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
-    housing = models.ForeignKey('Housing', on_delete=models.CASCADE)
-    start_datetime = models.DateTimeField()
-    end_datetime = models.DateTimeField()
-
-
 class Housing(BaseModel):
+    subjects = models.ManyToManyField('subjects.Subject')
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField(null=True, blank=True)
     cage_name = models.CharField(max_length=64, null=True, blank=True)
     cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
     enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
