@@ -4,6 +4,7 @@ import os
 import os.path as op
 from polymorphic.models import PolymorphicModel
 import sys
+import pytz
 import uuid
 
 from django import forms
@@ -16,7 +17,7 @@ from django.core.mail import send_mail
 from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.utils import termcolors
+from django.utils import termcolors, timezone
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -281,6 +282,15 @@ class BaseAdmin(VersionAdmin):
         if self.fields and 'json' not in self.fields:
             self.fields += ('json',)
         super(BaseAdmin, self).__init__(*args, **kwargs)
+
+    def get_changeform_initial_data(self, request):
+        # The default start time, in the admin interface, should be in the timezone of the user.
+        if not request.user.lab:
+            return {}
+        from misc.models import Lab
+        tz = pytz.timezone(Lab.objects.get(name=request.user.lab[0]).timezone)
+        now = timezone.now().astimezone(tz)
+        return {'start_time': now, 'created_at': now, 'date_time': now}
 
     def changelist_view(self, request, extra_context=None):
         category_list = _get_category_list(admin.site.get_app_list(request))
