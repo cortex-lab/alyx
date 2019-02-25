@@ -17,7 +17,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
-from misc.models import LabMember
+from misc.models import LabMember, Housing
 from misc.admin import NoteInline
 
 
@@ -227,6 +227,11 @@ class AddSurgeryInline(SurgeryInline):
         return False
 
 
+class HousingInline(admin.TabularInline):
+    model = Housing.subjects.through
+    extra = 0
+
+
 class SessionInline(BaseInlineAdmin):
     model = Session
     extra = 1
@@ -268,17 +273,21 @@ class SubjectForm(forms.ModelForm):
 
 
 class SubjectAdmin(BaseAdmin):
+    HOUSING_FIELDS = ('housing_l', 'cage_name', 'cage_type', 'light_cycle', 'enrichment',
+                      'food', 'cage_mates_l')
     fieldsets = (
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
                                 'responsible_user',
                                 'request',
                                 'wean_date',
-                                'to_be_genotyped', 'genotype_date',
-                                'death_date', 'to_be_culled',
-                                'reduced', 'reduced_date',
+                                ('to_be_genotyped', 'genotype_date',),
+                                ('to_be_culled', 'death_date', 'reduced', 'reduced_date',),
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json', 'subject_history')}),
+        ('HOUSING', {'fields': HOUSING_FIELDS,
+                     'classes': ('extrapretty',),
+                     }),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'cage', 'cage_changes',),
                      'classes': ('collapse',),
@@ -315,7 +324,7 @@ class SubjectAdmin(BaseAdmin):
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes',
-                       ) + fieldsets[3][1]['fields'][1:]  # water read only fields
+                       ) + fieldsets[4][1]['fields'][1:] + HOUSING_FIELDS  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
     list_filter = [ResponsibleUserListFilter,
@@ -332,6 +341,7 @@ class SubjectAdmin(BaseAdmin):
                SessionInline,
                OtherActionInline,
                NoteInline,
+               HousingInline,
                ]
 
     def session_count(self, sub):
@@ -362,6 +372,16 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<a href="{url}">{breeding_pair}</a>',
                            breeding_pair=bp or '-', url=url)
     breeding_pair_l.short_description = 'BP'
+
+    def housing_l(self, obj):
+        url = get_admin_url(obj.housing)
+        return format_html('<a href="{url}">{housing}</a>', housing=obj.housing or '-', url=url)
+    housing_l.short_description = 'housing'
+
+    def cage_mates_l(self, obj):
+        if obj.cage_mates:
+            return ','.join(list(obj.cage_mates.values_list('nickname', flat=True)))
+    cage_mates_l.short_description = 'cage mates'
 
     def litter_l(self, obj):
         url = get_admin_url(obj.litter)

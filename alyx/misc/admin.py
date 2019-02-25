@@ -1,4 +1,5 @@
 from pytz import all_timezones
+import uuid
 
 from django import forms
 from django.db import models
@@ -177,6 +178,26 @@ class HousingAdmin(BaseAdmin):
               ('enrichment', 'light_cycle',),
               ('food', 'cage_cleaning_frequency_days')]
     filter_horizontal = ('subjects',)
+    list_display = ('lab', 'cage_name', 'subjects_l', 'start_datetime', 'end_datetime',)
+
+    def save_model(self, request, obj, form, change):
+        subs = obj.subjects.all()
+        # if the modified object has already a end date, it's in the past and don't bother
+        super().save_model(request, obj, form, change)
+        if obj.end_datetime:
+            return
+        # many to many fields are updated after save
+        subs = form.data.get('subjects')
+        if isinstance(subs, str):
+            subs = [subs]
+        subs = [uuid.UUID(s) for s in subs]
+        housings = Housing.objects.filter(end_datetime__isnull=True).exclude(pk=obj.pk)
+        housings = housings.filter(subjects__pk__in=subs).distinct()
+        obj.update_and_create(housings, moved_subjects_pk=subs)
+
+    def subjects_l(self, obj):
+        return ', '.join(map(str, obj.subjects.all()))
+    subjects_l.short_description = 'subjects'
 
 
 admin.site.register(Housing, HousingAdmin)

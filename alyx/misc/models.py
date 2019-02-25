@@ -3,6 +3,8 @@ from io import BytesIO
 import os.path as op
 import uuid
 import sys
+import pytz
+from collections.abc import Iterable
 
 from PIL import Image
 
@@ -179,14 +181,66 @@ class Housing(BaseModel):
     food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
     cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
     light_cycle = models.IntegerField(choices=((0, 'Normal'),
-                                               (1, 'Inverted'),))
+                                               (1, 'Inverted'),),
+                                      null=True, blank=True)
 
-    def save(self):
-        super(Housing, self).save()
+    def save(self, **kwargs):
+        # if this is a forced update/insert, save and continue
+        if kwargs.get('force_update', False) or kwargs.get('force_insert', False):
+            super(Housing, self).save(**kwargs)
+            return
+
+        # first check if it's an update to an existing value, if not, just save
+        housings = Housing.objects.filter(pk=self.pk)
+        if not housings:
+            super(Housing, self).save(**kwargs)
+            return
+
+        # so if it's an update check for field changes excluding end date which is an update
+        old = Housing.objects.get(pk=self.pk)
+        excludes = ['start_datetime', 'end_datetime']
+        isequal = True
+        for f in self._meta.fields:
+            if f.name in excludes:
+                continue
+            isequal &= getattr(old, f.name) == getattr(self, f.name)
+        # in this case the housing may just have had its dates changed
+        if isequal:
+            super(Housing, self).save(**kwargs)
+            return
+        # update fields triggers 1) the update of the current rec, 2) the creation of a new rec
+        self.update_and_create(old)
+
+    def update_and_create(self, old_housings, moved_subjects_pk=None):
+        if not old_housings:
+            return
+        # 1) update of the old model(s), setting the end time
+        now = datetime.now().astimezone(timezone.get_current_timezone())
+        sub = self.subjects.first()
+        if sub and sub.lab:
+            now.astimezone(pytz.timezone(sub.lab.timezone))
+        # this needs to work for querysets and for misc.Housing objects
+        if not isinstance(old_housings, Iterable):
+            old_housings = [old_housings]
+        for old in old_housings:
+            old.end_datetime = timezone.make_naive(now)
+            old.save(force_update=True)
+        # 2) update of the current model
+        self.pk = None
+        self.start_datetime = old.end_datetime
+        self.save(force_insert=True)
+        # if this is an automatic subject removal, make sure the subjects are updated
+        if moved_subjects_pk:
+            subs = set(old.subjects.all().values_list('pk', flat=True))
+            subs = subs.difference(moved_subjects_pk)
+            self.subjects.set(subs)
 
     @property
     def mice_per_cage(self):
-        pass
-    # TODO logic of the admin interface for creation/update
-    # TODO logic of inheritance from the default lab values.
-    # TODO tests of all of this logic.
+        return self.subjects.objects.all().count()
+
+    @property
+    def lab(self):
+        sub = self.subjects.first()
+        if sub:
+            return sub.lab.name

@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('end_datetime', models.DateTimeField(blank=True, null=True)),
                 ('cage_name', models.CharField(blank=True, max_length=64, null=True)),
                 ('cage_cleaning_frequency_days', models.IntegerField(blank=True, null=True)),
-                ('light_cycle', models.IntegerField(choices=[(0, 'Normal'), (1, 'Inverted')])),
+                ('light_cycle', models.IntegerField(choices=[(0, 'Normal'), (1, 'Inverted')], blank=True, null=True)),
                 ('cage_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='misc.CageType')),
                 ('enrichment', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='misc.Enrichment')),
                 ('food', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='misc.Food')),
