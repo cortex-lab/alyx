@@ -9,7 +9,7 @@ from django.contrib.postgres.fields import JSONField
 
 from subjects.models import Subject
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, Enrichment, Food, Housing
-from alyx.base import BaseAdmin, BaseInlineAdmin
+from alyx.base import BaseAdmin
 
 
 class LabForm(forms.ModelForm):
@@ -152,12 +152,25 @@ class HousingAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        request = self.Meta.formfield_callback.keywords['request']
+        self.user = request.user
         subs = Subject.objects.filter(death_date__isnull=True)
+        lab = self.user.lab_id()
+        if lab:
+            subs = Subject.objects.filter(lab__in=lab)
+            self.fields['cage_type'].initial = lab[0].cage_type
+            self.fields['enrichment'].initial = lab[0].enrichment
+            self.fields['light_cycle'].initial = lab[0].light_cycle
+            self.fields['food'].initial = lab[0].food
+            self.fields['cage_cleaning_frequency_days'].initial =\
+                lab[0].cage_cleaning_frequency_days
         self.fields['subjects'].queryset = subs.order_by('lab', 'nickname')
 
 
 class HousingAdmin(BaseAdmin):
+
     form = HousingAdminForm
+
     fields = ['subjects',
               ('start_datetime', 'end_datetime',),
               ('cage_type', 'cage_name'),

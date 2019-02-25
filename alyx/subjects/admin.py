@@ -17,7 +17,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Project,
                      )
 from actions.models import Surgery, Session, OtherAction
-from misc.models import LabMember, Housing
+from misc.models import LabMember
 from misc.admin import NoteInline
 
 
@@ -1202,6 +1202,7 @@ mysite.register(ZygosityRule, ZygosityRuleAdmin)
 
 # Alternative admin views
 # ------------------------------------------------------------------------------------------------
+
 
 class SubjectAdverseEffectsAdmin(SubjectAdmin):
     list_display = ['nickname', 'responsible_user', 'sex', 'birth_date',
