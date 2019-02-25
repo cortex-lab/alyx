@@ -32,12 +32,20 @@ class LabMember(AbstractUser):
     def lab_id(self, date=datetime.now().date()):
         lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
         lms = lms.exclude(end_date__lt=date)
-        return lms
+        return Lab.objects.filter(id__in=lms.values_list('lab', flat=True))
 
     @property
     def lab(self, date=datetime.now().date()):
-        lms = self.lab_id(date=date)
-        return [str(ln[0]) for ln in lms.values_list('lab__name').distinct()]
+        labs = self.lab_id(date=date)
+        return [str(ln[0]) for ln in labs.values_list('name').distinct()]
+
+    @property
+    def tz(self):
+        labs = self.lab_id()
+        if not labs:
+            return settings.TIME_ZONE
+        else:
+            return labs[0].timezone
 
 
 class Lab(BaseModel):
