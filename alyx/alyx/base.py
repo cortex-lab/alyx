@@ -289,7 +289,10 @@ class BaseAdmin(VersionAdmin):
             return {}
         from misc.models import Lab
         tz = pytz.timezone(Lab.objects.get(name=request.user.lab[0]).timezone)
-        now = timezone.now().astimezone(tz)
+        assert settings.USE_TZ is False  # timezone.now() is expected to be a naive datetime
+        server_tz = pytz.timezone(settings.TIME_ZONE)  # server timezone
+        now = server_tz.localize(timezone.now())  # convert datetime from naive to server timezone
+        now = now.astimezone(tz)  # convert to the lab timezone
         return {'start_time': now, 'created_at': now, 'date_time': now}
 
     def changelist_view(self, request, extra_context=None):
