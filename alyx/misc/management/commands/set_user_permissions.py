@@ -35,6 +35,11 @@ class Command(BaseCommand):
             group.permissions.remove(Permission.objects.get(codename='add_%s' % m))
             group.permissions.remove(Permission.objects.get(codename='change_%s' % m))
 
+        # Cannot change a few models.
+        group.permissions.remove(Permission.objects.get(codename='change_project'))
+        group.permissions.remove(Permission.objects.get(codename='change_lab'))
+        group.permissions.remove(Permission.objects.get(codename='change_datasettype'))
+
         group.save()
         self.stdout.write("%d permissions have been set on group %s." %
                           (len(group.permissions.all()), group))
