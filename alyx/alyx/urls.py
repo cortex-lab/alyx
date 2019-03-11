@@ -148,6 +148,8 @@ urlpatterns = [
     path('water-requirement/<str:nickname>', av.WaterRequirement.as_view(),
          name='water-requirement'),
 
+    path('water-restriction', av.WaterRestrictionList.as_view(),
+         name='water-restriction-list'),
 
     path('admin/', admin.site.urls),
 

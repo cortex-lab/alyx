@@ -70,6 +70,13 @@ $(window).on("load", function() {
     }
 });
 
+// HACK: date widget in local timezone.
+(function($){
+  $(function(){
+    document.body.setAttribute("data-admin-utc-offset", (new Date()).getTimezoneOffset() * -60);
+  })
+})(jQuery)
+
 </script>
 
 {% endblock %}

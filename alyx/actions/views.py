@@ -25,6 +25,7 @@ from .serializers import (SessionListSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
+                          WaterRestrictionListSerializer,
                           )
 
 
@@ -270,7 +271,7 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Detail of one session
     """
-    queryset = Session.objects.all()
+    queryset = Session.objects.all().order_by('-start_time')
     queryset = SessionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = SessionDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -345,3 +346,21 @@ class WaterRequirement(APIView):
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
         data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
         return Response(data)
+
+
+class WaterRestrictionFilter(FilterSet):
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+
+    class Meta:
+        model = WaterRestriction
+        exclude = ['json']
+
+
+class WaterRestrictionList(generics.ListAPIView):
+    """
+    Lists water restriction.
+    """
+    queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
+    serializer_class = WaterRestrictionListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = WaterRestrictionFilter

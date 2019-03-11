@@ -256,7 +256,12 @@ class Subject(BaseModel):
         elif not self.lab.timezone:
             return timezone.get_default_timezone()
         else:
-            return pytz.timezone(self.lab.timezone)
+            try:
+                tz = pytz.timezone(self.lab.timezone)
+            except Exception:
+                logger.warning('Incorrect TZ format. Assuming UTC instead of ' + self.lab.timezone)
+                tz = pytz.timezone('Europe/London')
+            return tz
 
     def reinit_water_control(self):
         self._water_control = water_control(self)

@@ -36,10 +36,14 @@ class LabMember(AbstractUser):
     class Meta:
         ordering = ['username']
 
-    @property
-    def lab(self, date=datetime.now().date()):
+    def lab_id(self, date=datetime.now().date()):
         lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
         lms = lms.exclude(end_date__lt=date)
+        return lms
+
+    @property
+    def lab(self, date=datetime.now().date()):
+        lms = self.lab_id(date=date)
         return [str(ln[0]) for ln in lms.values_list('lab__name').distinct()]
 
 
