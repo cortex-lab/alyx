@@ -188,9 +188,11 @@ class Command(BaseCommand):
         if user.is_stock_manager:
             return
         surgery_done = set([surgery.subject.nickname for surgery in
-                            Surgery.objects.filter(subject__responsible_user=user)])
+                            Surgery.objects.filter(subject__responsible_user=user,
+                                                   subject__death_date__isnull=True)])
         subjects_user = set([subject.nickname for subject in
-                             Subject.objects.filter(responsible_user=user)])
+                             Subject.objects.filter(responsible_user=user,
+                                                    death_date__isnull=True)])
         surgery_pending = sorted(subjects_user - surgery_done)
         if not surgery_pending:
             return
