@@ -10,4 +10,4 @@ SUPERUSERS = ('charu', 'nick', 'max', 'cyrille')
 STOCK_MANAGERS = ('charu',)
 WEIGHT_THRESHOLD = 0.75
 DEFAULT_LAB_NAME = 'cortexlab'
-DEFAULT_LAB_PK = '20703e30-b81c-4b44-bbf4-d67b388a2f96'
+DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'

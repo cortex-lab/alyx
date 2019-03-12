@@ -19,7 +19,8 @@ class WaterControlTests(TestCase):
     def setUp(self):
         base.DISABLE_MAIL = True
         # create a subject
-        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01')
+        self.lab = Lab.objects.create(name='test_lab')
+        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=self.lab)
         self.sub = Subject.objects.get(pk=sub.pk)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)

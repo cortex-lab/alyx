@@ -5,7 +5,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_VideoCodeFiles.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_VideoCodeFiles.raw.*"
  }
@@ -16,7 +16,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_lickPiezo.timestamps",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Timestamps for lick trace timeseries: 2 column array giving sample number and time in seconds",
   "filename_pattern": "_ibl_lickPiezo.timestamps.*"
  }
@@ -27,7 +27,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveTrials.included",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "boolean suggesting which trials to include in analysis, chosen at experimenter discretion, e.g. by excluding the block of incorrect trials at the end of the session when the mouse has stopped",
   "filename_pattern": "_ibl_passiveTrials.included.*"
  }
@@ -38,7 +38,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveTrials.stimOn_times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
   "filename_pattern": "_ibl_passiveTrials.stimOn_times.*"
  }
@@ -49,7 +49,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_matParameters.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "Parameter structure used for the task in Matlab format.",
   "filename_pattern": "_rigbox_matParameters.raw.mat"
  }
@@ -60,7 +60,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_rightCamera.timestamps",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_rightCamera.timestamps.*"
  }
@@ -71,7 +71,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_taskSettings.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Metadata/Settings json (only one line). All information about the task, user, subject, contrasts, gain etc are included. (We should have a link with the structure of it somewhere)",
   "filename_pattern": "_iblrig_taskSettings.raw.*"
  }
@@ -82,7 +82,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_sparseNoise.xyPos",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "2 column array giving x and y coordiates on screen of sparse noise stimulus squares (WHAT UNIT?)",
   "filename_pattern": "_ibl_sparseNoise.xyPos.*"
  }
@@ -93,7 +93,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.feedbackType",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Whether feedback is positive or negative in choiceworld (-1 for negative, +1 for positive)",
   "filename_pattern": "_ibl_trials.feedbackType.*"
  }
@@ -104,7 +104,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.rewardVolume",
-  "created_by": "477c6f5f-1fbe-4003-8673-0f0499780e66",
+  "created_by": null,
   "description": "volume of reward given each trial in \u00b5l",
   "filename_pattern": "_ibl_trials.rewardVolume.*"
  }
@@ -115,7 +115,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_lickPiezo.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Raw lick trace (1 column array",
   "filename_pattern": "_ibl_lickPiezo.raw.*"
  }
@@ -126,7 +126,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveBeeps.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of the beep, equivilent to the go cue during the choice world task",
   "filename_pattern": "_ibl_passiveBeeps.times.*"
  }
@@ -137,7 +137,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.choice",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "which choice was made in choiceworld: -1 (turn CCW), +1 (turn CW), or 0 (nogo)",
   "filename_pattern": "_ibl_trials.choice.*"
  }
@@ -148,7 +148,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_timeLine.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_rigbox_timeLine.raw.mat"
  }
@@ -159,7 +159,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.repNum",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "the repetition number of the trial, i.e. how many trials have been repeated on this side (counting from 1)",
   "filename_pattern": "_ibl_trials.repNum.*"
  }
@@ -170,7 +170,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheel.position",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Absolute position of wheel (cm)",
   "filename_pattern": "_ibl_wheel.position.*"
  }
@@ -181,7 +181,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.response_times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Time of \"response\" in choiceworld- in absolute seconds, rather than relative to trial onset. This is when one of the three possible choices is registered in software, will not be the same as when the mouse's movement to generate that response begins.",
   "filename_pattern": "_ibl_trials.response_times.*"
  }
@@ -192,7 +192,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_encoderEvents.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Data file saved from Bonsai (Event, RE timestamp, Source, data, Bonsai Timestamp) - Each row is an event sent from the state machine (1, 2, 3 - stim off, on close loop)",
   "filename_pattern": "_iblrig_encoderEvents.raw.*"
  }
@@ -203,7 +203,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.intervals",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "2 column array giving each trials start (i.e. beginning of quiescent period) and stop (i.e. end of iti) times of trials in universal seconds",
   "filename_pattern": "_ibl_trials.intervals.*"
  }
@@ -214,7 +214,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_sparseNoise.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "times of those stimulus squares appeared in universal seconds",
   "filename_pattern": "_ibl_sparseNoise.times.*"
  }
@@ -225,7 +225,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.stimOn_times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
   "filename_pattern": "_ibl_trials.stimOn_times.*"
  }
@@ -236,7 +236,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveValveClicks.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of valve opening during passive trial presentation",
   "filename_pattern": "_ibl_passiveValveClicks.times.*"
  }
@@ -247,7 +247,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheel.timestamps",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Timestamps for wheel timeseries",
   "filename_pattern": "_ibl_wheel.timestamps.*"
  }
@@ -258,7 +258,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheelMoves.type",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "string array containing classified type of movement ('CW', 'CCW', 'Flinch', 'Other')",
   "filename_pattern": "_ibl_wheelMoves.type.*"
  }
@@ -269,7 +269,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveNoise.intervals",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "2 column array giving each passive noise trial's start (i.e. beginning of quiescent period) and stop (i.e. end of iti) times of trials in universal seconds",
   "filename_pattern": "_ibl_passiveNoise.intervals.*"
  }
@@ -280,7 +280,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_ambientSensorData.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Temperature and humidity from sensor in rig",
   "filename_pattern": "_iblrig_ambientSensorData.raw.*"
  }
@@ -291,7 +291,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_jsonParameters.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "Parameter structure used for the task in Json format.",
   "filename_pattern": "_rigbox_jsonParameters.raw.json"
  }
@@ -302,7 +302,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_codeFiles.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Zip of Gabor2D and basicChoiceWorld code folders that generated the data",
   "filename_pattern": "_iblrig_codeFiles.raw.*"
  }
@@ -313,7 +313,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.probabilityLeft",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Probability that the stimulus will be on the left hand side for the current block. The probability of right is 1 minus this",
   "filename_pattern": "_ibl_trials.probabilityLeft.*"
  }
@@ -324,20 +324,9 @@
  "fields": {
   "json": null,
   "name": "_iblrig_bodyCamera.timestamps",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
-  "description": "",
-  "filename_pattern": "_iblrig_bodyCamera.timestamps.*"
- }
-},
-{
- "model": "data.datasettype",
- "pk": "94f7190f-26c2-4503-99d5-2e9f05c8541b",
- "fields": {
-  "json": null,
-  "name": "unknown",
   "created_by": null,
   "description": "",
-  "filename_pattern": ""
+  "filename_pattern": "_iblrig_bodyCamera.timestamps.*"
  }
 },
 {
@@ -346,7 +335,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.contrastLeft",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "contrast of left-side stimulus (0...1) nan if trial is on other side",
   "filename_pattern": "_ibl_trials.contrastLeft.*"
  }
@@ -357,7 +346,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveTrials.contrastLeft",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "contrast of left-side stimulus (0...1)",
   "filename_pattern": "_ibl_passiveTrials.contrastLeft.*"
  }
@@ -368,7 +357,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.contrastRight",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "contrast of right-side stimulus (0...1) nan if trial is on other side",
   "filename_pattern": "_ibl_trials.contrastRight.*"
  }
@@ -379,7 +368,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_extraRewards.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of extra rewards",
   "filename_pattern": "_ibl_extraRewards.times.*"
  }
@@ -390,7 +379,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_encoderTrialInfo.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Raw trial data sent at beginning of trial from Bpod to Bonsai (TrialNum, init position of stim, stim_contrast, stim_freq, stim_angle, stim_gain, stim_sigma/size, Bonsai timestamp),",
   "filename_pattern": "_iblrig_encoderTrialInfo.raw.*"
  }
@@ -401,7 +390,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.feedback_times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Time of feedback delivery (reward or not) in choiceworld - in absolute seconds, rather than relative to trial onset",
   "filename_pattern": "_ibl_trials.feedback_times.*"
  }
@@ -412,7 +401,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheel.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "times of position in absolute seconds from session start",
   "filename_pattern": "_ibl_wheel.times.*"
  }
@@ -423,7 +412,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_rightCamera.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_rightCamera.raw.*"
  }
@@ -434,7 +423,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_leftCamera.timestamps",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_leftCamera.timestamps.*"
  }
@@ -445,7 +434,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveTrials.contrastRight",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "contrast of right-side stimulus (0...1)",
   "filename_pattern": "_ibl_passiveTrials.contrastRight.*"
  }
@@ -456,7 +445,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_block.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "File containing the session data, unparsed in Matlab format.",
   "filename_pattern": "_rigbox_block.raw.mat"
  }
@@ -467,7 +456,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_taskData.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Data file saved by PyBpod in json serializable lines (file itself is not a json object, each line is a json object corresponding to a trial) - Training task w/ automated contrast",
   "filename_pattern": "_iblrig_taskData.raw.*"
  }
@@ -478,7 +467,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_passiveWhiteNoise.times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Times of white noise bursts, equivilent to the negative feedback sound during the choice world task",
   "filename_pattern": "_ibl_passiveWhiteNoise.times.*"
  }
@@ -489,7 +478,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_hardwareInfo.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "Hardware configuration used for the task, json format",
   "filename_pattern": "_rigbox_hardwareInfo.raw.json"
  }
@@ -500,7 +489,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.included",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "boolean suggesting which trials to include in analysis, chosen at experimenter discretion, e.g. by excluding the block of incorrect trials at the end of the session when the mouse has stopped",
   "filename_pattern": "_ibl_trials.included.*"
  }
@@ -511,7 +500,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheelMoves.intervals",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "2 column array with onset and offset times of detected wheel movements in seconds",
   "filename_pattern": "_ibl_wheelMoves.intervals.*"
  }
@@ -522,7 +511,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_bodyCamera.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_bodyCamera.raw.*"
  }
@@ -533,7 +522,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_encoderPositions.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Data file saved from Bonsai (Position, RE timestamp, Position, Bonsai Timestamp) - Each row is a position change of the RE",
   "filename_pattern": "_iblrig_encoderPositions.raw.*"
  }
@@ -544,7 +533,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_wheel.velocity",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Signed velocity of wheel (cm/s) positive = CW",
   "filename_pattern": "_ibl_wheel.velocity.*"
  }
@@ -555,7 +544,7 @@
  "fields": {
   "json": null,
   "name": "_iblrig_leftCamera.raw",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "",
   "filename_pattern": "_iblrig_leftCamera.raw.*"
  }
@@ -566,7 +555,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.itiDuration",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Intertrial interval duration for each trial",
   "filename_pattern": "_ibl_trials.itiDuration.npy"
  }
@@ -577,7 +566,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.goCue_times",
-  "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+  "created_by": null,
   "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset",
   "filename_pattern": "_ibl_trials.goCue_times.*"
  }
@@ -588,7 +577,7 @@
  "fields": {
   "json": null,
   "name": "_rigbox_code.raw",
-  "created_by": "97d59a70-b1b6-42bc-b12c-ca83a4521507",
+  "created_by": null,
   "description": "Copy  of the expDef.m code file used for the session",
   "filename_pattern": "_rigbox_code.raw.m"
  }

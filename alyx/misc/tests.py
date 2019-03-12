@@ -6,7 +6,7 @@ from misc.models import Housing, HousingSubject, CageType
 
 
 class HousingTests(TestCase):
-    fixtures = ['misc.cagetype.json', 'misc.enrichment.json', 'misc.food.json']
+    fixtures = ['misc.cagetype.json', 'misc.enrichment.json', 'misc.food.json', 'misc.lab.json']
 
     def setUp(self):
         Subject.objects.create(nickname='sub1')
