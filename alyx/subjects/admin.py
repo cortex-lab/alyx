@@ -231,6 +231,20 @@ class HousingInline(admin.TabularInline):
     model = Housing.subjects.through
     extra = 0
 
+    def get_queryset(self, request):
+        qs = super(HousingInline, self).get_queryset(request)
+        return qs.filter(end_datetime__isnull=True)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        subject = request._obj_
+        if db_field.name == "housing" and subject:
+            from django.db.models import Q
+            kwargs["queryset"] = Housing.objects.filter(
+                Q(subjects__isnull=True) |
+                Q(housing_subjects__subject__lab__in=[subject.lab])
+            ).distinct()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 class SessionInline(BaseInlineAdmin):
     model = Session

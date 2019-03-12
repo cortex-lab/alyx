@@ -222,7 +222,8 @@ class Subject(BaseModel):
 
     @property
     def housing(self):
-        return Housing.objects.filter(subjects__in=[self], end_datetime__isnull=True).first()
+        return Housing.objects.filter(housing_subjects__subject__in=[self],
+                                      housing_subjects__end_datetime__isnull=True).first()
 
     @property
     def cage_name(self):
@@ -237,7 +238,9 @@ class Subject(BaseModel):
     @property
     def light_cycle(self):
         if self.housing:
-            return self.housing._meta.get_field('light_cycle').choices[self.housing.light_cycle][1]
+            if self.housing.light_cycle:
+                return self.housing._meta.get_field(
+                    'light_cycle').choices[self.housing.light_cycle][1]
 
     @property
     def enrichment(self):
