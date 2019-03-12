@@ -77,3 +77,16 @@ class HousingTests(TestCase):
                                       start_datetime=datetime.now())
         self.assertEqual(self.hou2.subjects_current().count(), 1)
         self.assertEqual(self.hou1.subjects_current().count(), 2)
+
+    def test_change_housing_subject(self):
+        self.hou2.subjects_current()
+        self.hou1.subjects_current()
+        hs = HousingSubject.objects.get(subject__nickname='sub2')
+        hs.subject = Subject.objects.get(nickname='sub1')
+        hs.save()
+        # in this case the subject 1 and 3 are in cage 2 and subject 2 is nowhere...
+        self.assertEqual(self.hou1.subjects_current().count(), 0)
+        self.assertEqual(list(self.hou2.subjects_current().values_list('nickname', flat=True)),
+                         ['sub1', 'sub3'])
+        # but subject 2 was in cage 2 before
+        self.assertFalse(HousingSubject.objects.get(subject__nickname='sub2').end_datetime is None)

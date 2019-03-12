@@ -3,6 +3,7 @@ from io import BytesIO
 import os.path as op
 import uuid
 import sys
+import pytz
 
 from PIL import Image
 
@@ -29,11 +30,23 @@ class LabMember(AbstractUser):
     class Meta:
         ordering = ['username']
 
-    @property
-    def lab(self, date=datetime.now().date()):
+    def lab_id(self, date=datetime.now().date()):
         lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
         lms = lms.exclude(end_date__lt=date)
-        return [str(ln[0]) for ln in lms.values_list('lab__name').distinct()]
+        return Lab.objects.filter(id__in=lms.values_list('lab', flat=True))
+
+    @property
+    def lab(self, date=datetime.now().date()):
+        labs = self.lab_id(date=date)
+        return [str(ln[0]) for ln in labs.values_list('name').distinct()]
+
+    @property
+    def tz(self):
+        labs = self.lab_id()
+        if not labs:
+            return settings.TIME_ZONE
+        else:
+            return labs[0].timezone
 
 
 class Lab(BaseModel):
@@ -55,7 +68,6 @@ class Lab(BaseModel):
         help_text="The minimum mouse weight is a linear combination of "
         "the reference weight and the zscore weight.")
     # those are all the default fields for populating Housing tables
-    cage_name = models.CharField(max_length=64, null=True, blank=True)
     cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
     enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
     food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
@@ -158,28 +170,115 @@ class Food(BaseModel):
         return self.name
 
 
-class SubjectHousing(BaseModel):
-    """
-    A junction table between Subject and Housing.
-    """
-    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE)
-    housing = models.ForeignKey('Housing', on_delete=models.CASCADE)
-    start_datetime = models.DateTimeField()
-    end_datetime = models.DateTimeField()
-
-
 class Housing(BaseModel):
-    cage_name = models.CharField(max_length=64, null=True, blank=True)
+    subjects = models.ManyToManyField('subjects.Subject', through='HousingSubject',
+                                      related_name='housings')
+    cage_name = models.CharField(max_length=64)
     cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
     enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
     food = models.ForeignKey('Food', on_delete=models.SET_NULL, null=True, blank=True)
     cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
     light_cycle = models.IntegerField(choices=((0, 'Normal'),
-                                               (1, 'Inverted'),))
+                                               (1, 'Inverted'),),
+                                      null=True, blank=True)
+
+    def __str__(self):
+        return self.cage_name + ' (housing: ' + str(self.pk)[:8] + ')'
+
+    def save(self, **kwargs):
+        # if this is a forced update/insert, save and continue
+        if kwargs.get('force_update', False) or kwargs.get('force_insert', False):
+            super(Housing, self).save(**kwargs)
+            return
+        # first check if it's an update to an existing value, if not, just save
+        housings = Housing.objects.filter(pk=self.pk)
+        if not housings:
+            super(Housing, self).save(**kwargs)
+            return
+        # so if it's an update check for field changes excluding end date which is an update
+        old = Housing.objects.get(pk=self.pk)
+        excludes = ['json', 'name']
+        isequal = True
+        for f in self._meta.fields:
+            if f.name in excludes:
+                continue
+            isequal &= getattr(old, f.name) == getattr(self, f.name)
+        # in this case the housing may just have had comments or json changed
+        if isequal:
+            super(Housing, self).save(**kwargs)
+            return
+        # update fields triggers 1) the update of the current rec, 2) the creation of a new rec
+        self.close_and_create()
+
+    def close_and_create(self):
+        # get the old/current object
+        old = Housing.objects.get(pk=self.pk)
+        subs = old.subjects_current()
+        if not subs:
+            return
+        # 1) update of the old model(s), setting the end time
+        now = datetime.now().astimezone(timezone.get_current_timezone())
+        if subs.first().lab:
+            now.astimezone(pytz.timezone(subs.first().lab.timezone))
+        old.housing_subjects.all().update(end_datetime=now)
+        # 2) update of the current model and create start time
+        self.pk = None
+        self.start_datetime = now
+        self.save(force_insert=True)
+        for sub in subs:
+            HousingSubject.objects.create(subject=sub, housing=self, start_datetime=now)
+
+    def subjects_current(self, datetime=None):
+        from subjects.models import Subject
+        if datetime:
+            hs = self.housing_subjects.filter(end_datetime__gte=datetime)
+            hs = hs.filter(start_datetime__lte=datetime)
+            pass
+        else:
+            hs = self.housing_subjects.filter(end_datetime__isnull=True)
+        return Subject.objects.filter(pk__in=hs.values_list('subject', flat=True))
 
     @property
-    def mice_per_cage():
-        pass
-    # TODO logic of the admin interface for creation/update
-    # TODO logic of inheritance from the default lab values.
-    # TODO tests of all of this logic.
+    def subject_count(self):
+        return self.subjects.objects.all().count()
+
+    @property
+    def lab(self):
+        sub = self.subjects.first()
+        if sub:
+            return sub.lab.name
+
+
+class HousingSubject(models.Model):
+    """
+    Through model for Housing and Subjects m2m
+    """
+    subject = models.ForeignKey('subjects.Subject',
+                                related_name='housing_subjects',
+                                on_delete=models.SET_NULL,
+                                null=True)
+    housing = models.ForeignKey('Housing',
+                                related_name='housing_subjects',
+                                on_delete=models.SET_NULL,
+                                null=True,
+                                blank=True)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField(null=True, blank=True)
+
+    def save(self, **kwargs):
+        if kwargs.get('force_update', False):
+            super(HousingSubject, self).save(**kwargs)
+            return
+        old = HousingSubject.objects.filter(pk=self.pk)
+        # if the subject is in another housing, close the other
+        if not self.end_datetime:
+            hs = HousingSubject.objects.filter(subject=self.subject, end_datetime__isnull=True
+                                               ).exclude(pk__in=old.values_list('pk', flat=True))
+            hs.update(end_datetime=self.start_datetime)
+        # if this is a modification of an existing object, force update the old and force insert
+        if old:
+            old[0].end_datetime = self.start_datetime
+            old[0].save(force_update=True)
+            self.pk = None
+            self.save(force_insert=True)
+        super(HousingSubject, self).save(**kwargs)

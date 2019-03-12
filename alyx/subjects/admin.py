@@ -236,12 +236,11 @@ class HousingInline(admin.TabularInline):
         return qs.filter(end_datetime__isnull=True)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        subject = request._obj_
-        if db_field.name == "housing" and subject:
+        if db_field.name == "housing" and request._obj_:
             from django.db.models import Q
             kwargs["queryset"] = Housing.objects.filter(
                 Q(subjects__isnull=True) |
-                Q(housing_subjects__subject__lab__in=[subject.lab])
+                Q(housing_subjects__subject__lab__in=[request._obj_.lab])
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
