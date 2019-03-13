@@ -349,3 +349,33 @@ class FileRecord(BaseModel):
 
     def __str__(self):
         return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
+
+
+# Download table
+# ------------------------------------------------------------------------------------------------
+
+class Download(BaseModel):
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    first_download = models.DateTimeField(auto_now_add=True)
+    last_download = models.DateTimeField(auto_now=True)
+    count = models.IntegerField(default=0)
+    projects = models.ManyToManyField('subjects.Project', blank=True)
+
+    class Meta:
+        unique_together = (('user', 'dataset'),)
+
+    def increment(self):
+        self.count += 1
+        self.save()
+
+    def __str__(self):
+        return '<Download of %s dataset by %s (%d)>' % (
+            self.dataset.dataset_type.name, self.user.username, self.count)
+
+
+def new_download(dataset, user, projects=()):
+    d, _ = Download.objects.get_or_create(user=user, dataset=dataset)
+    d.projects.add(*projects)
+    d.increment()
+    return d

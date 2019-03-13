@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord)
+                     Dataset, FileRecord, Download)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -142,9 +142,32 @@ class FileRecordAdmin(BaseAdmin):
         return getattr(obj.dataset, 'created_datetime', None)
 
 
+class DownloadAdmin(BaseAdmin):
+    fields = ('user', 'dataset', 'first_download', 'last_download', 'count', 'projects')
+    autocomplete_fields = ('dataset',)
+    readonly_fields = ('first_download', 'last_download')
+    list_display = ('dataset_type', 'dataset_name', 'subject', 'created_by',
+                    'user', 'first_download', 'last_download', 'count')
+    list_display_links = ('first_download',)
+    search_filter = ('user__username', 'dataset__name')
+
+    def dataset_name(self, obj):
+        return obj.dataset.name
+
+    def subject(self, obj):
+        return obj.dataset.session.subject.nickname
+
+    def dataset_type(self, obj):
+        return obj.dataset.dataset_type.name
+
+    def created_by(self, obj):
+        return obj.dataset.created_by.username
+
+
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
+admin.site.register(Download, DownloadAdmin)
