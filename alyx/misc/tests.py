@@ -9,6 +9,10 @@ class HousingTests(TestCase):
     fixtures = ['misc.cagetype.json', 'misc.enrichment.json', 'misc.food.json', 'misc.lab.json']
 
     def setUp(self):
+        """
+        hou1 contains sub1
+        hou2 contains sub2 and sub3
+        """
         Subject.objects.create(nickname='sub1')
         Subject.objects.create(nickname='sub2')
         Subject.objects.create(nickname='sub3')
@@ -20,7 +24,7 @@ class HousingTests(TestCase):
             HousingSubject.objects.create(subject=sub, housing=self.hou1,
                                           start_datetime=datetime.now() - timedelta(seconds=3600))
         self.hou2 = Housing.objects.create(cage_name='housing_2')
-        subs2 = Subject.objects.filter(death_date__isnull=True)[1:4]
+        subs2 = Subject.objects.filter(death_date__isnull=True)[1:]
         for sub in subs2:
             HousingSubject.objects.create(subject=sub, housing=self.hou2,
                                           start_datetime=datetime.now() - timedelta(seconds=3600))
@@ -62,6 +66,28 @@ class HousingTests(TestCase):
         self.assertFalse(hs[0].end_datetime is None)
         self.assertEqual(hs[0].subject.nickname, 'sub1')
 
+    def test_change_housing_field_no_current_subjects(self):
+        # first close all the subjects for the first housing
+        hs = self.hou1.housing_subjects.first()
+        hs.end_datetime = datetime.now()
+        hs.save()
+        # then update one field of housing: should result in duplication
+        self.hou1.cage_type = CageType.objects.first()
+        self.hou1.save()
+        # the housing is duplicated
+        self.assertTrue(Housing.objects.filter(cage_name='housing_1').count() == 2)
+        # all housings don't have any mouse
+        for hou in Housing.objects.filter(cage_name='housing_1'):
+            self.assertTrue(hou.subjects_current().count() == 0)
+
+    def test_set_housingsubjects_end_datetime(self):
+        # in this case the housingsubject is just closed
+        hs = self.hou1.housing_subjects.first()
+        hs.end_datetime = datetime.now()
+        hs.save()
+        self.assertTrue(self.hou1.subjects_current().count() == 0)
+        self.assertTrue(self.hou1.housing_subjects.count() == 1)
+
     def test_remove_subject(self):
         self.assertTrue(self.hou2.subjects_current().count(), 2)
         hs = HousingSubject.objects.get(housing=self.hou2, subject__nickname='sub2')
@@ -77,16 +103,3 @@ class HousingTests(TestCase):
                                       start_datetime=datetime.now())
         self.assertEqual(self.hou2.subjects_current().count(), 1)
         self.assertEqual(self.hou1.subjects_current().count(), 2)
-
-    def test_change_housing_subject(self):
-        self.hou2.subjects_current()
-        self.hou1.subjects_current()
-        hs = HousingSubject.objects.get(subject__nickname='sub2')
-        hs.subject = Subject.objects.get(nickname='sub1')
-        hs.save()
-        # in this case the subject 1 and 3 are in cage 2 and subject 2 is nowhere...
-        self.assertEqual(self.hou1.subjects_current().count(), 0)
-        self.assertEqual(list(self.hou2.subjects_current().values_list('nickname', flat=True)),
-                         ['sub1', 'sub3'])
-        # but subject 2 was in cage 2 before
-        self.assertFalse(HousingSubject.objects.get(subject__nickname='sub2').end_datetime is None)

@@ -7,6 +7,7 @@ source ../alyxvenv/bin/activate
 
 ./manage.py dumpdata data.datarepositorytype --indent 1 -o ./data/fixtures/data.datarepositorytype.json
 ./manage.py dumpdata data.dataformat --indent 1 -o ./data/fixtures/data.dataformat.json
+# NB: need to null created_by field
 ./manage.py dumpdata data.datasettype --indent 1 -o ./data/fixtures/data.datasettype.json
 
 ./manage.py dumpdata misc.cagetype --indent 1 -o ./misc/fixtures/misc.cagetype.json

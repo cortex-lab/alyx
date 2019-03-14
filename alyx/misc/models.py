@@ -222,7 +222,11 @@ class Housing(BaseModel):
     def close_and_create(self):
         # get the old/current object
         old = Housing.objects.get(pk=self.pk)
-        # TODO case with only old subjects
+        subs = old.subjects.all()
+        if not subs:
+            return
+        self.pk = None
+        self.save(force_insert=True)
         subs = old.subjects_current()
         if not subs:
             return
@@ -232,9 +236,6 @@ class Housing(BaseModel):
             now.astimezone(pytz.timezone(subs.first().lab.timezone))
         old.housing_subjects.all().update(end_datetime=now)
         # 2) update of the current model and create start time
-        self.pk = None
-        self.start_datetime = now
-        self.save(force_insert=True)
         for sub in subs:
             HousingSubject.objects.create(subject=sub, housing=self, start_datetime=now)
 
@@ -289,7 +290,6 @@ class HousingSubject(BaseModel):
         # if this is a modification of an existing object, force update the old and force insert
         if old:
             old[0].end_datetime = self.start_datetime
-            old[0].save(force_update=True)
-            self.pk = None
-            self.save(force_insert=True)
+            super(HousingSubject, self).save(force_update=True)  # self.save(force_insert=True)
+            return
         super(HousingSubject, self).save(**kwargs)

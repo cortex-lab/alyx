@@ -153,6 +153,7 @@ class FoodAdmin(BaseAdmin):
 class HousingSubjectAdminInline(admin.TabularInline):
     model = HousingSubject
     extra = 1
+    fields = ('subject', 'start_datetime', 'end_datetime')
 
     def get_queryset(self, request):
         qs = super(HousingSubjectAdminInline, self).get_queryset(request)
