@@ -171,6 +171,15 @@ class Food(BaseModel):
 
 
 class Housing(BaseModel):
+    """
+    Table containing housing conditions. Subjects are linked through the HousingSubject table
+    that contains the date_in / date_out for each Housing.
+    NB: housing is not a physical cage, although it refers to it by cage_name.
+    For history recording purposes, if an enrichment/food in a physical cage changes, then:
+     1) creates a new Housing instance
+     2) closes (set end_datetime) for current mice in junction table
+     3) creates HousingSubject records for the current mice and new Housing
+    """
     subjects = models.ManyToManyField('subjects.Subject', through='HousingSubject',
                                       related_name='housings')
     cage_name = models.CharField(max_length=64)
@@ -186,18 +195,18 @@ class Housing(BaseModel):
         return self.cage_name + ' (housing: ' + str(self.pk)[:8] + ')'
 
     def save(self, **kwargs):
-        # if this is a forced update/insert, save and continue
+        # if this is a forced update/insert, save and continue to avoid recursion
         if kwargs.get('force_update', False) or kwargs.get('force_insert', False):
             super(Housing, self).save(**kwargs)
             return
-        # first check if it's an update to an existing value, if not, just save
+        # first check if it's an update to an existing value, if not, just create
         housings = Housing.objects.filter(pk=self.pk)
         if not housings:
             super(Housing, self).save(**kwargs)
             return
         # so if it's an update check for field changes excluding end date which is an update
         old = Housing.objects.get(pk=self.pk)
-        excludes = ['json', 'name']
+        excludes = ['json', 'name']  # do not track changes to those fields
         isequal = True
         for f in self._meta.fields:
             if f.name in excludes:
@@ -213,6 +222,7 @@ class Housing(BaseModel):
     def close_and_create(self):
         # get the old/current object
         old = Housing.objects.get(pk=self.pk)
+        # TODO case with only old subjects
         subs = old.subjects_current()
         if not subs:
             return
@@ -249,7 +259,7 @@ class Housing(BaseModel):
             return sub.lab.name
 
 
-class HousingSubject(models.Model):
+class HousingSubject(BaseModel):
     """
     Through model for Housing and Subjects m2m
     """
@@ -266,6 +276,7 @@ class HousingSubject(models.Model):
     end_datetime = models.DateTimeField(null=True, blank=True)
 
     def save(self, **kwargs):
+        # if this is a forced update, save and continue to avoid recursion
         if kwargs.get('force_update', False):
             super(HousingSubject, self).save(**kwargs)
             return
