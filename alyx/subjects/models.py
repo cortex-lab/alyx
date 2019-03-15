@@ -13,7 +13,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from alyx.base import BaseModel, alyx_mail, modify_fields
-from actions.models import WaterRestriction
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
 from misc.models import Lab, default_lab
@@ -302,6 +301,7 @@ class Subject(BaseModel):
             self.to_be_genotyped = False
         # When a subject dies.
         if self.death_date and not _get_old_field(self, 'death_date'):
+            from actions.models import WaterRestriction
             # Close all water restrictions without an end date.
             for wr in WaterRestriction.objects.filter(subject=self,
                                                       start_time__isnull=False,
