@@ -17,6 +17,9 @@ from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url
 class LabForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(LabForm, self).__init__(*args, **kwargs)
+        # if user has read-only permissions only fields is empty
+        if not self.is_bound:
+            return
         self.fields['reference_weight_pct'].help_text =\
             'Threshold ratio triggers a warning using the Reference Weight method (0-1)'
         self.fields['reference_weight_pct'].label = 'Reference Weight Ratio'
