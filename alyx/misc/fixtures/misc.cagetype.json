@@ -1,0 +1,38 @@
+[
+{
+ "model": "misc.cagetype",
+ "pk": "0de47422-624b-4d29-9051-8a8a1e5aaceb",
+ "fields": {
+  "name": "GM500",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "misc.cagetype",
+ "pk": "16261ee8-a2df-4c35-9c0d-dd4cf66e3be5",
+ "fields": {
+  "name": "Micro-Isolator",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "misc.cagetype",
+ "pk": "630f19e7-d87e-45ad-8954-b2663d3839fe",
+ "fields": {
+  "name": "IVC",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "misc.cagetype",
+ "pk": "cc4ad0ee-2a66-4612-a277-3f4659c74128",
+ "fields": {
+  "name": "Allentown",
+  "json": null,
+  "description": ""
+ }
+}
+]

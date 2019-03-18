@@ -1,0 +1,47 @@
+[
+{
+ "model": "misc.enrichment",
+ "pk": "0dc9ef0b-2f4b-40a6-a2b0-59f1990fa8fc",
+ "fields": {
+  "json": null,
+  "name": "House",
+  "description": ""
+ }
+},
+{
+ "model": "misc.enrichment",
+ "pk": "3cc8b8c8-634b-4811-984f-65989846e910",
+ "fields": {
+  "json": null,
+  "name": "Nesting",
+  "description": ""
+ }
+},
+{
+ "model": "misc.enrichment",
+ "pk": "51fd5a81-d08c-4dae-9075-1b66d9996725",
+ "fields": {
+  "json": null,
+  "name": "Geometric object <5cm",
+  "description": ""
+ }
+},
+{
+ "model": "misc.enrichment",
+ "pk": "535c8de9-feb0-44b8-871e-2a4e0866d3c5",
+ "fields": {
+  "json": null,
+  "name": "Wheel",
+  "description": ""
+ }
+},
+{
+ "model": "misc.enrichment",
+ "pk": "d06c1f89-46b4-4dd9-8c0e-8ca1782095a5",
+ "fields": {
+  "json": null,
+  "name": "Cardboard tunnel",
+  "description": ""
+ }
+}
+]

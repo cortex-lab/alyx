@@ -448,7 +448,7 @@ class SessionAdmin(BaseActionAdmin):
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
-                                       'n_correct_trials', 'n_trials']
+                                       'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
@@ -457,7 +457,7 @@ class SessionAdmin(BaseActionAdmin):
     search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username')
     ordering = ('-start_time',)
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['task_protocol']
+    readonly_fields = ['task_protocol', 'weighing']
 
     def get_queryset(self, request):
         return super(SessionAdmin, self).get_queryset(request).prefetch_related(
@@ -477,6 +477,15 @@ class SessionAdmin(BaseActionAdmin):
 
     def dataset_types(self, obj):
         return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
+
+    def weighing(self, obj):
+        wei = Weighing.objects.filter(date_time=obj.start_time)
+        if not wei:
+            return ''
+        url = reverse('admin:%s_%s_change' % (wei[0]._meta.app_label, wei[0]._meta.model_name),
+                      args=[wei[0].id])
+        return format_html('<b><a href="{url}" ">{} g </a></b>', wei[0].weight, url=url)
+    weighing.short_description = 'weight before session'
 
 
 class NotificationUserFilter(DefaultListFilter):

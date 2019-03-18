@@ -1,0 +1,38 @@
+[
+{
+ "model": "misc.food",
+ "pk": "6c509b8c-2ccf-4d3d-9d8d-0d2011599d69",
+ "fields": {
+  "json": null,
+  "name": "Envigo 2919",
+  "description": ""
+ }
+},
+{
+ "model": "misc.food",
+ "pk": "775b40e5-83a9-49d6-86ca-d4f7d25032af",
+ "fields": {
+  "json": null,
+  "name": "Envigo 2914",
+  "description": ""
+ }
+},
+{
+ "model": "misc.food",
+ "pk": "8b4cfefa-36dc-4d2d-9994-08d5c2a75008",
+ "fields": {
+  "json": null,
+  "name": "Envigo 2018",
+  "description": ""
+ }
+},
+{
+ "model": "misc.food",
+ "pk": "a3c381f7-9145-4ff8-b4dc-ccc02d7b752a",
+ "fields": {
+  "json": null,
+  "name": "Picolab Rodent Diet 20 5053",
+  "description": ""
+ }
+}
+]

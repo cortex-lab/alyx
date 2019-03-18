@@ -1,0 +1,18 @@
+[
+{
+ "model": "data.datarepositorytype",
+ "pk": "8047d768-c04a-440e-91aa-f221719c4bc5",
+ "fields": {
+  "json": "",
+  "name": "Fileserver"
+ }
+},
+{
+ "model": "data.datarepositorytype",
+ "pk": "bd237c2c-d114-49fa-adc8-cfaca4fc2f87",
+ "fields": {
+  "json": "",
+  "name": "Cardboard box"
+ }
+}
+]

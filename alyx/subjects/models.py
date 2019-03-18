@@ -16,7 +16,7 @@ from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.models import WaterRestriction
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
-from misc.models import Lab, default_lab
+from misc.models import Lab, default_lab, Housing
 
 logger = logging.getLogger(__name__)
 
@@ -219,6 +219,43 @@ class Subject(BaseModel):
         self._water_control = None
         # Initialize the history of some fields.
         init_old_fields(self, self._fields_history + self._track_field_changes)
+
+    @property
+    def housing(self):
+        return Housing.objects.filter(housing_subjects__subject__in=[self],
+                                      housing_subjects__end_datetime__isnull=True).first()
+
+    @property
+    def cage_name(self):
+        if self.housing:
+            return self.housing.cage_name
+
+    @property
+    def cage_type(self):
+        if self.housing:
+            return self.housing.cage_type
+
+    @property
+    def light_cycle(self):
+        if self.housing:
+            if self.housing.light_cycle:
+                return self.housing._meta.get_field(
+                    'light_cycle').choices[self.housing.light_cycle][1]
+
+    @property
+    def enrichment(self):
+        if self.housing:
+            return self.housing.enrichment
+
+    @property
+    def food(self):
+        if self.housing:
+            return self.housing.food
+
+    @property
+    def cage_mates(self):
+        if self.housing:
+            return self.housing.subjects.exclude(pk=self.pk)
 
     def alive(self):
         return self.death_date is None

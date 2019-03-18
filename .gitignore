@@ -10,7 +10,7 @@ docs/_templates
 bin
 experimental
 *.asv
-*.json
+all_dumped_anon.json
 *.pkl
 *.patch
 *.sql

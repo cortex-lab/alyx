@@ -1,0 +1,20 @@
+[
+{
+ "model": "misc.lab",
+ "pk": "4027da48-7be3-43ec-a222-f75dffe36872",
+ "fields": {
+  "json": null,
+  "name": "cortexlab",
+  "institution": "University College London",
+  "address": "Cruciform Building, Gower Street, London, WC1E 6BT, United Kingdom",
+  "timezone": "Europe/London",
+  "reference_weight_pct": 0.0,
+  "zscore_weight_pct": 0.8,
+  "cage_type": null,
+  "enrichment": null,
+  "food": null,
+  "cage_cleaning_frequency_days": null,
+  "light_cycle": null
+ }
+}
+]

@@ -14,13 +14,13 @@ from subjects.models import Subject
 
 
 class WaterControlTests(TestCase):
+    fixtures = ['actions.watertype.json']
+
     def setUp(self):
         base.DISABLE_MAIL = True
-        wtypes = ['Water', 'Hydrogel', 'CA 5% Hydrogel', 'CA 5%', 'Sucrose 10%']
-        for wt in wtypes:
-            WaterType.objects.create(name=wt)
         # create a subject
-        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01')
+        self.lab = Lab.objects.create(name='test_lab')
+        sub = Subject.objects.create(nickname='bigboy', birth_date='2018-09-01', lab=self.lab)
         self.sub = Subject.objects.get(pk=sub.pk)
         # 50 days of loosing weight and getting 0.98 mL water
         self.start_date = datetime.datetime(year=2018, month=10, day=1)
@@ -42,7 +42,7 @@ class WaterControlTests(TestCase):
         Lab.objects.create(name='mixed', reference_weight_pct=0.425, zscore_weight_pct=0.425)
         # Create an initial Water Restriction
         start_wr = self.start_date + datetime.timedelta(days=self.rwind)
-        water_type = WaterType.objects.get(name='CA 5% Hydrogel')
+        water_type = WaterType.objects.get(name='Hydrogel 5% Citric Acid')
         self.wr = WaterRestriction.objects.create(subject=self.sub, start_time=start_wr,
                                                   water_type=water_type)
         # from now on new water administrations should have water_type as default
