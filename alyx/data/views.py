@@ -15,6 +15,7 @@ from .models import (DataRepositoryType,
                      Dataset,
                      FileRecord,
                      _get_session,
+                     new_download,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -275,3 +276,24 @@ class SyncViewSet(viewsets.GenericViewSet):
     def sync_status(self, request):
         rep = bulk_sync(dry_run=True)
         return Response(rep, status=200)
+
+
+class DownloadViewSet(mixins.CreateModelMixin,
+                      viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
+    def create(self, request):
+        user = request.user
+
+        dataset = request.data.get('dataset', None)
+        dataset = Dataset.objects.get(pk=dataset)
+
+        # Multiple projects, or the subject's projects
+        projects = request.data.get('projects', ())
+        if isinstance(projects, str):
+            projects = projects.split(',')
+        projects = [Project.objects.get(name=project) for project in projects if project]
+
+        download = new_download(dataset, user, projects=projects)
+        return Response({'download': str(download.pk), 'count': download.count}, status=201)

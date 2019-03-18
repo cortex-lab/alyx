@@ -194,3 +194,42 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
                          op.join(data['path'], 'a.c.e2'))
+
+    def test_download(self):
+        # Create a dataset.
+        data = {'name': 'mydataset',
+                'dataset_type': 'dst',
+                'data_format': 'df',
+                'file_size': 1234,
+                }
+        r = self.client.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+        pk = r.data['url'][r.data['url'].rindex('/') + 1:]
+
+        # 3 downloads of the same dataset with the same user (the count should increase).
+        dpks = []
+        for i in range(3):
+            r = self.client.post(reverse('new-download'), {
+                'user': 'test',
+                'dataset': pk,
+            })
+            self.ar(r, 201)
+            dpk = r.data['download']
+            assert r.data['count'] == i + 1
+            assert not dpks or dpk in dpks  # the download PK should be the same
+
+        # Test with projects
+        self.client.post(reverse('project-list'), {'name': 'tp1', 'repositories': ['dr']})
+        self.client.post(reverse('project-list'), {'name': 'tp2', 'repositories': ['dr']})
+
+        r = self.client.post(reverse('new-download'), {
+            'user': 'test',
+            'dataset': pk,
+            'projects': 'tp1,tp2',
+        })
+        self.ar(r, 201)
+        r.data['count'] == 4
+
+        from data.models import Download
+        d = Download.objects.last()
+        self.assertEqual([p.name for p in d.projects.all()], ['tp1', 'tp2'])

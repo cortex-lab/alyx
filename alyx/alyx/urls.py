@@ -17,6 +17,9 @@ sync_file_status = dv.SyncViewSet.as_view({
     'post': 'sync',
     'get': 'sync_status'
 })
+new_download = dv.DownloadViewSet.as_view({
+    'post': 'create'
+})
 
 user_list = mv.UserViewSet.as_view({
     'get': 'list'
@@ -134,6 +137,7 @@ urlpatterns = [
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
 
+    path('new-download', new_download, name='new-download'),
 
     path('users', user_list,
          name='user-list'),
