@@ -230,6 +230,7 @@ class AddSurgeryInline(SurgeryInline):
 class HousingInline(admin.TabularInline):
     model = Housing.subjects.through
     extra = 0
+    exclude = ('name', 'json',)
 
     def get_queryset(self, request):
         qs = super(HousingInline, self).get_queryset(request)
@@ -298,7 +299,7 @@ class SubjectAdmin(BaseAdmin):
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json', 'subject_history')}),
-        ('HOUSING', {'fields': HOUSING_FIELDS,
+        ('HOUSING (read-only, edit widget at the bottom of the page)', {'fields': HOUSING_FIELDS,
                      'classes': ('extrapretty',),
                      }),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',

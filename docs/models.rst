@@ -26,7 +26,7 @@ Data
    :show-inheritance:
    :members:
 
-Coordinate transforms
+Misc
 ---------------------
 .. image:: _static/misc_ERD.png
 .. automodule:: misc.models

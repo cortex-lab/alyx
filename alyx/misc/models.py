@@ -176,9 +176,9 @@ class Housing(BaseModel):
     that contains the date_in / date_out for each Housing.
     NB: housing is not a physical cage, although it refers to it by cage_name.
     For history recording purposes, if an enrichment/food in a physical cage changes, then:
-     1) creates a new Housing instance
-     2) closes (set end_datetime) for current mice in junction table
-     3) creates HousingSubject records for the current mice and new Housing
+    1) creates a new Housing instance
+    2) closes (set end_datetime) for current mice in junction table
+    3) creates HousingSubject records for the current mice and new Housing
     """
     subjects = models.ManyToManyField('subjects.Subject', through='HousingSubject',
                                       related_name='housings')
