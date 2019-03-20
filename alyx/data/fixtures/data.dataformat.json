@@ -1,18 +1,6 @@
 [
 {
  "model": "data.dataformat",
- "pk": "1a3e32f5-fed8-458f-9440-198f368aaf7e",
- "fields": {
-  "json": null,
-  "name": "unknown",
-  "description": "",
-  "file_extension": "",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
- }
-},
-{
- "model": "data.dataformat",
  "pk": "6b7ebce8-902a-42b1-ad39-3cc8193f3731",
  "fields": {
   "json": null,
