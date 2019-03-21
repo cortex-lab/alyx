@@ -66,6 +66,8 @@ class LabMembershipAdmin(BaseAdmin):
 class LabLocationAdmin(BaseAdmin):
     fields = ['name', 'lab']
     list_display = fields
+    search_fields = ('lab__name', 'name',)
+    ordering = ('lab__name', 'name',)
 
 
 class AdminImageWidget(AdminFileWidget):
