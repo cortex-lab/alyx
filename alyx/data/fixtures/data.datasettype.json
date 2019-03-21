@@ -581,5 +581,16 @@
   "description": "Copy  of the expDef.m code file used for the session",
   "filename_pattern": "_rigbox_code.raw.m"
  }
+},
+{
+ "model": "data.datasettype",
+ "pk": "63ea5aaa-1b51-4378-b515-2b6ec0502e05",
+ "fields": {
+  "json": null,
+  "name": "_ibl_trials.goCueTrigger_times",
+  "created_by": "df6d2fa9-db3b-4448-8832-0d3e68ee2b86",
+  "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset NOTE: this is the time the trigger command is sent by Bpod",
+  "filename_pattern": "_ibl_trials.goCueTrigger_times.*"
+ }
 }
 ]
