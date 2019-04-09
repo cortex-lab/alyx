@@ -443,8 +443,8 @@ class WaterAdminInline(BaseInlineAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'number', 'project_list',
-                    'dataset_types', 'user_list']
+    list_display = ['subject_l', 'start_time', 'number', 'lab',
+                    'dataset_count', 'task_protocol', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
@@ -454,15 +454,18 @@ class SessionAdmin(BaseActionAdmin):
                    ('subject__projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
                    ]
-    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username')
-    ordering = ('-start_time',)
+    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
+                     'task_protocol')
+    ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['task_protocol', 'weighing']
 
     def get_queryset(self, request):
-        return super(SessionAdmin, self).get_queryset(request).prefetch_related(
+        queryset = super(SessionAdmin, self).get_queryset(request).prefetch_related(
             'subject__projects', 'users', 'data_dataset_session_related',
             'data_dataset_session_related__dataset_type')
+        from django.db.models import Count
+        return queryset.annotate(_dataset_count=Count('data_dataset_session_related'))
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
@@ -475,8 +478,13 @@ class SessionAdmin(BaseActionAdmin):
         return sorted(set(projects))
     project_list.short_description = 'Lab servers'
 
-    def dataset_types(self, obj):
-        return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
+    def dataset_count(self, ses):
+        # count = len(ses.data_dataset_session_related.all())
+        count = ses._dataset_count
+        if count == 0:
+            count = '-'
+        return count
+    dataset_count.admin_order_field = '_dataset_count'
 
     def weighing(self, obj):
         wei = Weighing.objects.filter(date_time=obj.start_time)
