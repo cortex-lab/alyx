@@ -74,6 +74,10 @@ class Lab(BaseModel):
     cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
     light_cycle = models.IntegerField(choices=((0, 'Normal'),
                                                (1, 'Inverted'),), null=True, blank=True)
+    repositories = models.ManyToManyField(
+        'data.DataRepository', blank=True,
+        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
+        "automatically copied to all repositories assigned to its project.")
 
     def __str__(self):
         return self.name
@@ -231,9 +235,9 @@ class Housing(BaseModel):
         if not subs:
             return
         # 1) update of the old model(s), setting the end time
-        now = datetime.now().astimezone(timezone.get_current_timezone())
+        now = timezone.get_current_timezone().localize(datetime.now())
         if subs.first().lab:
-            now.astimezone(pytz.timezone(subs.first().lab.timezone))
+            now = now.astimezone(pytz.timezone(subs.first().lab.timezone))
         old.housing_subjects.all().update(end_datetime=now)
         # 2) update of the current model and create start time
         for sub in subs:

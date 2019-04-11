@@ -168,12 +168,8 @@ class LineDropdownFilter(RelatedDropdownFilter):
 # ------------------------------------------------------------------------------------------------
 
 class ProjectAdmin(BaseAdmin):
-    fields = ('name', 'description', 'repositories', 'users')
-    list_display = ('name', 'repositories_l', 'users_l')
-
-    def repositories_l(self, obj):
-        return ', '.join(repo.name for repo in obj.repositories.all())
-    repositories_l.short_description = 'repositories'
+    fields = ('name', 'description', 'users')
+    list_display = ('name', 'users_l')
 
     def users_l(self, obj):
         return ', '.join(map(str, obj.users.all()))
