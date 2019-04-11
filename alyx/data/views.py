@@ -316,8 +316,11 @@ class DownloadViewSet(mixins.CreateModelMixin,
     def create(self, request):
         user = request.user
 
-        dataset = request.data.get('dataset', None)
-        dataset = Dataset.objects.get(pk=dataset)
+        # this should work for bulk downloads, but they will all be assigned the same projects set
+        datasets = request.data.get('datasets', None)
+        if isinstance(datasets, str):
+            datasets = datasets.split(',')
+        datasets = [Dataset.objects.get(pk=ds) for ds in datasets]
 
         # Multiple projects, or the subject's projects
         projects = request.data.get('projects', ())
@@ -325,5 +328,12 @@ class DownloadViewSet(mixins.CreateModelMixin,
             projects = projects.split(',')
         projects = [Project.objects.get(name=project) for project in projects if project]
 
-        download = new_download(dataset, user, projects=projects)
-        return Response({'download': str(download.pk), 'count': download.count}, status=201)
+        # loop over datasets
+        dpk = []
+        dcount = []
+        for dataset in datasets:
+            download = new_download(dataset, user, projects=projects)
+            dpk.append(str(download.pk))
+            dcount.append(download.count)
+
+        return Response({'download': dpk, 'count': dcount}, status=201)
