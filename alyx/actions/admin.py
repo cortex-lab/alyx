@@ -15,7 +15,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule
                      )
-from data.models import Dataset
+from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
@@ -479,11 +479,13 @@ class SessionAdmin(BaseActionAdmin):
     project_list.short_description = 'Lab servers'
 
     def dataset_count(self, ses):
-        # count = len(ses.data_dataset_session_related.all())
-        count = ses._dataset_count
-        if count == 0:
-            count = '-'
-        return count
+        cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
+                                       data_repository__globus_is_personal=False,
+                                       exists=True).count()
+        cr = ses._dataset_count
+        return (' - ' if not cs else str(cs).rjust(3)) + ' / ' +\
+               (' - ' if not cr else str(cr).rjust(3))
+    dataset_count.short_description = '# datasets'
     dataset_count.admin_order_field = '_dataset_count'
 
     def weighing(self, obj):
