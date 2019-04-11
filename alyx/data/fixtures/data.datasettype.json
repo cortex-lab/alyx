@@ -588,7 +588,7 @@
  "fields": {
   "json": null,
   "name": "_ibl_trials.goCueTrigger_times",
-  "created_by": "df6d2fa9-db3b-4448-8832-0d3e68ee2b86",
+  "created_by": null,
   "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset NOTE: this is the time the trigger command is sent by Bpod",
   "filename_pattern": "_ibl_trials.goCueTrigger_times.*"
  }
