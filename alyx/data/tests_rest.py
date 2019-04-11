@@ -297,7 +297,7 @@ class APIDataTests(BaseTests):
             'projects': 'tp1,tp2',
         })
         self.ar(r, 201)
-        r.data['count'][0] == 4
+        self.assertTrue(r.data['count'][0] == 4)
         d = Download.objects.last()
         self.assertEqual([p.name for p in d.projects.all()], ['tp1', 'tp2'])
 

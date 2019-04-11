@@ -308,8 +308,15 @@ class SyncViewSet(viewsets.GenericViewSet):
         return Response(rep, status=200)
 
 
-class DownloadViewSet(mixins.CreateModelMixin,
-                      viewsets.GenericViewSet):
+class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """
+    This would be a REST query data field to log a download:
+        data = {'user': 'labmember_name',
+                'datasets': 'pk1',    # supports multiple pks as a list
+                'projects': 'project_name')   # supports multiple projects as a list
+    If there are multiple projects and multiple datasets, each datasets will be logged as
+    downloaded for all projects.
+    """
 
     serializer_class = serializers.Serializer
 
