@@ -8,13 +8,13 @@ import django_filters
 from django_filters.rest_framework import FilterSet
 
 from subjects.models import Subject, Project
+from misc.models import Lab
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
                      DatasetType,
                      Dataset,
                      FileRecord,
-                     _get_session,
                      new_download,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
@@ -24,14 +24,14 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           FileRecordSerializer,
                           )
-from .transfers import (
-    _get_repositories_for_projects, _create_dataset_file_records, bulk_sync)
+from .transfers import (_get_session, _get_repositories_for_labs,
+                        _create_dataset_file_records, bulk_sync)
 
 logger = logging.getLogger(__name__)
 
-
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
+
 
 class DataRepositoryTypeList(generics.ListCreateAPIView):
     queryset = DataRepositoryType.objects.all()
@@ -207,6 +207,36 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.Serializer
 
     def create(self, request):
+        """
+        The session is retrieved by the ALF convention in th relative path, so this field has to
+        match the format Subject/Date/Number as shown below.
+
+        The set of repositories are given through the labs. The lab is by default the subject lab,
+        but if it is specified, it overrides the subject lab entirely.
+
+        The repository is mandatory, as this is the repository where the files currently exist
+        It can be identified either by name (recommended) or hostname (compatibility).
+
+        The client side REST query should look like this:
+
+        r_ = {'created_by': 'user_name_alyx',
+              'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2', 'file3'],
+              'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
+              }
+
+        For backward compatibility the following is allowed (projects are labs the repo lookup
+        is done on the hostname instead of the repository name):
+
+         r_ = {'created_by': 'user_name_alyx',
+              'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2', 'file3'],
+              'projects': ['alyxlabname1', 'alyxlabname2'],  # optional NB should be labnames !
+              }
+
+        """
         user = request.data.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
@@ -238,13 +268,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             # comma-separated filenames
             filenames = filenames.split(',')
 
-        # Multiple projects, or the subject's projects
-        projects = request.data.get('projects', ())
-        if isinstance(projects, str):
-            projects = projects.split(',')
+        # Multiple labs
+        labs = request.data.get('projects', '') + request.data.get('labs', '')
+        labs = labs.split(',')
 
-        projects = [Project.objects.get(name=project) for project in projects if project]
-        repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
+        # projects = [Project.objects.get(name=project) for project in projects if project]
+        labs = [Lab.objects.get(name=lab) for lab in labs if lab]
+        repositories = _get_repositories_for_labs(labs or [subject.lab])
         if repo not in repositories:
             repositories += [repo]
 

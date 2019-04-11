@@ -74,6 +74,10 @@ class Lab(BaseModel):
     cage_cleaning_frequency_days = models.IntegerField(null=True, blank=True)
     light_cycle = models.IntegerField(choices=((0, 'Normal'),
                                                (1, 'Inverted'),), null=True, blank=True)
+    repositories = models.ManyToManyField(
+        'data.DataRepository', blank=True,
+        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
+        "automatically copied to all repositories assigned to its project.")
 
     def __str__(self):
         return self.name

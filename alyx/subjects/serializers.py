@@ -5,7 +5,6 @@ from actions.serializers import (WeighingDetailSerializer,
                                  WaterAdministrationDetailSerializer,
                                  )
 from django.contrib.auth import get_user_model
-from data.models import DataRepository
 from misc.models import Lab
 
 SUBJECT_LIST_SERIALIZER_FIELDS = ('nickname', 'url', 'id', 'responsible_user', 'birth_date',
@@ -166,15 +165,8 @@ class ProjectSerializer(serializers.HyperlinkedModelSerializer):
         required=False,
         default=serializers.CurrentUserDefault(),)
 
-    repositories = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='name',
-        queryset=DataRepository.objects.all(),
-        many=True,
-        required=False)
-
     class Meta:
         model = Project
-        fields = ('name', 'description', 'repositories', 'users')
+        fields = ('name', 'description', 'users')
         lookup_field = 'name'
         extra_kwargs = {'url': {'view_name': 'project-detail', 'lookup_field': 'name'}}

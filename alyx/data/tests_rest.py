@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
+from data.models import Dataset, FileRecord
 
 
 class APIDataTests(BaseTests):
@@ -17,8 +18,15 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('datarepository-list'), {'name': 'dr', 'hostname': 'hostname'})
         self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
         self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
-
+        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
+        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
         self.subject = self.client.get(reverse('subject-list')).data[0]['nickname']
+
+        # create some more dataset types a.a, a.b, a.c, a.d etc...
+        for let in 'abcd':
+            self.client.post(
+                reverse('datasettype-list'),
+                {'name': 'a.' + let, 'filename_pattern': 'a.' + let + '.*'})
 
         # Create a session and base session.
         date = '2018-01-01T12:00'
@@ -154,29 +162,85 @@ class APIDataTests(BaseTests):
         self.assertTrue(max(a) <= datetime.datetime(2018, 1, 1))
 
     def test_register_files(self):
-        self.client.post(reverse('project-list'), {'name': 'tp', 'repositories': ['dr']})
+        # create 4 repositories, 2 per lab
+        self.client.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
+        self.client.post(reverse('datarepository-list'), {'name': 'dra2', 'hostname': 'hosta2'})
+        self.client.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.client.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
 
-        self.client.post(
-            reverse('datasettype-list'),
-            {'name': 'a.b', 'filename_pattern': 'a.b.*'})
+        self.client.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1', 'dra2']})
+        self.client.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
 
-        self.client.post(
-            reverse('datasettype-list'),
-            {'name': 'a.c', 'filename_pattern': 'a.c.*'})
-
-        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
-        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
-
+        # start with registering 2 datasets on lab a, since the repo is not whithin the lab repos
+        # we expect 3 file records to be created, do it twice: list and char to test format
+        # and also test no duplication on several registrations
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
-                'filenames': 'a.b.e1,a.c.e2',
+                'filenames': 'a.a.e1,a.b.e1',
                 'hostname': 'hostname',
-                'projects': 'tp',
+                'labs': ['laba'],
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
+        self.assertTrue(fr.count() == 3)
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
+        self.assertTrue(fr.count() == 3)
+
+        # next test case where a dataset is registered normally first, but is subsequently added
+        # to another repository.
+        # at first we expect 2 repositories
+        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.c.e1',
+                'name': 'drb1',  # this is the repository name
+                'labs': ['labb'],
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.c.e1'))
+        self.assertTrue(fr.count() == 2)
+        # now we re-register the file, adding a repository not belonging to the lab, and expect
+        # 3 file records
+        data['name'] = 'dr'
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.c.e1'))
+        self.assertTrue(fr.count() == 3)
+
+        # last use case is about registering a dataset without a lab, the lab should be inferred
+        # from the subject
+        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1',
+                'name': 'drb2',  # this is the repository name
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
 
-        d0, d1 = r.data
+    def test_register_files_hostname(self):
+        # this is old use case where we register one dataset according to the hostname, no need
+        # for a lab in this case
+        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1,a.c.e2',
+                'hostname': 'hostname',
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        self._assert_registration(r, data)
 
+    def test_register_files_reponame(self):
+        # this is old use case where we register one dataset according to the hostname, no need
+        # for a lab in this case
+        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1,a.c.e2',
+                'name': 'dr',
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        self._assert_registration(r, data)
+
+    def _assert_registration(self, r, data):
+        d0, d1 = r.data
         self.assertEqual(d0['name'], 'a.b.e1')
         self.assertEqual(d0['created_by'], 'test')
         self.assertEqual(d0['dataset_type'], 'a.b')
@@ -219,9 +283,10 @@ class APIDataTests(BaseTests):
             assert not dpks or dpk in dpks  # the download PK should be the same
 
         # Test with projects
-        self.client.post(reverse('project-list'), {'name': 'tp1', 'repositories': ['dr']})
-        self.client.post(reverse('project-list'), {'name': 'tp2', 'repositories': ['dr']})
+        self.ar(self.client.post(reverse('project-list'), {'name': 'tp1'}), 201)
+        self.ar(self.client.post(reverse('project-list'), {'name': 'tp2'}), 201)
 
+        # TODO test with several datasets at one time
         r = self.client.post(reverse('new-download'), {
             'user': 'test',
             'dataset': pk,

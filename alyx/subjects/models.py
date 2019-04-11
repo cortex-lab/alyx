@@ -114,11 +114,6 @@ class Project(BaseModel):
     description = models.CharField(
         max_length=1023, blank=True, help_text="Description of the project")
 
-    repositories = models.ManyToManyField(
-        'data.DataRepository', blank=True,
-        help_text="Related DataRepository instances. Any file which is registered to Alyx is "
-        "automatically copied to all repositories assigned to its project.")
-
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True,
         help_text="Persons associated to the project.")

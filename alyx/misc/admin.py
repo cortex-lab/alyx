@@ -55,7 +55,8 @@ class LabAdmin(BaseAdmin):
     list_display = ['name', 'institution', 'address', 'timezone',
                     'reference_weight_pct', 'zscore_weight_pct']
     list_select_related = ['cage_type', 'enrichment', 'food']
-    fields = list_display + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle']
+    fields = list_display + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
+                                                   'repositories']
 
 
 class LabMembershipAdmin(BaseAdmin):

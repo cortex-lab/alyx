@@ -2,9 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord,
-                     _get_session,
-                     )
+                     Dataset, FileRecord,)
+from .transfers import _get_session
 from actions.models import Session
 from subjects.models import Subject
 
