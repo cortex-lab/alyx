@@ -483,8 +483,10 @@ class SessionAdmin(BaseActionAdmin):
                                        data_repository__globus_is_personal=False,
                                        exists=True).count()
         cr = ses._dataset_count
-        return (' - ' if not cs else str(cs).rjust(3)) + ' / ' +\
-               (' - ' if not cr else str(cr).rjust(3))
+        if cr == 0:
+            return '-'
+        col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
+        return format_html('<b><a style="color: #{};">{}</a></b>', col, '{:2.0f}'.format(cr))
     dataset_count.short_description = '# datasets'
     dataset_count.admin_order_field = '_dataset_count'
 
