@@ -219,22 +219,26 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         The client side REST query should look like this:
 
+        ```
         r_ = {'created_by': 'user_name_alyx',
               'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
               'filenames': ['file1', 'file2', 'file3'],
               'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
               }
+        ```
 
         For backward compatibility the following is allowed (projects are labs the repo lookup
         is done on the hostname instead of the repository name):
 
+        ```
          r_ = {'created_by': 'user_name_alyx',
               'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
               'filenames': ['file1', 'file2', 'file3'],
               'projects': ['alyxlabname1', 'alyxlabname2'],  # optional NB should be labnames !
               }
+        ```
 
         """
         user = request.data.get('created_by', None)
@@ -310,10 +314,13 @@ class SyncViewSet(viewsets.GenericViewSet):
 
 class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
-    This would be a REST query data field to log a download:
-        data = {'user': 'labmember_name',
-                'datasets': 'pk1',    # supports multiple pks as a list
-                'projects': 'project_name')   # supports multiple projects as a list
+    REST query data field to log a download:
+        ```
+            data = {'user': 'labmember_name',
+                    'datasets': 'pk1',    # supports multiple pks as a list
+                    'projects': 'project_name')   # supports multiple projects as a list
+        ```
+
     If there are multiple projects and multiple datasets, each datasets will be logged as
     downloaded for all projects.
     """
