@@ -2,10 +2,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord,)
+                     Dataset, Download, FileRecord,)
 from .transfers import _get_session
 from actions.models import Session
 from subjects.models import Subject
+from misc.models import LabMember
 
 
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -179,3 +180,17 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
             'date': {'write_only': True},
             'number': {'write_only': True},
         }
+
+
+class DownloadSerializer(serializers.HyperlinkedModelSerializer):
+
+    # dataset = DatasetSerializer(many=False, read_only=True)
+    dataset = serializers.PrimaryKeyRelatedField(many=False, read_only=True)
+
+    user = serializers.SlugRelatedField(
+        read_only=False, slug_field='username',
+        queryset=LabMember.objects.all())
+
+    class Meta:
+        model = Download
+        fields = ('id', 'user', 'dataset', 'count', 'json')

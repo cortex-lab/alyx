@@ -14,6 +14,7 @@ from .models import (DataRepositoryType,
                      DataFormat,
                      DatasetType,
                      Dataset,
+                     Download,
                      FileRecord,
                      new_download,
                      )
@@ -22,6 +23,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DataFormatSerializer,
                           DatasetTypeSerializer,
                           DatasetSerializer,
+                          DownloadSerializer,
                           FileRecordSerializer,
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
@@ -314,16 +316,16 @@ class SyncViewSet(viewsets.GenericViewSet):
 
 class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
-    REST query data field to log a download:
-        ```
-            data = {'user': 'labmember_name',
-                    'datasets': 'pk1',    # supports multiple pks as a list
-                    'projects': 'project_name')   # supports multiple projects as a list
-        ```
+    REST query data field to log a download:  
+    ```
+    data = {'user': 'labmember_name',  
+            'datasets': 'pk1',    # supports multiple pks as a list  
+            'projects': 'project_name')   # supports multiple projects as a list  
+    ```  
 
     If there are multiple projects and multiple datasets, each datasets will be logged as
     downloaded for all projects.
-    """
+    """  # noqa
 
     serializer_class = serializers.Serializer
 
@@ -351,3 +353,41 @@ class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             dcount.append(download.count)
 
         return Response({'download': dpk, 'count': dcount}, status=201)
+
+
+class DownloadDetail(generics.RetrieveUpdateAPIView):
+    """
+    Example: https://alyx.internationalbrainlab.org/downloads/151f5f77-c9bd-42e6-b31e-5a0e5b080afe
+    """
+    queryset = Download.objects.all()
+    serializer_class = DownloadSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class DownloadFilter(FilterSet):
+    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    dataset = django_filters.CharFilter('dataset__name')
+    user = django_filters.CharFilter('user__username')
+    dataset_type = django_filters.CharFilter(field_name='dataset__dataset_type__name',
+                                             lookup_expr=('icontains'))
+
+    class Meta:
+        model = Download
+        fields = ('count', )
+
+
+class DownloadList(generics.ListAPIView):
+    """
+    Example: `https://alyx.internationalbrainlab.org/downloads`
+
+    Filter implementation examples:
+    
+    -   `/downloads?user=jimmyjazz` on User  
+    -   `/downloads?json=processing` insensitive contains on JSON  
+    -   `/downloads?count=5`  download counts    
+    -   `/downloads?dataset_type=camera` insensitive contains on dataset type
+    """  # noqa
+    queryset = Download.objects.all()
+    serializer_class = DownloadSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = DownloadFilter
