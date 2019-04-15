@@ -257,7 +257,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         elif hostname:
             repo = DataRepository.objects.get(hostname=hostname)
         else:
-            raise ValueError("At least one argument between 'hostname' or 'name' is required.")
+            repo = None
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
@@ -278,10 +278,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
 
-        # projects = [Project.objects.get(name=project) for project in projects if project]
         labs = [Lab.objects.get(name=lab) for lab in labs if lab]
         repositories = _get_repositories_for_labs(labs or [subject.lab])
-        if repo not in repositories:
+        if repo and repo not in repositories:
             repositories += [repo]
 
         session = _get_session(
