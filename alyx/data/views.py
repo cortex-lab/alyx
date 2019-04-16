@@ -8,13 +8,14 @@ import django_filters
 from django_filters.rest_framework import FilterSet
 
 from subjects.models import Subject, Project
+from misc.models import Lab
 from .models import (DataRepositoryType,
                      DataRepository,
                      DataFormat,
                      DatasetType,
                      Dataset,
+                     Download,
                      FileRecord,
-                     _get_session,
                      new_download,
                      )
 from .serializers import (DataRepositoryTypeSerializer,
@@ -22,16 +23,17 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DataFormatSerializer,
                           DatasetTypeSerializer,
                           DatasetSerializer,
+                          DownloadSerializer,
                           FileRecordSerializer,
                           )
-from .transfers import (
-    _get_repositories_for_projects, _create_dataset_file_records, bulk_sync)
+from .transfers import (_get_session, _get_repositories_for_labs,
+                        _create_dataset_file_records, bulk_sync)
 
 logger = logging.getLogger(__name__)
 
-
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
+
 
 class DataRepositoryTypeList(generics.ListCreateAPIView):
     queryset = DataRepositoryType.objects.all()
@@ -207,6 +209,40 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.Serializer
 
     def create(self, request):
+        """
+        The session is retrieved by the ALF convention in th relative path, so this field has to
+        match the format Subject/Date/Number as shown below.
+
+        The set of repositories are given through the labs. The lab is by default the subject lab,
+        but if it is specified, it overrides the subject lab entirely.
+
+        The repository is mandatory, as this is the repository where the files currently exist
+        It can be identified either by name (recommended) or hostname (compatibility).
+
+        The client side REST query should look like this:
+
+        ```
+        r_ = {'created_by': 'user_name_alyx',
+              'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2', 'file3'],
+              'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
+              }
+        ```
+
+        For backward compatibility the following is allowed (projects are labs the repo lookup
+        is done on the hostname instead of the repository name):
+
+        ```
+         r_ = {'created_by': 'user_name_alyx',
+              'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2', 'file3'],
+              'projects': ['alyxlabname1', 'alyxlabname2'],  # optional NB should be labnames !
+              }
+        ```
+
+        """
         user = request.data.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
@@ -221,7 +257,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         elif hostname:
             repo = DataRepository.objects.get(hostname=hostname)
         else:
-            raise ValueError("At least one argument between 'hostname' or 'name' is required.")
+            repo = None
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
@@ -238,14 +274,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             # comma-separated filenames
             filenames = filenames.split(',')
 
-        # Multiple projects, or the subject's projects
-        projects = request.data.get('projects', ())
-        if isinstance(projects, str):
-            projects = projects.split(',')
+        # Multiple labs
+        labs = request.data.get('projects', '') + request.data.get('labs', '')
+        labs = labs.split(',')
 
-        projects = [Project.objects.get(name=project) for project in projects if project]
-        repositories = _get_repositories_for_projects(projects or list(subject.projects.all()))
-        if repo not in repositories:
+        labs = [Lab.objects.get(name=lab) for lab in labs if lab]
+        repositories = _get_repositories_for_labs(labs or [subject.lab])
+        if repo and repo not in repositories:
             repositories += [repo]
 
         session = _get_session(
@@ -278,16 +313,29 @@ class SyncViewSet(viewsets.GenericViewSet):
         return Response(rep, status=200)
 
 
-class DownloadViewSet(mixins.CreateModelMixin,
-                      viewsets.GenericViewSet):
+class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """
+    REST query data field to log a download:  
+    ```
+    data = {'user': 'labmember_name',  
+            'datasets': 'pk1',    # supports multiple pks as a list  
+            'projects': 'project_name')   # supports multiple projects as a list  
+    ```  
+
+    If there are multiple projects and multiple datasets, each datasets will be logged as
+    downloaded for all projects.
+    """  # noqa
 
     serializer_class = serializers.Serializer
 
     def create(self, request):
         user = request.user
 
-        dataset = request.data.get('dataset', None)
-        dataset = Dataset.objects.get(pk=dataset)
+        # this should work for bulk downloads, but they will all be assigned the same projects set
+        datasets = request.data.get('datasets', None)
+        if isinstance(datasets, str):
+            datasets = datasets.split(',')
+        datasets = [Dataset.objects.get(pk=ds) for ds in datasets]
 
         # Multiple projects, or the subject's projects
         projects = request.data.get('projects', ())
@@ -295,5 +343,50 @@ class DownloadViewSet(mixins.CreateModelMixin,
             projects = projects.split(',')
         projects = [Project.objects.get(name=project) for project in projects if project]
 
-        download = new_download(dataset, user, projects=projects)
-        return Response({'download': str(download.pk), 'count': download.count}, status=201)
+        # loop over datasets
+        dpk = []
+        dcount = []
+        for dataset in datasets:
+            download = new_download(dataset, user, projects=projects)
+            dpk.append(str(download.pk))
+            dcount.append(download.count)
+
+        return Response({'download': dpk, 'count': dcount}, status=201)
+
+
+class DownloadDetail(generics.RetrieveUpdateAPIView):
+    """
+    Example: https://alyx.internationalbrainlab.org/downloads/151f5f77-c9bd-42e6-b31e-5a0e5b080afe
+    """
+    queryset = Download.objects.all()
+    serializer_class = DownloadSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class DownloadFilter(FilterSet):
+    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    dataset = django_filters.CharFilter('dataset__name')
+    user = django_filters.CharFilter('user__username')
+    dataset_type = django_filters.CharFilter(field_name='dataset__dataset_type__name',
+                                             lookup_expr=('icontains'))
+
+    class Meta:
+        model = Download
+        fields = ('count', )
+
+
+class DownloadList(generics.ListAPIView):
+    """
+    Example: `https://alyx.internationalbrainlab.org/downloads`
+
+    Filter implementation examples:
+    
+    -   `/downloads?user=jimmyjazz` on User  
+    -   `/downloads?json=processing` insensitive contains on JSON  
+    -   `/downloads?count=5`  download counts    
+    -   `/downloads?dataset_type=camera` insensitive contains on dataset type
+    """  # noqa
+    queryset = Download.objects.all()
+    serializer_class = DownloadSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = DownloadFilter

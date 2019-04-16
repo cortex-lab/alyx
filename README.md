@@ -32,11 +32,16 @@ Enter a postgres password:
 ...
 $ python alyx/manage.py check
 $ python alyx/manage.py runserver
+
+# An then initialize fixtures (ie. load default objects in the database)
+cd scripts
+./load-init-fixtures.sh
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
 
 The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the `alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual environment with the dependencies (including django), and it creates all the required SQL tables.
+Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
 ### Web deployment
 Install apache, and wsgi module, then make sure it's enabled

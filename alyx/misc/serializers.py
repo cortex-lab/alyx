@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
 from subjects.models import Subject
 from misc.models import Lab
-from django.contrib.auth import get_user_model
+from data.models import DataRepository
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,9 +21,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class LabSerializer(serializers.HyperlinkedModelSerializer):
+
+    repositories = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=DataRepository.objects.all(),
+        many=True,
+        required=False)
+
     class Meta:
         model = Lab
-        fields = ('name', 'institution', 'address', 'timezone',
+        fields = ('name', 'institution', 'address', 'timezone', 'repositories',
                   'reference_weight_pct', 'zscore_weight_pct')
         lookup_field = 'name'
         extra_kwargs = {'url': {'view_name': 'lab-detail', 'lookup_field': 'name'}}

@@ -15,7 +15,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule
                      )
-from data.models import Dataset
+from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
@@ -443,8 +443,8 @@ class WaterAdminInline(BaseInlineAdmin):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'number', 'project_list',
-                    'dataset_types', 'user_list']
+    list_display = ['subject_l', 'start_time', 'number', 'lab',
+                    'dataset_count', 'task_protocol', 'user_list']
     list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
@@ -454,15 +454,18 @@ class SessionAdmin(BaseActionAdmin):
                    ('subject__projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
                    ]
-    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username')
-    ordering = ('-start_time',)
+    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
+                     'task_protocol')
+    ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['task_protocol', 'weighing']
 
     def get_queryset(self, request):
-        return super(SessionAdmin, self).get_queryset(request).prefetch_related(
+        queryset = super(SessionAdmin, self).get_queryset(request).prefetch_related(
             'subject__projects', 'users', 'data_dataset_session_related',
             'data_dataset_session_related__dataset_type')
+        from django.db.models import Count
+        return queryset.annotate(_dataset_count=Count('data_dataset_session_related'))
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
@@ -475,8 +478,17 @@ class SessionAdmin(BaseActionAdmin):
         return sorted(set(projects))
     project_list.short_description = 'Lab servers'
 
-    def dataset_types(self, obj):
-        return ', '.join(ds.dataset_type.name for ds in obj.data_dataset_session_related.all())
+    def dataset_count(self, ses):
+        cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
+                                       data_repository__globus_is_personal=False,
+                                       exists=True).count()
+        cr = ses._dataset_count
+        if cr == 0:
+            return '-'
+        col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
+        return format_html('<b><a style="color: #{};">{}</a></b>', col, '{:2.0f}'.format(cr))
+    dataset_count.short_description = '# datasets'
+    dataset_count.admin_order_field = '_dataset_count'
 
     def weighing(self, obj):
         wei = Weighing.objects.filter(date_time=obj.start_time)

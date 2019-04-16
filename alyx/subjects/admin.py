@@ -168,12 +168,8 @@ class LineDropdownFilter(RelatedDropdownFilter):
 # ------------------------------------------------------------------------------------------------
 
 class ProjectAdmin(BaseAdmin):
-    fields = ('name', 'description', 'repositories', 'users')
-    list_display = ('name', 'repositories_l', 'users_l')
-
-    def repositories_l(self, obj):
-        return ', '.join(repo.name for repo in obj.repositories.all())
-    repositories_l.short_description = 'repositories'
+    fields = ('name', 'description', 'users')
+    list_display = ('name', 'users_l')
 
     def users_l(self, obj):
         return ', '.join(map(str, obj.users.all()))
@@ -230,6 +226,7 @@ class AddSurgeryInline(SurgeryInline):
 class HousingInline(admin.TabularInline):
     model = Housing.subjects.through
     extra = 0
+    exclude = ('name', 'json',)
 
     def get_queryset(self, request):
         qs = super(HousingInline, self).get_queryset(request)
@@ -298,9 +295,8 @@ class SubjectAdmin(BaseAdmin):
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json', 'subject_history')}),
-        ('HOUSING', {'fields': HOUSING_FIELDS,
-                     'classes': ('extrapretty',),
-                     }),
+        ('HOUSING (read-only, edit widget at the bottom of the page)',
+         {'fields': HOUSING_FIELDS, 'classes': ('extrapretty',), }),
         ('PROFILE', {'fields': ('species', 'strain', 'source', 'line', 'litter',
                                 'cage', 'cage_changes',),
                      'classes': ('collapse',),

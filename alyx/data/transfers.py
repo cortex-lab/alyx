@@ -10,6 +10,7 @@ import numpy as np
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
+from actions.models import Session
 
 logger = logging.getLogger(__name__)
 
@@ -197,11 +198,11 @@ def get_data_format(filename):
     return DataFormat.objects.get(file_extension=file_extension)
 
 
-def _get_repositories_for_projects(projects):
+def _get_repositories_for_labs(labs):
     # List of data repositories associated to the subject's projects.
     repositories = set()
-    for project in projects:
-        repositories.update(project.repositories.all())
+    for lab in labs:
+        repositories.update(lab.repositories.all())
     return list(repositories)
 
 
@@ -446,3 +447,32 @@ def bulk_transfer(dry_run=False, project=None):
             if t == 0:
                 continue
             gc.submit_transfer(t)
+
+
+def _get_session(subject=None, date=None, number=None, user=None):
+    # https://github.com/cortex-lab/alyx/issues/408
+    if not subject or not date:
+        return None
+    # If a base session for that subject and date already exists, use it;
+    base = Session.objects.filter(
+        subject=subject, start_time__date=date, parent_session__isnull=True).first()
+    # Ensure a base session for that subject and date exists.
+    if not base:
+        raise ValueError("A base session for %s on %s does not exist" % (subject, date))
+    if user and user not in base.users.all():
+        base.users.add(user.pk)
+        base.save()
+    # If a subsession for that subject, date, and expNum already exists, use it;
+    session = Session.objects.filter(
+        subject=subject, start_time__date=date, number=number).first()
+    # Ensure the subsession exists.
+    if not session:
+        raise ValueError("A session for %s/%d on %s does not exist" % (subject, number, date))
+    if user and user not in session.users.all():
+        session.users.add(user.pk)
+        session.save()
+    # Attach the subsession to the base session if not already attached.
+    if (not session.parent_session) and base != session:
+        session.parent_session = base
+        session.save()
+    return session
