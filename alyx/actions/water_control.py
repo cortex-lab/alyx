@@ -223,7 +223,7 @@ class WaterControl(object):
         self.thresholds[:] = sorted(self.thresholds, key=itemgetter(0))
 
     def reference_weighing_at(self, date=None):
-        """Return the reference weighing at the specified date, or today."""
+        """Return a tuple (date, weight) the reference weighing at the specified date, or today."""
         if isinstance(date, datetime):
             date = date.date()
         if self.reference_weighing and (date is None or date >= self.reference_weighing[0].date()):
@@ -233,9 +233,9 @@ class WaterControl(object):
         if not wr:
             return
         # get the reference weight of the valid water restriction at the time
-        ref_weight = [_[2] for _ in self.water_restrictions if datetime.date(_[0]) == wr][0]
+        ref_weight = [(d, w) for d, e, w in self.water_restrictions if datetime.date(d) == wr][0]
         # if this one is zero, return the last weight before
-        if ref_weight == 0:
+        if ref_weight[1] == 0:
             ref_weight = self.last_weighing_before(wr)
         return ref_weight
 
