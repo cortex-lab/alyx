@@ -147,7 +147,7 @@ class WaterControl(object):
     def _check_water_restrictions(self):
         """Make sure all past water restrictions (except the current one) are finished."""
         last_date = None
-        for s, e in self.water_restrictions[:-1]:
+        for s, e, wr in self.water_restrictions[:-1]:
             if e is None:
                 logger.warning(
                     "The water restriction started on %s for %s not finished!",
@@ -157,27 +157,27 @@ class WaterControl(object):
                 assert s >= last_date
             last_date = s
 
-    def add_water_restriction(self, start_date=None, end_date=None):
+    def add_water_restriction(self, start_date=None, end_date=None, reference_weight=None):
         """Add a new water restriction."""
         self._check_water_restrictions()
-        self.water_restrictions.append((start_date, end_date))
+        self.water_restrictions.append((start_date, end_date, reference_weight))
 
     def end_current_water_restriction(self):
         """If the mouse is under water restriction, end it."""
         self._check_water_restrictions()
         if not self.water_restrictions:
             return
-        s, e = self.water_restrictions[-1]
+        s, e, wr = self.water_restrictions[-1]
         if e is not None:
             logger.warning("The mouse %s is not currently under water restriction.", self.nickname)
             return
-        self.water_restrictions[-1] = (s, self.today())
+        self.water_restrictions[-1] = (s, self.today(), wr)
 
     def current_water_restriction(self):
         """Return the date of the current water restriction if there is one, or None."""
         if not self.water_restrictions:
             return None
-        s, e = self.water_restrictions[-1]
+        s, e, wr = self.water_restrictions[-1]
         return s.date() if e is None else None
 
     def is_water_restricted(self, date=None):
@@ -194,10 +194,10 @@ class WaterControl(object):
         date = date or self.today()
         date = date.date() if isinstance(date, datetime) else date
         water_restrictions_before = [
-            (s, e) for (s, e) in self.water_restrictions if s.date() <= date]
+            (s, e, rw) for (s, e, rw) in self.water_restrictions if s.date() <= date]
         if not water_restrictions_before:
             return
-        s, e = water_restrictions_before[-1]
+        s, e, rw = water_restrictions_before[-1]
         # Return None if the mouse was not under water restriction at the specified date.
         if e is not None and date > e.date():
             return None
@@ -232,11 +232,12 @@ class WaterControl(object):
         wr = self.water_restriction_at(date)
         if not wr:
             return
-        # Now, wr is the starting date of the water restriction at the specified date.
-        # We search the last known weight as this date.
-        w = self.last_weighing_before(wr)
-        # This is the reference weight.
-        return w
+        # get the reference weight of the valid water restriction at the time
+        ref_weight = [_[2] for _ in self.water_restrictions if datetime.date(_[0]) == wr][0]
+        # if this one is zero, return the last weight before
+        if ref_weight == 0:
+            ref_weight = self.last_weighing_before(wr)
+        return ref_weight
 
     def reference_weight(self, date=None):
         """Return the reference weight at a given date."""
@@ -471,7 +472,7 @@ class WaterControl(object):
                 dtype=np.float64)
 
         # spans is a list of pairs (date, color) where there are changes of background colors.
-        for start_wr, end_wr in self.water_restrictions:
+        for start_wr, end_wr, ref_weight in self.water_restrictions:
             end_wr = end_wr or end
             # Get the dates and weights for the current water restriction.
             ds, ws, es, zw, rw = restrict_dates(weighing_dates, start_wr, end_wr, weights,
@@ -544,7 +545,7 @@ def water_control(subject):
     if last_wr and last_wr.reference_weight:
         wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
     for wr in wrs:
-        wc.add_water_restriction(wr.start_time, wr.end_time)
+        wc.add_water_restriction(wr.start_time, wr.end_time, wr.reference_weight)
 
     # Water administrations.
     was = am.WaterAdministration.objects.filter(subject=subject)
