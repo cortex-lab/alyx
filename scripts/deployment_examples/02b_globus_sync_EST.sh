@@ -2,16 +2,16 @@ cd /var/www/alyx-main/
 source ./venv/bin/activate
 cd alyx
 
-./manage.py files bulksync --project=ibl_churchlandlab
-./manage.py files bulksync --project=ibl_wittenlab
-./manage.py files bulksync --project=ibl_angelakilab
+./manage.py files bulksync --lab=churchlandlab
+./manage.py files bulksync --lab=wittenlab
+./manage.py files bulksync --lab=angelakilab
 
-./manage.py files bulktransfer --project=ibl_churchlandlab
-./manage.py files bulktransfer --project=ibl_wittenlab
-./manage.py files bulktransfer --project=ibl_angelakilab
+./manage.py files bulktransfer --lab=churchlandlab
+./manage.py files bulktransfer --lab=wittenlab
+./manage.py files bulktransfer --lab=angelakilab
 
 sleep 900
 
-./manage.py files bulksync --project=ibl_churchlandlab
-./manage.py files bulksync --project=ibl_wittenlab
-./manage.py files bulksync --project=ibl_angelakilab
+./manage.py files bulksync --lab=churchlandlab
+./manage.py files bulksync --lab=wittenlab
+./manage.py files bulksync --lab=angelakilab

@@ -2,13 +2,13 @@ cd /var/www/alyx-main/
 source ./venv/bin/activate
 cd alyx
 
-./manage.py files bulksync --project=ibl_cortexlab
-./manage.py files bulksync --project=ibl_mainenlab
+./manage.py files bulksync --lab=cortexlab
+./manage.py files bulksync --lab=mainenlab
 
-./manage.py files bulktransfer --project=ibl_cortexlab
-./manage.py files bulktransfer --project=ibl_mainenlab
+./manage.py files bulktransfer --lab=cortexlab
+./manage.py files bulktransfer --lab=mainenlab
 
 sleep 900
 
-./manage.py files bulksync --project=ibl_cortexlab
-./manage.py files bulksync --project=ibl_mainenlab
+./manage.py files bulksync --lab=cortexlab
+./manage.py files bulksync --lab=mainenlab
