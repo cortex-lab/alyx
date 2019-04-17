@@ -442,11 +442,12 @@ def bulk_transfer(dry_run=False, lab=None):
         tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
         logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
-    if ~dry_run:
-        for t in tm.flatten():
-            if t == 0:
-                continue
-            gc.submit_transfer(t)
+    if dry_run:
+        return
+    for t in tm.flatten():
+        if t == 0:
+            continue
+        gc.submit_transfer(t)
 
 
 def _get_session(subject=None, date=None, number=None, user=None):
