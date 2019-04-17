@@ -199,7 +199,7 @@ def get_data_format(filename):
 
 
 def _get_repositories_for_labs(labs):
-    # List of data repositories associated to the subject's projects.
+    # List of data repositories associated to the subject's labs.
     repositories = set()
     for lab in labs:
         repositories.update(lab.repositories.all())
@@ -325,7 +325,7 @@ def transfers_required(dataset):
             }
 
 
-def bulk_sync(dry_run=False, project=None):
+def bulk_sync(dry_run=False, lab=None):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
     Only the files belonging to a dataset for which one main repository as a missing file are
@@ -334,8 +334,8 @@ def bulk_sync(dry_run=False, project=None):
     This is meant to be launched before the transfer() function
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
-    if project:
-        dfs = dfs.filter(data_repository__project__name=project)
+    if lab:
+        dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
     dsets = Dataset.objects.filter(pk__in=dfs.values_list('dataset').distinct())
     all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
@@ -400,7 +400,7 @@ def _filename_from_file_record(fr, add_uuid=False):
     return fn
 
 
-def bulk_transfer(dry_run=False, project=None):
+def bulk_transfer(dry_run=False, lab=None):
     """
     uploads files from a local Globus repository to a main repository if the file on the main
     repository does not exist.
@@ -408,8 +408,8 @@ def bulk_transfer(dry_run=False, project=None):
     """
     gc = globus_transfer_client()
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
-    if project:
-        dfs = dfs.filter(data_repository__project__name=project)
+    if lab:
+        dfs = dfs.filter(data_repository__lab__name=lab)
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
     pri_repos = DataRepository.objects.filter(globus_is_personal=False)
     sec_repos = DataRepository.objects.filter(globus_is_personal=True)
