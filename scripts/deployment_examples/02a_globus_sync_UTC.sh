@@ -4,11 +4,14 @@ cd alyx
 
 ./manage.py files bulksync --lab=cortexlab
 ./manage.py files bulksync --lab=mainenlab
+./manage.py files bulksync --lab=mrsicflogellab
 
 ./manage.py files bulktransfer --lab=cortexlab
 ./manage.py files bulktransfer --lab=mainenlab
+./manage.py files bulktransfer --lab=mrsicflogellab
 
 sleep 900
 
 ./manage.py files bulksync --lab=cortexlab
 ./manage.py files bulksync --lab=mainenlab
+./manage.py files bulksync --lab=mrsicflogellab
