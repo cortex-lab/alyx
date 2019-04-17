@@ -519,6 +519,7 @@ def water_control(subject):
     from actions import models as am
     assert subject is not None
     lab = subject.lab
+
     # By default, if there is only one lab, use it for the subject.
     if lab is None:
         logger.info("Subject %s has no lab, no reference weight percentages considered.",
@@ -535,6 +536,7 @@ def water_control(subject):
         zscore_weight_pct=zw_pct,
         timezone=subject.timezone(),
         subject_id=subject.id,
+        implant_weight=subject.implant_weight
     )
     wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
