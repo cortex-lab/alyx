@@ -52,10 +52,12 @@ class LabForm(forms.ModelForm):
 
 class LabAdmin(BaseAdmin):
     form = LabForm
+    generics = ['name', 'institution', 'address', 'timezone',
+                'reference_weight_pct', 'zscore_weight_pct']
     list_display = ['name', 'institution', 'address', 'timezone', 'local', 'server',
                     'reference_weight_pct', 'zscore_weight_pct']
     list_select_related = ['cage_type', 'enrichment', 'food']
-    fields = list_display + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
+    fields = generics + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
                                                    'repositories']
 
     def local(self, obj):
