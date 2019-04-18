@@ -58,7 +58,7 @@ class LabAdmin(BaseAdmin):
                     'reference_weight_pct', 'zscore_weight_pct']
     list_select_related = ['cage_type', 'enrichment', 'food']
     fields = generics + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
-                                                   'repositories']
+                                               'repositories']
 
     def local(self, obj):
         return ','.join([p.name for p in obj.repositories.filter(globus_is_personal=True)])
