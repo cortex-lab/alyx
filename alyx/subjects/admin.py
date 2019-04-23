@@ -3,6 +3,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When
@@ -1172,7 +1173,7 @@ class GenotypeTestAdmin(BaseAdmin):
     list_select_related = ('subject', 'sequence')
 
 
-class LabMemberAdminForm(forms.ModelForm):
+class LabMemberAdminForm(UserChangeForm):
     class Meta:
         fields = ('__all__')
         model = LabMember
