@@ -10,9 +10,11 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        wrs = WaterRestriction.objects.filter(
-            start_time__isnull=False, end_time__isnull=True). \
-            select_related('subject'). \
+        wrs = WaterRestriction.objects.select_related('subject'). \
+            filter(
+                subject__death_date__isnull=True,
+                start_time__isnull=False,
+                end_time__isnull=True). \
             order_by('subject__nickname')
         for wr in wrs:
             check_water_administration(wr.subject)
