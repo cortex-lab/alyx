@@ -385,7 +385,7 @@ class WaterControl(object):
         assert isinstance(date, datetime)
         totw = 0
         for (d, w, ses) in self.water_administrations:
-            if d != date or w is None:
+            if d.date() != date.date() or w is None:
                 continue
             if has_session is None:
                 totw += w
