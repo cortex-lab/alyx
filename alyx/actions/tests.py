@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from alyx import base
-from actions.water_control import date
+from actions.water_control import to_date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
     Notification, NotificationRule, create_notification)
@@ -59,8 +59,8 @@ class WaterControlTests(TestCase):
         wc = self.sub.water_control
         wa = WaterAdministration.objects.filter(subject=self.sub)
         # the method from the wa model should return the expectation at the corresponding date
-        self.assertTrue(wa[0].expected() == wc.expected_water(date=wa[0].date_time.date()))
-        self.assertTrue(wa[40].expected() == wc.expected_water(date=wa[40].date_time.date()))
+        self.assertTrue(wa[0].expected() == wc.expected_water(date=wa[0].date_time))
+        self.assertTrue(wa[40].expected() == wc.expected_water(date=wa[40].date_time))
 
     def test_water_control_thresholds(self):
         # test computation on reference weight lab alone
@@ -105,7 +105,7 @@ class NotificationTests(TestCase):
         LabMembership.objects.create(user=self.user2, lab=self.lab, start_date='2018-01-01')
 
         self.subject = Subject.objects.create(
-            nickname='test', birth_date=date('2018-01-01'), lab=self.lab,
+            nickname='test', birth_date=to_date('2018-01-01'), lab=self.lab,
             responsible_user=self.user1)
         Weighing.objects.create(
             subject=self.subject, weight=10,
@@ -121,7 +121,7 @@ class NotificationTests(TestCase):
             date_time=timezone.datetime(2018, 6, 3, 12, 0, 0),
             water_administered=10,
         )
-        self.date = date('2018-06-10')
+        self.date = to_date('2018-06-10')
 
     def tearDown(self):
         base.DISABLE_MAIL = False
@@ -158,10 +158,14 @@ class NotificationTests(TestCase):
         self.assertTrue(notif is None)
 
     def test_notif_water_2(self):
-        date = timezone.datetime(2018, 6, 4, 12, 0, 0)
-        check_water_administration(self.subject, date=date)
-        notif = Notification.objects.last()
-        self.assertTrue(notif is not None)
+        # If the last water admin was on June 3 at 12pm, the notification
+        # should be created after June 4 at 11am.
+        l = ((9, False), (10, False), (11, True), (12, True))
+        for (h, r) in l:
+            date = timezone.datetime(2018, 6, 4, h, 0, 0)
+            check_water_administration(self.subject, date=date)
+            notif = Notification.objects.last()
+            self.assertTrue((notif is not None) is r)
 
     def test_notif_user_change_1(self):
         self.subject.responsible_user = self.user2

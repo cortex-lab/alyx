@@ -1,5 +1,6 @@
+# TODO: only work with datetimes
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from dateutil.rrule import HOURLY
 import functools
 import io
@@ -26,14 +27,26 @@ PALETTE = {
 
 
 def today():
-    return timezone.now().date()
+    return timezone.now()
 
 
-def date(s):
-    return datetime.strptime(s, '%Y-%m-%d').date()
+def to_date(s):
+    if isinstance(s, str):
+        return datetime.strptime('%s 12:00:00' % s, '%Y-%m-%d %H:%M:%S')
+    elif isinstance(s, datetime):
+        return s
+    elif s is None:
+        return s
+    raise ValueError("The date should be either a string or a datetime.")
+
+
+def date_to_datetime(d):
+    return datetime(d.year, d.month, d.day, 12, 0, 0)
 
 
 def date_range(start_date, end_date):
+    assert isinstance(start_date, datetime)
+    assert isinstance(end_date, datetime)
     for n in range(int((end_date - start_date).days) + 1):
         yield (start_date + timedelta(n))
 
@@ -68,12 +81,14 @@ def to_weeks(birth_date, dt):
         return 0
     if not dt:
         return 0
-    if isinstance(dt, datetime):
-        dt = dt.date()
+    assert isinstance(birth_date, datetime)
+    assert isinstance(dt, datetime)
     return (dt - birth_date).days // 7
 
 
 def restrict_dates(dates, start, end, *arrs):
+    assert isinstance(start, datetime)
+    assert isinstance(end, datetime)
     ind = (dates >= start) & (dates <= end)
     return [dates[ind]] + [arr[ind] for arr in arrs]
 
@@ -94,10 +109,7 @@ def return_figure(f):
 
 
 def tzone_convert(date_t, tz):
-    # Cannot convert a date object to a timezone.
-    from datetime import date as date_
-    if isinstance(date_t, date_):
-        return date_t
+    assert isinstance(date_t, datetime)
     date_t = timezone.make_aware(date_t, timezone.get_default_timezone(), is_dst=False)
     return timezone.make_naive(date_t, tz)
 
@@ -111,7 +123,10 @@ class WaterControl(object):
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname
-        self.birth_date = birth_date
+        if isinstance(birth_date, date):
+            birth_date = date_to_datetime(birth_date)
+        self.birth_date = to_date(birth_date)
+        assert self.birth_date is None or isinstance(self.birth_date, datetime)
         self.sex = sex
         self.implant_weight = implant_weight or 0.
         self.subject_id = subject_id
@@ -131,9 +146,9 @@ class WaterControl(object):
     def first_date(self):
         dwa = dwe = None
         if self.water_administrations:
-            dwa = min(d for d, _, _ in self.water_administrations).date()
+            dwa = min(d for d, _, _ in self.water_administrations)
         if self.weighings:
-            dwe = min(d for d, _ in self.weighings).date()
+            dwe = min(d for d, _ in self.weighings)
         if not dwa and not dwe:
             return self.birth_date
         elif dwa and dwe:
@@ -159,6 +174,8 @@ class WaterControl(object):
 
     def add_water_restriction(self, start_date=None, end_date=None, reference_weight=None):
         """Add a new water restriction."""
+        assert isinstance(start_date, datetime)
+        assert end_date is None or isinstance(end_date, datetime)
         self._check_water_restrictions()
         self.water_restrictions.append((start_date, end_date, reference_weight))
 
@@ -178,7 +195,7 @@ class WaterControl(object):
         if not self.water_restrictions:
             return None
         s, e, wr = self.water_restrictions[-1]
-        return s.date() if e is None else None
+        return s if e is None else None
 
     def is_water_restricted(self, date=None):
         """Return whether the subject is currently under water restriction.
@@ -192,18 +209,17 @@ class WaterControl(object):
         """If the subject was under water restriction at the specified date, return
         the start of that water restriction."""
         date = date or self.today()
-        date = date.date() if isinstance(date, datetime) else date
         water_restrictions_before = [
-            (s, e, rw) for (s, e, rw) in self.water_restrictions if s.date() <= date]
+            (s, e, rw) for (s, e, rw) in self.water_restrictions if s <= date]
         if not water_restrictions_before:
             return
         s, e, rw = water_restrictions_before[-1]
         # Return None if the mouse was not under water restriction at the specified date.
-        if e is not None and date > e.date():
+        if e is not None and date > e:
             return None
-        assert e is None or e.date() >= date
-        assert s.date() <= date
-        return s.date()
+        assert e is None or e >= date
+        assert s <= date
+        return s
 
     def add_weighing(self, date, weighing):
         """Add a weighing."""
@@ -224,16 +240,17 @@ class WaterControl(object):
 
     def reference_weighing_at(self, date=None):
         """Return a tuple (date, weight) the reference weighing at the specified date, or today."""
-        if isinstance(date, datetime):
-            date = date.date()
-        if self.reference_weighing and (date is None or date >= self.reference_weighing[0].date()):
+        if self.reference_weighing and (date is None or date >= self.reference_weighing[0]):
             return self.reference_weighing
         date = date or self.today()
+        assert isinstance(date, datetime)
         wr = self.water_restriction_at(date)
         if not wr:
             return
         # get the reference weight of the valid water restriction at the time
-        ref_weight = [(d, w) for d, e, w in self.water_restrictions if datetime.date(d) == wr][0]
+        ref_weight = [
+            (d, w) for d, e, w in self.water_restrictions
+            if d == wr][0]
         # if this one is zero, return the last weight before
         if ref_weight[1] == 0:
             ref_weight = self.last_weighing_before(wr)
@@ -249,18 +266,18 @@ class WaterControl(object):
     def last_weighing_before(self, date=None):
         """Return the last known weight of the subject before the specified date."""
         date = date or self.today()
-        if isinstance(date, datetime):
-            date = date.date()
+        assert isinstance(date, datetime)
         # Sort the weighings.
         self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
-        weighings_before = [(d, w) for (d, w) in self.weighings if d.date() <= date]
+        weighings_before = [(d, w) for (d, w) in self.weighings if d <= date]
         if weighings_before:
             return weighings_before[-1]
 
     def weighing_at(self, date=None):
         """Return the weight of the subject at the specified date."""
         date = date or self.today()
-        weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date]
+        assert isinstance(date, datetime)
+        weighings_at = [(d, w) for (d, w) in self.weighings if d == date]
         return weighings_at[0][1] if weighings_at else None
 
     def current_weighing(self):
@@ -346,17 +363,16 @@ class WaterControl(object):
     def last_water_administration_at(self, date=None):
         """Return the last known water administration of the subject before the specified date."""
         date = date or self.today()
-        if isinstance(date, datetime):
-            date = date.date()
         # Sort the water administrations.
         self.water_administrations[:] = sorted(self.water_administrations, key=itemgetter(0))
-        wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d.date() <= date]
+        wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d <= date]
         if wa_before:
             return wa_before[-1]
 
     def expected_water(self, date=None):
         """Return the expected water for the specified date."""
         date = date or self.today()
+        assert isinstance(date, datetime)
         iw = self.implant_weight or 0.
         weight = self.last_weighing_before(date=date)
         weight = weight[1] if weight else 0.
@@ -366,9 +382,10 @@ class WaterControl(object):
     def given_water(self, date=None, has_session=None):
         """Return the amount of water given at a specified date."""
         date = date or self.today()
+        assert isinstance(date, datetime)
         totw = 0
         for (d, w, ses) in self.water_administrations:
-            if d.date() != date or w is None:
+            if d != date or w is None:
                 continue
             if has_session is None:
                 totw += w
@@ -426,14 +443,14 @@ class WaterControl(object):
             return 0
 
     def to_jsonable(self, start_date=None, end_date=None):
-        start_date = date(start_date) if start_date else self.first_date()
-        end_date = date(end_date) if end_date else self.today()
+        start_date = to_date(start_date) if start_date else self.first_date()
+        end_date = to_date(end_date) if end_date else self.today()
         out = []
         for d in date_range(start_date, end_date):
             obj = {}
             for col in self._columns:
                 if col == 'date':
-                    obj['date'] = d
+                    obj['date'] = d.date()
                 else:
                     obj[col] = getattr(self, col)(date=d)
             out.append(obj)
@@ -531,7 +548,9 @@ def water_control(subject):
 
     # Create the WaterControl instance.
     wc = WaterControl(
-        nickname=subject.nickname, birth_date=subject.birth_date, sex=subject.sex,
+        nickname=subject.nickname,
+        birth_date=subject.birth_date,
+        sex=subject.sex,
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
         timezone=subject.timezone(),

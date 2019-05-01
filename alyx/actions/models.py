@@ -109,7 +109,7 @@ class WaterAdministration(BaseModel):
 
     def expected(self):
         wc = self.subject.water_control
-        return wc.expected_water(date=self.date_time.date())
+        return wc.expected_water(date=self.date_time)
 
     @property
     def hydrogel(self):
@@ -212,7 +212,7 @@ class Surgery(BaseAction):
             self.subject.actual_severity = 3
 
         if self.outcome_type == 'a' and self.start_time:
-            self.subject.death_date = self.start_time.date()
+            self.subject.death_date = self.start_time
         self.subject.save()
         return super(Surgery, self).save(*args, **kwargs)
 
@@ -272,7 +272,7 @@ class WaterRestriction(BaseAction):
 
     def save(self, *args, **kwargs):
         if not self.reference_weight and self.subject:
-            w = self.subject.water_control.last_weighing_before(self.start_time.date())
+            w = self.subject.water_control.last_weighing_before(self.start_time)
             if w:
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
@@ -426,7 +426,7 @@ class Notification(BaseModel):
             return True
 
     def __str__(self):
-        return "<Notification '%s' (%s) %s>" % (self.title, self.status, self.send_at.date())
+        return "<Notification '%s' (%s) %s>" % (self.title, self.status, self.send_at)
 
 
 class NotificationRule(BaseModel):
