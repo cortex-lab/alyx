@@ -99,7 +99,7 @@ def default_source():
 
 
 def default_responsible():
-    return get_user_model().objects.filter(is_stock_manager=True).first()
+    return get_user_model().objects.order_by('-is_stock_manager').first()
 
 
 def default_species():
