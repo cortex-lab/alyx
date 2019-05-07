@@ -40,6 +40,6 @@ def check_water_administration(subject, date=None):
     delay = date - wa[0]
     # Notification if water needs to be given more than 23h after the last
     # water administration.
-    if remaining > 0 and delay.total_seconds() > 23 * 3600:
+    if remaining > 0 and delay.total_seconds() >= 23 * 3600 - 10:
         msg = "%.1f mL remaining for %s" % (remaining, subject)
         create_notification('mouse_water', msg, subject)

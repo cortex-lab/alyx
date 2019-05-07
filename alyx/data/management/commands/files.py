@@ -5,8 +5,7 @@ from django.db.models import Count, Q
 from actions.models import Session
 from data import transfers
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
-from subjects.models import Project
-
+from misc.models import Lab
 logging.getLogger(__name__).setLevel(logging.WARNING)
 
 
@@ -21,13 +20,14 @@ def _iter_datasets(dataset_id=None, limit=None, user=None):
         yield dataset
 
 
-def _create_missing_file_records_main_globus(dry_run=False, project=None):
-    projects = Project.objects.all()
-    if project:
-        projects = projects.filter(name=project)
-    for p in projects:
-        repos = p.repositories.filter(globus_is_personal=False)
-        dsets = Dataset.objects.filter(session__project=p)
+def _create_missing_file_records_main_globus(dry_run=False, lab=None):
+    if lab:
+        labs = Lab.objects.filter(name=lab)
+    else:
+        labs = Lab.objects.all()
+    for l in labs:
+        repos = l.repositories.filter(globus_is_personal=False)
+        dsets = Dataset.objects.filter(session__lab=l)
         for r in repos:
             dsr = dsets.annotate(rep_count=Count('file_records',
                                                  filter=Q(file_records__data_repository=r)))
@@ -46,14 +46,13 @@ def _create_missing_file_records_main_globus(dry_run=False, project=None):
 
 
 def _create_missing_file_records(dry_run=False):
-    # Create missing file records for sessions that have been manually assigned
-    # to a project.
-    for s in Session.objects.select_related('project').prefetch_related(
+    # Create missing file records for sessions that have been manually assigned to a lab
+    for s in Session.objects.select_related('lab').prefetch_related(
             'data_dataset_session_related',
             'data_dataset_session_related__file_records',
-    ).filter(project__isnull=False):  # noqa
-        # All repositories associated to the session's projects.
-        expected_repos = set(s.project.repositories.all())
+    ).filter(lab__isnull=False):  # noqa
+        # All repositories associated to the session's lab.
+        expected_repos = set(s.lab.repositories.all())
         # Going through the datasets.
         for d in s.data_dataset_session_related.all():
             fr = d.file_records.first()
@@ -76,7 +75,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('action', help='Action')
         parser.add_argument('dataset', nargs='?', help='Dataset')
-        parser.add_argument('--project', help='Only sync for project')
+        parser.add_argument('--lab', help='Only sync for specific lab')
         parser.add_argument('--dry', action='store_true', help='dry run')
         parser.add_argument('--data-repository', help='data repository')
         parser.add_argument('--path', help='path')
@@ -91,14 +90,14 @@ class Command(BaseCommand):
         limit = options.get('limit')
         user = options.get('user')
         dry = options.get('dry')
-        project = options.get('project')
+        lab = options.get('lab')
 
         if action == 'bulksync':
-            _create_missing_file_records_main_globus(dry_run=dry, project=project)
-            transfers.bulk_sync(dry_run=dry, project=project)
+            _create_missing_file_records_main_globus(dry_run=dry, lab=lab)
+            transfers.bulk_sync(dry_run=dry, lab=lab)
 
         if action == 'bulktransfer':
-            transfers.bulk_transfer(dry_run=dry, project=project)
+            transfers.bulk_transfer(dry_run=dry, lab=lab)
 
         if action == 'login':
             transfers.create_globus_token()

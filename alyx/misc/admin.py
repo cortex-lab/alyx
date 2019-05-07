@@ -52,11 +52,19 @@ class LabForm(forms.ModelForm):
 
 class LabAdmin(BaseAdmin):
     form = LabForm
-    list_display = ['name', 'institution', 'address', 'timezone',
+    generics = ['name', 'institution', 'address', 'timezone',
+                'reference_weight_pct', 'zscore_weight_pct']
+    list_display = ['name', 'institution', 'address', 'timezone', 'local', 'server',
                     'reference_weight_pct', 'zscore_weight_pct']
     list_select_related = ['cage_type', 'enrichment', 'food']
-    fields = list_display + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
-                                                   'repositories']
+    fields = generics + list_select_related + ['cage_cleaning_frequency_days', 'light_cycle',
+                                               'repositories']
+
+    def local(self, obj):
+        return ','.join([p.name for p in obj.repositories.filter(globus_is_personal=True)])
+
+    def server(self, obj):
+        return ','.join([p.name for p in obj.repositories.filter(globus_is_personal=False)])
 
 
 class LabMembershipAdmin(BaseAdmin):

@@ -384,7 +384,7 @@ class WeighingAdmin(BaseActionAdmin):
 
     def percentage_weight(self, obj):
         wc = obj.subject.water_control
-        return wc.percentage_weight_html(date=obj.date_time.date())
+        return wc.percentage_weight_html(date=obj.date_time)
     percentage_weight.short_description = 'Weight %'
 
 
