@@ -210,7 +210,7 @@ class WaterControl(object):
         the start of that water restriction."""
         date = date or self.today()
         water_restrictions_before = [
-            (s, e, rw) for (s, e, rw) in self.water_restrictions if s <= date]
+            (s, e, rw) for (s, e, rw) in self.water_restrictions if s.date() <= date.date()]
         if not water_restrictions_before:
             return
         s, e, rw = water_restrictions_before[-1]
@@ -269,7 +269,7 @@ class WaterControl(object):
         assert isinstance(date, datetime)
         # Sort the weighings.
         self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
-        weighings_before = [(d, w) for (d, w) in self.weighings if d <= date]
+        weighings_before = [(d, w) for (d, w) in self.weighings if d.date() <= date.date()]
         if weighings_before:
             return weighings_before[-1]
 
@@ -277,7 +277,7 @@ class WaterControl(object):
         """Return the weight of the subject at the specified date."""
         date = date or self.today()
         assert isinstance(date, datetime)
-        weighings_at = [(d, w) for (d, w) in self.weighings if d == date]
+        weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date.date()]
         return weighings_at[0][1] if weighings_at else None
 
     def current_weighing(self):
