@@ -119,8 +119,9 @@ class APIActionsTests(BaseTests):
         assert dates[0] == start_date
         assert dates[-1] == end_date
         assert dates[2] == date
-        for r in d['records']:
-            print(r)
+        assert d['records'][2]['weighing_at'] > 0
+        for i in range(2, 5):
+            assert d['records'][i]['weight'] > 0
 
     def test_sessions(self):
         a_dict4json = {'String': 'this is not a JSON'}

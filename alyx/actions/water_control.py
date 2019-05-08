@@ -47,7 +47,7 @@ def date_to_datetime(d):
 def date_range(start_date, end_date):
     assert isinstance(start_date, datetime)
     assert isinstance(end_date, datetime)
-    for n in range(int((end_date - start_date).days) + 1):
+    for n in range(int((end_date.date() - start_date.date()).days) + 1):
         yield (start_date + timedelta(n))
 
 
@@ -218,7 +218,7 @@ class WaterControl(object):
         if e is not None and date > e:
             return None
         assert e is None or e >= date
-        assert s <= date
+        assert s.date() <= date.date()
         return s
 
     def add_weighing(self, date, weighing):
