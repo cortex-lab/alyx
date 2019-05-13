@@ -220,8 +220,7 @@ def _create_dataset_file_records(
 
     # Create the dataset.
     dataset, _ = Dataset.objects.get_or_create(
-        name=filename, session=session, created_by=user,
-        dataset_type=dataset_type, data_format=data_format)
+        name=filename, session=session, dataset_type=dataset_type, data_format=data_format)
     # Validate the fields.
     dataset.full_clean()
 
