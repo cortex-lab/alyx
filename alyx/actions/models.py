@@ -357,7 +357,8 @@ def get_recipients(notification_type, subject=None, users=None):
                     member not in users]
 
 
-def create_notification(notification_type, message, subject=None, users=None, force=None):
+def create_notification(
+        notification_type, message, subject=None, users=None, force=None, details=''):
     delay = delay_since_last_notification(notification_type, message, subject)
     max_delay = NOTIFICATION_MIN_DELAYS.get(notification_type, 0)
     if not force and delay < max_delay:
@@ -367,7 +368,7 @@ def create_notification(notification_type, message, subject=None, users=None, fo
     notif = Notification.objects.create(
         notification_type=notification_type,
         title=message,
-        message=message,
+        message=message + '\n\n' + details,
         subject=subject)
     recipients = get_recipients(notification_type, subject=subject, users=users)
     if recipients:

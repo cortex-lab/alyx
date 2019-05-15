@@ -1,4 +1,5 @@
 import logging
+from textwrap import dedent
 
 from django.utils import timezone
 
@@ -12,7 +13,7 @@ def responsible_user_changed(subject, old_user, new_user):
     """Send a notification when a responsible user changes."""
     msg = 'Responsible user of %s changed from %s to %s' % \
           (subject, old_user.username, new_user.username)
-    create_notification('responsible_user_change', msg, subject, [old_user, new_user])
+    create_notification('responsible_user_change', msg, subject, users=[old_user, new_user])
 
 
 def check_weighing(subject, date=None):
@@ -42,4 +43,17 @@ def check_water_administration(subject, date=None):
     # water administration.
     if remaining > 0 and delay.total_seconds() >= 23 * 3600 - 10:
         msg = "%.1f mL remaining for %s" % (remaining, subject)
-        create_notification('mouse_water', msg, subject)
+        details = dedent('''
+        Mouse: %s
+        User: %s
+        Date: %s
+        Last water administration: %s, %.2f mL
+        Remaining water: %.1f mL
+        Delay: %.1f hours
+        ''' % (
+            subject.nickname,
+            subject.responsible_user.username,
+            date.strftime('%Y-%m-%d %H:%M:%S'),
+            wa[0].strftime('%Y-%m-%d %H:%M:%S'), wa[1],
+            remaining, (delay.total_seconds() / 3600)))
+        create_notification('mouse_water', msg, subject, details=details)
