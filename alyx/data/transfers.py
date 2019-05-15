@@ -221,6 +221,9 @@ def _create_dataset_file_records(
     # Create the dataset.
     dataset, _ = Dataset.objects.get_or_create(
         name=filename, session=session, dataset_type=dataset_type, data_format=data_format)
+    # The user doesn't have to be the same when getting an existing dataset, but we still
+    # have to set the created_by field.
+    dataset.created_by = user
     # Validate the fields.
     dataset.full_clean()
 

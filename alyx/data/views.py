@@ -315,12 +315,12 @@ class SyncViewSet(viewsets.GenericViewSet):
 
 class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
-    REST query data field to log a download:  
+    REST query data field to log a download:
     ```
-    data = {'user': 'labmember_name',  
-            'datasets': 'pk1',    # supports multiple pks as a list  
-            'projects': 'project_name')   # supports multiple projects as a list  
-    ```  
+    data = {'user': 'labmember_name',
+            'datasets': 'pk1',    # supports multiple pks as a list
+            'projects': 'project_name')   # supports multiple projects as a list
+    ```
 
     If there are multiple projects and multiple datasets, each datasets will be logged as
     downloaded for all projects.
@@ -380,10 +380,10 @@ class DownloadList(generics.ListAPIView):
     Example: `https://alyx.internationalbrainlab.org/downloads`
 
     Filter implementation examples:
-    
-    -   `/downloads?user=jimmyjazz` on User  
-    -   `/downloads?json=processing` insensitive contains on JSON  
-    -   `/downloads?count=5`  download counts    
+
+    -   `/downloads?user=jimmyjazz` on User
+    -   `/downloads?json=processing` insensitive contains on JSON
+    -   `/downloads?count=5`  download counts
     -   `/downloads?dataset_type=camera` insensitive contains on dataset type
     """  # noqa
     queryset = Download.objects.all()
