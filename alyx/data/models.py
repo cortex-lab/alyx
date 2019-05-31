@@ -262,10 +262,11 @@ class Dataset(BaseExperimentalData):
         default=default_data_format)
 
     def data_url(self):
-        records = self.file_records.all()
-        records = [r for r in records if r.data_repository.data_url and r.exists]
+        records = self.file_records.filter(data_repository__data_url__isnull=False,
+                                           exists=True)
+        # returns preferentially globus non-personal endpoint
         if records:
-            return records[0].data_url()
+            return records.order_by('data_repository__globus_is_personal')[0].data_url()
 
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
