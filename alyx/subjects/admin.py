@@ -170,11 +170,19 @@ class LineDropdownFilter(RelatedDropdownFilter):
 
 class ProjectAdmin(BaseAdmin):
     fields = ('name', 'description', 'users')
-    list_display = ('name', 'users_l')
+    list_display = ('name', 'subjects_count', 'sessions_count', 'users_l')
 
     def users_l(self, obj):
         return ', '.join(map(str, obj.users.all()))
     users_l.short_description = 'users'
+
+    def sessions_count(self, obj):
+        return Session.objects.filter(project=obj).count()
+    sessions_count.short_description = '# sessions'
+
+    def subjects_count(self, obj):
+        return Subject.objects.filter(projects=obj).count()
+    subjects_count.short_description = '# subjects'
 
 
 # Subject
