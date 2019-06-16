@@ -1,158 +1,158 @@
 [
-{
- "model": "data.dataformat",
- "pk": "6b7ebce8-902a-42b1-ad39-3cc8193f3731",
- "fields": {
-  "json": null,
-  "name": "jsonable",
-  "description": "ascii file for which each line is a jsonable string",
-  "file_extension": ".jsonable",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
+ {
+  "model": "data.dataformat",
+  "pk": "6b7ebce8-902a-42b1-ad39-3cc8193f3731",
+  "fields": {
+   "json": null,
+   "name": "jsonable",
+   "description": "ascii file for which each line is a jsonable string",
+   "file_extension": ".jsonable",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "6fd398a0-8a3c-46c0-a9a2-e42f1c8f35d2",
+  "fields": {
+   "json": null,
+   "name": "mj2",
+   "description": "mj2 movie",
+   "file_extension": ".mj2",
+   "matlab_loader_function": "VideoReader",
+   "python_loader_function": "ffmpeg"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "7b28e2a1-0d34-4758-a028-85e572f90587",
+  "fields": {
+   "json": null,
+   "name": "ssv",
+   "description": "space separated value file",
+   "file_extension": ".ssv",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "915c2d20-c77e-4c47-b4a5-d9eb6c782be1",
+  "fields": {
+   "json": null,
+   "name": "m",
+   "description": "MATLAB script/function files",
+   "file_extension": ".m",
+   "matlab_loader_function": "open",
+   "python_loader_function": "read"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "9f923a3a-fe7f-4baa-bce1-6e0be4da78bb",
+  "fields": {
+   "json": null,
+   "name": "json",
+   "description": "JSON",
+   "file_extension": ".json",
+   "matlab_loader_function": "loadjson",
+   "python_loader_function": "json.load"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "b0572461-af44-4979-b3c2-c9f12a8a0161",
+  "fields": {
+   "json": null,
+   "name": "mat",
+   "description": "MATLAB native file format",
+   "file_extension": ".mat",
+   "matlab_loader_function": "load",
+   "python_loader_function": "scipy.io.loadmat"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "b08760c9-a486-46d2-bc22-26ddcf3a1527",
+  "fields": {
+   "json": null,
+   "name": "notData",
+   "description": "file format for datasets with no associated files (eg parent datasets)",
+   "file_extension": "",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "c03e71e8-846a-42b2-9865-e9f950bb7806",
+  "fields": {
+   "json": null,
+   "name": "bin",
+   "description": "binary file with no header",
+   "file_extension": ".bin",
+   "matlab_loader_function": "fread",
+   "python_loader_function": "unknown"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "cdba2cad-6348-410f-bdd1-019a2b598d8c",
+  "fields": {
+   "json": null,
+   "name": "csv",
+   "description": "comma separated value file",
+   "file_extension": ".csv",
+   "matlab_loader_function": "fopen",
+   "python_loader_function": "Pandas.read_csv"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "d8df05af-ec4a-48f8-8847-a2b54c3d5b09",
+  "fields": {
+   "json": null,
+   "name": "mp4",
+   "description": "Digital multimedia container",
+   "file_extension": ".mp4",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "e7b3d18f-5f58-4eea-994b-0e1f6ff87c2c",
+  "fields": {
+   "json": null,
+   "name": "npy",
+   "description": "npy-formatted square numerical array",
+   "file_extension": ".npy",
+   "matlab_loader_function": "readNPY",
+   "python_loader_function": "numpy.load"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "e97f80d2-8f58-4afd-b49a-70facb9d900f",
+  "fields": {
+   "json": null,
+   "name": "zip",
+   "description": "ZIP compressed archive",
+   "file_extension": ".zip",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "f4ef3f1d-a334-4141-a35f-376f6d14eb2f",
+  "fields": {
+   "json": "",
+   "name": "tsv",
+   "description": "Tab-separated values",
+   "file_extension": ".tsv",
+   "matlab_loader_function": "",
+   "python_loader_function": "pandas.read_table"
+  }
  }
-},
-{
- "model": "data.dataformat",
- "pk": "6fd398a0-8a3c-46c0-a9a2-e42f1c8f35d2",
- "fields": {
-  "json": null,
-  "name": "mj2",
-  "description": "mj2 movie",
-  "file_extension": ".mj2",
-  "matlab_loader_function": "VideoReader",
-  "python_loader_function": "ffmpeg"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "7b28e2a1-0d34-4758-a028-85e572f90587",
- "fields": {
-  "json": null,
-  "name": "ssv",
-  "description": "space separated value file",
-  "file_extension": ".ssv",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
- }
-},
-{
- "model": "data.dataformat",
- "pk": "915c2d20-c77e-4c47-b4a5-d9eb6c782be1",
- "fields": {
-  "json": null,
-  "name": "m",
-  "description": "MATLAB script/function files",
-  "file_extension": ".m",
-  "matlab_loader_function": "open",
-  "python_loader_function": "read"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "9f923a3a-fe7f-4baa-bce1-6e0be4da78bb",
- "fields": {
-  "json": null,
-  "name": "json",
-  "description": "JSON",
-  "file_extension": ".json",
-  "matlab_loader_function": "loadjson",
-  "python_loader_function": "json.load"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "b0572461-af44-4979-b3c2-c9f12a8a0161",
- "fields": {
-  "json": null,
-  "name": "mat",
-  "description": "MATLAB native file format",
-  "file_extension": ".mat",
-  "matlab_loader_function": "load",
-  "python_loader_function": "scipy.io.loadmat"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "b08760c9-a486-46d2-bc22-26ddcf3a1527",
- "fields": {
-  "json": null,
-  "name": "notData",
-  "description": "file format for datasets with no associated files (eg parent datasets)",
-  "file_extension": "",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
- }
-},
-{
- "model": "data.dataformat",
- "pk": "c03e71e8-846a-42b2-9865-e9f950bb7806",
- "fields": {
-  "json": null,
-  "name": "bin",
-  "description": "binary file with no header",
-  "file_extension": ".bin",
-  "matlab_loader_function": "fread",
-  "python_loader_function": "unknown"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "cdba2cad-6348-410f-bdd1-019a2b598d8c",
- "fields": {
-  "json": null,
-  "name": "csv",
-  "description": "comma separated value file",
-  "file_extension": ".csv",
-  "matlab_loader_function": "fopen",
-  "python_loader_function": "Pandas.read_csv"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "d8df05af-ec4a-48f8-8847-a2b54c3d5b09",
- "fields": {
-  "json": null,
-  "name": "mp4",
-  "description": "Digital multimedia container",
-  "file_extension": ".mp4",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
- }
-},
-{
- "model": "data.dataformat",
- "pk": "e7b3d18f-5f58-4eea-994b-0e1f6ff87c2c",
- "fields": {
-  "json": null,
-  "name": "npy",
-  "description": "npy-formatted square numerical array",
-  "file_extension": ".npy",
-  "matlab_loader_function": "readNPY",
-  "python_loader_function": "numpy.load"
- }
-},
-{
- "model": "data.dataformat",
- "pk": "e97f80d2-8f58-4afd-b49a-70facb9d900f",
- "fields": {
-  "json": null,
-  "name": "zip",
-  "description": "ZIP compressed archive",
-  "file_extension": ".zip",
-  "matlab_loader_function": "",
-  "python_loader_function": ""
- }
-},
-{
- "model": "data.dataformat",
- "pk": "f4ef3f1d-a334-4141-a35f-376f6d14eb2f",
- "fields": {
-  "json": "",
-  "name": "tsv",
-  "description": "Tab-separated values",
-  "file_extension": ".tsv",
-  "matlab_loader_function": "",
-  "python_loader_function": "pandas.read_table"
- }
-}
 ]
