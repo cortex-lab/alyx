@@ -48,6 +48,10 @@ Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete
 Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
 
+# import projects from cortexlab. remove those that don't correspond to any session
+pk_projs = ses_ucl.values_list('project', flat=True).distinct()
+Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
+
 # only imports users that are relevant to IBL
 users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
                    'Karolina_Socha', 'Hamish', 'laura', 'niccolo']
@@ -74,7 +78,7 @@ init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
                  'data.datasettype',
                  'misc.lab',
-                 'subjects.project',
+                 #  'subjects.project',
                  #  'actions.proceduretype',
                  #  'actions.watertype',
                  ]
