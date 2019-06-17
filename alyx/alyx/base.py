@@ -314,6 +314,8 @@ class BaseAdmin(VersionAdmin):
             return obj.user == request.user
         elif getattr(obj, 'users', False):
             return request.user in obj.users.all()
+        elif getattr(obj, 'responsible_user', False):
+            return obj.responsible_user == request.user
 
 
 class BaseInlineAdmin(admin.TabularInline):
