@@ -304,6 +304,17 @@ class BaseAdmin(VersionAdmin):
                                      for model in category_list[0].models]
         return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
+    def has_change_permission(self, request, obj=None):
+        if not obj:
+            return True
+        elif request.user.is_superuser:
+            return True
+        # models like WaterAdmin / Weighing / NotificationRule have a single user field
+        elif getattr(obj, 'user', False):
+            return obj.user == request.user
+        elif getattr(obj, 'users', False):
+            return request.user in obj.users.all()
+
 
 class BaseInlineAdmin(admin.TabularInline):
     show_change_link = True

@@ -2,7 +2,7 @@ import json
 
 # for the data.datasettype fixture, remove unknown and null the created-by field
 file_fixtures = './data/fixtures/data.datasettype.json'
-with open (file_fixtures) as ff:
+with open(file_fixtures) as ff:
     fix = json.load(ff)
 
 for i, f in enumerate(fix):
@@ -10,8 +10,17 @@ for i, f in enumerate(fix):
     if f['fields']['name'] == 'unknown':
         fix.remove(f)
 
-for f in fix:
-    print(f['fields']['name'])
+with open(file_fixtures, 'w') as outfile:
+    json.dump(fix, outfile, indent=1)
+
+# for the data.dataformat fixture, remove unknown
+file_fixtures = './data/fixtures/data.dataformat.json'
+with open(file_fixtures) as ff:
+    fix = json.load(ff)
+
+for i, f in enumerate(fix):
+    if f['fields']['name'] == 'unknown':
+        fix.remove(f)
 
 with open(file_fixtures, 'w') as outfile:
     json.dump(fix, outfile, indent=1)

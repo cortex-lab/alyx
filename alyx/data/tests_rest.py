@@ -208,6 +208,12 @@ class APIDataTests(BaseTests):
         fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.c.e1'))
         self.assertTrue(fr.count() == 3)
 
+        # test case where a dataset is subsequently registered with a different user
+        # doesn't break and the last user is labeled on the dataset
+        data['created_by'] = '17'
+        r = self.client.post(reverse('register-file'), data)
+        self.assertEqual(r.data[0]['created_by'], '17')
+
         # last use case is about registering a dataset without a lab, the lab should be inferred
         # from the subject
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,

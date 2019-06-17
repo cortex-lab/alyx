@@ -15,6 +15,6 @@ class Command(BaseCommand):
                 subject__death_date__isnull=True,
                 start_time__isnull=False,
                 end_time__isnull=True). \
-            order_by('subject__nickname')
+            order_by('subject__responsible_user__username', 'subject__nickname')
         for wr in wrs:
             check_water_administration(wr.subject)

@@ -107,7 +107,6 @@ def _bring_to_front(ids, id):
 
 # Admin
 # ------------------------------------------------------------------------------------------------
-
 class BaseActionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(BaseActionForm, self).__init__(*args, **kwargs)
@@ -199,7 +198,9 @@ class WaterAdministrationForm(forms.ModelForm):
         if getattr(self, 'last_subject_id', None):
             ids += [self.last_subject_id]
         # These ids first in the list of subjects, if any ids
-        if ids:
+        if not self.fields:
+            return
+        elif ids:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
             self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
         else:
