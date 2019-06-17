@@ -274,6 +274,8 @@ class SubjectForm(forms.ModelForm):
         # NOTE: Retrieve the request, passed by ModelAdmin.get_form()
         self.request = kwargs.pop('request', None)
         super(SubjectForm, self).__init__(*args, **kwargs)
+        if not self.fields:
+            return
         if self.instance.line:
             self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
         self.fields['responsible_user'].queryset = get_user_model().objects.all()
