@@ -57,8 +57,7 @@ class APIActionsTests(BaseTests):
     def test_list_water_administration_1(self):
         url = reverse('water-administration-create')
         response = self.client.get(url)
-        self.ar(response)
-        d = response.data[0]
+        d = self.ar(response)[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
                              'water_administered', 'water_type')) <= set(d))
 
@@ -69,16 +68,14 @@ class APIActionsTests(BaseTests):
 
         url = reverse('water-administration-create') + '?nickname=' + self.subject.nickname
         response = self.client.get(url)
-        self.ar(response)
-        d = response.data[0]
+        d = self.ar(response)[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user',
                              'water_administered', 'water_type', 'adlib')) <= set(d))
 
     def test_list_weighing_1(self):
         url = reverse('weighing-create')
         response = self.client.get(url)
-        self.ar(response)
-        d = response.data[0]
+        d = self.ar(response)[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
 
     def test_list_weighing_filter(self):
@@ -88,8 +85,7 @@ class APIActionsTests(BaseTests):
 
         url = reverse('weighing-create') + '?nickname=' + self.subject.nickname
         response = self.client.get(url)
-        self.ar(response)
-        d = response.data[0]
+        d = self.ar(response)[0]
         self.assertTrue(set(('date_time', 'url', 'subject', 'user', 'weight')) <= set(d))
 
     def test_water_requirement(self):
@@ -150,7 +146,7 @@ class APIActionsTests(BaseTests):
         self.assertEqual(r.data['json'], a_dict4json)
         # but not in the session list
         r = self.client.get(reverse('session-list') + '?id=' + s1_details['url'][-36:])
-        s1 = r.data[0]
+        s1 = self.ar(r)[0]
         self.assertFalse('json' in s1)
         # create another session for further testing
         ses_dict['start_time'] = '2018-07-11T12:34:56'
@@ -159,44 +155,43 @@ class APIActionsTests(BaseTests):
         ses_dict['lab'] = self.lab02
         ses_dict['n_correct_trials'] = 37
         r = self.client.post(reverse('session-list'), ses_dict)
-        s2 = r.data
+        s2 = self.ar(r, code=201)
         s2.pop('json')
         # Test the date range filter
         r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
-        self.assertEqual(r.data[0], s1)
+        rdata = self.ar(r)
+        self.assertEqual(rdata[0], s1)
         # Test the user filter, this should return 2 sessions
-        r = self.client.get(reverse('session-list') + '?users=test')
-        self.assertTrue(len(r.data) == 2)
+        d = self.ar(self.client.get(reverse('session-list') + '?users=test'))
+        self.assertTrue(len(d) == 2)
         # This should return only one session
-        r = self.client.get(reverse('session-list') + '?users=test2')
-        self.assertEqual(r.data[0], s2)
+        d = self.ar(self.client.get(reverse('session-list') + '?users=test2'))
+        self.assertTrue(all([d[0][k] == s2[k] for k in d[0]]))
         # This should return only one session
-        r = self.client.get(reverse('session-list') + '?lab=awesomelab')
-        self.assertEqual(r.data[0], s2)
+        d = self.ar(self.client.get(reverse('session-list') + '?lab=awesomelab'))
+        self.assertTrue(all([d[0][k] == s2[k] for k in d[0]]))
         # Test performance: gte, lte and ensures null performances not included
-        r = self.client.get(reverse('session-list') + '?performance_gte=50')
-        self.assertEqual(r.data[0]['url'], s1['url'])
-        self.assertTrue(len(r.data) == 1)
-        r = self.client.get(reverse('session-list') + '?performance_lte=50')
-        self.assertEqual(r.data[0]['url'], s2['url'])
-        self.assertTrue(len(r.data) == 1)
+        d = self.ar(self.client.get(reverse('session-list') + '?performance_gte=50'))
+        self.assertEqual(d[0]['url'], s1['url'])
+        self.assertTrue(len(d) == 1)
+        d = self.ar(self.client.get(reverse('session-list') + '?performance_lte=50'))
+        self.assertEqual(d[0]['url'], s2['url'])
+        self.assertTrue(len(d) == 1)
         # test the Session serializer wateradmin related field
         ses = Session.objects.get(subject=self.subject, users=self.superuser,
                                   project=self.projectX, start_time__date='2018-07-09')
         WaterAdministration.objects.create(subject=self.subject, session=ses, water_administered=1)
-        r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
-        self.ar(r)
-        self.assertEqual(r.data[0]['wateradmin_session_related'][0]['water_administered'], 1)
+        d = self.ar(self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09'))
+        d = self.ar(self.client.get(d[0]['url']))
+        self.assertEqual(d['wateradmin_session_related'][0]['water_administered'], 1)
 
     def test_list_retrieve_water_restrictions(self):
         url = reverse('water-restriction-list')
         response = self.client.get(url)
-        self.ar(response)
-        d = response.data[0]
+        d = self.ar(response)[0]
         self.assertTrue(set(d.keys()) >= set(['reference_weight', 'water_type', 'subject',
                                               'start_time', 'end_time']))
         url = url = reverse('water-restriction-list') + '?subject=' + d['subject']
         response = self.client.get(url)
-        self.ar(response)
-        d2 = response.data[0]
+        d2 = self.ar(response)[0]
         self.assertEqual(d, d2)
