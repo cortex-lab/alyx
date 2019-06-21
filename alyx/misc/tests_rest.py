@@ -16,8 +16,7 @@ class APIActionsTests(BaseTests):
     def test_create_lab_membership(self):
         # first test creation of lab through rest endpoint
         response = self.client.post(reverse('lab-list'), {'name': 'superlab'})
-        self.ar(response, 201)
-        d = response.data
+        d = self.ar(response, 201)
         self.assertTrue(d['name'])
         # create a membership
         lm = LabMembership.objects.create(user=self.superuser, lab=self.lab)
@@ -35,8 +34,7 @@ class APIActionsTests(BaseTests):
         self.assertTrue(set(self.superuser.lab) == set(['superlab', self.lab.name]))
         # now makes sure the REST endpoint returns the same thing
         response = self.client.get(reverse('user-list') + '/test')
-        self.ar(response, 200)
-        d = response.data
+        d = self.ar(response, 200)
         self.assertTrue(set(d['lab']) == set(self.superuser.lab))
 
     def test_user_rest(self):

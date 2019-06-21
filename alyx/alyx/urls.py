@@ -94,6 +94,12 @@ urlpatterns = [
     path('labs/<str:name>', mv.LabDetail.as_view(),
          name="lab-detail"),
 
+    path('locations', av.LabLocationList.as_view(),
+         name="location-list"),
+
+    path('locations/<str:name>', av.LabLocationAPIDetails.as_view(),
+         name="location-detail"),
+
     path('new-download', new_download, name='new-download'),
 
     path('projects', sv.ProjectList.as_view(),
