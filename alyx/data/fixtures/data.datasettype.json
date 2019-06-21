@@ -379,7 +379,7 @@
   "fields": {
    "json": null,
    "name": "_iblrig_ambientSensorData.raw",
-   "created_by": "36723bf5-050a-48ad-8129-aa60aa23a0c1",
+   "created_by": null,
    "description": "Temperature and humidity from sensor in rig",
    "filename_pattern": "_iblrig_ambientSensorData.raw.*"
   }
