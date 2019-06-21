@@ -195,3 +195,19 @@ class APIActionsTests(BaseTests):
         response = self.client.get(url)
         d2 = self.ar(response)[0]
         self.assertEqual(d, d2)
+
+    def test_list_retrieve_lab_locations(self):
+        # test list
+        url = reverse('location-list')
+        l = self.ar(self.client.get(url))
+        self.assertTrue(len(l) > 0)
+        self.assertEqual(set(l[0].keys()), {'name', 'json', 'lab'})
+        # test detail
+        url = reverse('location-detail', args=[l[0]['name']])
+        d = self.ar(self.client.get(url))
+        self.assertEqual(d, l[0])
+        # test patch
+        url = reverse('location-detail', args=[l[0]['name']])
+        json_dict = {'string': "look at me! I'm a new Json field"}
+        p = self.ar(self.client.patch(url, data={'json': json.dumps(json_dict)}))
+        self.assertEqual(p['json'], json_dict)

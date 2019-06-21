@@ -70,6 +70,20 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         required=False,)
 
 
+class LabLocationSerializer(serializers.ModelSerializer):
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        many=False,
+        required=False,)
+
+    class Meta:
+        model = LabLocation
+        fields = ('name', 'lab', 'json')
+
+
 class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     dataset_type = serializers.SlugRelatedField(
