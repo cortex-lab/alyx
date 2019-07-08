@@ -262,7 +262,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         iw = getattr(subject, 'implant_weight', None)
         rw = subject.water_control.weight() if subject else None
         form.base_fields['implant_weight'].initial = iw or 0
-        form.base_fields['reference_weight'].initial = rw or 0
+        if self.has_change_permission(request, obj):
+            form.base_fields['reference_weight'].initial = rw or 0
         return form
 
     form = WaterRestrictionForm
@@ -461,6 +462,17 @@ class SessionAdmin(BaseActionAdmin):
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['task_protocol', 'weighing']
 
+    def get_form(self, request, obj=None, **kwargs):
+        from subjects.admin import Project
+        from django.db.models import Q
+        form = super(SessionAdmin, self).get_form(request, obj, **kwargs)
+        if form.base_fields and not request.user.is_superuser:
+            # the projects edit box is limited to projects with no user or containing current user
+            form.base_fields['project'].queryset = Project.objects.filter(
+                Q(users=request.user.pk) | Q(users=None) | Q(pk=obj.project.pk)
+            ).distinct()
+        return form
+
     def get_queryset(self, request):
         queryset = super(SessionAdmin, self).get_queryset(request).prefetch_related(
             'subject__projects', 'users', 'data_dataset_session_related',
@@ -471,13 +483,6 @@ class SessionAdmin(BaseActionAdmin):
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
     user_list.short_description = 'users'
-
-    def project_list(self, obj):
-        projects = tuple(p.name for p in obj.subject.projects.all())
-        if obj.project:
-            projects += (obj.project.name,)
-        return sorted(set(projects))
-    project_list.short_description = 'Lab servers'
 
     def dataset_count(self, ses):
         cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),

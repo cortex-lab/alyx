@@ -70,6 +70,20 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         required=False,)
 
 
+class LabLocationSerializer(serializers.ModelSerializer):
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        many=False,
+        required=False,)
+
+    class Meta:
+        model = LabLocation
+        fields = ('name', 'lab', 'json')
+
+
 class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     dataset_type = serializers.SlugRelatedField(
@@ -96,30 +110,15 @@ class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
 class SessionListSerializer(BaseActionSerializer):
 
-    data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
-    wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
-
-    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
-                                           queryset=Project.objects.all(), required=False)
-
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related(
-            'subject', 'location', 'parent_session', 'lab', 'project')
-        queryset = queryset.prefetch_related(
-            'users', 'procedures',
-            'data_dataset_session_related',
-            'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__file_records',
-            'data_dataset_session_related__file_records__data_repository',
-            'wateradmin_session_related',
-        )
-        return queryset
+        queryset = queryset.select_related('subject')
+        return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = SESSION_FIELDS
+        fields = ('subject', 'start_time', 'number', 'url')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
@@ -139,7 +138,7 @@ class SessionDetailSerializer(BaseActionSerializer):
             'data_dataset_session_related__file_records__data_repository',
             'wateradmin_session_related',
         )
-        return queryset
+        return queryset.order_by('-start_time')
 
     class Meta:
         model = Session

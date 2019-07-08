@@ -10,6 +10,7 @@ from django.db.models import Case, When
 from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
+from django.db.models import Q
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url,
                        _iter_history_changes)
@@ -279,6 +280,11 @@ class SubjectForm(forms.ModelForm):
         if self.instance.line:
             self.fields['litter'].queryset = Litter.objects.filter(line=self.instance.line)
         self.fields['responsible_user'].queryset = get_user_model().objects.all()
+        if not self.request.user.is_superuser:
+            # the projects edit box is limited to projects with no user or containing current user
+            self.fields['projects'].queryset = Project.objects.filter(
+                Q(users=self.request.user.pk) | Q(users=None)
+            )
 
     def clean_responsible_user(self):
         old_ru = self.instance.responsible_user

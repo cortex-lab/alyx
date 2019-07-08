@@ -19,8 +19,9 @@ from subjects.models import Subject
 from .water_control import water_control, date as get_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType)
-from .serializers import (SessionListSerializer,
+    Weighing, WaterType, LabLocation)
+from .serializers import (LabLocationSerializer,
+                          SessionListSerializer,
                           SessionDetailSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
@@ -364,3 +365,22 @@ class WaterRestrictionList(generics.ListAPIView):
     serializer_class = WaterRestrictionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = WaterRestrictionFilter
+
+
+class LabLocationList(generics.ListAPIView):
+    """
+    Lists Lab Location
+    """
+    queryset = LabLocation.objects.all()
+    serializer_class = LabLocationSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of full detail and deleting a water administration.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = LabLocationSerializer
+    queryset = LabLocation.objects.all()
+    lookup_field = 'name'
