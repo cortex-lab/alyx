@@ -226,6 +226,7 @@ def _create_dataset_file_records(
     dataset.created_by = user
     # Validate the fields.
     dataset.full_clean()
+    dataset.save()
 
     # Create one file record per repository.
     exists_in = exists_in or ()

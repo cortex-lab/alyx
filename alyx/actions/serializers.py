@@ -113,12 +113,12 @@ class SessionListSerializer(BaseActionSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject')
+        queryset = queryset.select_related('subject', 'lab')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'url')
+        fields = ('subject', 'start_time', 'number', 'lab', 'url')
 
 
 class SessionDetailSerializer(BaseActionSerializer):

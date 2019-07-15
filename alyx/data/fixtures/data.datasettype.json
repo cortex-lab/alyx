@@ -735,5 +735,16 @@
    "description": "Channel which has the largest amplitude for this cluster. Note this counts all channels in the whole recording (starting from zero), rather than just the channels on this cluster's home probe - so if you want to find this cluster's brain location, it would be channels.brainLocation[clusters.peakChannel[i],:]",
    "filename_pattern": "clusters.peakChannel.npy"
   }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "ffe43f90-d13f-42ad-b2c9-38603a9a5439",
+  "fields": {
+   "json": null,
+   "name": "_ibl_leftCamera.dlc",
+   "created_by": null,
+   "description": "Raw DLC output for leftCamera",
+   "filename_pattern": "_ibl_leftCamera.dlc.*"
+  }
  }
 ]
