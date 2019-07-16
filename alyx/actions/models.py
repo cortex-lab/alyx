@@ -451,3 +451,31 @@ class NotificationRule(BaseModel):
     def __str__(self):
         return "<Notification rule for %s: %s '%s'>" % (
             self.user, self.notification_type, self.subjects_scope)
+
+
+class CullReason(BaseModel):
+    description = models.TextField(blank=True, max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class Cull(BaseModel):
+    """
+    Culling action
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                             on_delete=models.SET_NULL,
+                             help_text="The user who culled the subject")
+    subject = models.OneToOneField('subjects.Subject',
+                                   on_delete=models.CASCADE,
+                                   related_name='culling',
+                                   help_text="The culled subject")
+    date_time = models.DateField(null=False, blank=False)
+    cull_method = models.TextField(blank=True)
+    cull_reason = models.ForeignKey('CullReason', null=True, blank=True,
+                                    on_delete=models.SET_NULL,
+                                    help_text="Reason for culling the subject")
+
+    def __str__(self):
+        return "%s Cull" % (self.subject)

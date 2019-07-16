@@ -13,7 +13,7 @@ from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule
+                     Notification, NotificationRule, Cull, CullReason,
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
@@ -551,6 +551,17 @@ class NotificationRuleAdmin(BaseAdmin):
         )
 
 
+class CullAdmin(BaseAdmin):
+    list_display = ('subject', 'user', 'date_time', 'cull_reason', 'cull_method')
+    search_fields = ('user', 'subject')
+    fields = list_display
+    ordering = ('-date_time',)
+
+
+class CullReasonAdmin(BaseAdmin):
+    pass
+
+
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
@@ -565,3 +576,6 @@ admin.site.register(WaterType, WaterTypeAdmin)
 
 admin.site.register(Notification, NotificationAdmin)
 admin.site.register(NotificationRule, NotificationRuleAdmin)
+
+admin.site.register(Cull, CullAdmin)
+admin.site.register(CullReason, CullReasonAdmin)
