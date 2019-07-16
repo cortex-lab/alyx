@@ -161,7 +161,6 @@ class Subject(BaseModel):
                                default=default_source)
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
-    death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     genotype_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
@@ -184,8 +183,6 @@ class Subject(BaseModel):
     protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
                                        default=settings.DEFAULT_PROTOCOL)
     description = models.TextField(blank=True)
-
-    cull_method = models.TextField(blank=True)
     adverse_effects = models.TextField(blank=True)
     actual_severity = models.IntegerField(null=True, blank=True, choices=SEVERITY_CHOICES)
 
@@ -213,6 +210,11 @@ class Subject(BaseModel):
         self._water_control = None
         # Initialize the history of some fields.
         init_old_fields(self, self._fields_history + self._track_field_changes)
+
+    @property
+    def death_date(self):
+        if self.cull:
+            return self.cull.date
 
     @property
     def housing(self):
@@ -252,7 +254,7 @@ class Subject(BaseModel):
             return self.housing.subjects.exclude(pk=self.pk)
 
     def alive(self):
-        return self.death_date is None
+        return hasattr(self, 'cull')
     alive.boolean = True
 
     def nicknamesafe(self):

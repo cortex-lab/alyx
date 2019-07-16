@@ -56,9 +56,9 @@ class SubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(subject__death_date=None)
+            return queryset.filter(subject__cull__isnull=True)
         if self.value() == 'n':
-            return queryset.exclude(subject__death_date=None)
+            return queryset.exclude(subject__cull__isnull=True)
         elif self.value == 'all':
             return queryset.all()
 
@@ -117,7 +117,7 @@ class BaseActionForm(forms.ModelForm):
         if 'subject' in self.fields:
             inst = self.instance
             ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
-                                                        death_date=None).order_by('nickname')]
+                                                        cull__isnull=True).order_by('nickname')]
             if getattr(inst, 'subject', None):
                 ids = _bring_to_front(ids, inst.subject.pk)
             if getattr(self, 'last_subject_id', None):

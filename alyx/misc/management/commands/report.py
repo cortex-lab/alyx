@@ -189,10 +189,10 @@ class Command(BaseCommand):
             return
         surgery_done = set([surgery.subject.nickname for surgery in
                             Surgery.objects.filter(subject__responsible_user=user,
-                                                   subject__death_date__isnull=True)])
+                                                   subject__cull__isnull=True)])
         subjects_user = set([subject.nickname for subject in
                              Subject.objects.filter(responsible_user=user,
-                                                    death_date__isnull=True)])
+                                                    cull__isnull=True)])
         surgery_pending = sorted(subjects_user - surgery_done)
         if not surgery_pending:
             return
@@ -230,9 +230,9 @@ class Command(BaseCommand):
 
     def make_todo(self):
         tbg = Subject.objects.filter(to_be_genotyped=True).order_by('nickname')
-        tbc = Subject.objects.filter(death_date__isnull=True,
+        tbc = Subject.objects.filter(cull__isnull=True,
                                      to_be_culled=True).order_by('nickname')
-        tbr = Subject.objects.filter(death_date__isnull=False,
+        tbr = Subject.objects.filter(cull__isnull=False,
                                      reduced=False).order_by('nickname')
 
         text = "%d mice to be genotyped:\n" % len(tbg)
