@@ -552,10 +552,10 @@ class NotificationRuleAdmin(BaseAdmin):
 
 
 class CullAdmin(BaseAdmin):
-    list_display = ('subject', 'user', 'date_time', 'cull_reason', 'cull_method')
+    list_display = ('subject', 'user', 'date', 'cull_reason', 'cull_method')
     search_fields = ('user', 'subject')
     fields = list_display
-    ordering = ('-date_time',)
+    ordering = ('-date',)
 
 
 class CullReasonAdmin(BaseAdmin):

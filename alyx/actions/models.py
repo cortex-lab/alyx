@@ -471,7 +471,7 @@ class Cull(BaseModel):
                                    on_delete=models.CASCADE,
                                    related_name='culling',
                                    help_text="The culled subject")
-    date_time = models.DateField(null=False, blank=False)
+    date = models.DateField(null=False, blank=False)
     cull_method = models.TextField(blank=True)
     cull_reason = models.ForeignKey('CullReason', null=True, blank=True,
                                     on_delete=models.SET_NULL,
