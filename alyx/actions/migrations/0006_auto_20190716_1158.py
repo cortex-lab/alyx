@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='cull',
             name='subject',
-            field=models.OneToOneField(help_text='The culled subject', on_delete=django.db.models.deletion.CASCADE, related_name='culling', to='subjects.Subject'),
+            field=models.OneToOneField(help_text='The culled subject', on_delete=django.db.models.deletion.CASCADE, related_name='cull', to='subjects.Subject'),
         ),
         migrations.AddField(
             model_name='cull',

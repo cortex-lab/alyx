@@ -467,9 +467,8 @@ class Cull(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                              on_delete=models.SET_NULL,
                              help_text="The user who culled the subject")
-    subject = models.OneToOneField('subjects.Subject',
+    subject = models.OneToOneField('subjects.Subject', related_name='cull',
                                    on_delete=models.CASCADE,
-                                   related_name='culling',
                                    help_text="The culled subject")
     date = models.DateField(null=False, blank=False)
     cull_method = models.TextField(blank=True)
