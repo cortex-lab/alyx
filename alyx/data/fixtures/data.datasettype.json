@@ -50,7 +50,7 @@
    "json": null,
    "name": "_ibl_passiveTrials.stimOn_times",
    "created_by": null,
-   "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
+   "description": "Times of stimulus onset in absolute seconds",
    "filename_pattern": "_ibl_passiveTrials.stimOn_times.*"
   }
  },
@@ -745,6 +745,17 @@
    "created_by": null,
    "description": "Raw DLC output for leftCamera",
    "filename_pattern": "_ibl_leftCamera.dlc.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "7e27c540-e61d-401f-b774-54d573886a6c",
+  "fields": {
+   "json": null,
+   "name": "_ibl_trials.stimOnTrigger_times",
+   "created_by": null,
+   "description": "Times of stimulus onset trigger command",
+   "filename_pattern": "_ibl_trials.stimOnTrigger_times.*"
   }
  }
 ]
