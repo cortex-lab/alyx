@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
                 ('date', models.DateField()),
                 ('cull_method', models.TextField(blank=True)),
-                ('description', models.TextField(blank=True, max_length=255)),
+                ('description', models.TextField(blank=True, max_length=255,  help_text='Narrative/Details')),
             ],
             options={
                 'abstract': False,
