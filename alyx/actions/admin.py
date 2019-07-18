@@ -552,14 +552,15 @@ class NotificationRuleAdmin(BaseAdmin):
 
 
 class CullAdmin(BaseAdmin):
-    list_display = ('subject', 'user', 'date', 'cull_reason', 'cull_method')
+    list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
     search_fields = ('user', 'subject')
-    fields = list_display
+    fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
 
-
-class CullReasonAdmin(BaseAdmin):
-    pass
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
@@ -578,4 +579,4 @@ admin.site.register(Notification, NotificationAdmin)
 admin.site.register(NotificationRule, NotificationRuleAdmin)
 
 admin.site.register(Cull, CullAdmin)
-admin.site.register(CullReason, CullReasonAdmin)
+admin.site.register(CullReason, BaseAdmin)

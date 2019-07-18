@@ -161,6 +161,7 @@ class Subject(BaseModel):
                                default=default_source)
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     birth_date = models.DateField(null=True, blank=True)
+    death_date = models.DateField(null=True, blank=True)
     wean_date = models.DateField(null=True, blank=True)
     genotype_date = models.DateField(null=True, blank=True)
     responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
@@ -183,6 +184,8 @@ class Subject(BaseModel):
     protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
                                        default=settings.DEFAULT_PROTOCOL)
     description = models.TextField(blank=True)
+
+    cull_method = models.TextField(blank=True)
     adverse_effects = models.TextField(blank=True)
     actual_severity = models.IntegerField(null=True, blank=True, choices=SEVERITY_CHOICES)
 
@@ -210,11 +213,6 @@ class Subject(BaseModel):
         self._water_control = None
         # Initialize the history of some fields.
         init_old_fields(self, self._fields_history + self._track_field_changes)
-
-    @property
-    def death_date(self):
-        if self.cull:
-            return self.cull.date
 
     @property
     def housing(self):
@@ -320,6 +318,7 @@ class Subject(BaseModel):
                         for test in tests)
 
     def save(self, *args, **kwargs):
+        from actions.models import WaterRestriction, Cull
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
@@ -335,13 +334,22 @@ class Subject(BaseModel):
             self.to_be_genotyped = False
         # When a subject dies.
         if self.death_date and not _get_old_field(self, 'death_date'):
-            from actions.models import WaterRestriction
             # Close all water restrictions without an end date.
             for wr in WaterRestriction.objects.filter(subject=self,
                                                       start_time__isnull=False,
                                                       end_time__isnull=True):
                 wr.end_time = self.death_date
                 wr.save()
+        # deal with the synchronisation of cull object, ideally this should be done in a form
+        if self.death_date and not hasattr(self, 'cull'):
+            Cull.objects.create(subject=self, cull_method=self.cull_method, date=self.death_date,
+                                user=self.responsible_user)
+        if hasattr(self, 'cull') and self.cull_method != self.cull.cull_method:
+            self.cull.cull_method = self.cull_method
+            self.cull.save()
+        if hasattr(self, 'cull') and self.death_date != self.cull.date:
+            self.cull.date = self.death_date
+            self.cull.save()
         # Save the reduced date.
         if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = timezone.now().date()

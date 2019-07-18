@@ -475,6 +475,19 @@ class Cull(BaseModel):
     cull_reason = models.ForeignKey('CullReason', null=True, blank=True,
                                     on_delete=models.SET_NULL,
                                     help_text="Reason for culling the subject")
+    description = models.TextField(blank=True, max_length=255, help_text='Narrative/Details')
 
     def __str__(self):
         return "%s Cull" % (self.subject)
+
+    def save(self, *args, **kwargs):
+        subject_change = False
+        if self.subject.death_date != self.date:
+            self.subject.death_date = self.date
+            subject_change = True
+        if self.subject.cull_method != self.cull_method:
+            self.subject.cull_method = self.cull_method
+            subject_change = True
+        if subject_change:
+            self.subject.save()
+        return super(Cull, self).save(*args, **kwargs)

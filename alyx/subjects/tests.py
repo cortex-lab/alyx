@@ -11,6 +11,8 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 
 from .admin import mysite
+from subjects.models import Subject
+from actions.models import Cull
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -238,3 +240,35 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert a.allele == allele
         assert a.subject == subject
         assert a.zygosity == 2
+
+
+class SubjectCullTests(TestCase):
+
+    def setUp(self):
+        self.sub1 = Subject.objects.create(nickname='basil')
+        self.sub2 = Subject.objects.create(nickname='loretta')
+
+    def test_update_cull_object(self):
+        self.assertFalse(hasattr(self.sub1, 'cull'))
+        # makes sure than when creating the cull
+        cull = Cull.objects.create(subject=self.sub1, date='2019-07-15')
+        self.assertEqual(self.sub1.death_date, cull.date)
+        # change cull properties and make sure the corresponding subject properties changed too
+        cull.cull_method = 'CO2'
+        cull.date = '2019-07-16'
+        cull.save()
+        self.assertEqual(self.sub1.cull_method, cull.cull_method)
+        self.assertEqual(self.sub1.death_date, cull.date)
+
+    def test_update_subject_death(self):
+        # now add a death date and make sure a cull action is created
+        self.assertFalse(hasattr(self.sub2, 'cull'))
+        self.sub2.death_date = '2019-07-18'
+        self.sub2.save()
+        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
+        # it should work on updates too
+        self.sub2.death_date = '2019-07-11'
+        self.sub2.cull_method = 'CO2'
+        self.sub2.save()
+        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
+        self.assertEqual(self.sub2.cull.cull_method, self.sub2.cull_method)

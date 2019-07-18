@@ -7,6 +7,17 @@ import django.db.models.deletion
 import uuid
 
 
+def sync_cull(apps, scheme):
+    print(apps)
+    from subjects.models import Subject
+    from actions.models import Cull
+
+    subs = Subject.objects.filter(death_date__isnull=False)
+    for sub in subs:
+        cul = Cull.objects.create(subject=sub, date=sub.death_date, cull_method=sub.cull_method,
+                                  user=sub.responsible_user)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -24,6 +35,7 @@ class Migration(migrations.Migration):
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
                 ('date', models.DateField()),
                 ('cull_method', models.TextField(blank=True)),
+                ('description', models.TextField(blank=True, max_length=255)),
             ],
             options={
                 'abstract': False,
@@ -56,4 +68,5 @@ class Migration(migrations.Migration):
             name='user',
             field=models.ForeignKey(blank=True, help_text='The user who culled the subject', null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
         ),
+        migrations.RunPython(sync_cull),
     ]
