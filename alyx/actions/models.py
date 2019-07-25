@@ -500,4 +500,10 @@ class Cull(BaseModel):
             subject_change = True
         if subject_change:
             self.subject.save()
+            # End all open water restrictions.
+            for wr in WaterRestriction.objects.filter(
+                    subject=self.subject, start_time__isnull=False, end_time__isnull=True):
+                wr.end_time = self.date
+                logger.debug("Ending water restriction %s.", wr)
+                wr.save()
         return super(Cull, self).save(*args, **kwargs)

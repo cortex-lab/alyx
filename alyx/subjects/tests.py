@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from operator import attrgetter
 import os.path as op
@@ -12,7 +13,7 @@ from django.test.client import RequestFactory
 
 from .admin import mysite
 from subjects.models import Subject
-from actions.models import Cull, CullMethod
+from actions.models import Cull, CullMethod, WaterRestriction
 from misc.models import Lab
 
 logger = logging.getLogger(__file__)
@@ -250,18 +251,29 @@ class SubjectCullTests(TestCase):
         self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab)
         self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab)
         self.CO2 = CullMethod.objects.create(name='CO2')
+        self.decapitation = CullMethod.objects.create(name='decapitation')
+        self.wr = WaterRestriction.objects.create(
+            subject=self.sub1, start_time=datetime(2019, 1, 1, 12, 0, 0))
 
     def test_update_cull_object(self):
         self.assertFalse(hasattr(self.sub1, 'cull'))
+        # self.assertIsNone(self.wr.end_time)
         # makes sure than when creating the cull
         cull = Cull.objects.create(subject=self.sub1, date='2019-07-15', cull_method=self.CO2)
         self.assertEqual(self.sub1.death_date, cull.date)
         # change cull properties and make sure the corresponding subject properties changed too
-        # cull.cull_method = self.CO2
+        cull.cull_method = self.decapitation
         cull.date = '2019-07-16'
         cull.save()
         self.assertEqual(self.sub1.cull_method, str(cull.cull_method))
         self.assertEqual(self.sub1.death_date, cull.date)
+        # [CR] WARNING: the water restriction is closed at the first save (Cull creation), but NOT
+        # at the second save, when the cull date has been changed. I don't think the closed
+        # water restriction's end time should be silently updated to reflect this.
+        # This is why we have a NotEqual.
+        self.assertNotEqual(
+            WaterRestriction.objects.get(subject=self.sub1).end_time.strftime('%Y-%m-%d'),
+            cull.date)
 
     def test_update_subject_death(self):
         # now add a death date and make sure a cull action is created
