@@ -13,7 +13,7 @@ from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule, Cull, CullReason,
+                     Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
@@ -580,3 +580,4 @@ admin.site.register(NotificationRule, NotificationRuleAdmin)
 
 admin.site.register(Cull, CullAdmin)
 admin.site.register(CullReason, BaseAdmin)
+admin.site.register(CullMethod, BaseAdmin)

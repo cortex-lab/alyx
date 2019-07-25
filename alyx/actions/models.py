@@ -460,22 +460,32 @@ class CullReason(BaseModel):
         return self.name
 
 
+class CullMethod(BaseModel):
+    description = models.TextField(blank=True, max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class Cull(BaseModel):
     """
     Culling action
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
-                             on_delete=models.SET_NULL,
-                             help_text="The user who culled the subject")
-    subject = models.OneToOneField('subjects.Subject', related_name='cull',
-                                   on_delete=models.CASCADE,
-                                   help_text="The culled subject")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="The user who culled the subject")
+    subject = models.OneToOneField(
+        'subjects.Subject', related_name='cull', on_delete=models.CASCADE,
+        help_text="The culled subject")
     date = models.DateField(null=False, blank=False)
-    cull_method = models.TextField(blank=True)
-    cull_reason = models.ForeignKey('CullReason', null=True, blank=True,
-                                    on_delete=models.SET_NULL,
-                                    help_text="Reason for culling the subject")
     description = models.TextField(blank=True, max_length=255, help_text='Narrative/Details')
+
+    cull_reason = models.ForeignKey(
+        CullReason, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="Reason for culling the subject")
+    cull_method = models.ForeignKey(
+        CullMethod, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="How the subject was culled")
 
     def __str__(self):
         return "%s Cull" % (self.subject)
