@@ -13,6 +13,7 @@ from django.test.client import RequestFactory
 from .admin import mysite
 from subjects.models import Subject
 from actions.models import Cull
+from misc.models import Lab
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -245,8 +246,9 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
 class SubjectCullTests(TestCase):
 
     def setUp(self):
-        self.sub1 = Subject.objects.create(nickname='basil')
-        self.sub2 = Subject.objects.create(nickname='loretta')
+        self.lab = Lab.objects.create(name='awesomelab')
+        self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab)
+        self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab)
 
     def test_update_cull_object(self):
         self.assertFalse(hasattr(self.sub1, 'cull'))
