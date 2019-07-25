@@ -318,7 +318,7 @@ class Subject(BaseModel):
                         for test in tests)
 
     def save(self, *args, **kwargs):
-        from actions.models import WaterRestriction, Cull
+        from actions.models import WaterRestriction, Cull, CullMethod
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
@@ -341,11 +341,14 @@ class Subject(BaseModel):
                 wr.end_time = self.death_date
                 wr.save()
         # deal with the synchronisation of cull object, ideally this should be done in a form
+        # Get the cull_method instance with the same name, if it exists, or None.
+        cull_method = CullMethod.objects.filter(name=self.cull_method).first()
         if self.death_date and not hasattr(self, 'cull'):
-            Cull.objects.create(subject=self, cull_method=self.cull_method, date=self.death_date,
-                                user=self.responsible_user)
-        if hasattr(self, 'cull') and self.cull_method != self.cull.cull_method:
-            self.cull.cull_method = self.cull_method
+            Cull.objects.create(
+                subject=self, cull_method=cull_method, date=self.death_date,
+                user=self.responsible_user)
+        if hasattr(self, 'cull') and self.cull_method != str(self.cull.cull_method):
+            self.cull.cull_method = cull_method
             self.cull.save()
         if hasattr(self, 'cull') and self.death_date != self.cull.date:
             self.cull.date = self.death_date

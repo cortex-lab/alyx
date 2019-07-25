@@ -495,8 +495,8 @@ class Cull(BaseModel):
         if self.subject.death_date != self.date:
             self.subject.death_date = self.date
             subject_change = True
-        if self.subject.cull_method != self.cull_method:
-            self.subject.cull_method = self.cull_method
+        if self.subject.cull_method != str(self.cull_method):
+            self.subject.cull_method = str(self.cull_method)
             subject_change = True
         if subject_change:
             self.subject.save()

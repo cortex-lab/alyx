@@ -12,7 +12,7 @@ from django.test.client import RequestFactory
 
 from .admin import mysite
 from subjects.models import Subject
-from actions.models import Cull
+from actions.models import Cull, CullMethod
 from misc.models import Lab
 
 logger = logging.getLogger(__file__)
@@ -249,17 +249,18 @@ class SubjectCullTests(TestCase):
         self.lab = Lab.objects.create(name='awesomelab')
         self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab)
         self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab)
+        self.CO2 = CullMethod.objects.create(name='CO2')
 
     def test_update_cull_object(self):
         self.assertFalse(hasattr(self.sub1, 'cull'))
         # makes sure than when creating the cull
-        cull = Cull.objects.create(subject=self.sub1, date='2019-07-15')
+        cull = Cull.objects.create(subject=self.sub1, date='2019-07-15', cull_method=self.CO2)
         self.assertEqual(self.sub1.death_date, cull.date)
         # change cull properties and make sure the corresponding subject properties changed too
-        cull.cull_method = 'CO2'
+        # cull.cull_method = self.CO2
         cull.date = '2019-07-16'
         cull.save()
-        self.assertEqual(self.sub1.cull_method, cull.cull_method)
+        self.assertEqual(self.sub1.cull_method, str(cull.cull_method))
         self.assertEqual(self.sub1.death_date, cull.date)
 
     def test_update_subject_death(self):
@@ -273,4 +274,4 @@ class SubjectCullTests(TestCase):
         self.sub2.cull_method = 'CO2'
         self.sub2.save()
         self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
-        self.assertEqual(self.sub2.cull.cull_method, self.sub2.cull_method)
+        self.assertEqual(str(self.sub2.cull.cull_method), self.sub2.cull_method)
