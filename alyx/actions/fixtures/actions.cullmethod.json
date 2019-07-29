@@ -1,0 +1,56 @@
+[
+{
+ "model": "actions.cullmethod",
+ "pk": "01a5a8d8-a233-48e2-b2a7-ac0580034ac8",
+ "fields": {
+  "name": "Cervical Dislocation",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullmethod",
+ "pk": "0694060a-1797-4529-8e59-5f39423866f3",
+ "fields": {
+  "name": "Overdose",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullmethod",
+ "pk": "13407b51-a6ba-4176-9dea-b852741f8eb4",
+ "fields": {
+  "name": "CO2",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullmethod",
+ "pk": "4e166f8c-6c22-4b7a-8dd3-d8b810d02981",
+ "fields": {
+  "name": "Decapitation",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullmethod",
+ "pk": "6988037c-4c9e-46a4-94f7-e2509741089e",
+ "fields": {
+  "name": "Cooling",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullmethod",
+ "pk": "a10c2b09-f52a-4a11-8333-f95cb2ee478f",
+ "fields": {
+  "name": "Concussion of the Brain",
+  "json": null,
+  "description": ""
+ }
+}
+]
