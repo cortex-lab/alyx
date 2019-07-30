@@ -451,3 +451,59 @@ class NotificationRule(BaseModel):
     def __str__(self):
         return "<Notification rule for %s: %s '%s'>" % (
             self.user, self.notification_type, self.subjects_scope)
+
+
+class CullReason(BaseModel):
+    description = models.TextField(blank=True, max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class CullMethod(BaseModel):
+    description = models.TextField(blank=True, max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class Cull(BaseModel):
+    """
+    Culling action
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="The user who culled the subject")
+    subject = models.OneToOneField(
+        'subjects.Subject', related_name='cull', on_delete=models.CASCADE,
+        help_text="The culled subject")
+    date = models.DateField(null=False, blank=False)
+    description = models.TextField(blank=True, max_length=255, help_text='Narrative/Details')
+
+    cull_reason = models.ForeignKey(
+        CullReason, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="Reason for culling the subject")
+    cull_method = models.ForeignKey(
+        CullMethod, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="How the subject was culled")
+
+    def __str__(self):
+        return "%s Cull" % (self.subject)
+
+    def save(self, *args, **kwargs):
+        subject_change = False
+        if self.subject.death_date != self.date:
+            self.subject.death_date = self.date
+            subject_change = True
+        if self.subject.cull_method != str(self.cull_method):
+            self.subject.cull_method = str(self.cull_method)
+            subject_change = True
+        if subject_change:
+            self.subject.save()
+            # End all open water restrictions.
+            for wr in WaterRestriction.objects.filter(
+                    subject=self.subject, start_time__isnull=False, end_time__isnull=True):
+                wr.end_time = self.date
+                logger.debug("Ending water restriction %s.", wr)
+                wr.save()
+        return super(Cull, self).save(*args, **kwargs)

@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from operator import attrgetter
 import os.path as op
@@ -11,6 +12,9 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 
 from .admin import mysite
+from subjects.models import Subject
+from actions.models import Cull, CullMethod, WaterRestriction
+from misc.models import Lab
 
 logger = logging.getLogger(__file__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -238,3 +242,48 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert a.allele == allele
         assert a.subject == subject
         assert a.zygosity == 2
+
+
+class SubjectCullTests(TestCase):
+
+    def setUp(self):
+        self.lab = Lab.objects.create(name='awesomelab')
+        self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab)
+        self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab)
+        self.CO2 = CullMethod.objects.create(name='CO2')
+        self.decapitation = CullMethod.objects.create(name='decapitation')
+        self.wr = WaterRestriction.objects.create(
+            subject=self.sub1, start_time=datetime(2019, 1, 1, 12, 0, 0))
+
+    def test_update_cull_object(self):
+        self.assertFalse(hasattr(self.sub1, 'cull'))
+        # self.assertIsNone(self.wr.end_time)
+        # makes sure than when creating the cull
+        cull = Cull.objects.create(subject=self.sub1, date='2019-07-15', cull_method=self.CO2)
+        self.assertEqual(self.sub1.death_date, cull.date)
+        # change cull properties and make sure the corresponding subject properties changed too
+        cull.cull_method = self.decapitation
+        cull.date = '2019-07-16'
+        cull.save()
+        self.assertEqual(self.sub1.cull_method, str(cull.cull_method))
+        self.assertEqual(self.sub1.death_date, cull.date)
+        # [CR] WARNING: the water restriction is closed at the first save (Cull creation), but NOT
+        # at the second save, when the cull date has been changed. I don't think the closed
+        # water restriction's end time should be silently updated to reflect this.
+        # This is why we have a NotEqual.
+        self.assertNotEqual(
+            WaterRestriction.objects.get(subject=self.sub1).end_time.strftime('%Y-%m-%d'),
+            cull.date)
+
+    def test_update_subject_death(self):
+        # now add a death date and make sure a cull action is created
+        self.assertFalse(hasattr(self.sub2, 'cull'))
+        self.sub2.death_date = '2019-07-18'
+        self.sub2.save()
+        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
+        # it should work on updates too
+        self.sub2.death_date = '2019-07-11'
+        self.sub2.cull_method = 'CO2'
+        self.sub2.save()
+        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
+        self.assertEqual(str(self.sub2.cull.cull_method), self.sub2.cull_method)

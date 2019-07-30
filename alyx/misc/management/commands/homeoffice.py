@@ -90,7 +90,7 @@ class Command(BaseCommand):
         start_date = options.get('start_date')
         end_date = options.get('end_date')
 
-        k = Subject.objects.filter(killed(start_date, end_date)).order_by('death_date')
+        k = Subject.objects.filter(killed(start_date, end_date)).order_by('cull__date')
         g = Subject.objects.filter(genotyped(start_date, end_date)).order_by('genotype_date')
         tkg = transgenic(k & g)
 

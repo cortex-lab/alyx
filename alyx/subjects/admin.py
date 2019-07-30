@@ -80,9 +80,9 @@ class SubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(death_date=None)
+            return queryset.filter(cull__isnull=True)
         if self.value() == 'n':
-            return queryset.exclude(death_date=None)
+            return queryset.exclude(cull__isnull=True)
         elif self.value == 'all':
             return queryset.all()
 
@@ -157,7 +157,7 @@ class TodoFilter(DefaultListFilter):
         elif self.value() == 'c':
             return queryset.filter(to_be_culled=True)
         elif self.value() == 'r':
-            return queryset.filter(death_date__isnull=False, reduced=False)
+            return queryset.filter(cull__isnull=False, reduced=False)
 
 
 class LineDropdownFilter(RelatedDropdownFilter):
@@ -303,12 +303,12 @@ class SubjectAdmin(BaseAdmin):
     HOUSING_FIELDS = ('housing_l', 'cage_name', 'cage_type', 'light_cycle', 'enrichment',
                       'food', 'cage_mates_l')
     fieldsets = (
-        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days',
-                                'responsible_user',
-                                'request',
-                                'wean_date',
+        ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
+                                'request', 'wean_date',
                                 ('to_be_genotyped', 'genotype_date',),
-                                ('to_be_culled', 'death_date', 'reduced', 'reduced_date',),
+                                ('death_date', 'to_be_culled'),
+                                ('reduced_date', 'reduced'),
+                                ('cull_', 'cull_reason_'),
                                 'ear_mark',
                                 'protocol_number', 'description',
                                 'lab', 'projects', 'json', 'subject_history')}),
@@ -349,7 +349,7 @@ class SubjectAdmin(BaseAdmin):
                      ]
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
-                       'cage_changes',
+                       'cage_changes', 'cull_', 'cull_reason_',
                        ) + fieldsets[4][1]['fields'][1:] + HOUSING_FIELDS  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
@@ -398,6 +398,18 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<a href="{url}">{breeding_pair}</a>',
                            breeding_pair=bp or '-', url=url)
     breeding_pair_l.short_description = 'BP'
+
+    def cull_reason_(self, obj):
+        if hasattr(obj, 'cull'):
+            return obj.cull.cull_reason
+    cull_reason_.short_description = 'cull reason'
+
+    def cull_(self, obj):
+        if not hasattr(obj, 'cull'):
+            return
+        url = get_admin_url(obj.cull)
+        return format_html('<a href="{url}">{cull}</a>', cull=obj.cull or '-', url=url)
+    cull_.short_description = 'cull object'
 
     def housing_l(self, obj):
         url = get_admin_url(obj.housing)
@@ -467,8 +479,7 @@ class SubjectAdmin(BaseAdmin):
     def get_queryset(self, request):
         return super(SubjectAdmin, self).get_queryset(request).select_related(
             'request', 'request__user'
-        ).prefetch_related(
-            'zygosity_set')
+        ).prefetch_related('zygosity_set', 'cull')
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
@@ -537,7 +548,7 @@ class SubjectAdmin(BaseAdmin):
     def save_model(self, request, obj, form, change):
         if obj.reduced_date is not None and not obj.reduced:
             obj.reduced = True
-        if obj.death_date is not None and obj.to_be_culled:
+        if hasattr(obj, 'cull') and obj.to_be_culled:
             obj.to_be_culled = False
         super(SubjectAdmin, self).save_model(request, obj, form, change)
 
@@ -1260,6 +1271,10 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
                    ]
     list_editable = []
 
+    def cull_method(self, obj):
+        if obj.cull:
+            return obj.cull.cull_method
+
     def has_add_permission(self, request):
         return False
 
@@ -1291,23 +1306,20 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(death_date=None)
+            return queryset.filter(cull__isnull=True)
         if self.value() == 'n':
-            return queryset.exclude(death_date=None)
+            return queryset.exclude(cull__isnull=True)
         if self.value() == 'nr':
-            return queryset.filter(reduced=False).exclude(death_date=None)
+            return queryset.filter(reduced=False).exclude(cull__isnull=True)
         if self.value() == 'tbc':
-            return queryset.filter(to_be_culled=True, death_date=None)
+            return queryset.filter(to_be_culled=True, cull__isnull=True)
         elif self.value == 'all':
             return queryset.all()
 
 
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'birth_date', 'sex_f',
-                    'ear_mark', 'line', 'zygosities',
-                    'cage', 'responsible_user',
-                    'death_date', 'to_be_culled', 'reduced',
-                    ]
+    list_display = ['nickname', 'birth_date', 'death_date', 'sex_f', 'ear_mark',
+                    'line', 'cage', 'responsible_user', 'to_be_culled', 'reduced', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
@@ -1315,12 +1327,20 @@ class CullMiceAdmin(SubjectAdmin):
                    ]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 
+    ordering = ('-birth_date',)
+
     def sex_f(self, obj):
         return obj.sex[0] if obj.sex else ''
     sex_f.short_description = 'sex'
 
     def has_add_permission(self, request):
         return False
+
+    def cull_l(self, obj):
+        if hasattr(obj, 'cull'):
+            url = get_admin_url(obj.cull)
+            return format_html('<a href="{url}">{cull}</a>', cull=obj.cull.date or '-', url=url)
+    cull_l.short_description = 'cull'
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')

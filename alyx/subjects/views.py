@@ -11,7 +11,7 @@ from .serializers import (SubjectListSerializer,
 
 
 class SubjectFilter(FilterSet):
-    alive = django_filters.BooleanFilter('death_date', lookup_expr='isnull')
+    alive = django_filters.BooleanFilter('cull', lookup_expr='isnull')
     responsible_user = django_filters.CharFilter('responsible_user__username')
     stock = django_filters.BooleanFilter('responsible_user', method='filter_stock')
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
@@ -37,7 +37,7 @@ class SubjectFilter(FilterSet):
                 (SELECT subject_id FROM actions_waterrestriction
                 WHERE end_time IS NULL)
                 '''])
-        return qs.filter(death_date=None)
+        return qs.filter(cull__isnull=True)
 
     class Meta:
         model = Subject

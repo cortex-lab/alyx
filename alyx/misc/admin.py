@@ -171,7 +171,7 @@ class HousingSubjectAdminInline(admin.TabularInline):
 
     def get_queryset(self, request):
         qs = super(HousingSubjectAdminInline, self).get_queryset(request)
-        return qs.filter(subject__death_date__isnull=True)
+        return qs.filter(subject__cull__isnull=True)
 
 
 class HousingAdminForm(forms.ModelForm):
