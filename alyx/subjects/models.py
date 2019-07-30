@@ -252,7 +252,7 @@ class Subject(BaseModel):
             return self.housing.subjects.exclude(pk=self.pk)
 
     def alive(self):
-        return self.death_date is None
+        return hasattr(self, 'cull')
     alive.boolean = True
 
     def nicknamesafe(self):
@@ -318,6 +318,7 @@ class Subject(BaseModel):
                         for test in tests)
 
     def save(self, *args, **kwargs):
+        from actions.models import WaterRestriction, Cull, CullMethod
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
@@ -333,13 +334,25 @@ class Subject(BaseModel):
             self.to_be_genotyped = False
         # When a subject dies.
         if self.death_date and not _get_old_field(self, 'death_date'):
-            from actions.models import WaterRestriction
             # Close all water restrictions without an end date.
             for wr in WaterRestriction.objects.filter(subject=self,
                                                       start_time__isnull=False,
                                                       end_time__isnull=True):
                 wr.end_time = self.death_date
                 wr.save()
+        # deal with the synchronisation of cull object, ideally this should be done in a form
+        # Get the cull_method instance with the same name, if it exists, or None.
+        cull_method = CullMethod.objects.filter(name=self.cull_method).first()
+        if self.death_date and not hasattr(self, 'cull'):
+            Cull.objects.create(
+                subject=self, cull_method=cull_method, date=self.death_date,
+                user=self.responsible_user)
+        if hasattr(self, 'cull') and self.cull_method != str(self.cull.cull_method):
+            self.cull.cull_method = cull_method
+            self.cull.save()
+        if hasattr(self, 'cull') and self.death_date != self.cull.date:
+            self.cull.date = self.death_date
+            self.cull.save()
         # Save the reduced date.
         if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = timezone.now().date()

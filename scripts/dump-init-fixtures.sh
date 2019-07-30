@@ -4,6 +4,8 @@ source ../alyxvenv/bin/activate
 
 ./manage.py dumpdata actions.proceduretype --indent 1 -o ./actions/fixtures/actions.proceduretype.json
 ./manage.py dumpdata actions.watertype --indent 1 -o ./actions/fixtures/actions.watertype.json
+./manage.py dumpdata actions.cullreason --indent 1 -o ./actions/fixtures/actions.cullreason.json
+./manage.py dumpdata actions.cullmethod --indent 1 -o ./actions/fixtures/actions.cullmethod.json
 
 ./manage.py dumpdata data.datarepositorytype --indent 1 -o ./data/fixtures/data.datarepositorytype.json
 ./manage.py dumpdata data.dataformat --indent 1 -o ./data/fixtures/data.dataformat.json

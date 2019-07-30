@@ -13,7 +13,7 @@ from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule
+                     Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
@@ -56,9 +56,9 @@ class SubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(subject__death_date=None)
+            return queryset.filter(subject__cull__isnull=True)
         if self.value() == 'n':
-            return queryset.exclude(subject__death_date=None)
+            return queryset.exclude(subject__cull__isnull=True)
         elif self.value == 'all':
             return queryset.all()
 
@@ -117,7 +117,7 @@ class BaseActionForm(forms.ModelForm):
         if 'subject' in self.fields:
             inst = self.instance
             ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
-                                                        death_date=None).order_by('nickname')]
+                                                        cull__isnull=True).order_by('nickname')]
             if getattr(inst, 'subject', None):
                 ids = _bring_to_front(ids, inst.subject.pk)
             if getattr(self, 'last_subject_id', None):
@@ -552,6 +552,18 @@ class NotificationRuleAdmin(BaseAdmin):
         )
 
 
+class CullAdmin(BaseAdmin):
+    list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
+    search_fields = ('user', 'subject')
+    fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
+    ordering = ('-date',)
+
+    def subject_l(self, obj):
+        url = get_admin_url(obj.subject)
+        return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
+    subject_l.short_description = 'subject'
+
+
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
 admin.site.register(Weighing, WeighingAdmin)
 admin.site.register(WaterAdministration, WaterAdministrationAdmin)
@@ -566,3 +578,7 @@ admin.site.register(WaterType, WaterTypeAdmin)
 
 admin.site.register(Notification, NotificationAdmin)
 admin.site.register(NotificationRule, NotificationRuleAdmin)
+
+admin.site.register(Cull, CullAdmin)
+admin.site.register(CullReason, BaseAdmin)
+admin.site.register(CullMethod, BaseAdmin)

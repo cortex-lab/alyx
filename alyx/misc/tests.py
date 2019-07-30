@@ -19,12 +19,12 @@ class HousingTests(TestCase):
         Housing.objects.all().delete()
         HousingSubject.objects.all().delete()
         self.hou1 = Housing.objects.create(cage_name='housing_1')
-        subs1 = Subject.objects.filter(death_date__isnull=True)[0:1]
+        subs1 = Subject.objects.filter(cull__isnull=True)[0:1]
         for sub in subs1:
             HousingSubject.objects.create(subject=sub, housing=self.hou1,
                                           start_datetime=datetime.now() - timedelta(seconds=3600))
         self.hou2 = Housing.objects.create(cage_name='housing_2')
-        subs2 = Subject.objects.filter(death_date__isnull=True)[1:]
+        subs2 = Subject.objects.filter(cull__isnull=True)[1:]
         for sub in subs2:
             HousingSubject.objects.create(subject=sub, housing=self.hou2,
                                           start_datetime=datetime.now() - timedelta(seconds=3600))

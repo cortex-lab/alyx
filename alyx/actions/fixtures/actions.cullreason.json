@@ -1,0 +1,65 @@
+[
+{
+ "model": "actions.cullreason",
+ "pk": "0d8d52d8-e989-4193-9c33-8c997271e02f",
+ "fields": {
+  "name": "infection or illness",
+  "json": null,
+  "description": "Known or indeterminate"
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "13ed7ed6-734d-470d-81ad-f51f2f6baee5",
+ "fields": {
+  "name": "regular experiment end",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "1ca73836-6a5c-4939-93a6-75c7fdb0a3e3",
+ "fields": {
+  "name": "acute injury",
+  "json": null,
+  "description": "headplate loss, indeterminate, etc"
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "4bae1398-4beb-4399-b5fc-d7ffb6fdd261",
+ "fields": {
+  "name": "underweight",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "f235d64a-cca1-490d-b741-2cc6cceba53b",
+ "fields": {
+  "name": "issue during surgery",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "f450fb3f-d9cf-4e81-ba6a-1bde38aaaf6d",
+ "fields": {
+  "name": "time limit reached",
+  "json": null,
+  "description": "age, protocol etc... please describe in cull note"
+ }
+},
+{
+ "model": "actions.cullreason",
+ "pk": "f997bdad-3fb4-400a-85fa-0fa8463f2227",
+ "fields": {
+  "name": "benign experimental impediments",
+  "json": null,
+  "description": "cataract, bone regrowth, mouse didn't learn task"
+ }
+}
+]

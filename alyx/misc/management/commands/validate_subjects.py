@@ -24,7 +24,7 @@ class Command(BaseCommand):
         print()
 
         subjects = Subject.objects.filter(
-            death_date__isnull=False, to_be_culled=True).order_by('nickname')
+            cull__isnull=False, to_be_culled=True).order_by('nickname')
         n = len(subjects)
         print("Check 'to_be_culled' of %s subjects." % n)
         for s in subjects:
