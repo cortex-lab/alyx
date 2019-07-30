@@ -15,7 +15,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
-from data.models import Dataset, FileRecord
+from data.models import Dataset
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
@@ -448,7 +448,6 @@ class WaterAdminInline(BaseInlineAdmin):
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab',
                     'dataset_count', 'task_protocol', 'user_list']
-    list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
                                        'n_correct_trials', 'n_trials', 'weighing']
@@ -476,21 +475,32 @@ class SessionAdmin(BaseActionAdmin):
         return form
 
     def get_queryset(self, request):
-        queryset = super(SessionAdmin, self).get_queryset(request).prefetch_related(
-            'subject__projects', 'users', 'data_dataset_session_related',
-            'data_dataset_session_related__dataset_type')
+        queryset = super(SessionAdmin, self).get_queryset(request).select_related(
+            'subject', 'location', 'lab',
+        ).prefetch_related(
+            'subject__projects', 'users',
+            'data_dataset_session_related',
+            'data_dataset_session_related__dataset_type',
+            'data_dataset_session_related__file_records',
+            'data_dataset_session_related__file_records__data_repository',
+        )
         from django.db.models import Count
-        return queryset.annotate(_dataset_count=Count('data_dataset_session_related'))
+        return queryset.annotate(
+            _dataset_count=Count('data_dataset_session_related'),
+        )
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
     user_list.short_description = 'users'
 
     def dataset_count(self, ses):
-        cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
-                                       data_repository__globus_is_personal=False,
-                                       exists=True).count()
+        # Number of datasets.
         cr = ses._dataset_count
+        # Number of uploaded datasets.
+        cs = len([
+            ds for ds in ses.data_dataset_session_related.all()
+            if any(fr for fr in ds.file_records.all()
+                   if not fr.data_repository.globus_is_personal and fr.exists())])
         if cr == 0:
             return '-'
         col = '008000' if cr == cs else '808080'  # green if all files uploaded on server

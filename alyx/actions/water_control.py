@@ -5,7 +5,7 @@ from dateutil.rrule import HOURLY
 import functools
 import io
 import logging
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 import os.path as op
 
 from django.urls import reverse
@@ -533,7 +533,6 @@ class WaterControl(object):
 
 
 def water_control(subject):
-    from actions import models as am
     assert subject is not None
     lab = subject.lab
 
@@ -560,22 +559,21 @@ def water_control(subject):
     wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
     # Water restrictions.
-    wrs = am.WaterRestriction.objects.filter(subject=subject).order_by('start_time')
+    wrs = sorted(list(subject.actions_waterrestrictions.all()), key=attrgetter('start_time'))
     # Reference weight.
-    last_wr = wrs.last()
+    last_wr = wrs[-1] if wrs else None
     if last_wr and last_wr.reference_weight:
         wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
     for wr in wrs:
         wc.add_water_restriction(wr.start_time, wr.end_time, wr.reference_weight)
 
     # Water administrations.
-    was = am.WaterAdministration.objects.filter(subject=subject)
-    was = was.select_related('water_type').order_by('date_time')
+    was = sorted(list(subject.water_administrations.all()), key=attrgetter('date_time'))
     for wa in was:
         wc.add_water_administration(wa.date_time, wa.water_administered, session=wa.session_id)
 
     # Weighings
-    ws = am.Weighing.objects.filter(subject=subject).order_by('date_time')
+    ws = sorted(list(subject.weighings.all()), key=attrgetter('date_time'))
     for w in ws:
         wc.add_weighing(w.date_time, w.weight)
 

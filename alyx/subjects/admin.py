@@ -6,7 +6,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.db.models import Case, When
+from django.db.models import Case, When, Count, Prefetch
 from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
@@ -18,7 +18,8 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
                      Project,
                      )
-from actions.models import Surgery, Session, OtherAction
+from actions.models import (
+    Surgery, Session, OtherAction, WaterAdministration, WaterRestriction, Weighing)
 from misc.models import LabMember, Housing
 from misc.admin import NoteInline
 
@@ -335,11 +336,20 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user', 'lab',
-                    'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l', 'line_l', 'litter_l',
-                    'zygosities', 'alive', 'cage', 'description'
+    list_display = ['nickname',
+                    'weight_percent',
+                    'birth_date',
+                    'responsible_user',
+                    'lab',
+                    'session_count', 'sex_l', 'ear_mark_',
+                    'breeding_pair_l',
+                    'line_l',
+                    'litter_l',
+                    'zygosities',
+                    'alive',
+                    'cage',
+                    'description'
                     ]
-    list_select_related = ('line', 'litter', 'litter__breeding_pair', 'responsible_user')
     search_fields = ['nickname',
                      'responsible_user__first_name',
                      'responsible_user__last_name',
@@ -370,8 +380,31 @@ class SubjectAdmin(BaseAdmin):
                HousingInline,
                ]
 
+    def get_queryset(self, request):
+        q = super(SubjectAdmin, self).get_queryset(request).select_related(
+            'request', 'request__user', 'litter', 'litter__breeding_pair',
+            'responsible_user',
+            'line', 'lab', 'cull', 'cull__cull_method', 'cull__cull_reason',
+            'species', 'strain', 'source',
+        ).prefetch_related(
+            'zygosity_set',
+            'zygosity_set__allele',
+            'line__alleles',
+            Prefetch(
+                'actions_waterrestrictions',
+                queryset=WaterRestriction.objects.order_by('start_time')),
+            Prefetch(
+                'water_administrations',
+                queryset=WaterAdministration.objects.order_by('date_time')),
+            Prefetch(
+                'weighings',
+                queryset=Weighing.objects.order_by('date_time')),
+        )
+        q = q.annotate(sessions_count=Count('actions_sessions'))
+        return q
+
     def session_count(self, sub):
-        return Session.objects.filter(subject=sub).count()
+        return sub.sessions_count
     session_count.short_description = '# sess'
 
     def weight_percent(self, sub):
@@ -386,11 +419,6 @@ class SubjectAdmin(BaseAdmin):
     def sex_l(self, obj):
         return obj.sex[0] if obj.sex else ''
     sex_l.short_description = 'sex'
-
-    def genotype_l(self, obj):
-        genotype = GenotypeTest.objects.filter(subject=obj)
-        return ', '.join(map(str, genotype))
-    genotype_l.short_description = 'genotype'
 
     def breeding_pair_l(self, obj):
         bp = obj.litter.breeding_pair if obj.litter else None
@@ -476,11 +504,6 @@ class SubjectAdmin(BaseAdmin):
     def cage_changes(self, obj):
         return format_html('<br />\n'.join(_iter_history_changes(obj, 'cage')))
 
-    def get_queryset(self, request):
-        return super(SubjectAdmin, self).get_queryset(request).select_related(
-            'request', 'request__user'
-        ).prefetch_related('zygosity_set', 'cull')
-
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
@@ -497,10 +520,16 @@ class SubjectAdmin(BaseAdmin):
         return AdminFormWithRequest
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-        user = kwargs['request'].user
+        request = kwargs['request']
+        user = request.user
+        formfield = super(SubjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
         if db_field.name == 'responsible_user':
             kwargs['initial'] = user
-        return super(SubjectAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+            choices = getattr(request, '_responsible_user_choices_cache', None)
+            if choices is None:
+                request._responsible_user_choices_cache = choices = list(formfield.choices)
+            formfield.choices = choices
+        return formfield
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'request' and request.resolver_match:
