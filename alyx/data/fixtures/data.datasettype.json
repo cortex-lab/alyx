@@ -282,7 +282,7 @@
    "name": "_spikeglx_sync.channels",
    "created_by": null,
    "description": "[nsync]. Sync channel number (0-15)",
-   "filename_pattern": "_spikeglx_sync.channels.npy"
+   "filename_pattern": "_spikeglx_sync.channels*.npy"
   }
  },
  {
@@ -326,7 +326,7 @@
    "name": "_spikeglx_sync.times",
    "created_by": null,
    "description": "[nsync]Times of sync pulses, seconds relative to ephys start",
-   "filename_pattern": "_spikeglx_sync.times.npy"
+   "filename_pattern": "_spikeglx_sync.times*.npy"
   }
  },
  {
@@ -601,7 +601,7 @@
    "name": "_spikeglx_sync.polarities",
    "created_by": null,
    "description": "[nsync]. Polarity of front: 1: rising, -1 falling",
-   "filename_pattern": "_spikeglx_sync.polarities.npy"
+   "filename_pattern": "_spikeglx_sync.polarities*.npy"
   }
  },
  {
@@ -756,6 +756,50 @@
    "created_by": null,
    "description": "Times of stimulus onset trigger command",
    "filename_pattern": "_ibl_trials.stimOnTrigger_times.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "2aba753c-0316-44e7-ad54-b42c81a99349",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.ap",
+   "created_by": null,
+   "description": "Action Potentials band of raw neurophysiology data",
+   "filename_pattern": "*ephysData.raw*.ap.bin"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "d0d22f62-1c16-435c-a437-c82474c42100",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.lf",
+   "created_by": null,
+   "description": "Low Field band of raw neurophysiology data",
+   "filename_pattern": "*ephysData.raw*.lf.bin"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "f9f6df39-52af-4818-a502-845489d671f4",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.meta",
+   "created_by": null,
+   "description": "Metadata text file for raw binary neurophysiology data",
+   "filename_pattern": "*ephysData.raw*.meta"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "41068334-1826-42ee-a09a-759d907dd0cf",
+  "fields": {
+   "json": null,
+   "name": "_iblrig_RFMapStim.raw",
+   "created_by": null,
+   "description": "Visual stimulus raw information",
+   "filename_pattern": "_iblrig_RFMapStim.raw.bin"
   }
  }
 ]
