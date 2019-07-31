@@ -248,7 +248,7 @@ class Dataset(BaseExperimentalData):
     """
     objects = DatasetManager()
 
-    file_size = models.IntegerField(blank=True, null=True, help_text="Size in bytes")
+    file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
 
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
