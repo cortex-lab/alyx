@@ -252,7 +252,7 @@ class Subject(BaseModel):
             return self.housing.subjects.exclude(pk=self.pk)
 
     def alive(self):
-        return hasattr(self, 'cull')
+        return not hasattr(self, 'cull')
     alive.boolean = True
 
     def nicknamesafe(self):
