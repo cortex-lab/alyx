@@ -500,7 +500,7 @@ class SessionAdmin(BaseActionAdmin):
         cs = len([
             ds for ds in ses.data_dataset_session_related.all()
             if any(fr for fr in ds.file_records.all()
-                   if not fr.data_repository.globus_is_personal and fr.exists())])
+                   if not fr.data_repository.globus_is_personal and fr.exists)])
         if cr == 0:
             return '-'
         col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
