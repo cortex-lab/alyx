@@ -336,19 +336,9 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname',
-                    'weight_percent',
-                    'birth_date',
-                    'responsible_user',
-                    'lab',
-                    'session_count', 'sex_l', 'ear_mark_',
-                    'breeding_pair_l',
-                    'line_l',
-                    'litter_l',
-                    'zygosities',
-                    'alive',
-                    'cage',
-                    'description'
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user', 'lab',
+                    'project_l', 'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l',
+                    'line_l', 'litter_l', 'zygosities', 'alive', 'cage',
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
@@ -356,6 +346,7 @@ class SubjectAdmin(BaseAdmin):
                      'responsible_user__username',
                      'cage',
                      'lab__name',
+                     'projects__name',
                      ]
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
@@ -458,6 +449,12 @@ class SubjectAdmin(BaseAdmin):
         url = get_admin_url(obj.line)
         return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
     line_l.short_description = 'line'
+
+    def project_l(self, obj):
+        # url = get_admin_url(obj.line)
+        # return format_html('<a href="{url}">{line}</a>', line=obj.line or '-', url=url)
+        return '\n'.join(list(obj.projects.all().values_list('name', flat=True)))
+    project_l.short_description = 'projects'
 
     def zygosities(self, obj):
         return '; '.join(obj.zygosity_strings())

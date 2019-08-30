@@ -474,33 +474,16 @@ class SessionAdmin(BaseActionAdmin):
             ).distinct()
         return form
 
-    def get_queryset(self, request):
-        queryset = super(SessionAdmin, self).get_queryset(request).select_related(
-            'subject', 'location', 'lab',
-        ).prefetch_related(
-            'subject__projects', 'users',
-            'data_dataset_session_related',
-            'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__file_records',
-            'data_dataset_session_related__file_records__data_repository',
-        )
-        from django.db.models import Count
-        return queryset.annotate(
-            _dataset_count=Count('data_dataset_session_related'),
-        )
-
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
     user_list.short_description = 'users'
 
     def dataset_count(self, ses):
-        # Number of datasets.
-        cr = ses._dataset_count
-        # Number of uploaded datasets.
-        cs = len([
-            ds for ds in ses.data_dataset_session_related.all()
-            if any(fr for fr in ds.file_records.all()
-                   if not fr.data_repository.globus_is_personal and fr.exists)])
+        cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
+                                       data_repository__globus_is_personal=False,
+                                       exists=True).values_list('relative_path').distinct().count()
+        cr = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
+                                       ).values_list('relative_path').distinct().count()
         if cr == 0:
             return '-'
         col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
@@ -564,7 +547,7 @@ class NotificationRuleAdmin(BaseAdmin):
 
 class CullAdmin(BaseAdmin):
     list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
-    search_fields = ('user', 'subject')
+    search_fields = ('user__username', 'subject__nickname')
     fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
 
