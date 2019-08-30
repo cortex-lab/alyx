@@ -548,7 +548,7 @@ class NotificationRuleAdmin(BaseAdmin):
 
 class CullAdmin(BaseAdmin):
     list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
-    search_fields = ('user', 'subject')
+    search_fields = ('user__username', 'subject__nickname')
     fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
 
