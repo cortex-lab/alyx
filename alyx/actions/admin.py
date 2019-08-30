@@ -15,7 +15,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjectio
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
-from data.models import Dataset
+from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
