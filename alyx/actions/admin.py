@@ -448,7 +448,6 @@ class WaterAdminInline(BaseInlineAdmin):
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab',
                     'dataset_count', 'task_protocol', 'user_list']
-    list_select_related = ('subject', 'location')
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
                                        'n_correct_trials', 'n_trials', 'weighing']
@@ -475,13 +474,6 @@ class SessionAdmin(BaseActionAdmin):
             ).distinct()
         return form
 
-    def get_queryset(self, request):
-        queryset = super(SessionAdmin, self).get_queryset(request).prefetch_related(
-            'subject__projects', 'users', 'data_dataset_session_related',
-            'data_dataset_session_related__dataset_type')
-        from django.db.models import Count
-        return queryset.annotate(_dataset_count=Count('data_dataset_session_related'))
-
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))
     user_list.short_description = 'users'
@@ -489,8 +481,9 @@ class SessionAdmin(BaseActionAdmin):
     def dataset_count(self, ses):
         cs = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
                                        data_repository__globus_is_personal=False,
-                                       exists=True).count()
-        cr = ses._dataset_count
+                                       exists=True).values_list('relative_path').distinct().count()
+        cr = FileRecord.objects.filter(dataset__in=ses.data_dataset_session_related.all(),
+                                       ).values_list('relative_path').distinct().count()
         if cr == 0:
             return '-'
         col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
@@ -554,7 +547,7 @@ class NotificationRuleAdmin(BaseAdmin):
 
 class CullAdmin(BaseAdmin):
     list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
-    search_fields = ('user', 'subject')
+    search_fields = ('user__username', 'subject__nickname')
     fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
 

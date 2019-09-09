@@ -216,8 +216,9 @@ class Subject(BaseModel):
 
     @property
     def housing(self):
-        return Housing.objects.filter(housing_subjects__subject__in=[self],
-                                      housing_subjects__end_datetime__isnull=True).first()
+        return Housing.objects.filter(
+            housing_subjects__subject__in=[self],
+            housing_subjects__end_datetime__isnull=True).first()
 
     @property
     def cage_name(self):
@@ -305,8 +306,11 @@ class Subject(BaseModel):
         return self._water_control
 
     def zygosity_strings(self):
-        alleles = self.line.alleles.all() if self.line else Allele.objects.all()
-        return list(map(str, self.zygosity_set.filter(allele__in=alleles)))
+        zs = list(self.zygosity_set.all())
+        if self.line:
+            alleles = set(self.line.alleles.all())
+            zs = [z for z in zs if z.allele in alleles]
+        return list(map(str, zs))
 
     def is_negative(self):
         """Genotype is -/- for all genes."""

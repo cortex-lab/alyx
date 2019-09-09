@@ -100,6 +100,5 @@ $ /manage.py test -n
     -   `./manage.py migrate`
 7. Full test on alyx-dev
 8. Repeat 4,5,6,7 on alyx-main
-9. If webserver, reload Apache `sudo /etc/init.d/apache2 reload`
-
-
+9. If there was migrations, update database permission: `./manage.py set_db_permissions`
+10. If webserver, reload Apache `sudo /etc/init.d/apache2 reload`
