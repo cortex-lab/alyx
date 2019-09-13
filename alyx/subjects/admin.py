@@ -336,9 +336,9 @@ class SubjectAdmin(BaseAdmin):
                              }),
     )
 
-    list_display = ['nickname', 'weight_percent', 'birth_date', 'responsible_user', 'lab',
-                    'project_l', 'session_count', 'sex_l', 'ear_mark_', 'breeding_pair_l',
-                    'line_l', 'litter_l', 'zygosities', 'alive', 'cage',
+    list_display = ['nickname', 'weight_percent', 'birth_date', 'sex_l', 'alive', 'session_count',
+                    'responsible_user', 'lab', 'description', 'project_l', 'ear_mark_',
+                    'line_l', 'litter_l', 'zygosities', 'cage', 'breeding_pair_l',
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
