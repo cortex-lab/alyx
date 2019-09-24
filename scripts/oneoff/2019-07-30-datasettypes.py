@@ -1,7 +1,5 @@
 from operator import itemgetter
-from pathlib import Path
 from data.models import DatasetType, Dataset
-
 
 # All existing dataset types.
 dataset_types = set(map(itemgetter(0), DatasetType.objects.values_list('name')))

@@ -10,7 +10,8 @@ json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 # remove all subjects that never had anything to do with IBL
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
-sub_ibl = ses.values_list('subject', flat=True).distinct()
+sub_ibl = list(ses.values_list('subject', flat=True))
+sub_ibl += list(Subject.objects.values_list('pk', flat=True))
 Subject.objects.using('cortexlab').exclude(pk__in=sub_ibl).delete()
 
 # then remove base Sessions
@@ -49,7 +50,9 @@ Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
 
 # import projects from cortexlab. remove those that don't correspond to any session
-pk_projs = ses_ucl.values_list('project', flat=True).distinct()
+pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
+pk_projs += list(Project.objects.values_list('pk', flat=True))
+
 Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
 
 # only imports users that are relevant to IBL
