@@ -801,5 +801,16 @@
    "description": "Passive Visual stimulus raw information",
    "filename_pattern": "_iblrig_RFMapStim.raw.bin"
   }
+ },
+ {
+ "model": "data.datasettype",
+ "pk": "8f36fa46-3fbc-4921-be8d-89f838c4ec42",
+ "fields": {
+  "json": null,
+  "name": "_ibl_leftCamera.times",
+  "created_by": null,
+  "description": "Synchronized time stamps for left camera",
+  "filename_pattern": "_ibl_leftCamera.times.*"
  }
+}
 ]
