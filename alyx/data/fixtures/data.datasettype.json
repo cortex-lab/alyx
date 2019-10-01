@@ -106,7 +106,7 @@
    "name": "clusters.amps",
    "created_by": null,
    "description": "Mean amplitude of each cluster (\u00b5V)",
-   "filename_pattern": "clusters.amps.*"
+   "filename_pattern": "clusters.amps.npy"
   }
  },
  {
@@ -206,17 +206,6 @@
    "created_by": null,
    "description": "Absolute position of wheel (cm)",
    "filename_pattern": "*wheel.position.*"
-  }
- },
- {
-  "model": "data.datasettype",
-  "pk": "59c557be-7310-4c80-8bf8-51ef7c959dcf",
-  "fields": {
-   "json": null,
-   "name": "channels.sitePositions",
-   "created_by": null,
-   "description": "[nch, 2] ]Site positions of all channels in local  coordinates. Probe tip is at the origin.",
-   "filename_pattern": "channels.sitePositions.npy"
   }
  },
  {
@@ -433,10 +422,10 @@
   "pk": "9464bcd6-be30-4180-876a-93625c79977d",
   "fields": {
    "json": null,
-   "name": "channels.rawRow",
+   "name": "channels.rawInd",
    "created_by": null,
    "description": "[nch] Each channel's row in its home file (look up via probes.rawFileName), counting from zero. Note some rows don't have a channel, for example if they were sync pulses",
-   "filename_pattern": "channels.rawRow.npy"
+   "filename_pattern": "channels.rawInd.npy"
   }
  },
  {
@@ -730,10 +719,10 @@
   "pk": "fedf27ea-6428-4b14-bdf5-3863c9901a48",
   "fields": {
    "json": null,
-   "name": "clusters.peakChannel",
+   "name": "clusters.channels",
    "created_by": null,
    "description": "Channel which has the largest amplitude for this cluster. Note this counts all channels in the whole recording (starting from zero), rather than just the channels on this cluster's home probe - so if you want to find this cluster's brain location, it would be channels.brainLocation[clusters.peakChannel[i],:]",
-   "filename_pattern": "clusters.peakChannel.npy"
+   "filename_pattern": "clusters.channels.npy"
   }
  },
   {
@@ -741,10 +730,10 @@
   "pk": "ffe43f90-d13f-42ad-b2c9-38603a9a5439",
   "fields": {
    "json": null,
-   "name": "_ibl_leftCamera.dlc",
+   "name": "camera.dlc",
    "created_by": null,
-   "description": "Raw DLC output for leftCamera",
-   "filename_pattern": "_ibl_leftCamera.dlc.*"
+   "description": "Raw DLC output for Camera as numpy array",
+   "filename_pattern": "*camera.dlc.*"
   }
  },
  {
@@ -802,15 +791,59 @@
    "filename_pattern": "_iblrig_RFMapStim.raw.bin"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "6e777a97-f1f4-4cab-8c57-80ef5c7c7841",
+  "fields": {
+   "json": null,
+   "name": "channels.probes",
+   "created_by": null,
+   "description": "Probe assignments for each channel (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
+   "filename_pattern": "channels.probes.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "f91db8df-ebdc-448a-9ba2-7b2d003f0c3d",
+  "fields": {
+   "json": null,
+   "name": "clusters.probes",
+   "created_by": null,
+   "description": "Probe assignments for each cluster (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
+   "filename_pattern": "clusters.probes.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "184ef28b-056e-4416-8626-809e3a8fc73b",
+  "fields": {
+   "json": null,
+   "name": "spikes.templates",
+   "created_by": null,
+   "description": "Detection template assignment for each spike (integers counting from 0). Can be used as direct indexing of the templates.* attributes.",
+   "filename_pattern": "spikes.templates.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "59c557be-7310-4c80-8bf8-51ef7c959dcf",
+  "fields": {
+   "json": null,
+   "name": "channels.localCoordinates",
+   "created_by": null,
+   "description": "relative to probe coordinate system (µm): x (first) dimension is on the width of the shank while (y) is the depth where 0 is the deepest site, and positive above this.",
+   "filename_pattern": "channels.localCoordinates.npy"
+  }
+ },
  {
  "model": "data.datasettype",
  "pk": "8f36fa46-3fbc-4921-be8d-89f838c4ec42",
  "fields": {
   "json": null,
-  "name": "_ibl_leftCamera.times",
+  "name": "camera.times",
   "created_by": null,
-  "description": "Synchronized time stamps for left camera",
-  "filename_pattern": "_ibl_leftCamera.times.*"
+  "description": "Synchronized time stamps for camera",
+  "filename_pattern": "*camera.times.*"
+  }
  }
-}
 ]
