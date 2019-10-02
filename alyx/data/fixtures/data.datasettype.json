@@ -736,6 +736,17 @@
    "filename_pattern": "*ephysData*.meta"
   }
  },
+   {
+  "model": "data.datasettype",
+  "pk": "05981c26-6f62-4bb6-af22-745f9751c7be",
+  "fields": {
+   "json": null,
+   "name": "ephysData.sync.npy",
+   "created_by": null,
+   "description": "Synchronization file for multi-probes acquisitions",
+   "filename_pattern": "*ephysData*.sync.npy"
+  }
+ },
  {
   "model": "data.datasettype",
   "pk": "41068334-1826-42ee-a09a-759d907dd0cf",
