@@ -727,6 +727,17 @@
  },
   {
   "model": "data.datasettype",
+  "pk": "993e04d9-33f4-42c1-b665-3a39da26c72b",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.nidq",
+   "created_by": null,
+   "description": "Nidq breakout box binary data for Neuropixel 3B system",
+   "filename_pattern": "*ephysData*.nidq.bin"
+  }
+ },
+  {
+  "model": "data.datasettype",
   "pk": "f9f6df39-52af-4818-a502-845489d671f4",
   "fields": {
    "json": null,
