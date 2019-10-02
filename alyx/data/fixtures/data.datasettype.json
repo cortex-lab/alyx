@@ -835,6 +835,17 @@
    "filename_pattern": "channels.localCoordinates.npy"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "94cb84f9-afb9-4285-bf71-333757380261",
+  "fields": {
+   "json": null,
+   "name": "channels._phy_ids",
+   "created_by": null,
+   "description": "Array of integers saying which index in Phy the channel corresponds to (counting from zero).",
+   "filename_pattern": "channels._phy_ids.npy"
+  }
+ },
  {
  "model": "data.datasettype",
  "pk": "8f36fa46-3fbc-4921-be8d-89f838c4ec42",
