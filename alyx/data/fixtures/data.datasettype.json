@@ -711,7 +711,7 @@
    "name": "ephysData.raw.ap",
    "created_by": null,
    "description": "Action Potentials band of raw neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.ap.bin"
+   "filename_pattern": "*ephysData*.ap.bin"
   }
  },
  {
@@ -722,7 +722,7 @@
    "name": "ephysData.raw.lf",
    "created_by": null,
    "description": "Low Field band of raw neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.lf.bin"
+   "filename_pattern": "*ephysData*.lf.bin"
   }
  },
   {
@@ -733,7 +733,7 @@
    "name": "ephysData.raw.meta",
    "created_by": null,
    "description": "Metadata text file for raw binary neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.meta"
+   "filename_pattern": "*ephysData*.meta"
   }
  },
  {
