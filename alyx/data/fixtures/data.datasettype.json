@@ -78,17 +78,6 @@
  },
  {
   "model": "data.datasettype",
-  "pk": "169323bd-7f91-4b75-a3e5-69530db33d21",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_rightCamera.timestamps",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_rightCamera.timestamps.*"
-  }
- },
- {
-  "model": "data.datasettype",
   "pk": "26e731af-67a7-4be0-9dbc-c25eb153da31",
   "fields": {
    "json": null,
@@ -408,17 +397,6 @@
  },
  {
   "model": "data.datasettype",
-  "pk": "93b79e71-c8f6-4d81-b298-2c8f6aefe192",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_bodyCamera.timestamps",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_bodyCamera.timestamps.*"
-  }
- },
- {
-  "model": "data.datasettype",
   "pk": "9464bcd6-be30-4180-876a-93625c79977d",
   "fields": {
    "json": null,
@@ -521,10 +499,10 @@
   "pk": "b5ec79de-9c9e-4009-8892-10aa2ddb9638",
   "fields": {
    "json": null,
-   "name": "_iblrig_leftCamera.timestamps",
+   "name": "_iblrig_Camera.timestamps",
    "created_by": null,
    "description": "",
-   "filename_pattern": "_iblrig_leftCamera.timestamps.*"
+   "filename_pattern": "_iblrig_*Camera.*timestamps*"
   }
  },
  {
