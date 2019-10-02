@@ -741,10 +741,21 @@
   "pk": "05981c26-6f62-4bb6-af22-745f9751c7be",
   "fields": {
    "json": null,
-   "name": "ephysData.sync.npy",
+   "name": "ephysData.raw.sync",
    "created_by": null,
-   "description": "Synchronization file for multi-probes acquisitions",
+   "description": "Synchronization file for multi-probes acquisitions.",
    "filename_pattern": "*ephysData*.sync.npy"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "524bc84c-bf31-481f-b9f7-73e87090bd39",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.wiring",
+   "created_by": null,
+   "description": "Description of wiring of synchronization auxiliaries",
+   "filename_pattern": "*ephysData*.wiring.json"
   }
  },
  {
