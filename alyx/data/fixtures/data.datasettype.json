@@ -18,7 +18,7 @@
    "name": "spikes.clusters",
    "created_by": null,
    "description": "[nspi]. Cluster assignments for each spike (integers counting from 0).",
-   "filename_pattern": "spikes.clusters.npy"
+   "filename_pattern": "spikes.clusters*.npy"
   }
  },
  {
@@ -62,7 +62,7 @@
    "name": "spikes.times",
    "created_by": null,
    "description": "[nspi]. Times of spikes (seconds, relative to experiment onset). Note this includes spikes from all probes, merged together",
-   "filename_pattern": "spikes.times.npy"
+   "filename_pattern": "spikes.times*.npy"
   }
  },
  {
@@ -73,7 +73,7 @@
    "name": "spikes.samples",
    "created_by": null,
    "description": "[nspi]. Sample index of spikes in their own electrophysiology binary file.",
-   "filename_pattern": "spikes.samples.npy"
+   "filename_pattern": "spikes.samples*.npy"
   }
  },
  {
@@ -348,7 +348,7 @@
    "name": "spikes.amps",
    "created_by": null,
    "description": "[nspi]. Amplitude of each spike (\u00b5V)",
-   "filename_pattern": "spikes.amps.npy"
+   "filename_pattern": "spikes.amps*.npy"
   }
  },
  {
@@ -359,7 +359,7 @@
    "name": "clusters.waveformsDuration",
    "created_by": null,
    "description": "Waveforms length in ms",
-   "filename_pattern": "clusters.waveformsDuration.npy"
+   "filename_pattern": "clusters.waveformsDuration*.npy"
   }
  },
  {
@@ -414,7 +414,7 @@
    "name": "channels.rawInd",
    "created_by": null,
    "description": "[nch] Each channel's row in its home file (look up via probes.rawFileName), counting from zero. Note some rows don't have a channel, for example if they were sync pulses",
-   "filename_pattern": "channels.rawInd.npy"
+   "filename_pattern": "channels.rawInd*.npy"
   }
  },
  {
@@ -623,7 +623,7 @@
    "name": "clusters.depths",
    "created_by": null,
    "description": "[nc] Depth of mean cluster waveform on probe (\u00b5m). 0 means deepest site, positive means above this.",
-   "filename_pattern": "clusters.depths.npy"
+   "filename_pattern": "clusters.depths*.npy"
   }
  },
  {
@@ -645,7 +645,7 @@
    "name": "spikes.depths",
    "created_by": null,
    "description": "[nspi]. Depth along probe of each spike (\u00b5m; computed from waveform center of mass). 0 means deepest site, positive means above this",
-   "filename_pattern": "spikes.depths.npy"
+   "filename_pattern": "spikes.depths*.npy"
   }
  },
  {
@@ -689,7 +689,7 @@
    "name": "clusters.channels",
    "created_by": null,
    "description": "Channel which has the largest amplitude for this cluster. Note this counts all channels in the whole recording (starting from zero), rather than just the channels on this cluster's home probe - so if you want to find this cluster's brain location, it would be channels.brainLocation[clusters.peakChannel[i],:]",
-   "filename_pattern": "clusters.channels.npy"
+   "filename_pattern": "clusters.channels*.npy"
   }
  },
   {
@@ -799,7 +799,7 @@
    "name": "channels.probes",
    "created_by": null,
    "description": "Probe assignments for each channel (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-   "filename_pattern": "channels.probes.npy"
+   "filename_pattern": "channels.probes*.npy"
   }
  },
  {
@@ -810,7 +810,7 @@
    "name": "clusters.probes",
    "created_by": null,
    "description": "Probe assignments for each cluster (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-   "filename_pattern": "clusters.probes.npy"
+   "filename_pattern": "clusters.probes*.npy"
   }
  },
  {
@@ -821,7 +821,7 @@
    "name": "spikes.templates",
    "created_by": null,
    "description": "Detection template assignment for each spike (integers counting from 0). Can be used as direct indexing of the templates.* attributes.",
-   "filename_pattern": "spikes.templates.npy"
+   "filename_pattern": "spikes.templates*.npy"
   }
  },
  {
@@ -843,7 +843,7 @@
    "name": "channels._phy_ids",
    "created_by": null,
    "description": "Array of integers saying which index in Phy the channel corresponds to (counting from zero).",
-   "filename_pattern": "channels._phy_ids.npy"
+   "filename_pattern": "channels._phy_ids*.npy"
   }
  },
  {
