@@ -67,6 +67,17 @@
  },
  {
   "model": "data.datasettype",
+  "pk": "6559486b-197a-49b4-abff-3efbc4a04ac7",
+  "fields": {
+   "json": null,
+   "name": "spikes.samples",
+   "created_by": null,
+   "description": "[nspi]. Sample index of spikes in their own electrophysiology binary file.",
+   "filename_pattern": "spikes.samples.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
   "pk": "156b266c-abc8-416d-96d4-db85fd232909",
   "fields": {
    "json": null,
