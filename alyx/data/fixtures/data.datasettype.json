@@ -835,6 +835,28 @@
    "filename_pattern": "channels._phy_ids*.npy"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "d3547560-7cd3-48e6-903c-427317a06a3b",
+  "fields": {
+   "json": null,
+   "name": "_ibl_log.info",
+   "created_by": null,
+   "description": "Log File for normal job completion",
+   "filename_pattern": "_ibl_log.info*.log"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "86f168dc-5a37-4e67-adfe-353cf6aed751",
+  "fields": {
+   "json": null,
+   "name": "_ibl_log.error",
+   "created_by": null,
+   "description": "Log File for errored job",
+   "filename_pattern": "_ibl_log.error*.log"
+  }
+ },
  {
  "model": "data.datasettype",
  "pk": "8f36fa46-3fbc-4921-be8d-89f838c4ec42",
