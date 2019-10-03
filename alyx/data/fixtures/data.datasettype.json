@@ -224,7 +224,7 @@
   "pk": "63ea5aaa-1b51-4378-b515-2b6ec0502e05",
   "fields": {
    "json": null,
-   "name": "_ibl_trials.goCueTrigger_times",
+   "name": "trials.goCueTrigger_times",
    "created_by": null,
    "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset NOTE: this is the time the trigger command is sent by Bpod",
    "filename_pattern": "_ibl_trials.goCueTrigger_times.*"
@@ -389,7 +389,7 @@
   "pk": "9295f7a4-dd1b-440e-8ad0-53223aebab81",
   "fields": {
    "json": null,
-   "name": "_ibl_trials.probabilityLeft",
+   "name": "trials.probabilityLeft",
    "created_by": null,
    "description": "Probability that the stimulus will be on the left hand side for the current block. The probability of right is 1 minus this",
    "filename_pattern": "_ibl_trials.probabilityLeft.*"
