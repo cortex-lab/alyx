@@ -106,7 +106,7 @@
    "name": "clusters.amps",
    "created_by": null,
    "description": "Mean amplitude of each cluster (\u00b5V)",
-   "filename_pattern": "clusters.amps.npy"
+   "filename_pattern": "clusters.amps*.npy"
   }
  },
  {
@@ -832,7 +832,7 @@
    "name": "channels.localCoordinates",
    "created_by": null,
    "description": "relative to probe coordinate system (µm): x (first) dimension is on the width of the shank while (y) is the depth where 0 is the deepest site, and positive above this.",
-   "filename_pattern": "channels.localCoordinates.npy"
+   "filename_pattern": "channels.localCoordinates*.npy"
   }
  },
   {
