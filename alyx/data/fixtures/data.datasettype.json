@@ -301,7 +301,7 @@
   "pk": "74c0120c-7515-478f-9725-53d587d86c49",
   "fields": {
    "json": null,
-   "name": "wheel.times",
+   "name": "wheel.timestamps",
    "created_by": null,
    "description": "Timestamps for wheel timeseries",
    "filename_pattern": "*wheel.times*"
