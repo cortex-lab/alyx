@@ -356,10 +356,10 @@
   "pk": "856ad907-da77-4182-9a34-5eb02b217f2c",
   "fields": {
    "json": null,
-   "name": "clusters.waveformsDuration",
+   "name": "clusters.peakToThrough",
    "created_by": null,
    "description": "Waveforms length in ms",
-   "filename_pattern": "clusters.waveformsDuration*.npy"
+   "filename_pattern": "clusters.peakToThrough*.npy"
   }
  },
  {
