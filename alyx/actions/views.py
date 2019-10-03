@@ -211,7 +211,7 @@ class SessionFilter(FilterSet):
         dtypes = value.split(',')
         queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
-            dtypes_count=Count('data_dataset_session_related__dataset_type'))
+            dtypes_count=Count('data_dataset_session_related__dataset_type', distinct=True))
         queryset = queryset.filter(dtypes_count__gte=len(dtypes))
         return queryset
 
