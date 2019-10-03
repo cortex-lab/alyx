@@ -271,7 +271,7 @@
    "name": "_spikeglx_sync.channels",
    "created_by": null,
    "description": "[nsync]. Sync channel number (0-15)",
-   "filename_pattern": "_spikeglx_sync.channel*.npy"
+   "filename_pattern": "_spikeglx_sync.channels*.npy"
   }
  },
  {
@@ -315,7 +315,7 @@
    "name": "_spikeglx_sync.times",
    "created_by": null,
    "description": "[nsync]Times of sync pulses, seconds relative to ephys start",
-   "filename_pattern": "_spikeglx_sync.time*.npy"
+   "filename_pattern": "_spikeglx_sync.times*.npy"
   }
  },
  {
@@ -557,7 +557,7 @@
    "name": "_spikeglx_sync.polarities",
    "created_by": null,
    "description": "[nsync]. Polarity of front: 1: rising, -1 falling",
-   "filename_pattern": "_spikeglx_sync.polaritie*.npy"
+   "filename_pattern": "_spikeglx_sync.polarities*.npy"
   }
  },
  {
