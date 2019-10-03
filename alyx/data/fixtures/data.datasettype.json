@@ -301,10 +301,10 @@
   "pk": "74c0120c-7515-478f-9725-53d587d86c49",
   "fields": {
    "json": null,
-   "name": "wheel.timestamps",
+   "name": "wheel.times",
    "created_by": null,
    "description": "Timestamps for wheel timeseries",
-   "filename_pattern": "*wheel.timestamps.*"
+   "filename_pattern": "*wheel.times*"
   }
  },
  {
@@ -481,17 +481,6 @@
    "created_by": null,
    "description": "Time of feedback delivery (reward or not) in choiceworld - in absolute seconds, rather than relative to trial onset",
    "filename_pattern": "*trials.feedback_times.*"
-  }
- },
- {
-  "model": "data.datasettype",
-  "pk": "b396747f-0c67-4de4-9610-c7e210a5b86a",
-  "fields": {
-   "json": null,
-   "name": "wheel.times",
-   "created_by": null,
-   "description": "times of position in absolute seconds from session start",
-   "filename_pattern": "*wheel.times.*"
   }
  },
  {
