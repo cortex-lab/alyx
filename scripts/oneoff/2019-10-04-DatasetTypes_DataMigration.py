@@ -14,6 +14,8 @@ dtypes_old2delte_reassign = [
     ('b3e9dded-027e-4cf0-8392-2baeb3bfcabd', 'e40899d0-a883-40ac-8214-344bcf249d09'),
     # _iblrig_Camera.raw
     ('df68dbb7-8d0e-4a5b-b829-e2a832a89b62', 'e40899d0-a883-40ac-8214-344bcf249d09'),
+    # wheel.times
+    ('b396747f-0c67-4de4-9610-c7e210a5b86a', '74c0120c-7515-478f-9725-53d587d86c49'),
 ]
 
 # load init fixtures
