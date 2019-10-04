@@ -1,3 +1,5 @@
+""" `./manage.py shell < ../scripts/oneoff/2019-10-04-DatasetTypes_DataMigration.py` """
+
 from django.core.management import call_command
 from data.models import DatasetType, Dataset
 
