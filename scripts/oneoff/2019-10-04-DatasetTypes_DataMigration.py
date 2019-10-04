@@ -30,9 +30,9 @@ for pks in dtypes_old2delte_reassign:
     datasets = Dataset.objects.filter(dataset_type=dt2del[0])
     if len(datasets):
         d2new = DatasetType.objects.get(pk=pks[1])
-        print(f'reassign {dt2del[0].name} to {d2new.name}')
+        print('reassign ' + dt2del[0].name + ' to ' + d2new.name)
         if not DRY:
             datasets.update(dataset_type=d2new)
-    print(f'delete {dt2del[0].name} ')
+    print('delete ' + dt2del[0].name)
     if not DRY:
         dt2del.delete()
