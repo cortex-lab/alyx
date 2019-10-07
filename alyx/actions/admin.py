@@ -145,6 +145,9 @@ class BaseActionAdmin(BaseAdmin):
     subject_l.short_description = 'subject'
     subject_l.admin_order_field = 'subject__nickname'
 
+    def projects(self, obj):
+        return ', '.join(p.name for p in obj.subject.projects.all())
+
     def _get_last_subject(self, request):
         return getattr(request, 'session', {}).get('last_subject_id', None)
 
@@ -216,11 +219,11 @@ class WaterAdministrationAdmin(BaseActionAdmin):
     fields = ['subject', 'date_time', 'water_administered', 'water_type', 'adlib', 'user',
               'session_l']
     list_display = ['subject_l', 'water_administered', 'user', 'date_time', 'water_type',
-                    'adlib', 'session_l']
+                    'adlib', 'session_l', 'projects']
     list_display_links = ('water_administered', )
     list_select_related = ('subject', 'user')
     ordering = ['-date_time', 'subject__nickname']
-    search_fields = ['subject__nickname']
+    search_fields = ['subject__nickname', 'subject__projects__name']
     list_filter = [ResponsibleUserListFilter, ('subject', RelatedDropdownFilter)]
     readonly_fields = ['session_l', ]
 
@@ -272,12 +275,12 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     fields = ['subject', 'implant_weight', 'reference_weight',
               'start_time', 'end_time', 'water_type', 'users', 'narrative']
     list_display = ('subject_w', 'start_time_l', 'end_time_l', 'water_type', 'weight',
-                    'weight_ref') + WaterControl._columns[3:]
+                    'weight_ref') + WaterControl._columns[3:] + ('projects',)
     list_select_related = ('subject',)
     list_display_links = ('start_time_l', 'end_time_l')
     readonly_fields = ('weight',)  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
-    search_fields = ['subject__nickname']
+    search_fields = ['subject__nickname', 'subject__projects__name']
     list_filter = [ResponsibleUserListFilter,
                    ('subject', RelatedDropdownFilter),
                    ActiveFilter,
@@ -375,12 +378,12 @@ class WeighingForm(BaseActionForm):
 
 
 class WeighingAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'weight', 'percentage_weight', 'date_time']
+    list_display = ['subject_l', 'weight', 'percentage_weight', 'date_time', 'projects']
     list_select_related = ('subject',)
     fields = ['subject', 'date_time', 'weight', 'user']
     ordering = ('-date_time',)
     list_display_links = ('weight',)
-    search_fields = ['subject__nickname']
+    search_fields = ['subject__nickname', 'subject__projects__name']
     list_filter = [ResponsibleUserListFilter,
                    ('subject', RelatedDropdownFilter)]
 
@@ -400,12 +403,12 @@ class WaterTypeAdmin(BaseActionAdmin):
 
 
 class SurgeryAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative']
+    list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative', 'projects']
     list_select_related = ('subject',)
 
     fields = BaseActionAdmin.fields + ['outcome_type']
     list_display_links = ['date']
-    search_fields = ('subject__nickname',)
+    search_fields = ('subject__nickname', 'subject__projects__name')
     list_filter = [SubjectAliveListFilter,
                    ResponsibleUserListFilter,
                    ('subject__line', RelatedDropdownFilter),
@@ -448,7 +451,7 @@ class WaterAdminInline(BaseInlineAdmin):
 
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab',
-                    'dataset_count', 'task_protocol', 'user_list']
+                    'dataset_count', 'task_protocol', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
         'repo_url', 'project', ('type', 'task_protocol', ), 'number',
@@ -475,6 +478,9 @@ class SessionAdmin(BaseActionAdmin):
                 Q(users=request.user.pk) | Q(users=None) | Q(pk=current_proj)
             ).distinct()
         return form
+
+    def project_(self, obj):
+        return getattr(obj.project, 'name', None)
 
     def repo_url(self, obj):
         url = settings.SESSION_REPO_URL.format(
@@ -555,8 +561,8 @@ class NotificationRuleAdmin(BaseAdmin):
 
 
 class CullAdmin(BaseAdmin):
-    list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method')
-    search_fields = ('user__username', 'subject__nickname')
+    list_display = ('date', 'subject_l', 'user', 'cull_reason', 'cull_method', 'projects')
+    search_fields = ('user__username', 'subject__nickname', 'subject__projects__name')
     fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
 
@@ -564,6 +570,9 @@ class CullAdmin(BaseAdmin):
         url = get_admin_url(obj.subject)
         return format_html('<a href="{url}">{subject}</a>', subject=obj.subject or '-', url=url)
     subject_l.short_description = 'subject'
+
+    def projects(self, obj):
+        return ', '.join(p.name for p in obj.subject.projects.all())
 
 
 admin.site.register(ProcedureType, ProcedureTypeAdmin)
