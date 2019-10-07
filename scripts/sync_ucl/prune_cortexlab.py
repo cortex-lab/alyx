@@ -4,7 +4,7 @@ from django.core.management import call_command
 from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery, NotificationRule, Notification
 from misc.models import Lab, LabMember, LabLocation
-from data.models import Dataset, DatasetType
+from data.models import Dataset, DatasetType, DataRepository, FileRecord
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
@@ -48,6 +48,11 @@ dtypes = [dt[0] for dt in DatasetType.objects.all().values_list('name')]
 Dataset.objects.using('cortexlab').exclude(dataset_type__name__in=dtypes).delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='Unknown').delete()
 Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
+
+# we want to make sure that no other file record than the ones in already existing repositories
+# are imported
+repos = list(DataRepository.objects.all().values_list('pk', flat=True))
+FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete()
 
 # import projects from cortexlab. remove those that don't correspond to any session
 pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
