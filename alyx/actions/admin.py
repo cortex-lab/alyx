@@ -1,6 +1,7 @@
 import logging
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When
@@ -449,8 +450,9 @@ class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab',
                     'dataset_count', 'task_protocol', 'user_list']
     list_display_links = ['start_time']
-    fields = BaseActionAdmin.fields + ['project', ('type', 'task_protocol', ), 'number',
-                                       'n_correct_trials', 'n_trials', 'weighing']
+    fields = BaseActionAdmin.fields + [
+        'repo_url', 'project', ('type', 'task_protocol', ), 'number',
+        'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('subject__projects', RelatedDropdownFilter),
@@ -460,7 +462,7 @@ class SessionAdmin(BaseActionAdmin):
                      'task_protocol')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['task_protocol', 'weighing']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project
@@ -473,6 +475,13 @@ class SessionAdmin(BaseActionAdmin):
                 Q(users=request.user.pk) | Q(users=None) | Q(pk=current_proj)
             ).distinct()
         return form
+
+    def repo_url(self, obj):
+        url = settings.SESSION_REPO_URL.format(
+            subject=obj.subject.nickname, date=obj.start_time.date(), number=int(obj.number))
+        print(url)
+        return format_html(
+            '<a href="{url}">{url}</a>'.format(url=url))
 
     def user_list(self, obj):
         return ', '.join(map(str, obj.users.all()))

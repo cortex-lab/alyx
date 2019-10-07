@@ -11,3 +11,5 @@ STOCK_MANAGERS = ('charu',)
 WEIGHT_THRESHOLD = 0.75
 DEFAULT_LAB_NAME = 'cortexlab'
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
+SESSION_REPO_URL = \
+    "http://ibl.flatironinstitute.org/cortexlab/Subjects/{subject}/{date}/{number:03d}/"
