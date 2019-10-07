@@ -2,8 +2,10 @@ from datetime import timedelta, date
 import itertools
 from operator import itemgetter
 
+from django.contrib.postgres.fields import JSONField
 from django.db.models import Count, Q, F, ExpressionWrapper, FloatField
 from django.db.models.deletion import Collector
+from django_filters.rest_framework.filters import CharFilter
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -211,7 +213,7 @@ class SessionFilter(FilterSet):
         dtypes = value.split(',')
         queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
-            dtypes_count=Count('data_dataset_session_related__dataset_type'))
+            dtypes_count=Count('data_dataset_session_related__dataset_type', distinct=True))
         queryset = queryset.filter(dtypes_count__gte=len(dtypes))
         return queryset
 
@@ -232,6 +234,11 @@ class SessionFilter(FilterSet):
     class Meta:
         model = Session
         exclude = []
+        filter_overrides = {
+            JSONField: {
+                'filter_class': CharFilter,
+            },
+        }
 
 
 class WeighingFilter(FilterSet):

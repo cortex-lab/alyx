@@ -90,7 +90,6 @@ for item in DB_UCL:
             pk_ibl2ucl[str(dbitem[0].pk)] = item['pk']
 
 
-
 # Now regexp into the json files the PK
 with open(FILE_IBL_JSON_DUMP_INP) as f:
     text = f.read()

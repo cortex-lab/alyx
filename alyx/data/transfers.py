@@ -171,7 +171,7 @@ def globus_file_exists(file_record):
 
 def _filename_matches_pattern(filename, pattern):
     filename = op.basename(filename)
-    reg = pattern.replace('.', r'\.').replace('_', r'\_').replace('*', r'.+')
+    reg = pattern.replace('.', r'\.').replace('_', r'\_').replace('*', r'.*')
     return re.match(reg, filename, re.IGNORECASE)
 
 
