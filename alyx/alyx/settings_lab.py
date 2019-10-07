@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 # ALYX-SPECIFIC
 ALLOWED_HOSTS = ['localhost']
 LANGUAGE_CODE = 'en-us'
@@ -13,3 +15,16 @@ DEFAULT_LAB_NAME = 'cortexlab'
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 SESSION_REPO_URL = \
     "http://ibl.flatironinstitute.org/cortexlab/Subjects/{subject}/{date}/{number:03d}/"
+NARRATIVE_TEMPLATES = {
+    'Headplate implant': dedent('''
+        == General ==
+
+        Start time (hh:mm):   ___:___
+        End time (hh:mm):    ___:___
+
+        [etc]
+
+        == Notes ==
+        <write your notes here>
+        '''),
+}

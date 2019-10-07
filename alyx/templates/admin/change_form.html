@@ -40,7 +40,6 @@ $(document).keydown(function(e) {
 });
 
 
-
 function getShownFieldsets() {
     return $("fieldset > h2 > a.collapse-toggle:not(:contains(S))").map(
         function () { return this.id; }).get();
@@ -69,6 +68,26 @@ $(window).on("load", function() {
         $("#" + id).parent().parent().removeClass("collapsed");
     }
 });
+
+
+
+// Narrative templates
+$(window).on("load", function() {
+    var templates = JSON.parse(atob("{{ narrative_templates }}"));
+    $("select[name='procedures']").on("change", function (e) {
+       // Do nothing if the narrative is already filled.
+       if ($("textarea[name='narrative']").val()) { return; }
+       // Get the selected procedures.
+       var selectedText = $("select[name='procedures'] option:selected").text();
+       for (const [key, value] of Object.entries(templates)) {
+            if (selectedText.includes(key)) {
+                $("textarea[name='narrative']").val(value);
+                break;
+            }
+       }
+    })
+});
+
 
 // HACK: date widget in local timezone.
 (function($){

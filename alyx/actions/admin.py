@@ -1,3 +1,5 @@
+import base64
+import json
 import logging
 
 from django import forms
@@ -449,6 +451,12 @@ class WaterAdminInline(BaseInlineAdmin):
     readonly_fields = ('name', 'water_administered', 'water_type')
 
 
+def _pass_narrative_templates(context):
+    context['narrative_templates'] = \
+        base64.b64encode(json.dumps(settings.NARRATIVE_TEMPLATES).encode('utf-8')).decode('utf-8')
+    return context
+
+
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab',
                     'dataset_count', 'task_protocol', 'user_list', 'project_']
@@ -479,13 +487,22 @@ class SessionAdmin(BaseActionAdmin):
             ).distinct()
         return form
 
+    def change_view(self, request, extra_context=None, **kwargs):
+        context = extra_context or {}
+        context = _pass_narrative_templates(context)
+        return super(SessionAdmin, self).change_view(request, extra_context=context, **kwargs)
+
+    def add_view(self, request, extra_context=None):
+        context = extra_context or {}
+        context = _pass_narrative_templates(context)
+        return super(SessionAdmin, self).add_view(request, extra_context=context)
+
     def project_(self, obj):
         return getattr(obj.project, 'name', None)
 
     def repo_url(self, obj):
         url = settings.SESSION_REPO_URL.format(
-            subject=obj.subject.nickname, date=obj.start_time.date(), number=int(obj.number))
-        print(url)
+            subject=obj.subject.nickname, date=obj.start_time.date(), number=obj.number or 0)
         return format_html(
             '<a href="{url}">{url}</a>'.format(url=url))
 
