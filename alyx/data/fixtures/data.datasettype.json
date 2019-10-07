@@ -18,7 +18,7 @@
    "name": "spikes.clusters",
    "created_by": null,
    "description": "[nspi]. Cluster assignments for each spike (integers counting from 0).",
-   "filename_pattern": "spikes.clusters.npy"
+   "filename_pattern": "spikes.clusters*.npy"
   }
  },
  {
@@ -62,7 +62,18 @@
    "name": "spikes.times",
    "created_by": null,
    "description": "[nspi]. Times of spikes (seconds, relative to experiment onset). Note this includes spikes from all probes, merged together",
-   "filename_pattern": "spikes.times.npy"
+   "filename_pattern": "spikes.times*.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "6559486b-197a-49b4-abff-3efbc4a04ac7",
+  "fields": {
+   "json": null,
+   "name": "spikes.samples",
+   "created_by": null,
+   "description": "[nspi]. Sample index of spikes in their own electrophysiology binary file.",
+   "filename_pattern": "spikes.samples*.npy"
   }
  },
  {
@@ -74,17 +85,6 @@
    "created_by": null,
    "description": "Parameter structure used for the task in Matlab format.",
    "filename_pattern": "_rigbox_matParameters.raw.mat"
-  }
- },
- {
-  "model": "data.datasettype",
-  "pk": "169323bd-7f91-4b75-a3e5-69530db33d21",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_rightCamera.timestamps",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_rightCamera.timestamps.*"
   }
  },
  {
@@ -106,7 +106,7 @@
    "name": "clusters.amps",
    "created_by": null,
    "description": "Mean amplitude of each cluster (\u00b5V)",
-   "filename_pattern": "clusters.amps.npy"
+   "filename_pattern": "clusters.amps*.npy"
   }
  },
  {
@@ -235,7 +235,7 @@
   "pk": "63ea5aaa-1b51-4378-b515-2b6ec0502e05",
   "fields": {
    "json": null,
-   "name": "_ibl_trials.goCueTrigger_times",
+   "name": "trials.goCueTrigger_times",
    "created_by": null,
    "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset NOTE: this is the time the trigger command is sent by Bpod",
    "filename_pattern": "_ibl_trials.goCueTrigger_times.*"
@@ -304,7 +304,7 @@
    "name": "wheel.timestamps",
    "created_by": null,
    "description": "Timestamps for wheel timeseries",
-   "filename_pattern": "*wheel.timestamps.*"
+   "filename_pattern": "*wheel.times*"
   }
  },
  {
@@ -348,7 +348,7 @@
    "name": "spikes.amps",
    "created_by": null,
    "description": "[nspi]. Amplitude of each spike (\u00b5V)",
-   "filename_pattern": "spikes.amps.npy"
+   "filename_pattern": "spikes.amps*.npy"
   }
  },
  {
@@ -356,10 +356,10 @@
   "pk": "856ad907-da77-4182-9a34-5eb02b217f2c",
   "fields": {
    "json": null,
-   "name": "clusters.waveformDuration",
+   "name": "clusters.peakToThrough",
    "created_by": null,
    "description": "Waveforms length in ms",
-   "filename_pattern": "clusters.waveformDuration.npy"
+   "filename_pattern": "clusters.peakToThrough*.npy"
   }
  },
  {
@@ -400,21 +400,10 @@
   "pk": "9295f7a4-dd1b-440e-8ad0-53223aebab81",
   "fields": {
    "json": null,
-   "name": "_ibl_trials.probabilityLeft",
+   "name": "trials.probabilityLeft",
    "created_by": null,
    "description": "Probability that the stimulus will be on the left hand side for the current block. The probability of right is 1 minus this",
    "filename_pattern": "_ibl_trials.probabilityLeft.*"
-  }
- },
- {
-  "model": "data.datasettype",
-  "pk": "93b79e71-c8f6-4d81-b298-2c8f6aefe192",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_bodyCamera.timestamps",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_bodyCamera.timestamps.*"
   }
  },
  {
@@ -425,7 +414,7 @@
    "name": "channels.rawInd",
    "created_by": null,
    "description": "[nch] Each channel's row in its home file (look up via probes.rawFileName), counting from zero. Note some rows don't have a channel, for example if they were sync pulses",
-   "filename_pattern": "channels.rawInd.npy"
+   "filename_pattern": "channels.rawInd*.npy"
   }
  },
  {
@@ -496,35 +485,13 @@
  },
  {
   "model": "data.datasettype",
-  "pk": "b396747f-0c67-4de4-9610-c7e210a5b86a",
-  "fields": {
-   "json": null,
-   "name": "wheel.times",
-   "created_by": null,
-   "description": "times of position in absolute seconds from session start",
-   "filename_pattern": "*wheel.times.*"
-  }
- },
- {
-  "model": "data.datasettype",
-  "pk": "b3e9dded-027e-4cf0-8392-2baeb3bfcabd",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_rightCamera.raw",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_rightCamera.raw.*"
-  }
- },
- {
-  "model": "data.datasettype",
   "pk": "b5ec79de-9c9e-4009-8892-10aa2ddb9638",
   "fields": {
    "json": null,
-   "name": "_iblrig_leftCamera.timestamps",
+   "name": "_iblrig_Camera.timestamps",
    "created_by": null,
    "description": "",
-   "filename_pattern": "_iblrig_leftCamera.timestamps.*"
+   "filename_pattern": "_iblrig_*Camera.*timestamps*"
   }
  },
  {
@@ -617,17 +584,6 @@
  },
  {
   "model": "data.datasettype",
-  "pk": "df68dbb7-8d0e-4a5b-b829-e2a832a89b62",
-  "fields": {
-   "json": null,
-   "name": "_iblrig_bodyCamera.raw",
-   "created_by": null,
-   "description": "",
-   "filename_pattern": "_iblrig_bodyCamera.raw.*"
-  }
- },
- {
-  "model": "data.datasettype",
   "pk": "e0c77fba-1e8d-435a-b57e-b33c867ede83",
   "fields": {
    "json": null,
@@ -656,7 +612,7 @@
    "name": "clusters.depths",
    "created_by": null,
    "description": "[nc] Depth of mean cluster waveform on probe (\u00b5m). 0 means deepest site, positive means above this.",
-   "filename_pattern": "clusters.depths.npy"
+   "filename_pattern": "clusters.depths*.npy"
   }
  },
  {
@@ -664,10 +620,10 @@
   "pk": "e40899d0-a883-40ac-8214-344bcf249d09",
   "fields": {
    "json": null,
-   "name": "_iblrig_leftCamera.raw",
+   "name": "_iblrig_Camera.raw",
    "created_by": null,
    "description": "",
-   "filename_pattern": "_iblrig_leftCamera.raw.*"
+   "filename_pattern": "_iblrig_*Camera.raw.*"
   }
  },
  {
@@ -678,7 +634,7 @@
    "name": "spikes.depths",
    "created_by": null,
    "description": "[nspi]. Depth along probe of each spike (\u00b5m; computed from waveform center of mass). 0 means deepest site, positive means above this",
-   "filename_pattern": "spikes.depths.npy"
+   "filename_pattern": "spikes.depths*.npy"
   }
  },
  {
@@ -722,7 +678,7 @@
    "name": "clusters.channels",
    "created_by": null,
    "description": "Channel which has the largest amplitude for this cluster. Note this counts all channels in the whole recording (starting from zero), rather than just the channels on this cluster's home probe - so if you want to find this cluster's brain location, it would be channels.brainLocation[clusters.peakChannel[i],:]",
-   "filename_pattern": "clusters.channels.npy"
+   "filename_pattern": "clusters.channels*.npy"
   }
  },
   {
@@ -755,7 +711,7 @@
    "name": "ephysData.raw.ap",
    "created_by": null,
    "description": "Action Potentials band of raw neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.ap.bin"
+   "filename_pattern": "*ephysData*.ap.bin"
   }
  },
  {
@@ -766,7 +722,18 @@
    "name": "ephysData.raw.lf",
    "created_by": null,
    "description": "Low Field band of raw neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.lf.bin"
+   "filename_pattern": "*ephysData*.lf.bin"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "993e04d9-33f4-42c1-b665-3a39da26c72b",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.nidq",
+   "created_by": null,
+   "description": "Nidq breakout box binary data for Neuropixel 3B system",
+   "filename_pattern": "*ephysData*.nidq.bin"
   }
  },
   {
@@ -777,7 +744,29 @@
    "name": "ephysData.raw.meta",
    "created_by": null,
    "description": "Metadata text file for raw binary neurophysiology data",
-   "filename_pattern": "*ephysData.raw*.meta"
+   "filename_pattern": "*ephysData*.meta"
+  }
+ },
+   {
+  "model": "data.datasettype",
+  "pk": "05981c26-6f62-4bb6-af22-745f9751c7be",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.sync",
+   "created_by": null,
+   "description": "Synchronization file for multi-probes acquisitions.",
+   "filename_pattern": "*ephysData*.sync.npy"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "524bc84c-bf31-481f-b9f7-73e87090bd39",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.wiring",
+   "created_by": null,
+   "description": "Description of wiring of synchronization auxiliaries",
+   "filename_pattern": "*ephysData*.wiring.json"
   }
  },
  {
@@ -799,7 +788,7 @@
    "name": "channels.probes",
    "created_by": null,
    "description": "Probe assignments for each channel (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-   "filename_pattern": "channels.probes.npy"
+   "filename_pattern": "channels.probes*.npy"
   }
  },
  {
@@ -810,7 +799,7 @@
    "name": "clusters.probes",
    "created_by": null,
    "description": "Probe assignments for each cluster (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-   "filename_pattern": "clusters.probes.npy"
+   "filename_pattern": "clusters.probes*.npy"
   }
  },
  {
@@ -821,7 +810,7 @@
    "name": "spikes.templates",
    "created_by": null,
    "description": "Detection template assignment for each spike (integers counting from 0). Can be used as direct indexing of the templates.* attributes.",
-   "filename_pattern": "spikes.templates.npy"
+   "filename_pattern": "spikes.templates*.npy"
   }
  },
  {
@@ -832,7 +821,40 @@
    "name": "channels.localCoordinates",
    "created_by": null,
    "description": "relative to probe coordinate system (µm): x (first) dimension is on the width of the shank while (y) is the depth where 0 is the deepest site, and positive above this.",
-   "filename_pattern": "channels.localCoordinates.npy"
+   "filename_pattern": "channels.localCoordinates*.npy"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "94cb84f9-afb9-4285-bf71-333757380261",
+  "fields": {
+   "json": null,
+   "name": "channels._phy_ids",
+   "created_by": null,
+   "description": "Array of integers saying which index in Phy the channel corresponds to (counting from zero).",
+   "filename_pattern": "channels._phy_ids*.npy"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "d3547560-7cd3-48e6-903c-427317a06a3b",
+  "fields": {
+   "json": null,
+   "name": "_ibl_log.info",
+   "created_by": null,
+   "description": "Log File for normal job completion",
+   "filename_pattern": "_ibl_log.info*.log"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "86f168dc-5a37-4e67-adfe-353cf6aed751",
+  "fields": {
+   "json": null,
+   "name": "_ibl_log.error",
+   "created_by": null,
+   "description": "Log File for errored job",
+   "filename_pattern": "_ibl_log.error*.log"
   }
  },
  {

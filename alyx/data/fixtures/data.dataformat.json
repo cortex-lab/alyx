@@ -143,6 +143,18 @@
    "python_loader_function": ""
   }
  },
+  {
+  "model": "data.dataformat",
+  "pk": "a8dace55-5134-426c-a615-6591241e7ba0",
+  "fields": {
+   "json": null,
+   "name": "meta",
+   "description": "Text file containing electrophysiology acquisition metadata",
+   "file_extension": ".meta",
+   "matlab_loader_function": "ibllib.io.spikeglx.read_meta_data",
+   "python_loader_function": "ibllib.io.spikeglx.read_meta_data"
+  }
+ },
  {
   "model": "data.dataformat",
   "pk": "f4ef3f1d-a334-4141-a35f-376f6d14eb2f",
