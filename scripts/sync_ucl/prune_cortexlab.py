@@ -53,6 +53,7 @@ Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
 # are imported
 repos = list(DataRepository.objects.all().values_list('pk', flat=True))
 FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete()
+DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
 # import projects from cortexlab. remove those that don't correspond to any session
 pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
