@@ -12,6 +12,8 @@ json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
+sub_ibl += list(Subject.objects.using('cortexlab').filter(
+    projects__name__icontains='ibl').values_list('pk', flat=True))
 Subject.objects.using('cortexlab').exclude(pk__in=sub_ibl).delete()
 
 # then remove base Sessions
