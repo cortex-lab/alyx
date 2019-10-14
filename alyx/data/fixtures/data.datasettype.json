@@ -491,7 +491,7 @@
    "name": "_iblrig_Camera.timestamps",
    "created_by": null,
    "description": "",
-   "filename_pattern": "_iblrig_*Camera.*timestamps*"
+   "filename_pattern": "_iblrig_*Camera.*timestamps.*"
   }
  },
  {

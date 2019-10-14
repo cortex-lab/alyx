@@ -157,6 +157,18 @@
  },
  {
   "model": "data.dataformat",
+  "pk": "11eef17e-c498-4b65-bc82-666c13b2ffa8",
+  "fields": {
+   "json": null,
+   "name": "log",
+   "description": "Log text file",
+   "file_extension": ".log",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
   "pk": "f4ef3f1d-a334-4141-a35f-376f6d14eb2f",
   "fields": {
    "json": "",
