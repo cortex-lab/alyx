@@ -909,7 +909,7 @@
   "name": "_iblmic_audioSpectrogram.times_mic",
   "created_by": null,
   "description": "Frequency scale of audio spectrogram from microphone (s)",
-  "filename_pattern": "_iblmic_audioSpectrogram.times_mic.*"
+  "filename_pattern": "_iblmic_audioSpectrogram.times*.*"
   }
  }
 ]
