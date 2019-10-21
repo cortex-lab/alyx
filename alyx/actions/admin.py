@@ -487,11 +487,11 @@ class SessionAdmin(BaseActionAdmin):
             ).distinct()
         return form
 
-    def change_view(self, request, obj_id, extra_context=None, **kwargs):
+    def change_view(self, request, object_id, extra_context=None, **kwargs):
         context = extra_context or {}
         context = _pass_narrative_templates(context)
         return super(SessionAdmin, self).change_view(
-            request, obj_id, extra_context=context, **kwargs)
+            request, object_id, extra_context=context, **kwargs)
 
     def add_view(self, request, extra_context=None):
         context = extra_context or {}
