@@ -711,7 +711,7 @@
    "name": "ephysData.raw.ap",
    "created_by": null,
    "description": "Action Potentials band of raw neurophysiology data",
-   "filename_pattern": "*ephysData*.ap.bin"
+   "filename_pattern": "*ephysData*.ap.*bin"
   }
  },
  {
