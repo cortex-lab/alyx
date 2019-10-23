@@ -710,8 +710,8 @@
    "json": null,
    "name": "ephysData.raw.ap",
    "created_by": null,
-   "description": "Action Potentials band of raw neurophysiology data",
-   "filename_pattern": "*ephysData*.ap.*bin"
+   "description": "Action Potentials band of raw neurophysiology data - mtscomp compressed",
+   "filename_pattern": "*ephysData*.ap.cbin"
   }
  },
  {
@@ -721,8 +721,8 @@
    "json": null,
    "name": "ephysData.raw.lf",
    "created_by": null,
-   "description": "Low Field band of raw neurophysiology data",
-   "filename_pattern": "*ephysData*.lf.bin"
+   "description": "Low Field band of raw neurophysiology data - mtscomp compressed",
+   "filename_pattern": "*ephysData*.lf.cbin"
   }
  },
   {
@@ -732,8 +732,19 @@
    "json": null,
    "name": "ephysData.raw.nidq",
    "created_by": null,
-   "description": "Nidq breakout box binary data for Neuropixel 3B system",
-   "filename_pattern": "*ephysData*.nidq.bin"
+   "description": "Nidq breakout box binary data for Neuropixel 3B system - mtscomp compressed",
+   "filename_pattern": "*ephysData*.nidq.cbin"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "2ba28b37-0833-4b7b-bad5-d36c108d3941",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.ch",
+   "created_by": null,
+   "description": "mtscomp header file for block compressed binary time-series. ",
+   "filename_pattern": "*ephysData*.ch"
   }
  },
   {
