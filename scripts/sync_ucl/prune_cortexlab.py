@@ -12,6 +12,8 @@ json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
+sub_ibl += list(Subject.objects.using('cortexlab').filter(
+    projects__name__icontains='ibl').values_list('pk', flat=True))
 Subject.objects.using('cortexlab').exclude(pk__in=sub_ibl).delete()
 
 # then remove base Sessions
@@ -53,6 +55,7 @@ Dataset.objects.using('cortexlab').filter(dataset_type__name='unknown').delete()
 # are imported
 repos = list(DataRepository.objects.all().values_list('pk', flat=True))
 FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete()
+DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
 # import projects from cortexlab. remove those that don't correspond to any session
 pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
