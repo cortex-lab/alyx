@@ -503,7 +503,11 @@ class SessionAdmin(BaseActionAdmin):
 
     def repo_url(self, obj):
         url = settings.SESSION_REPO_URL.format(
-            subject=obj.subject.nickname, date=obj.start_time.date(), number=obj.number or 0)
+            lab=obj.subject.lab.name,
+            subject=obj.subject.nickname,
+            date=obj.start_time.date(),
+            number=obj.number or 0,
+        )
         return format_html(
             '<a href="{url}">{url}</a>'.format(url=url))
 
