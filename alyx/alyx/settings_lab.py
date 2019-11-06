@@ -8,13 +8,13 @@ GLOBUS_CLIENT_ID = '525cc517-8ccb-4d11-8036-af332da5eafd'
 SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
 DEFAULT_SOURCE = 'Cruciform BSU'
 DEFAULT_PROTOCOL = '1'
-SUPERUSERS = ('root')
+SUPERUSERS = ('root',)
 STOCK_MANAGERS = ('charu',)
 WEIGHT_THRESHOLD = 0.75
 DEFAULT_LAB_NAME = 'cortexlab'
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 SESSION_REPO_URL = \
-    "http://ibl.flatironinstitute.org/cortexlab/Subjects/{subject}/{date}/{number:03d}/"
+    "http://ibl.flatironinstitute.org/{lab}/Subjects/{subject}/{date}/{number:03d}/"
 NARRATIVE_TEMPLATES = {
     'Headplate implant': dedent('''
         == General ==
