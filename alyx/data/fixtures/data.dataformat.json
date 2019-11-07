@@ -83,6 +83,30 @@
    "python_loader_function": ""
   }
  },
+   {
+  "model": "data.dataformat",
+  "pk": "0712fa36-f6e8-4705-a731-4416f9fcd65a",
+  "fields": {
+   "json": null,
+   "name": "ch",
+   "description": "mts compression header",
+   "file_extension": ".bin",
+   "matlab_loader_function": "fread",
+   "python_loader_function": "unknown"
+  }
+ },
+  {
+  "model": "data.dataformat",
+  "pk": "ff90db44-72df-4cfd-8b0d-09c1a01fb173",
+  "fields": {
+   "json": null,
+   "name": "cbin",
+   "description": "mts compressed binary file",
+   "file_extension": ".cbin",
+   "matlab_loader_function": "fread",
+   "python_loader_function": "unknown"
+  }
+ },
  {
   "model": "data.dataformat",
   "pk": "c03e71e8-846a-42b2-9865-e9f950bb7806",
