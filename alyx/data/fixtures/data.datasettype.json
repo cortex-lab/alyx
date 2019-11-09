@@ -922,5 +922,16 @@
   "description": "Frequency scale of audio spectrogram from microphone (s)",
   "filename_pattern": "_iblmic_audioSpectrogram.times*.*"
   }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "288b8f91-78b3-42bb-b90e-8bb2c82a35c9",
+ "fields": {
+  "json": null,
+  "name": "_iblrig_micData.raw.flac",
+  "created_by": null,
+  "description": "Microphone data lossless compression for ephys",
+  "filename_pattern": "_iblrig_micData.raw.flac"
+  }
  }
 ]
