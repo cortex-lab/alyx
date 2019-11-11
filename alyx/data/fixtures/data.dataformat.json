@@ -205,7 +205,7 @@
  },
   {
   "model": "data.dataformat",
-  "pk": " f002a248-177d-4e29-b30a-aef3c0b52eff ",
+  "pk": "f002a248-177d-4e29-b30a-aef3c0b52eff",
   "fields": {
    "json": "",
    "name": "flac",
