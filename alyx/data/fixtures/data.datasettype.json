@@ -356,10 +356,10 @@
   "pk": "856ad907-da77-4182-9a34-5eb02b217f2c",
   "fields": {
    "json": null,
-   "name": "clusters.peakToThrough",
+   "name": "clusters.peakToTrough",
    "created_by": null,
    "description": "Waveforms length in ms",
-   "filename_pattern": "clusters.peakToThrough*.npy"
+   "filename_pattern": "clusters.peakToT*rough*.npy"
   }
  },
  {
@@ -491,7 +491,7 @@
    "name": "_iblrig_Camera.timestamps",
    "created_by": null,
    "description": "",
-   "filename_pattern": "_iblrig_*Camera.*timestamps*"
+   "filename_pattern": "_iblrig_*Camera.*timestamps.*"
   }
  },
  {
@@ -710,8 +710,8 @@
    "json": null,
    "name": "ephysData.raw.ap",
    "created_by": null,
-   "description": "Action Potentials band of raw neurophysiology data",
-   "filename_pattern": "*ephysData*.ap.bin"
+   "description": "Action Potentials band of raw neurophysiology data - mtscomp compressed",
+   "filename_pattern": "*ephysData*.ap.cbin"
   }
  },
  {
@@ -721,8 +721,8 @@
    "json": null,
    "name": "ephysData.raw.lf",
    "created_by": null,
-   "description": "Low Field band of raw neurophysiology data",
-   "filename_pattern": "*ephysData*.lf.bin"
+   "description": "Low Field band of raw neurophysiology data - mtscomp compressed",
+   "filename_pattern": "*ephysData*.lf.cbin"
   }
  },
   {
@@ -732,8 +732,19 @@
    "json": null,
    "name": "ephysData.raw.nidq",
    "created_by": null,
-   "description": "Nidq breakout box binary data for Neuropixel 3B system",
-   "filename_pattern": "*ephysData*.nidq.bin"
+   "description": "Nidq breakout box binary data for Neuropixel 3B system - mtscomp compressed",
+   "filename_pattern": "*ephysData*.nidq.cbin"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "2ba28b37-0833-4b7b-bad5-d36c108d3941",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.ch",
+   "created_by": null,
+   "description": "mtscomp header file for block compressed binary time-series. ",
+   "filename_pattern": "*ephysData*.ch"
   }
  },
   {
@@ -866,6 +877,61 @@
   "created_by": null,
   "description": "Synchronized time stamps for camera",
   "filename_pattern": "*camera.times.*"
+  }
+ },
+ {
+ "model": "data.datasettype",
+ "pk": "5ec9b957-d0b8-4343-8d32-e2bc40ce4c5d",
+ "fields": {
+  "json": null,
+  "name": "onsetGoCue.times_mic",
+  "created_by": null,
+  "description": "GoCue Times extracted from microphone data (s)",
+  "filename_pattern": "_iblmic_onsetGoCue.times_mic.*"
+  }
+ },
+ {
+ "model": "data.datasettype",
+ "pk": "cad0b10e-ff17-4f31-a2d0-1be0de95b2d6",
+ "fields": {
+  "json": null,
+  "name": "_iblmic_audioSpectrogram.frequencies",
+  "created_by": null,
+  "description": "Frequency scale of audio spectrogram from microphone (Hz)",
+  "filename_pattern": "_iblmic_audioSpectrogram.frequencies.*"
+  }
+ },
+ {
+ "model": "data.datasettype",
+ "pk": "d9d99abc-f14a-47c2-b61a-91efba29956a",
+ "fields": {
+  "json": null,
+  "name": "_iblmic_audioSpectrogram.power",
+  "created_by": null,
+  "description": "Audio spectrogram from microphone, power",
+  "filename_pattern": "_iblmic_audioSpectrogram.power.*"
+  }
+ },
+ {
+ "model": "data.datasettype",
+ "pk": "bed4e73c-8843-4fbe-8e6b-eb2d8cda5d8b",
+ "fields": {
+  "json": null,
+  "name": "_iblmic_audioSpectrogram.times_mic",
+  "created_by": null,
+  "description": "Frequency scale of audio spectrogram from microphone (s)",
+  "filename_pattern": "_iblmic_audioSpectrogram.times*.*"
+  }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "288b8f91-78b3-42bb-b90e-8bb2c82a35c9",
+ "fields": {
+  "json": null,
+  "name": "_iblrig_micData.raw.flac",
+  "created_by": null,
+  "description": "Microphone data lossless compression for ephys",
+  "filename_pattern": "_iblrig_micData.raw.flac"
   }
  }
 ]

@@ -83,6 +83,30 @@
    "python_loader_function": ""
   }
  },
+   {
+  "model": "data.dataformat",
+  "pk": "0712fa36-f6e8-4705-a731-4416f9fcd65a",
+  "fields": {
+   "json": null,
+   "name": "ch",
+   "description": "mts compression header",
+   "file_extension": ".ch",
+   "matlab_loader_function": "fread",
+   "python_loader_function": "unknown"
+  }
+ },
+  {
+  "model": "data.dataformat",
+  "pk": "ff90db44-72df-4cfd-8b0d-09c1a01fb173",
+  "fields": {
+   "json": null,
+   "name": "cbin",
+   "description": "mts compressed binary file",
+   "file_extension": ".cbin",
+   "matlab_loader_function": "fread",
+   "python_loader_function": "unknown"
+  }
+ },
  {
   "model": "data.dataformat",
   "pk": "c03e71e8-846a-42b2-9865-e9f950bb7806",
@@ -157,6 +181,18 @@
  },
  {
   "model": "data.dataformat",
+  "pk": "11eef17e-c498-4b65-bc82-666c13b2ffa8",
+  "fields": {
+   "json": null,
+   "name": "log",
+   "description": "Log text file",
+   "file_extension": ".log",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
   "pk": "f4ef3f1d-a334-4141-a35f-376f6d14eb2f",
   "fields": {
    "json": "",
@@ -165,6 +201,18 @@
    "file_extension": ".tsv",
    "matlab_loader_function": "",
    "python_loader_function": "pandas.read_table"
+  }
+ },
+  {
+  "model": "data.dataformat",
+  "pk": " f002a248-177d-4e29-b30a-aef3c0b52eff ",
+  "fields": {
+   "json": "",
+   "name": "flac",
+   "description": "Free lossless audio codec digital microphone data",
+   "file_extension": ".flac",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
   }
  }
 ]
