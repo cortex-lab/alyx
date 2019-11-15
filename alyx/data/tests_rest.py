@@ -222,8 +222,9 @@ class APIDataTests(BaseTests):
         self.ar(r, 201)
         self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 1)
         # re-register the same dataset with a different collection throws an error
-        data['collection'] = 'alf/titi'
-        # self.client.post(reverse('register-file'), data)
+        data['filenames'] = 'alf/titi/a.b.e1'
+        with self.assertRaises(Exception):
+            self.client.post(reverse('register-file'), data)
         # re-register a dataset with the same name but a different subcollection adds a new dataset
         data['path'] = '%s/2018-01-01/002/alf/titi' % self.subject
         r = self.client.post(reverse('register-file'), data)
