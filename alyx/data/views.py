@@ -249,6 +249,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         else:
             user = request.user
 
+        # get collection if any
+        collection = request.data.get('collection', None)
         # get the concerned repository using the name/hostname combination
         name = request.data.get('name', None)
         hostname = request.data.get('hostname', None)
@@ -292,8 +294,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             if not filename:
                 continue
             dataset = _create_dataset_file_records(
-                rel_dir_path=rel_dir_path, filename=filename, session=session, user=user,
-                repositories=repositories, exists_in=exists_in)
+                collection=collection, rel_dir_path=rel_dir_path, filename=filename,
+                session=session, user=user, repositories=repositories, exists_in=exists_in)
             out = _make_dataset_response(dataset)
             response.append(out)
 
