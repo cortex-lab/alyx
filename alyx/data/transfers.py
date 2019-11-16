@@ -212,7 +212,7 @@ def _create_dataset_file_records(
 
     assert session is not None
 
-    relative_path = op.join(rel_dir_path, filename)
+    relative_path = op.join(rel_dir_path, collection or '', filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
