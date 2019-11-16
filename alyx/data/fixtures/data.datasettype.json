@@ -928,10 +928,21 @@
  "pk": "288b8f91-78b3-42bb-b90e-8bb2c82a35c9",
  "fields": {
   "json": null,
-  "name": "_iblrig_micData.raw.flac",
+  "name": "_iblrig_micData.raw",
   "created_by": null,
   "description": "Microphone data lossless compression for ephys",
   "filename_pattern": "_iblrig_micData.raw.flac"
+  }
+ },
+   {
+ "model": "data.datasettype",
+ "pk": "9baab957-63d9-408d-ad65-1b163ffcd50b",
+ "fields": {
+  "json": null,
+  "name": "probes.description",
+  "created_by": null,
+  "description": "JSON with one entry per probe containing label, model (3A, 3B1, 3B2),serial and raw_file_name",
+  "filename_pattern": "probes.description*.json"
   }
  }
 ]
