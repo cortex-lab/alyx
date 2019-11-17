@@ -362,6 +362,28 @@
    "filename_pattern": "clusters.metrics*.csv"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "0a79262d-9bc9-46d3-90ca-f53058448fdf",
+  "fields": {
+   "json": null,
+   "name": "clusters.waveformsChannels",
+   "created_by": null,
+   "description": "Index of channels that are stored for each cluster waveform. Sorted by increasing distance from the maximum amplitude channel.",
+   "filename_pattern": "clusters.waveformsChannels*.npy"
+  }
+ },
+   {
+  "model": "data.datasettype",
+  "pk": "93caf4ac-c39d-4723-aaac-d67123f687e4",
+  "fields": {
+   "json": null,
+   "name": "clusters.waveforms",
+   "created_by": null,
+   "description": "Waveform from spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
+   "filename_pattern": "clusters.waveforms.npy"
+  }
+ },
  {
   "model": "data.datasettype",
   "pk": "856ad907-da77-4182-9a34-5eb02b217f2c",
@@ -848,17 +870,6 @@
  },
   {
   "model": "data.datasettype",
-  "pk": "94cb84f9-afb9-4285-bf71-333757380261",
-  "fields": {
-   "json": null,
-   "name": "channels._phy_ids",
-   "created_by": null,
-   "description": "Array of integers saying which index in Phy the channel corresponds to (counting from zero).",
-   "filename_pattern": "channels._phy_ids*.npy"
-  }
- },
-  {
-  "model": "data.datasettype",
   "pk": "d3547560-7cd3-48e6-903c-427317a06a3b",
   "fields": {
    "json": null,
@@ -943,6 +954,28 @@
   "created_by": null,
   "description": "Microphone data lossless compression for ephys",
   "filename_pattern": "_iblrig_micData.raw.flac"
+  }
+ },
+    {
+  "model": "data.datasettype",
+  "pk": "b53f2d05-d491-43f8-992f-f5962a2727ed",
+  "fields": {
+   "json": null,
+   "name": "templates.waveformsChannels",
+   "created_by": null,
+   "description": "Index of channels that are stored for each template. Sorted by increasing distance from the maximum amplitude channel.",
+   "filename_pattern": "templates.waveformsChannels.npy"
+  }
+ },
+   {
+  "model": "data.datasettype",
+  "pk": "d917bfa4-9b7f-4b3f-b892-378f4bcafbe8",
+  "fields": {
+   "json": null,
+   "name": "templates.waveforms",
+   "created_by": null,
+   "description": "Waveform of automatic spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
+   "filename_pattern": "templates.waveforms.npy"
   }
  },
    {
