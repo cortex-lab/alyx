@@ -337,8 +337,9 @@ class SubjectAdmin(BaseAdmin):
     )
 
     list_display = ['nickname', 'weight_percent', 'birth_date', 'sex_l', 'alive', 'session_count',
-                    'responsible_user', 'lab', 'description', 'project_l', 'ear_mark_',
-                    'line_l', 'litter_l', 'zygosities', 'cage', 'breeding_pair_l',
+                    'responsible_user', 'lab', 'description',
+                    'project_l',  # 'session_projects_l',
+                    'ear_mark_', 'line_l', 'litter_l', 'zygosities', 'cage', 'breeding_pair_l',
                     ]
     search_fields = ['nickname',
                      'responsible_user__first_name',
@@ -394,6 +395,10 @@ class SubjectAdmin(BaseAdmin):
         )
         q = q.annotate(sessions_count=Count('actions_sessions'))
         return q
+
+    def session_projects_l(self, sub):
+        return ', '.join(sub.session_projects)
+    session_projects_l.short_description = 'session proj'
 
     def session_count(self, sub):
         return sub.sessions_count
