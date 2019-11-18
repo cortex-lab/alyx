@@ -410,7 +410,8 @@ def bulk_transfer(dry_run=False, lab=None):
     repository does not exist.
     should be launched after bulk_sync() function
     """
-    gc = globus_transfer_client()
+    if not dry_run:
+        gc = globus_transfer_client()
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
@@ -429,21 +430,26 @@ def bulk_transfer(dry_run=False, lab=None):
             logger.warning(str(ds.data_repository.name) + ':' + ds.relative_path +
                            ' is nowhere to ' + 'be found in local AND remote repositories')
             continue
-        isec = [ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository][0]
+        isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
+                    None)
+        if not isec:
+            continue
         # if the transfer doesn't exist, create it:
         if tm[ipri][isec] == 0:
             label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
-            tm[ipri][isec] = globus_sdk.TransferData(
-                gc,
-                source_endpoint=sec_repos[isec].globus_endpoint_id,
-                destination_endpoint=pri_repos[ipri].globus_endpoint_id,
-                verify_checksum=True,
-                sync_level='checksum',
-                label=label)
+            if not dry_run:
+                tm[ipri][isec] = globus_sdk.TransferData(
+                    gc,
+                    source_endpoint=sec_repos[isec].globus_endpoint_id,
+                    destination_endpoint=pri_repos[ipri].globus_endpoint_id,
+                    verify_checksum=True,
+                    sync_level='checksum',
+                    label=label)
         # add the transfer to the current task
         destination_file = _filename_from_file_record(ds, add_uuid=True)
         source_file = _filename_from_file_record(src_file)
-        tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
+        if not dry_run:
+            tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
         logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry_run:
