@@ -351,6 +351,7 @@ class SubjectAdmin(BaseAdmin):
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes', 'cull_', 'cull_reason_',
+                       'death_date',
                        ) + fieldsets[4][1]['fields'][1:] + HOUSING_FIELDS  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
