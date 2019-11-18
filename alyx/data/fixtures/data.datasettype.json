@@ -1008,7 +1008,7 @@
   "name": "_iblqc_ephysTimeRms.timestamps",
   "created_by": null,
   "description": "Time scale for the RMS amplitude as a function of time, relative to the raw binary ephys file (s)",
-  "filename_pattern": "_iblqc_ephysTimeRms*.timestamps.npy",
+  "filename_pattern": "_iblqc_ephysTimeRms*.timestamps.npy"
   }
  },
   {
@@ -1027,10 +1027,10 @@
  "pk": "aced686b-6d9e-4094-bb3a-8e8a198cae28",
  "fields": {
   "json": null,
-  "name": "_iblqc_ephysSpectralDensity.freq",
+  "name": "_iblqc_ephysSpectralDensity.freqs",
   "created_by": null,
   "description": "Frequency scale for the spectrogram (Hz)",
-  "filename_pattern": "_iblqc_ephysSpectralDensity*.freq.npy"
+  "filename_pattern": "_iblqc_ephysSpectralDensity*.freqs.npy"
   }
  },
   {

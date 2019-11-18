@@ -81,9 +81,9 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'file_size', 'md5', 'session_ro']
+    fields = ['name', 'dataset_type', 'file_size', 'md5', 'session_ro', 'collection']
     readonly_fields = ['name_', 'session_ro']
-    list_display = ['name_', 'subject', 'dataset_type_', 'file_size', 'session_ro',
+    list_display = ['name_', 'collection', 'dataset_type_', 'file_size', 'session_ro',
                     'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
