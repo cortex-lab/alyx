@@ -308,14 +308,20 @@ class BaseAdmin(VersionAdmin):
     def has_change_permission(self, request, obj=None):
         if not obj:
             return True
-        elif request.user.is_superuser:
+        if request.user.is_superuser:
             return True
         # models like WaterAdmin / Weighing / NotificationRule have a single user field
-        elif getattr(obj, 'user', False):
+        subject = getattr(obj, 'subject', None)
+        # All objects related to a water-restricted subject should be editable by anyone.
+        if subject:
+            wc = getattr(subject, 'water_control', None)
+            if wc and wc.is_water_restricted():
+                return True
+        if getattr(obj, 'user', False):
             return obj.user == request.user
-        elif getattr(obj, 'users', False):
+        if getattr(obj, 'users', False):
             return request.user in obj.users.all()
-        elif getattr(obj, 'responsible_user', False):
+        if getattr(obj, 'responsible_user', False):
             return obj.responsible_user == request.user
 
 
