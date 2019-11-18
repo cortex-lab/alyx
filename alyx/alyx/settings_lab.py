@@ -17,14 +17,21 @@ SESSION_REPO_URL = \
     "http://ibl.flatironinstitute.org/{lab}/Subjects/{subject}/{date}/{number:03d}/"
 NARRATIVE_TEMPLATES = {
     'Headplate implant': dedent('''
-        == General ==
+    == General ==
 
-        Start time (hh:mm):   ___:___
-        End time (hh:mm):    ___:___
+    Start time (hh:mm):   ___:___
+    End time (hh:mm):    ___:___
 
-        [etc]
+    Bregma-Lambda :   _______  (mm)
 
-        == Notes ==
-        <write your notes here>
+    == Drugs == (copy paste as many times as needed; select IV, SC or IP)
+    __________________( IV / SC / IP ) Admin. time (hh:mm)  ___:___
+
+    == Coordinates ==  (copy paste as many times as needed; select B or L)
+    (B / L) - Region: AP:  _______  ML:  ______  (mm)
+    Region: _____________________________
+
+    == Notes ==
+    <write your notes here>
         '''),
 }

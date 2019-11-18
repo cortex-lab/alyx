@@ -208,11 +208,11 @@ def _get_repositories_for_labs(labs):
 
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
-        repositories=None, exists_in=None):
+        repositories=None, exists_in=None, collection=None):
 
     assert session is not None
 
-    relative_path = op.join(rel_dir_path, filename)
+    relative_path = op.join(rel_dir_path, collection or '', filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
@@ -220,7 +220,8 @@ def _create_dataset_file_records(
 
     # Create the dataset.
     dataset, _ = Dataset.objects.get_or_create(
-        name=filename, session=session, dataset_type=dataset_type, data_format=data_format)
+        collection=collection, name=filename, session=session,
+        dataset_type=dataset_type, data_format=data_format)
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user

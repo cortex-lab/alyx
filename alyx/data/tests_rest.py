@@ -210,12 +210,28 @@ class APIDataTests(BaseTests):
 
         # last use case is about registering a dataset without a lab, the lab should be inferred
         # from the subject
-        data = {'path': '%s/2018-01-01/2/dir' % self.subject,
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
                 'filenames': 'a.b.e1',
                 'name': 'drb2',  # this is the repository name
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
+
+        # re-register the same dataset, check that there is only one
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 1)
+        # re-register the same dataset with a different collection throws an error
+        data['filenames'] = 'alf/titi/a.b.e1'
+        # re-register a dataset with the same name but a different subcollection adds a new dataset
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 2)
+        # but registering a dataset using a subollection that matches another raises an error
+        data['path'] = '%s/2018-01-01/002' % self.subject
+        data['filenames'] = 'dir/a.b.e1'
+        with self.assertRaises(Exception):
+            self.client.post(reverse('register-file'), data)
 
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need

@@ -321,6 +321,11 @@ class Subject(BaseModel):
         return ','.join('%s%s' % ('-' if test.test_result == 0 else '', str(test.sequence))
                         for test in tests)
 
+    @property
+    def session_projects(self):
+        """List of projects that have at least one session with this subject."""
+        return Project.objects.filter(session__subject=self).distinct()
+
     def save(self, *args, **kwargs):
         from actions.models import WaterRestriction, Cull, CullMethod
         # If the nickname is empty, use the autoname from the line.

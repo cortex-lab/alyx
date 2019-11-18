@@ -351,6 +351,39 @@
    "filename_pattern": "spikes.amps*.npy"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "e71eae26-10ff-469a-a515-690791456df8",
+  "fields": {
+   "json": null,
+   "name": "clusters.metrics",
+   "created_by": null,
+   "description": "Quality control metrics at the cluster level. Fields may vary.",
+   "filename_pattern": "clusters.metrics*.csv"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "0a79262d-9bc9-46d3-90ca-f53058448fdf",
+  "fields": {
+   "json": null,
+   "name": "clusters.waveformsChannels",
+   "created_by": null,
+   "description": "Index of channels that are stored for each cluster waveform. Sorted by increasing distance from the maximum amplitude channel.",
+   "filename_pattern": "clusters.waveformsChannels*.npy"
+  }
+ },
+   {
+  "model": "data.datasettype",
+  "pk": "93caf4ac-c39d-4723-aaac-d67123f687e4",
+  "fields": {
+   "json": null,
+   "name": "clusters.waveforms",
+   "created_by": null,
+   "description": "Waveform from spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
+   "filename_pattern": "clusters.waveforms.npy"
+  }
+ },
  {
   "model": "data.datasettype",
   "pk": "856ad907-da77-4182-9a34-5eb02b217f2c",
@@ -359,7 +392,7 @@
    "name": "clusters.peakToTrough",
    "created_by": null,
    "description": "Waveforms length in ms",
-   "filename_pattern": "clusters.peakToT*rough*.npy"
+   "filename_pattern": "clusters.peakToTrough*.npy"
   }
  },
  {
@@ -837,17 +870,6 @@
  },
   {
   "model": "data.datasettype",
-  "pk": "94cb84f9-afb9-4285-bf71-333757380261",
-  "fields": {
-   "json": null,
-   "name": "channels._phy_ids",
-   "created_by": null,
-   "description": "Array of integers saying which index in Phy the channel corresponds to (counting from zero).",
-   "filename_pattern": "channels._phy_ids*.npy"
-  }
- },
-  {
-  "model": "data.datasettype",
   "pk": "d3547560-7cd3-48e6-903c-427317a06a3b",
   "fields": {
    "json": null,
@@ -928,10 +950,54 @@
  "pk": "288b8f91-78b3-42bb-b90e-8bb2c82a35c9",
  "fields": {
   "json": null,
-  "name": "_iblrig_micData.raw.flac",
+  "name": "_iblrig_micData.raw",
   "created_by": null,
   "description": "Microphone data lossless compression for ephys",
   "filename_pattern": "_iblrig_micData.raw.flac"
+  }
+ },
+    {
+  "model": "data.datasettype",
+  "pk": "b53f2d05-d491-43f8-992f-f5962a2727ed",
+  "fields": {
+   "json": null,
+   "name": "templates.waveformsChannels",
+   "created_by": null,
+   "description": "Index of channels that are stored for each template. Sorted by increasing distance from the maximum amplitude channel.",
+   "filename_pattern": "templates.waveformsChannels.npy"
+  }
+ },
+   {
+  "model": "data.datasettype",
+  "pk": "d917bfa4-9b7f-4b3f-b892-378f4bcafbe8",
+  "fields": {
+   "json": null,
+   "name": "templates.waveforms",
+   "created_by": null,
+   "description": "Waveform of automatic spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
+   "filename_pattern": "templates.waveforms.npy"
+  }
+ },
+   {
+ "model": "data.datasettype",
+ "pk": "9baab957-63d9-408d-ad65-1b163ffcd50b",
+ "fields": {
+  "json": null,
+  "name": "probes.description",
+  "created_by": null,
+  "description": "JSON with one entry per probe containing label, model (3A, 3B1, 3B2),serial and raw_file_name",
+  "filename_pattern": "probes.description*.json"
+  }
+ },
+     {
+ "model": "data.datasettype",
+ "pk": "f8598f8a-272e-4ae0-aaa9-77c3ac733aaf",
+ "fields": {
+  "json": null,
+  "name": "probes.trajectory",
+  "created_by": null,
+  "description": "JSON with one entry per probe containing the 7 parameters describing the probe trajectory. Refer to the coordinate section of this document for more information.\n 'x':(um) medio-lateral coordinate relative to Bregma, left negative\n 'y':(um) antero-posterior coordinate relative to Bregma, back negative\n 'z':(um) dorso-ventral coordinate relative to Bregma, ventral negative\n 'phi':(degrees)[-180 180] azimuth\n 'theta':(degrees)[0 180] polar angle\n 'depth':(um) insertion depth\n 'beta' :(degrees) roll angle of the probe\"",
+  "filename_pattern": "probes.trajectory*.json"
   }
  }
 ]

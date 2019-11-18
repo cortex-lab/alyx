@@ -253,6 +253,9 @@ class Dataset(BaseExperimentalData):
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 
+    collection = models.CharField(blank=True, null=True, max_length=255,
+                                  help_text='file subcollection or subfolder')
+
     dataset_type = models.ForeignKey(
         DatasetType, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_dataset_type)

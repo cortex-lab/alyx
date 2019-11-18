@@ -1,5 +1,6 @@
 import logging
 import re
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets, mixins, serializers
@@ -291,9 +292,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         for filename in filenames:
             if not filename:
                 continue
+            # if filename contains path elements, interpret them as the collection field, otherwise
+            # collection field is None
+            collection = str(Path(filename.replace('\\', '/')).parent)
+            collection = None if collection == '.' else collection
+            filename = Path(filename).name
             dataset = _create_dataset_file_records(
-                rel_dir_path=rel_dir_path, filename=filename, session=session, user=user,
-                repositories=repositories, exists_in=exists_in)
+                collection=collection, rel_dir_path=rel_dir_path, filename=filename,
+                session=session, user=user, repositories=repositories, exists_in=exists_in)
             out = _make_dataset_response(dataset)
             response.append(out)
 

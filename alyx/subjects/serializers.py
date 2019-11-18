@@ -9,7 +9,8 @@ from misc.models import Lab
 
 SUBJECT_LIST_SERIALIZER_FIELDS = ('nickname', 'url', 'id', 'responsible_user', 'birth_date',
                                   'age_weeks', 'death_date', 'species', 'sex', 'litter', 'strain',
-                                  'source', 'line', 'projects', 'lab', 'genotype', 'description',
+                                  'source', 'line', 'projects', 'session_projects',
+                                  'lab', 'genotype', 'description',
                                   'alive', 'reference_weight', 'last_water_restriction',
                                   'expected_water', 'remaining_water')
 
@@ -111,6 +112,12 @@ class SubjectListSerializer(_WaterRestrictionBaseSerializer):
         read_only=False,
         slug_field='name',
         queryset=Project.objects.all(),
+        many=True,
+        required=False,)
+
+    session_projects = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='name',
         many=True,
         required=False,)
 
