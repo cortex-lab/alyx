@@ -315,7 +315,8 @@ class BaseAdmin(VersionAdmin):
         # All objects related to a water-restricted subject should be editable by anyone.
         if subject:
             wc = getattr(subject, 'water_control', None)
-            if wc and wc.is_water_restricted():
+            # Check lab.
+            if wc and wc.is_water_restricted() and subject.lab.name in request.user.lab:
                 return True
         if getattr(obj, 'user', False):
             return obj.user == request.user
