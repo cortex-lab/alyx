@@ -98,6 +98,17 @@
    "filename_pattern": "_iblrig_taskSettings.raw.*"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "334ac31e-49e2-480f-b1b3-661e4fae7bb2",
+  "fields": {
+   "json": null,
+   "name": "clusters.uuids",
+   "created_by": null,
+   "description": "Unique identifier assigned to each cluster when ALF files created and during manual curation.",
+   "filename_pattern": "clusters.uuids*.csv"
+  }
+ },
  {
   "model": "data.datasettype",
   "pk": "28440e6f-5809-46e8-9a18-ee79c5f1aea4",
@@ -105,7 +116,7 @@
    "json": null,
    "name": "clusters.amps",
    "created_by": null,
-   "description": "Mean amplitude of each cluster (\u00b5V)",
+   "description": "Mean amplitude of each cluster (V)",
    "filename_pattern": "clusters.amps*.npy"
   }
  },
@@ -270,7 +281,7 @@
    "json": null,
    "name": "_spikeglx_sync.channels",
    "created_by": null,
-   "description": "[nsync]. Sync channel number (0-15)",
+   "description": "0 based index corresponding to the raw file sync channel used [0-15 on 3A, 0-8 on 3B]",
    "filename_pattern": "_spikeglx_sync.channels*.npy"
   }
  },
@@ -347,7 +358,7 @@
    "json": null,
    "name": "spikes.amps",
    "created_by": null,
-   "description": "[nspi]. Amplitude of each spike (\u00b5V)",
+   "description": "[nspi]. Amplitude of each spike (V)",
    "filename_pattern": "spikes.amps*.npy"
   }
  },
@@ -802,6 +813,17 @@
    "filename_pattern": "*ephysData*.sync.npy"
   }
  },
+ {
+  "model": "data.datasettype",
+  "pk": "9e77de1e-b20b-4a84-b372-2c20907f95b6",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.timestamps",
+   "created_by": null,
+   "description": "2 columns file containing time synchronisation information for the AP binary file: sample index in the first column and session time in the second column. Note that sample indices may not be integers.",
+   "filename_pattern": "*ephysData*.timestamps.npy"
+  }
+ },
   {
   "model": "data.datasettype",
   "pk": "524bc84c-bf31-481f-b9f7-73e87090bd39",
@@ -1018,7 +1040,7 @@
   "json": null,
   "name": "_iblqc_ephysTimeRms.amps",
   "created_by": null,
-  "description": "RMS amplitude as a function of time (uV)",
+  "description": "RMS amplitude as a function of time (V)",
   "filename_pattern": "_iblqc_ephysTimeRms*.amps.npy"
   }
  },
@@ -1040,7 +1062,7 @@
   "json": null,
   "name": "_iblqc_ephysSpectralDensity.amps",
   "created_by": null,
-  "description": "Spectral Density for all channels (uV**2/Hz)",
+  "description": "Spectral Density for all channels (V**2/Hz)",
   "filename_pattern": "_iblqc_ephysSpectralDensity*.amps.npy"
   }
  }
