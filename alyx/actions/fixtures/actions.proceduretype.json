@@ -260,6 +260,15 @@
   "description": "This term covers:\r\n- Induction and maintenance of general/local/regional anaesthesia by use of agents and by routes suitable for the species, nature and duration of the procedure - Inhalation.\r\n- Subcutaneous injection under anesthesia\r\n- Administration of substances topically to the skin or conjunctiva with anaesthesia.\r\n- Intracranial injection of substances with anaesthesia\r\n- Administration of substances into neural structures by injection and with anaesthesia."
  }
 },
+ {
+ "model": "actions.proceduretype",
+ "pk": "ecc88a87-684f-442b-bfb6-bb8574c2f70e",
+ "fields": {
+  "name": "Histology",
+  "json": null,
+  "description": "Covers the acquisition of histological sections, the subsequent registration of slices to a common reference atlas and the eventual recovery of electrophysiology tracks through manual picking."
+ }
+},
 {
  "model": "actions.proceduretype",
  "pk": "f573f844-4fa5-4c00-8fcd-61369950f2dc",
