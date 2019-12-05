@@ -432,7 +432,7 @@ def bulk_transfer(dry_run=False, lab=None):
             continue
         isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
                     None)
-        if not isec:
+        if isec is None:
             continue
         # if the transfer doesn't exist, create it:
         if tm[ipri][isec] == 0:
