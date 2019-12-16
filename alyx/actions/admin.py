@@ -481,7 +481,7 @@ class SessionAdmin(BaseActionAdmin):
         form = super(SessionAdmin, self).get_form(request, obj, **kwargs)
         if form.base_fields and not request.user.is_superuser:
             # the projects edit box is limited to projects with no user or containing current user
-            current_proj = obj.project.pk if obj else None
+            current_proj = obj.project.pk if obj and obj.project else None
             form.base_fields['project'].queryset = Project.objects.filter(
                 Q(users=request.user.pk) | Q(users=None) | Q(pk=current_proj)
             ).distinct()
