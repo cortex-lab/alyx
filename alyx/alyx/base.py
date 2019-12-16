@@ -310,20 +310,20 @@ class BaseAdmin(VersionAdmin):
             return True
         if request.user.is_superuser:
             return True
-        # models like WaterAdmin / Weighing / NotificationRule have a single user field
-        subject = getattr(obj, 'subject', None)
-        # All objects related to a water-restricted subject should be editable by anyone.
-        if subject:
-            wc = getattr(subject, 'water_control', None)
-            # Check lab.
-            if wc and wc.is_water_restricted() and subject.lab.name in request.user.lab:
-                return True
-        if getattr(obj, 'user', False):
-            return obj.user == request.user
-        if getattr(obj, 'users', False):
-            return request.user in obj.users.all()
-        if getattr(obj, 'responsible_user', False):
-            return obj.responsible_user == request.user
+        # Subject associated to the object.
+        subj = obj if hasattr(obj, 'responsible_user') else getattr(obj, 'subject', None)
+        # List of allowed users for the subject.
+        allowed = getattr(subj, 'allowed_users', None)
+        allowed = set(allowed.all() if allowed else [])
+        # Add the repsonsible user or user(s) to the list of allowed users.
+        if hasattr(obj, 'responsible_user'):
+            allowed.add(obj.responsible_user)
+        if hasattr(obj, 'user'):
+            allowed.add(obj.user)
+        if hasattr(obj, 'users'):
+            for user in obj.users.all():
+                allowed.add(user)
+        return request.user in allowed
 
 
 class BaseInlineAdmin(admin.TabularInline):

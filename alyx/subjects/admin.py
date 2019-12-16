@@ -314,6 +314,7 @@ class SubjectAdmin(BaseAdmin):
                                 ('cull_', 'cull_reason_'),
                                 'ear_mark',
                                 'protocol_number', 'description',
+                                'allowed_users',
                                 'lab', 'projects', 'json', 'subject_history')}),
         ('HOUSING (read-only, edit widget at the bottom of the page)',
          {'fields': HOUSING_FIELDS, 'classes': ('extrapretty',), }),
