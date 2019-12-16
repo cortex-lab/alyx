@@ -29,7 +29,8 @@ from misc.admin import NoteInline
 
 def create_modeladmin(modeladmin, model, name=None):
     # http://stackoverflow.com/a/2228821/1595060
-    name = name.replace(' ' , '_')
+    name = name.replace(' ', '_')
+
     class Meta:
         proxy = True
         app_label = model._meta.app_label
