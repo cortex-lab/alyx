@@ -145,15 +145,25 @@ class APIDataTests(BaseTests):
             'number': 2,
         }
         data = [data, data.copy()]
-        data[1]['created_datetime'] = '2017-12-21T12:00'
+        data[1]['created_datetime'] = '2018-02-21T12:00'
+        data[1]['name'] = 'dataset-created-after'
         r = self.client.post(reverse('dataset-list'), data[0])
         self.ar(r, 201)
         r = self.client.post(reverse('dataset-list'), data[1])
         self.ar(r, 201)
-        r = self.client.get(reverse('dataset-list') + '?created_datetime_lte=2018-01-01')
+        # only one has been created before 2018-01-01
+        r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01')
         a = [datetime.datetime.strptime(d['created_datetime'],
                                         '%Y-%m-%dT%H:%M:%S') for d in self.ar(r)]
-        self.assertTrue(max(a) <= datetime.datetime(2018, 1, 1))
+        self.assertTrue(max(a).date() <= datetime.date(2018, 1, 1))
+        # only one has been created on 2018-02-21
+        r = self.client.get(reverse('dataset-list') + '?created_date=2018-02-21')
+        res = self.ar(r, 200)
+        self.assertTrue(res[0]['name'] == 'dataset-created-after')
+        self.assertTrue(len(res) == 1)
+        # but both correspond to session of 2018-01-01
+        r = self.client.get(reverse('dataset-list') + '?date=2018-01-01')
+        self.assertTrue(len(self.ar(r, 200)) == 2)
 
     def test_register_files(self):
         # create 4 repositories, 2 per lab

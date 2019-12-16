@@ -215,7 +215,7 @@
    "json": null,
    "name": "wheel.position",
    "created_by": null,
-   "description": "Absolute position of wheel (cm)",
+   "description": "Absolute position of wheel.",
    "filename_pattern": "*wheel.position.*"
   }
  },
@@ -644,7 +644,7 @@
    "json": null,
    "name": "wheel.velocity",
    "created_by": null,
-   "description": "Signed velocity of wheel (cm/s) positive = CW",
+   "description": "Signed velocity of wheel",
    "filename_pattern": "*wheel.velocity.*"
   }
  },
