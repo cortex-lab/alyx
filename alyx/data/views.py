@@ -106,14 +106,15 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class DatasetFilter(FilterSet):
     subject = django_filters.CharFilter('session__subject__nickname')
-    date = django_filters.CharFilter('created_datetime__date')
+    created_date = django_filters.CharFilter('created_datetime__date')
+    date = django_filters.CharFilter('session__start_time__date')
     created_by = django_filters.CharFilter('created_by__username')
     dataset_type = django_filters.CharFilter('dataset_type__name')
     experiment_number = django_filters.CharFilter('session__number')
-    created_datetime_gte = django_filters.DateTimeFilter('created_datetime',
-                                                         lookup_expr='gte')
-    created_datetime_lte = django_filters.DateTimeFilter('created_datetime',
-                                                         lookup_expr='lte')
+    created_date_gte = django_filters.DateTimeFilter('created_datetime__date',
+                                                     lookup_expr='gte')
+    created_date_lte = django_filters.DateTimeFilter('created_datetime__date',
+                                                     lookup_expr='lte')
 
     class Meta:
         model = Dataset

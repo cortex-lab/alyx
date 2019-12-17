@@ -98,6 +98,17 @@
    "filename_pattern": "_iblrig_taskSettings.raw.*"
   }
  },
+  {
+  "model": "data.datasettype",
+  "pk": "334ac31e-49e2-480f-b1b3-661e4fae7bb2",
+  "fields": {
+   "json": null,
+   "name": "clusters.uuids",
+   "created_by": null,
+   "description": "Unique identifier assigned to each cluster when ALF files created and during manual curation.",
+   "filename_pattern": "clusters.uuids*.csv"
+  }
+ },
  {
   "model": "data.datasettype",
   "pk": "28440e6f-5809-46e8-9a18-ee79c5f1aea4",
@@ -105,7 +116,7 @@
    "json": null,
    "name": "clusters.amps",
    "created_by": null,
-   "description": "Mean amplitude of each cluster (\u00b5V)",
+   "description": "Mean amplitude of each cluster (V)",
    "filename_pattern": "clusters.amps*.npy"
   }
  },
@@ -204,7 +215,7 @@
    "json": null,
    "name": "wheel.position",
    "created_by": null,
-   "description": "Absolute position of wheel (cm)",
+   "description": "Absolute position of wheel.",
    "filename_pattern": "*wheel.position.*"
   }
  },
@@ -270,7 +281,7 @@
    "json": null,
    "name": "_spikeglx_sync.channels",
    "created_by": null,
-   "description": "[nsync]. Sync channel number (0-15)",
+   "description": "0 based index corresponding to the raw file sync channel used [0-15 on 3A, 0-8 on 3B]",
    "filename_pattern": "_spikeglx_sync.channels*.npy"
   }
  },
@@ -347,7 +358,7 @@
    "json": null,
    "name": "spikes.amps",
    "created_by": null,
-   "description": "[nspi]. Amplitude of each spike (\u00b5V)",
+   "description": "[nspi]. Amplitude of each spike (V)",
    "filename_pattern": "spikes.amps*.npy"
   }
  },
@@ -633,7 +644,7 @@
    "json": null,
    "name": "wheel.velocity",
    "created_by": null,
-   "description": "Signed velocity of wheel (cm/s) positive = CW",
+   "description": "Signed velocity of wheel",
    "filename_pattern": "*wheel.velocity.*"
   }
  },
@@ -800,6 +811,17 @@
    "created_by": null,
    "description": "Synchronization file for multi-probes acquisitions.",
    "filename_pattern": "*ephysData*.sync.npy"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "9e77de1e-b20b-4a84-b372-2c20907f95b6",
+  "fields": {
+   "json": null,
+   "name": "ephysData.raw.timestamps",
+   "created_by": null,
+   "description": "2 columns file containing time synchronisation information for the AP binary file: sample index in the first column and session time in the second column. Note that sample indices may not be integers.",
+   "filename_pattern": "*ephysData*.timestamps.npy"
   }
  },
   {
@@ -989,7 +1011,7 @@
   "filename_pattern": "probes.description*.json"
   }
  },
-     {
+ {
  "model": "data.datasettype",
  "pk": "f8598f8a-272e-4ae0-aaa9-77c3ac733aaf",
  "fields": {
@@ -998,6 +1020,50 @@
   "created_by": null,
   "description": "JSON with one entry per probe containing the 7 parameters describing the probe trajectory. Refer to the coordinate section of this document for more information.\n 'x':(um) medio-lateral coordinate relative to Bregma, left negative\n 'y':(um) antero-posterior coordinate relative to Bregma, back negative\n 'z':(um) dorso-ventral coordinate relative to Bregma, ventral negative\n 'phi':(degrees)[-180 180] azimuth\n 'theta':(degrees)[0 180] polar angle\n 'depth':(um) insertion depth\n 'beta' :(degrees) roll angle of the probe\"",
   "filename_pattern": "probes.trajectory*.json"
+  }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "a02ab1c2-c881-4acc-9e3a-13c0a0c3e187",
+ "fields": {
+  "json": null,
+  "name": "_iblqc_ephysTimeRms.timestamps",
+  "created_by": null,
+  "description": "Time scale for the RMS amplitude as a function of time, relative to the raw binary ephys file (s)",
+  "filename_pattern": "_iblqc_ephysTimeRms*.timestamps.npy"
+  }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "374e0fc2-58be-4670-b238-a43f82aae8a4",
+ "fields": {
+  "json": null,
+  "name": "_iblqc_ephysTimeRms.rms",
+  "created_by": null,
+  "description": "RMS amplitude as a function of time (V)",
+  "filename_pattern": "_iblqc_ephysTimeRms*.rms.npy"
+  }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "aced686b-6d9e-4094-bb3a-8e8a198cae28",
+ "fields": {
+  "json": null,
+  "name": "_iblqc_ephysSpectralDensity.freqs",
+  "created_by": null,
+  "description": "Frequency scale for the spectrogram (Hz)",
+  "filename_pattern": "_iblqc_ephysSpectralDensity*.freqs.npy"
+  }
+ },
+  {
+ "model": "data.datasettype",
+ "pk": "e61ce46e-0412-4edc-8c38-50a5c60e3ee4",
+ "fields": {
+  "json": null,
+  "name": "_iblqc_ephysSpectralDensity.power",
+  "created_by": null,
+  "description": "Spectral Density for all channels (V**2/Hz)",
+  "filename_pattern": "_iblqc_ephysSpectralDensity*.power.npy"
   }
  }
 ]
