@@ -312,8 +312,9 @@ class BaseAdmin(VersionAdmin):
             return True
         # Subject associated to the object.
         subj = obj if hasattr(obj, 'responsible_user') else getattr(obj, 'subject', None)
+        resp_user = getattr(subj, 'responsible_user', None)
         # List of allowed users for the subject.
-        allowed = getattr(subj, 'allowed_users', None)
+        allowed = getattr(resp_user, 'allowed_users', None)
         allowed = set(allowed.all() if allowed else [])
         # Add the repsonsible user or user(s) to the list of allowed users.
         if hasattr(obj, 'responsible_user'):

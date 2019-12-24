@@ -314,7 +314,6 @@ class SubjectAdmin(BaseAdmin):
                                 ('cull_', 'cull_reason_'),
                                 'ear_mark',
                                 'protocol_number', 'description',
-                                'allowed_users',
                                 'lab', 'projects', 'json', 'subject_history')}),
         ('HOUSING (read-only, edit widget at the bottom of the page)',
          {'fields': HOUSING_FIELDS, 'classes': ('extrapretty',), }),
@@ -1249,9 +1248,17 @@ class LabMemberAdminForm(UserChangeForm):
 
 class LabMemberAdmin(UserAdmin):
     form = LabMemberAdminForm
+
+    fieldsets = UserAdmin.fieldsets + (
+        ('Extra fields', {'fields': ('allowed_users',)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ('Extra fields', {'fields': ('allowed_users',)}),
+    )
+
     ordering = ['username']
     list_display = ['username', 'email', 'first_name', 'last_name',
-                    'groups_l',
+                    'groups_l', 'allowed_users_',
                     'is_staff', 'is_superuser', 'is_stock_manager',
                     ]
     list_editable = ['is_stock_manager']
@@ -1265,6 +1272,10 @@ class LabMemberAdmin(UserAdmin):
     def groups_l(self, obj):
         return ', '.join(map(str, obj.groups.all()))
     groups_l.short_description = 'groups'
+
+    def allowed_users_(self, obj):
+        return ', '.join(u.username for u in obj.allowed_users.all())
+    allowed_users_.short_description = 'allowed users'
 
 
 # Reorganize admin index

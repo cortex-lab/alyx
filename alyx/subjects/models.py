@@ -170,7 +170,6 @@ class Subject(BaseModel):
                                          related_name='subjects_responsible',
                                          help_text="Who has primary or legal responsibility "
                                          "for the subject.")
-    allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL)
     lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     projects = models.ManyToManyField(
