@@ -276,6 +276,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             # comma-separated filenames
             filenames = filenames.split(',')
 
+        # md5 sums if provided
+        md5s = request.data.get('md5', ())
+        if isinstance(md5s, str):
+            md5s = md5s.split(',')
+
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
