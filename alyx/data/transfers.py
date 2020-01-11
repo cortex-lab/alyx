@@ -533,10 +533,14 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
-                    ls_current_path = [f['name'] for f in gtc.operation_ls(ge, path=current_path)]
-                if Path(file2del).name in ls_current_path:
-                    print('DELETE ', file2del)
-                    delete_clients[i].add_item(file2del)
+                    try:
+                        ls_current_path = [f['name'] for f in
+                                           gtc.operation_ls(ge, path=current_path)]
+                    except globus_sdk.exc.TransferAPIError as err:
+                        if 'ClientError.NotFound' in str(err):
+                            ls_current_path = []
+                        else:
+                            raise err
 
     # launch the deletion jobs and remove records from the database
     if dry:
