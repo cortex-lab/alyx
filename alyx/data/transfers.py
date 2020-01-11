@@ -3,6 +3,7 @@ import logging
 import os
 import os.path as op
 import re
+from pathlib import Path
 
 from django.db.models import Case, When, Count, Q
 import globus_sdk
@@ -490,3 +491,59 @@ def _get_session(subject=None, date=None, number=None, user=None):
         session.parent_session = base
         session.save()
     return session
+
+
+def globus_delete_datasets(datasets, dry=True, local_only=False):
+    """
+    For each dataset in the queryset, delete the dataset record in the database and attempt
+    a Globus delete for all physical file-records associated.
+    Admin territory.
+    :param datasets:
+    :param dry: default True
+    :param local_only: only delete from non-FlatIron locations: in this case only file records will
+    be removed from the database, not the datasets records.
+    :return:
+    """
+    # first get the list of Globus endpoints concerned
+    file_records = FileRecord.objects.filter(dataset__in=datasets)
+    if local_only:
+        file_records = file_records.filter(data_repository__globus_is_personal=True)
+        file_records = file_records.exclude(data_repository__name__icontains='flatiron')
+    globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
+                                                flat=True).distinct()
+
+    # create a globus delete_client for each globus endpoint
+    if not dry:
+        gtc = globus_transfer_client()
+        delete_clients = []
+        for ge in globus_endpoints:
+            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
+
+    # appends each file for deletion
+    current_path = None
+    for i, ge in enumerate(globus_endpoints):
+        frs = FileRecord.objects.filter(
+            dataset__in=datasets, data_repository__globus_endpoint_id=ge).order_by('relative_path')
+        for fr in frs:
+            add_uuid = not fr.data_repository.globus_is_personal
+            file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
+
+            if dry:
+                print(file2del)
+            else:
+                if current_path != Path(file2del).parent:
+                    current_path = Path(file2del).parent
+                    ls_current_path = [f['name'] for f in gtc.operation_ls(ge, path=current_path)]
+                if Path(file2del).name in ls_current_path:
+                    print('DELETE ', file2del)
+                    delete_clients[i].add_item(file2del)
+
+    # launch the deletion jobs and remove records from the database
+    if dry:
+        return
+    for dc in delete_clients:
+        gtc.submit_delete(dc)
+
+    file_records.delete()
+    if not local_only:
+        datasets.delete()
