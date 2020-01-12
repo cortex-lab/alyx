@@ -513,8 +513,8 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
                                                 flat=True).distinct()
 
     # create a globus delete_client for each globus endpoint
+    gtc = globus_transfer_client()
     if not dry:
-        gtc = globus_transfer_client()
         delete_clients = []
         for ge in globus_endpoints:
             delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
@@ -522,14 +522,21 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
     # appends each file for deletion
     current_path = None
     for i, ge in enumerate(globus_endpoints):
+        # get endpoint status before continuing
+        endpoint_info = gtc.get_endpoint(ge)
+        # if the endpoint is not globus_connect (ie. not personal) this returns None
+        endpoint_connected = endpoint_info.data['gcp_connected'] is not False
+        # if the endpoint is offline skip
+        if not endpoint_connected:
+            logger.warning(endpoint_info.data['display_name'] + 'is offline. SKIPPING.')
+            continue
         frs = FileRecord.objects.filter(
             dataset__in=datasets, data_repository__globus_endpoint_id=ge).order_by('relative_path')
         for fr in frs:
             add_uuid = not fr.data_repository.globus_is_personal
             file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
-
             if dry:
-                print(file2del)
+                logger.info(file2del)
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
@@ -541,13 +548,19 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
                             ls_current_path = []
                         else:
                             raise err
-
+                    if Path(file2del).name in ls_current_path:
+                        logger.info('DELETE: ' + file2del)
+                        delete_clients[i].add_item(file2del)
     # launch the deletion jobs and remove records from the database
     if dry:
         return
     for dc in delete_clients:
+        # submitting a deletion without data will create an error
+        if dc['DATA'] == []:
+            continue
         gtc.submit_delete(dc)
 
     file_records.delete()
     if not local_only:
-        datasets.delete()
+        for ds in datasets:
+            ds.delete()
