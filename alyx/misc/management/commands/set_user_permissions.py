@@ -52,7 +52,10 @@ class Command(BaseCommand):
             # Add all users to the group.
             user.groups.add(group)
             # Set super users for a few select users.
-            user.is_superuser = user.username in settings.SUPERUSERS
-            user.is_stock_manager = user.username in settings.STOCK_MANAGERS
+            user.is_superuser = user.is_superuser or user.username in settings.SUPERUSERS
+            user.is_stock_manager = (
+                user.is_stock_manager or user.username in settings.STOCK_MANAGERS)
+            user.is_staff = True
+            user.is_active = True
             user.save()
         self.stdout.write("%d users have been successfully updated." % len(users))
