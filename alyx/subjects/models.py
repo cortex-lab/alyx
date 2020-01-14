@@ -356,10 +356,10 @@ class Subject(BaseModel):
             Cull.objects.create(
                 subject=self, cull_method=cull_method, date=self.death_date,
                 user=self.responsible_user)
-        if hasattr(self, 'cull') and self.cull_method != str(self.cull.cull_method):
+        elif hasattr(self, 'cull') and self.cull_method != str(self.cull.cull_method):
             self.cull.cull_method = cull_method
             self.cull.save()
-        if hasattr(self, 'cull') and self.death_date != self.cull.date:
+        elif hasattr(self, 'cull') and self.death_date != self.cull.date:
             self.cull.date = self.death_date
             self.cull.save()
         # Save the reduced date.

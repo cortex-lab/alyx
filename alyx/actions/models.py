@@ -509,3 +509,13 @@ class Cull(BaseModel):
                 logger.debug("Ending water restriction %s.", wr)
                 wr.save()
         return super(Cull, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # on deletion of the Cull object, setting the death_date of the related subject to None
+        sub = self.subject
+        output = super(Cull, self).delete(*args, **kwargs)
+        sub.cull = None
+        sub.death_date = None
+        sub.cull_method = ''
+        sub.save()
+        return output
