@@ -227,7 +227,7 @@ def _create_dataset_file_records(
     # have to set the created_by field.
     dataset.created_by = user
     # if a md5 sum is provided, label the dataset with it
-    if md5:
+    if md5 is not None:
         dataset.md5 = md5
     # Validate the fields.
     dataset.full_clean()

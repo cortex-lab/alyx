@@ -227,8 +227,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         r_ = {'created_by': 'user_name_alyx',
               'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
-              'filenames': ['file1', 'file2', 'file3'],
+              'filenames': ['file1', 'file2'],
               'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
+              'md5': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
+                      'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               }
         ```
 
@@ -277,7 +279,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             filenames = filenames.split(',')
 
         # md5 sums if provided
-        md5s = request.data.get('md5', ())
+        md5s = request.data.get('md5', [None for f in filenames])
         if isinstance(md5s, str):
             md5s = md5s.split(',')
 
@@ -295,7 +297,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename in filenames:
+        for filename, md5 in zip(filenames, md5s):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
@@ -305,7 +307,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             filename = Path(filename).name
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
-                session=session, user=user, repositories=repositories, exists_in=exists_in)
+                session=session, user=user, repositories=repositories, exists_in=exists_in,
+                md5=md5)
             out = _make_dataset_response(dataset)
             response.append(out)
 
