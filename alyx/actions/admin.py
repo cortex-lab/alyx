@@ -439,9 +439,17 @@ class DatasetInline(BaseInlineAdmin):
     show_change_link = True
     model = Dataset
     extra = 1
-    fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
-    readonly_fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+    fields = ('name', 'dataset_type', 'online', 'created_by', 'created_datetime')
+    readonly_fields = ('name', 'dataset_type', 'online', 'created_by', 'created_datetime')
     ordering = ("name",)
+
+    def online(self, obj):
+        fr = obj.file_records.filter(data_repository__globus_is_personal=False)
+        if fr:
+            return all(fr.values_list('exists', flat=True))
+        else:
+            return False
+    online.short_description = 'On Server'
 
 
 class WaterAdminInline(BaseInlineAdmin):
