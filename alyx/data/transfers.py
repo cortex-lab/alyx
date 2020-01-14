@@ -238,9 +238,10 @@ def _create_dataset_file_records(
     for repo in repositories:
         exists = repo in exists_in
         # Do not create a new file record if it already exists.
-        fr, _ = FileRecord.objects.get_or_create(
+        fr, is_new = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
-        fr.exists = exists
+        if is_new:
+            fr.exists = exists
         # Validate the fields.
         fr.full_clean()
         fr.save()
