@@ -3,7 +3,6 @@ import logging
 from math import inf
 
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -242,7 +241,15 @@ class Session(BaseAction):
     task_protocol = models.CharField(max_length=1023, blank=True, default='')
     n_trials = models.IntegerField(blank=True, null=True)
     n_correct_trials = models.IntegerField(blank=True, null=True)
-    qc = JSONField(blank=True, null=True, help_text="Quality control JSON field")
+
+    QC_CHOICES = [
+        (50, 'CRITICAL',),
+        (40, 'ERROR',),
+        (30, 'WARNING',),
+        (20, 'NOT_SET',),
+        (10, 'PASS',),
+    ]
+    qc = models.IntegerField(default=20, choices=QC_CHOICES)
 
     def save(self, *args, **kwargs):
         # Default project is the subject's project.
