@@ -286,7 +286,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # file hashes if provided
         filesizes = request.data.get('filesizes', [None for f in filenames])
         if isinstance(filesizes, str):
-            filesizes = hashes.split(',')
+            filesizes = filesizes.split(',')
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')

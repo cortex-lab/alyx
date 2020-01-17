@@ -251,15 +251,18 @@ class APIDataTests(BaseTests):
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
                 'filenames': 'a.b.e1,a.c.e2',
                 'hostname': 'hostname',
-                'hashes': '71f920fa275127a7b60fa4d4d41432a3,71f920fa275127a7b60fa4d4d41432a1'
+                'hashes': '71f920fa275127a7b60fa4d4d41432a3,71f920fa275127a7b60fa4d4d41432a1',
+                'filesizes': '14564,45686',
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
         self._assert_registration(r, data)
-        self.assertEqual(Dataset.objects.get(name='a.b.e1').md5,
-                         uuid.UUID('71f920fa275127a7b60fa4d4d41432a3'))
-        self.assertEqual(Dataset.objects.get(name='a.c.e2').md5,
-                         uuid.UUID('71f920fa275127a7b60fa4d4d41432a1'))
+        ds0 = Dataset.objects.get(name='a.b.e1')
+        ds1 = Dataset.objects.get(name='a.c.e2')
+        self.assertEqual(uuid.UUID(ds0.hash), uuid.UUID('71f920fa275127a7b60fa4d4d41432a3'))
+        self.assertEqual(uuid.UUID(ds1.hash), uuid.UUID('71f920fa275127a7b60fa4d4d41432a1'))
+        self.assertEqual(ds0.file_size, 14564)
+        self.assertEqual(ds1.file_size, 45686)
 
     def test_register_files_md5(self):
         # this is old use case where we register one dataset according to the hostname, no need
