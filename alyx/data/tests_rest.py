@@ -251,7 +251,7 @@ class APIDataTests(BaseTests):
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
                 'filenames': 'a.b.e1,a.c.e2',
                 'hostname': 'hostname',
-                'md5': '71f920fa275127a7b60fa4d4d41432a3,71f920fa275127a7b60fa4d4d41432a1'
+                'hashes': '71f920fa275127a7b60fa4d4d41432a3,71f920fa275127a7b60fa4d4d41432a1'
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)

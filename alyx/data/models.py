@@ -253,6 +253,15 @@ class Dataset(BaseExperimentalData):
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 
+    hash = models.CharField(blank=True, null=True, max_length=64,
+                            help_text=("Hash of the data buffer, SHA-1 is 40 hex chars, while md5"
+                                       "is 32 hex chars"))
+
+    # here we usually refer to version as an algorithm version such as ibllib-1.4.2
+    version = models.CharField(blank=True, null=True, max_length=64,
+                               help_text="version of the algorithm generating the file")
+
+    # while the collection is seen more as a data revision
     collection = models.CharField(blank=True, null=True, max_length=255,
                                   help_text='file subcollection or subfolder')
 

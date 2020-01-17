@@ -209,7 +209,8 @@ def _get_repositories_for_labs(labs):
 
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
-        repositories=None, exists_in=None, collection=None, md5=None):
+        repositories=None, exists_in=None, collection=None, hash=None,
+        file_size=None):
 
     assert session is not None
 
@@ -227,8 +228,10 @@ def _create_dataset_file_records(
     # have to set the created_by field.
     dataset.created_by = user
     # if a md5 sum is provided, label the dataset with it
-    if md5 is not None:
-        dataset.md5 = md5
+    if hash is not None:
+        dataset.hash = hash
+    if file_size is not None:
+        dataset.file_size = file_size
     # Validate the fields.
     dataset.full_clean()
     dataset.save()

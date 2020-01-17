@@ -229,8 +229,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
               'filenames': ['file1', 'file2'],
               'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
-              'md5': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
-                      'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
+              'hash': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
+                       'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               }
         ```
 
@@ -278,10 +278,15 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             # comma-separated filenames
             filenames = filenames.split(',')
 
-        # md5 sums if provided
-        md5s = request.data.get('md5', [None for f in filenames])
-        if isinstance(md5s, str):
-            md5s = md5s.split(',')
+        # file hashes if provided
+        hashes = request.data.get('hashes', [None for f in filenames])
+        if isinstance(hashes, str):
+            hashes = hashes.split(',')
+
+        # file hashes if provided
+        filesizes = request.data.get('filesizes', [None for f in filenames])
+        if isinstance(filesizes, str):
+            filesizes = hashes.split(',')
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
@@ -297,7 +302,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename, md5 in zip(filenames, md5s):
+        for filename, hash, fsize in zip(filenames, hashes, filesizes):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
@@ -308,7 +313,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
-                md5=md5)
+                hash=hash, file_size=fsize)
             out = _make_dataset_response(dataset)
             response.append(out)
 
