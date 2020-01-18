@@ -199,11 +199,15 @@ def get_data_format(filename):
     return DataFormat.objects.get(file_extension=file_extension)
 
 
-def _get_repositories_for_labs(labs):
+def _get_repositories_for_labs(labs, server_only=False):
     # List of data repositories associated to the subject's labs.
     repositories = set()
     for lab in labs:
-        repositories.update(lab.repositories.all())
+        if server_only:
+            repos = lab.repositories.filter(globus_is_personal=False)
+        else:
+            repos = lab.repositories.all()
+        repositories.update(repos)
     return list(repositories)
 
 
@@ -227,7 +231,7 @@ def _create_dataset_file_records(
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user
-    # if a md5 sum is provided, label the dataset with it
+    # if a hash is provided, label the dataset with it
     if hash is not None:
         dataset.hash = hash
     if file_size is not None:
