@@ -280,6 +280,14 @@ class Dataset(BaseExperimentalData):
         if records:
             return records.order_by('data_repository__globus_is_personal')[0].data_url()
 
+    @property
+    def online(self):
+        fr = self.file_records.filter(data_repository__globus_is_personal=False)
+        if fr:
+            return all(fr.values_list('exists', flat=True))
+        else:
+            return False
+
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
         return "<Dataset %s %s '%s' by %s on %s>" % (
