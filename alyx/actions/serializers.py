@@ -93,7 +93,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = ('id', 'name', 'dataset_type', 'data_url', 'url')
+        fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size', 'md5')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
@@ -118,7 +118,7 @@ class SessionListSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'url')
+        fields = ('subject', 'start_time', 'number', 'lab', 'url', 'task_protocol')
 
 
 class SessionDetailSerializer(BaseActionSerializer):

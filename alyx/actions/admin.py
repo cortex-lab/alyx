@@ -439,9 +439,14 @@ class DatasetInline(BaseInlineAdmin):
     show_change_link = True
     model = Dataset
     extra = 1
-    fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
-    readonly_fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+    fields = ('name', 'dataset_type', '_online', 'created_by', 'created_datetime')
+    readonly_fields = ('name', 'dataset_type', '_online', 'created_by', 'created_datetime')
     ordering = ("name",)
+
+    def _online(self, obj):
+        return obj.online
+    _online.short_description = 'On server'
+    _online.boolean = True
 
 
 class WaterAdminInline(BaseInlineAdmin):
