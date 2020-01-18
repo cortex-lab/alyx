@@ -264,7 +264,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(ds0.file_size, 14564)
         self.assertEqual(ds1.file_size, 45686)
 
-    def test_register_files_md5(self):
+    def test_register_files_hash(self):
         # this is old use case where we register one dataset according to the hostname, no need
         # for a lab in this case
         data = {'path': '%s/2018-01-01/2/dir' % self.subject,
