@@ -253,6 +253,7 @@ class APIDataTests(BaseTests):
                 'hostname': 'hostname',
                 'hashes': '71f920fa275127a7b60fa4d4d41432a3,71f920fa275127a7b60fa4d4d41432a1',
                 'filesizes': '14564,45686',
+                'versions': '1.1.1,2.2.2',
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
@@ -263,6 +264,8 @@ class APIDataTests(BaseTests):
         self.assertEqual(uuid.UUID(ds1.hash), uuid.UUID('71f920fa275127a7b60fa4d4d41432a1'))
         self.assertEqual(ds0.file_size, 14564)
         self.assertEqual(ds1.file_size, 45686)
+        self.assertEqual(ds0.version, '1.1.1')
+        self.assertEqual(ds1.version, '2.2.2')
 
     def test_register_files_hash(self):
         # this is old use case where we register one dataset according to the hostname, no need

@@ -233,8 +233,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'hash': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
                        'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               'filesizes': [145684, 354213],    # optional
-              'server_only': True   # optional, defaults to False. Will only create file
+              'server_only': True,   # optional, defaults to False. Will only create file
               # records in the server repositories and skips local repositories
+              'versions': ['1.4.4', '1.4.4'],  # optional,usually refers to the software version
+              # used to generate the file
               }
         ```
 
@@ -244,7 +246,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
          r_ = {
               ...
               'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
-              'projects': 'alyx_lab_name',  # optional, serves the same purpose as lab field
+              'projects': 'alyx_lab_name',  # optional, alias of lab field above
               ...
               }
         ```
@@ -278,8 +280,12 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
-            # comma-separated filenames
             filenames = filenames.split(',')
+
+        # versions if provided
+        versions = request.data.get('versions', [None for f in filenames])
+        if isinstance(versions, str):
+            versions = versions.split(',')
 
         # file hashes if provided
         hashes = request.data.get('hashes', [None for f in filenames])
@@ -307,7 +313,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename, hash, fsize in zip(filenames, hashes, filesizes):
+        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
@@ -318,7 +324,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize)
+                hash=hash, file_size=fsize, version=version)
             out = _make_dataset_response(dataset)
             response.append(out)
 

@@ -214,7 +214,7 @@ def _get_repositories_for_labs(labs, server_only=False):
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,
-        file_size=None):
+        file_size=None, version=None):
 
     assert session is not None
 
@@ -231,11 +231,21 @@ def _create_dataset_file_records(
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user
-    # if a hash is provided, label the dataset with it
+    if version is not None:
+        dataset.version = version
+    """
+    if a hash/filesize is provided, label the dataset with it
+    if there was a hash and or filesize in the datset and the provided items are different,
+    then set the existing file records exists field to False
+    """
+    is_patched = False
     if hash is not None:
+        if dataset.hash is not None:
+            is_patched = not(dataset.hash == hash)
         dataset.hash = hash
     if file_size is not None:
         dataset.file_size = file_size
+        is_patched = not(dataset.file_size == file_size)
     # Validate the fields.
     dataset.full_clean()
     dataset.save()
@@ -247,7 +257,7 @@ def _create_dataset_file_records(
         # Do not create a new file record if it already exists.
         fr, is_new = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
-        if is_new:
+        if is_new or is_patched:
             fr.exists = exists
         # Validate the fields.
         fr.full_clean()
