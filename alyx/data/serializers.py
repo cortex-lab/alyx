@@ -116,6 +116,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
     hash = serializers.CharField(required=False, allow_null=True)
 
+    version = serializers.CharField(required=False, allow_null=True)
+
     file_size = serializers.IntegerField(required=False)
 
     experiment_number = serializers.SerializerMethodField()
