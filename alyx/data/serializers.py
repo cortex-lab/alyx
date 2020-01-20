@@ -172,7 +172,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format',
-                  'session', 'file_size', 'hash',
+                  'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {
