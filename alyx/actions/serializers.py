@@ -11,7 +11,7 @@ from misc.models import LabLocation, Lab
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
-                  'parent_session', 'n_correct_trials', 'n_trials', 'url',
+                  'parent_session', 'n_correct_trials', 'n_trials', 'url', 'qc',
                   'wateradmin_session_related', 'data_dataset_session_related')
 
 
@@ -93,7 +93,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size', 'md5')
+        fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size', 'hash', 'version')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
