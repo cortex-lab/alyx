@@ -230,7 +230,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
               'filenames': ['file1', 'file2'],
               'labs': 'alyxlabname1',  # optional, will get the subjects lab if not used
-              'hash': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
+              'hashes': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
                        'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               'filesizes': [145684, 354213],    # optional
               'server_only': True,   # optional, defaults to False. Will only create file
