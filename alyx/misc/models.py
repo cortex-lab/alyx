@@ -26,7 +26,7 @@ def default_lab():
 class LabMember(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     is_stock_manager = models.BooleanField(default=False)
-    allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
     class Meta:
         ordering = ['username']
