@@ -439,9 +439,15 @@ class DatasetInline(BaseInlineAdmin):
     show_change_link = True
     model = Dataset
     extra = 1
-    fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
-    readonly_fields = ('name', 'dataset_type', 'created_by', 'created_datetime')
+    fields = ('name', 'dataset_type', '_online', 'version', 'created_by', 'created_datetime')
+    readonly_fields = ('name', 'dataset_type', '_online', 'version', 'created_by',
+                       'created_datetime')
     ordering = ("name",)
+
+    def _online(self, obj):
+        return obj.online
+    _online.short_description = 'On server'
+    _online.boolean = True
 
 
 class WaterAdminInline(BaseInlineAdmin):
@@ -458,11 +464,11 @@ def _pass_narrative_templates(context):
 
 
 class SessionAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'start_time', 'number', 'lab',
-                    'dataset_count', 'task_protocol', 'user_list', 'project_']
+    list_display = ['subject_l', 'start_time', 'number', 'lab', 'dataset_count',
+                    'task_protocol', 'qc', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
-        'repo_url', 'project', ('type', 'task_protocol', ), 'number',
+        'repo_url', 'qc', 'project', ('type', 'task_protocol', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),

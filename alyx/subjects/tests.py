@@ -248,8 +248,9 @@ class SubjectCullTests(TestCase):
 
     def setUp(self):
         self.lab = Lab.objects.create(name='awesomelab')
-        self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab)
-        self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab)
+        self.sub1 = Subject.objects.create(nickname='basil', lab=self.lab, birth_date='2019-01-01')
+        self.sub2 = Subject.objects.create(nickname='loretta', lab=self.lab,
+                                           birth_date='2019-01-01')
         self.CO2 = CullMethod.objects.create(name='CO2')
         self.decapitation = CullMethod.objects.create(name='decapitation')
         self.wr = WaterRestriction.objects.create(
@@ -274,6 +275,12 @@ class SubjectCullTests(TestCase):
         self.assertNotEqual(
             WaterRestriction.objects.get(subject=self.sub1).end_time.strftime('%Y-%m-%d'),
             cull.date)
+        # now make sure that when the Cull object is deleted, the corresponding subject has his
+        # death_date set to None
+        cull.delete()
+        self.assertIsNone(self.sub1.death_date)
+        self.assertEqual(self.sub1.cull_method, '')
+        self.assertTrue(self.sub1.alive())
 
     def test_update_subject_death(self):
         # now add a death date and make sure a cull action is created

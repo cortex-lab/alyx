@@ -114,9 +114,9 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Session.objects.all(),
     )
 
-    md5 = serializers.UUIDField(
-        format='hex_verbose', allow_null=True, required=False,
-    )
+    hash = serializers.CharField(required=False, allow_null=True)
+
+    version = serializers.CharField(required=False, allow_null=True)
 
     file_size = serializers.IntegerField(required=False)
 
@@ -172,7 +172,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
                   'dataset_type', 'data_format',
-                  'session', 'file_size', 'md5',
+                  'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number')
         extra_kwargs = {

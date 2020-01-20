@@ -1044,6 +1044,17 @@
   "filename_pattern": "_iblqc_ephysTimeRms*.rms.npy"
   }
  },
+   {
+ "model": "data.datasettype",
+ "pk": "c29a238f-95a4-4081-9ef2-7d0e0b225f20",
+ "fields": {
+  "json": null,
+  "name": "_iblrig_stimPositionScreen.raw",
+  "created_by": null,
+  "description": "CSV file with 3 columns, CONTRAST [0->1], STIM_POSITION [visual deg], TIMESTAMP [isostandard] (saves stim positions and contrast every time they change)",
+  "filename_pattern": "_iblrig_stimPositionScreen.raw.csv"
+  }
+ },
   {
  "model": "data.datasettype",
  "pk": "aced686b-6d9e-4094-bb3a-8e8a198cae28",

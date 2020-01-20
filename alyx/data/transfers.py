@@ -3,6 +3,7 @@ import logging
 import os
 import os.path as op
 import re
+from pathlib import Path
 
 from django.db.models import Case, When, Count, Q
 import globus_sdk
@@ -198,17 +199,22 @@ def get_data_format(filename):
     return DataFormat.objects.get(file_extension=file_extension)
 
 
-def _get_repositories_for_labs(labs):
+def _get_repositories_for_labs(labs, server_only=False):
     # List of data repositories associated to the subject's labs.
     repositories = set()
     for lab in labs:
-        repositories.update(lab.repositories.all())
+        if server_only:
+            repos = lab.repositories.filter(globus_is_personal=False)
+        else:
+            repos = lab.repositories.all()
+        repositories.update(repos)
     return list(repositories)
 
 
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
-        repositories=None, exists_in=None, collection=None):
+        repositories=None, exists_in=None, collection=None, hash=None,
+        file_size=None, version=None):
 
     assert session is not None
 
@@ -225,6 +231,21 @@ def _create_dataset_file_records(
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user
+    if version is not None:
+        dataset.version = version
+    """
+    if a hash/filesize is provided, label the dataset with it
+    if there was a hash and or filesize in the datset and the provided items are different,
+    then set the existing file records exists field to False
+    """
+    is_patched = False
+    if hash is not None:
+        if dataset.hash is not None:
+            is_patched = not(dataset.hash == hash)
+        dataset.hash = hash
+    if file_size is not None:
+        dataset.file_size = file_size
+        is_patched = not(dataset.file_size == file_size)
     # Validate the fields.
     dataset.full_clean()
     dataset.save()
@@ -234,9 +255,10 @@ def _create_dataset_file_records(
     for repo in repositories:
         exists = repo in exists_in
         # Do not create a new file record if it already exists.
-        fr, _ = FileRecord.objects.get_or_create(
+        fr, is_new = FileRecord.objects.get_or_create(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
-        fr.exists = exists
+        if is_new or is_patched:
+            fr.exists = exists
         # Validate the fields.
         fr.full_clean()
         fr.save()
@@ -487,3 +509,76 @@ def _get_session(subject=None, date=None, number=None, user=None):
         session.parent_session = base
         session.save()
     return session
+
+
+def globus_delete_datasets(datasets, dry=True, local_only=False):
+    """
+    For each dataset in the queryset, delete the dataset record in the database and attempt
+    a Globus delete for all physical file-records associated.
+    Admin territory.
+    :param datasets:
+    :param dry: default True
+    :param local_only: only delete from non-FlatIron locations: in this case only file records will
+    be removed from the database, not the datasets records.
+    :return:
+    """
+    # first get the list of Globus endpoints concerned
+    file_records = FileRecord.objects.filter(dataset__in=datasets)
+    if local_only:
+        file_records = file_records.filter(data_repository__globus_is_personal=True)
+        file_records = file_records.exclude(data_repository__name__icontains='flatiron')
+    globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
+                                                flat=True).distinct()
+
+    # create a globus delete_client for each globus endpoint
+    gtc = globus_transfer_client()
+    if not dry:
+        delete_clients = []
+        for ge in globus_endpoints:
+            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
+
+    # appends each file for deletion
+    current_path = None
+    for i, ge in enumerate(globus_endpoints):
+        # get endpoint status before continuing
+        endpoint_info = gtc.get_endpoint(ge)
+        # if the endpoint is not globus_connect (ie. not personal) this returns None
+        endpoint_connected = endpoint_info.data['gcp_connected'] is not False
+        # if the endpoint is offline skip
+        if not endpoint_connected:
+            logger.warning(endpoint_info.data['display_name'] + 'is offline. SKIPPING.')
+            continue
+        frs = FileRecord.objects.filter(
+            dataset__in=datasets, data_repository__globus_endpoint_id=ge).order_by('relative_path')
+        for fr in frs:
+            add_uuid = not fr.data_repository.globus_is_personal
+            file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
+            if dry:
+                logger.info(file2del)
+            else:
+                if current_path != Path(file2del).parent:
+                    current_path = Path(file2del).parent
+                    try:
+                        ls_current_path = [f['name'] for f in
+                                           gtc.operation_ls(ge, path=current_path)]
+                    except globus_sdk.exc.TransferAPIError as err:
+                        if 'ClientError.NotFound' in str(err):
+                            ls_current_path = []
+                        else:
+                            raise err
+                    if Path(file2del).name in ls_current_path:
+                        logger.info('DELETE: ' + file2del)
+                        delete_clients[i].add_item(file2del)
+    # launch the deletion jobs and remove records from the database
+    if dry:
+        return
+    for dc in delete_clients:
+        # submitting a deletion without data will create an error
+        if dc['DATA'] == []:
+            continue
+        gtc.submit_delete(dc)
+
+    file_records.delete()
+    if not local_only:
+        for ds in datasets:
+            ds.delete()

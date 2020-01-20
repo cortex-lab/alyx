@@ -212,14 +212,15 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
     def create(self, request):
         """
-        The session is retrieved by the ALF convention in th relative path, so this field has to
+        The session is retrieved by the ALF convention in the relative path, so this field has to
         match the format Subject/Date/Number as shown below.
 
         The set of repositories are given through the labs. The lab is by default the subject lab,
         but if it is specified, it overrides the subject lab entirely.
 
-        The repository is mandatory, as this is the repository where the files currently exist
-        It can be identified either by name (recommended) or hostname (compatibility).
+        One repository or lab is mandatory, as this is the repository where the files
+        currently exist It can be identified either by name (recommended) or hostname
+        (compatibility).
 
         The client side REST query should look like this:
 
@@ -227,20 +228,26 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         r_ = {'created_by': 'user_name_alyx',
               'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
-              'filenames': ['file1', 'file2', 'file3'],
-              'labs': ['alyxlabname1', 'alyxlabname2'],  # optional
+              'filenames': ['file1', 'file2'],
+              'labs': 'alyxlabname1',  # optional, will get the subjects lab if not used
+              'hash': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
+                       'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
+              'filesizes': [145684, 354213],    # optional
+              'server_only': True,   # optional, defaults to False. Will only create file
+              # records in the server repositories and skips local repositories
+              'versions': ['1.4.4', '1.4.4'],  # optional,usually refers to the software version
+              # used to generate the file
               }
         ```
 
         For backward compatibility the following is allowed (projects are labs the repo lookup
         is done on the hostname instead of the repository name):
-
         ```
-         r_ = {'created_by': 'user_name_alyx',
+         r_ = {
+              ...
               'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
-              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
-              'filenames': ['file1', 'file2', 'file3'],
-              'projects': ['alyxlabname1', 'alyxlabname2'],  # optional NB should be labnames !
+              'projects': 'alyx_lab_name',  # optional, alias of lab field above
+              ...
               }
         ```
 
@@ -273,15 +280,31 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
-            # comma-separated filenames
             filenames = filenames.split(',')
+
+        # versions if provided
+        versions = request.data.get('versions', [None for f in filenames])
+        if isinstance(versions, str):
+            versions = versions.split(',')
+
+        # file hashes if provided
+        hashes = request.data.get('hashes', [None for f in filenames])
+        if isinstance(hashes, str):
+            hashes = hashes.split(',')
+
+        # filesizes if provided
+        filesizes = request.data.get('filesizes', [None for f in filenames])
+        if isinstance(filesizes, str):
+            filesizes = filesizes.split(',')
+
+        # flag to discard file records creation on local repositories, defaults to False
+        server_only = request.data.get('server_only', False)
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
-
         labs = [Lab.objects.get(name=lab) for lab in labs if lab]
-        repositories = _get_repositories_for_labs(labs or [subject.lab])
+        repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
         if repo and repo not in repositories:
             repositories += [repo]
 
@@ -290,7 +313,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename in filenames:
+        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
@@ -300,7 +323,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             filename = Path(filename).name
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
-                session=session, user=user, repositories=repositories, exists_in=exists_in)
+                session=session, user=user, repositories=repositories, exists_in=exists_in,
+                hash=hash, file_size=fsize, version=version)
             out = _make_dataset_response(dataset)
             response.append(out)
 

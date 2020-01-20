@@ -81,17 +81,18 @@ class FileRecordInline(BaseInlineAdmin):
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
-    fields = ['name', 'dataset_type', 'file_size', 'md5', 'session_ro', 'collection']
-    readonly_fields = ['name_', 'session_ro']
-    list_display = ['name_', 'collection', 'dataset_type_', 'file_size', 'session_ro',
-                    'created_by', 'created_datetime']
+    fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
+              'session_ro', 'collection']
+    readonly_fields = ['name_', 'session_ro', '_online']
+    list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
+                    'session_ro', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ]
     search_fields = ('created_by__username', 'name', 'session__subject__nickname',
-                     'dataset_type__name', 'dataset_type__filename_pattern')
+                     'dataset_type__name', 'dataset_type__filename_pattern', 'version')
     ordering = ('-created_datetime',)
 
     def get_queryset(self, request):
@@ -112,6 +113,11 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
     def subject(self, obj):
         return obj.session.subject.nickname
+
+    def _online(self, obj):
+        return obj.online
+    _online.short_description = 'On server'
+    _online.boolean = True
 
 
 class FileRecordAdmin(BaseAdmin):
