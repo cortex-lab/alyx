@@ -307,6 +307,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
         if repo and repo not in repositories:
             repositories += [repo]
+        if server_only:
+            exists_in = repositories
 
         session = _get_session(
             subject=subject, date=date, number=session_number, user=user)
