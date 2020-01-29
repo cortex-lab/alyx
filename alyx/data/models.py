@@ -242,16 +242,13 @@ class Dataset(BaseExperimentalData):
     """
     A chunk of data that is stored outside the database, most often a rectangular binary array.
     There can be multiple FileRecords for one Dataset, which will be different physical files,
-    all containing identical data, with the same MD5.
+    all containing identical data, with the same hash.
 
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
     """
     objects = DatasetManager()
 
     file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
-
-    md5 = models.UUIDField(blank=True, null=True,
-                           help_text="MD5 hash of the data buffer")
 
     hash = models.CharField(blank=True, null=True, max_length=64,
                             help_text=("Hash of the data buffer, SHA-1 is 40 hex chars, while md5"
