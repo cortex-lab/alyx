@@ -526,3 +526,41 @@ class Cull(BaseModel):
         sub.cull_method = ''
         sub.save()
         return output
+
+
+class PerfusionSolution(BaseModel):
+    # 'IBL receipe v0.0.1', '30% sucrose PBS', 'PBS', 'other'
+    def __str__(self):
+        return self.name
+
+
+class PerfusionTemperature(BaseModel):
+    # ('4°C', 'room temperature', 'dry ice', 'other')
+    def __str__(self):
+        return self.name
+
+
+class Perfusion(BaseAction):
+    pfa_solution = models.ForeignKey(
+        PerfusionSolution, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='pfa_solution')
+
+    liver_cleared = models.BooleanField(blank=True, default=False)
+
+    post_fixation_time = models.PositiveIntegerField(blank=True, default=0)
+
+    post_fixation_temperature = models.ForeignKey(
+        PerfusionTemperature, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='post_fixation_temperature')
+
+    transport_time = models.PositiveIntegerField(blank=True, default=0)
+
+    transport_temperature = models.ForeignKey(
+        PerfusionTemperature, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='transport_temperature')
+
+    transport_solution = models.ForeignKey(
+        PerfusionSolution, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='transport_solution')
+
+    time_to_imaging = models.PositiveIntegerField(blank=True, default=0)

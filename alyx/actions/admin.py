@@ -14,10 +14,12 @@ from rangefilter.filter import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
-from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
-                     WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule, Cull, CullReason, CullMethod,
-                     )
+from .models import (
+    OtherAction, ProcedureType, Session, Surgery, VirusInjection,
+    Perfusion, PerfusionSolution, PerfusionTemperature,
+    WaterAdministration, WaterRestriction, Weighing, WaterType,
+    Notification, NotificationRule, Cull, CullReason, CullMethod,
+)
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
@@ -463,6 +465,28 @@ def _pass_narrative_templates(context):
     return context
 
 
+class PerfusionAdmin(BaseActionAdmin):
+    list_display = [
+        'subject_l', 'date', 'users_l', 'pfa_solution', 'liver_cleared',
+        'post_fixation_time', 'post_fixation_temperature', 'transport_time',
+        'transport_temperature', 'transport_solution', 'time_to_imaging',
+    ]
+    fields = [
+        'subject', 'start_time', 'pfa_solution', 'liver_cleared', 'post_fixation_time',
+        'post_fixation_temperature', 'transport_time', 'transport_temperature',
+        'transport_solution', 'time_to_imaging',
+        'narrative', 'location', 'lab', 'json',
+    ]
+
+    def date(self, obj):
+        return obj.start_time.date()
+    date.admin_order_field = 'start_time'
+
+    def users_l(self, obj):
+        return ', '.join(map(str, obj.users.all()))
+    users_l.short_description = 'users'
+
+
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab', 'dataset_count',
                     'task_protocol', 'qc', 'user_list', 'project_']
@@ -611,6 +635,10 @@ admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 admin.site.register(Session, SessionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
+
+admin.site.register(Perfusion, PerfusionAdmin)
+admin.site.register(PerfusionSolution, BaseAdmin)
+admin.site.register(PerfusionTemperature, BaseAdmin)
 
 admin.site.register(Surgery, SurgeryAdmin)
 admin.site.register(WaterType, WaterTypeAdmin)
