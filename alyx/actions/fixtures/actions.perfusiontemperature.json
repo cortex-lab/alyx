@@ -1,0 +1,34 @@
+[
+{
+ "model": "actions.perfusiontemperature",
+ "pk": "18772e14-81bb-43d9-a2f2-085b3f46b77b",
+ "fields": {
+  "name": "Dry ice",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusiontemperature",
+ "pk": "4b131ebc-425d-4610-8c38-3557f76cc769",
+ "fields": {
+  "name": "4\u00b0C",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusiontemperature",
+ "pk": "73585f49-ab89-4d50-b495-5b48608f8fc8",
+ "fields": {
+  "name": "Other",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusiontemperature",
+ "pk": "77508e9e-b079-4fe3-b3fc-fa5406878308",
+ "fields": {
+  "name": "Room temperature",
+  "json": null
+ }
+}
+]

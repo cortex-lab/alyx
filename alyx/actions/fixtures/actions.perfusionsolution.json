@@ -1,0 +1,34 @@
+[
+{
+ "model": "actions.perfusionsolution",
+ "pk": "33b5b803-7032-4a25-b93b-f6ea8ab3ce99",
+ "fields": {
+  "name": "PBS",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusionsolution",
+ "pk": "79b6ed2e-4ba1-4ff7-828d-f66722e9281b",
+ "fields": {
+  "name": "IBL receipe v0.0.1",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusionsolution",
+ "pk": "7d6dbe13-1095-4793-a698-436e5fea10f0",
+ "fields": {
+  "name": "30% sucrose PBS",
+  "json": null
+ }
+},
+{
+ "model": "actions.perfusionsolution",
+ "pk": "bbfbde08-17a5-4981-9caa-395f00634a66",
+ "fields": {
+  "name": "Other",
+  "json": null
+ }
+}
+]

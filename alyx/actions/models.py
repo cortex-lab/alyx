@@ -529,13 +529,11 @@ class Cull(BaseModel):
 
 
 class PerfusionSolution(BaseModel):
-    # 'IBL receipe v0.0.1', '30% sucrose PBS', 'PBS', 'other'
     def __str__(self):
         return self.name
 
 
 class PerfusionTemperature(BaseModel):
-    # ('4°C', 'room temperature', 'dry ice', 'other')
     def __str__(self):
         return self.name
 
