@@ -131,51 +131,71 @@ def alyx_mail(to, subject, text=''):
         return False
 
 
-ADMIN_PAGES = [('Common', ['Subjects',
-                           'Sessions',
-                           'Surgeries',
-                           'Breeding pairs',
-                           'Litters',
-                           'Water administrations',
-                           'Water restrictions',
-                           'Weighings',
-                           'Subject requests',
-                           ]),
-               ('Data files',
-                ['Data repository types',
-                 'Data repositories',
-                 'Data formats',
-                 'Dataset types',
-                 'Datasets',
-                 'Downloads',
-                 'File records',
-                 'Data collections',
-                 'Time series',
-                 'Event series',
-                 'Interval series',
-                 ]),
-               ('Data that changes rarely',
-                ['Lines',
-                 'Strains',
-                 'Alleles',
-                 'Sequences',
-                 'Sources',
-                 'Species',
-                 'Other actions',
-                 'Procedure types',
-                 'Water types',
-                 ]),
-               ('Other', ['Genotype tests',
-                          'Zygosities',
-                          ]),
-               ('IT admin', ['Tokens',
-                             'Groups',
-                             'Lab members',
-                             'Labs',
-                             'Lab locations',
-                             'Lab memberships',
-                             ]),
-               ]
+ADMIN_PAGES = [('Common', [
+
+    'Subjects',
+    'Sessions',
+    'Surgeries',
+    'Perfusions',
+    'Breeding pairs',
+    'Litters',
+    'Water administrations',
+    'Water restrictions',
+    'Weighings',
+    'Subject requests',
+    'Culls',
+    'Projects',
+
+]), ('Data files', [
+
+    'Data repository types',
+    'Data repositories',
+    'Data formats',
+    'Dataset types',
+    'Datasets',
+    'Downloads',
+    'File records',
+    'Data collections',
+    'Time series',
+    'Event series',
+    'Interval series',
+
+]), ('Data that changes rarely', [
+
+    'Lines',
+    'Strains',
+    'Alleles',
+    'Sequences',
+    'Sources',
+    'Species',
+    'Procedure types',
+    'Water types',
+    'Cull methods',
+    'Cull reasons',
+    'Perfusion solutions',
+    'Perfusion temperatures',
+    'Cage types',
+    'Enrichments',
+    'Foods',
+    'Housings',
+    'Zygosity rules',
+
+]), ('Other', [
+
+    'Genotype tests',
+    'Zygosities',
+    'Other actions',
+
+]), ('IT admin', [
+
+    'Tokens',
+    'Groups',
+    'Lab members',
+    'Labs',
+    'Lab locations',
+    'Lab memberships',
+]),
+]
 
 
 class Bunch(dict):
