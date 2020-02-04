@@ -511,6 +511,77 @@ def _get_session(subject=None, date=None, number=None, user=None):
     return session
 
 
+def globus_delete_local_datasets(datasets, dry=True):
+    """
+    For each dataset in the queryset delete the file records belonging to a Globus personal repo
+    only if a server file exists and matches the size.
+    :param datasets:
+    :param dry: default True
+    :return:
+    """
+    gtc = []
+    # first get the list of Globus endpoints concerned
+    file_records = FileRecord.objects.filter(dataset__in=datasets)
+    globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
+                                                flat=True).distinct()
+    # create a globus delete_client for each globus endpoint
+    gtc = globus_transfer_client()
+    delete_clients = []
+    for ge in globus_endpoints:
+        delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
+
+    def _ls_globus(file_record, dry=dry, add_uuid=False):
+        try:
+            path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
+            ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
+                                      path=path.parent)
+        except globus_sdk.exc.TransferAPIError as err:
+            if 'ClientError.NotFound' in str(err):
+                return
+            else:
+                raise err
+        return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
+
+    # appends each file for deletion
+    fr2delete = []
+    for ds in datasets:
+        # check the existence of the server file
+        fr_server = ds.file_records.filter(exists=True,
+                                           data_repository__globus_is_personal=False).first()
+        ls_server = _ls_globus(fr_server, add_uuid=True)
+        # if the file is not found on the remote server, do nothing
+        if ls_server == []:
+            logger.warning(fr_server.relative_path + " not found on server - skipping")
+            continue
+        fr_local = ds.file_records.filter(data_repository__globus_is_personal=True)
+        for frloc in fr_local:
+            ls_local = _ls_globus(frloc)
+            # if the data is not found on the local server, remove the file record from database
+            if ls_local == []:
+                fr2delete.append(frloc.id)
+                continue
+            # if the file sizes don't match throw a warning and continue
+            if not ls_local[0]['size'] == ls_server[0]['size']:
+                logger.warning(frloc.relative_path + " sizes don't check out, skipping")
+                continue
+            # the files exist local and remote,
+            fr2delete.append(frloc.id)
+            file2del = _filename_from_file_record(frloc)
+            del_client = [dc for dc in delete_clients if dc['endpoint'] ==
+                          str(frloc.data_repository.globus_endpoint_id)][0]
+            del_client.add_item(file2del)
+            logger.info('DELETE: ' + _filename_from_file_record(frloc))
+    # launch the deletion jobs and remove records from the database
+    if dry:
+        return
+    for dc in delete_clients:
+        # submitting a deletion without data will create an error
+        if dc['DATA'] == []:
+            continue
+        gtc.submit_delete(dc)
+    file_records.delete()
+
+
 def globus_delete_datasets(datasets, dry=True, local_only=False):
     """
     For each dataset in the queryset, delete the dataset record in the database and attempt
