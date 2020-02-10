@@ -4,6 +4,7 @@
 *!
 alyx-backups
 alyx/alyx/settings_secret.py
+alyx/alyx/settings_labs.py
 docs/_build
 docs/_templates
 *.tsv

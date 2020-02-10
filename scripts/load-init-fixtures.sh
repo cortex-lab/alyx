@@ -5,6 +5,9 @@ source ../alyxvenv/bin/activate
 ./manage.py loaddata ./actions/fixtures/actions.proceduretype.json
 ./manage.py loaddata ./actions/fixtures/actions.watertype.json
 ./manage.py loaddata ./actions/fixtures/actions.cullreason.json
+./manage.py loaddata ./actions/fixtures/actions.cullmethod.json
+./manage.py loaddata ./actions/fixtures/actions.perfusionsolution.json
+./manage.py loaddata ./actions/fixtures/actions.perfusiontemperature.json
 
 ./manage.py loaddata ./data/fixtures/data.datarepositorytype.json
 ./manage.py loaddata ./data/fixtures/data.dataformat.json
