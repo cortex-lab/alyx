@@ -102,9 +102,9 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR("Lab name should be specified to delete "
                                                    "files on local server. Exiting now."))
                 return
-            cut_off_date = '2019-12-01'
-            dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq']
-            # '_iblrig_Camera.raw'
+            cut_off_date = '2019-12-31'
+            dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',
+                      '_iblrig_Camera.raw']
             frecs = FileRecord.objects.filter(
                 ~Q(dataset__dataset_type__name__icontains='flatiron'),
                 dataset__dataset_type__name__in=dtypes,
@@ -114,7 +114,8 @@ class Command(BaseCommand):
             )
             dsets = frecs.values_list('dataset', flat=True)
             dsets = Dataset.objects.filter(id__in=dsets)
-            transfers.globus_delete_local_datasets(dsets, dry=True)
+            logging.getLogger(__name__).setLevel(logging.INFO)
+            transfers.globus_delete_local_datasets(dsets, dry=dry)
 
         if action == 'bulksync':
             _create_missing_file_records_main_globus(dry_run=dry, lab=lab)
