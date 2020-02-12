@@ -10,11 +10,12 @@ from django.db.models import Case, When
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django.contrib.admin import TabularInline
 from rangefilter.filter import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
                        get_admin_url)
-from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
+from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
@@ -22,6 +23,7 @@ from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
+from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
 
@@ -544,6 +546,22 @@ class SessionAdmin(BaseActionAdmin):
     weighing.short_description = 'weight before session'
 
 
+class ProbeInsertionInline(TabularInline):
+    fk_name = "session"
+    show_change_link = True
+    model = ProbeInsertion
+    fields = ('probe_label', 'x', 'y', 'z', 'depth', 'theta', 'phi', 'roll', 'provenance')
+    extra = 0
+
+
+class EphysSessionAdmin(SessionAdmin):
+    inlines = [ProbeInsertionInline, WaterAdminInline, DatasetInline, NoteInline]
+
+    def get_queryset(self, request):
+        qs = super(EphysSessionAdmin, self).get_queryset(request)
+        return qs.filter(task_protocol__icontains='ephys')
+
+
 class NotificationUserFilter(DefaultListFilter):
     title = 'notification users'
     parameter_name = 'users'
@@ -609,6 +627,7 @@ admin.site.register(WaterAdministration, WaterAdministrationAdmin)
 admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 
 admin.site.register(Session, SessionAdmin)
+admin.site.register(EphysSession, EphysSessionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
