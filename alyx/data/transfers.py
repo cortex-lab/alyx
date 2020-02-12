@@ -550,14 +550,14 @@ def globus_delete_local_datasets(datasets, dry=True):
                                            data_repository__globus_is_personal=False).first()
         ls_server = _ls_globus(fr_server, add_uuid=True)
         # if the file is not found on the remote server, do nothing
-        if ls_server == []:
+        if ls_server == [] or ls_server is None:
             logger.warning(fr_server.relative_path + " not found on server - skipping")
             continue
         fr_local = ds.file_records.filter(data_repository__globus_is_personal=True)
         for frloc in fr_local:
             ls_local = _ls_globus(frloc)
             # if the data is not found on the local server, remove the file record from database
-            if ls_local == []:
+            if ls_local == [] or ls_local is None:
                 fr2delete.append(frloc.id)
                 continue
             # if the file sizes don't match throw a warning and continue

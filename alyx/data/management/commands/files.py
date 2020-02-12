@@ -70,6 +70,11 @@ def _create_missing_file_records(dry_run=False):
 
 
 class Command(BaseCommand):
+    """
+        ./manage.py files bulksync --lab=cortexlab --dry
+        ./manage.py files bulktransfer --lab=cortexlab --dry
+        ./manage.py files removelocal --lab=cortexlab --dry
+    """
     help = "Manage files"
 
     def add_arguments(self, parser):
@@ -91,6 +96,25 @@ class Command(BaseCommand):
         user = options.get('user')
         dry = options.get('dry')
         lab = options.get('lab')
+
+        if action == 'removelocal':
+            if lab is None:
+                self.stdout.write(self.style.ERROR("Lab name should be specified to delete "
+                                                   "files on local server. Exiting now."))
+                return
+            cut_off_date = '2019-12-01'
+            dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq']
+            # '_iblrig_Camera.raw'
+            frecs = FileRecord.objects.filter(
+                ~Q(dataset__dataset_type__name__icontains='flatiron'),
+                dataset__dataset_type__name__in=dtypes,
+                exists=True,
+                dataset__session__start_time__date__lte=cut_off_date,
+                dataset__session__lab__name=lab
+            )
+            dsets = frecs.values_list('dataset', flat=True)
+            dsets = Dataset.objects.filter(id__in=dsets)
+            transfers.globus_delete_local_datasets(dsets, dry=True)
 
         if action == 'bulksync':
             _create_missing_file_records_main_globus(dry_run=dry, lab=lab)
