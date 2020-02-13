@@ -550,7 +550,7 @@ class ProbeInsertionInline(TabularInline):
     fk_name = "session"
     show_change_link = True
     model = ProbeInsertion
-    fields = ('probe_label', 'x', 'y', 'z', 'depth', 'theta', 'phi', 'roll', 'provenance')
+    fields = ('label',)
     extra = 0
 
 
