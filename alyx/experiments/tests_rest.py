@@ -30,7 +30,7 @@ class APISubjectsTests(BaseTests):
         urlf = url + '?&session=' + str(self.session.id) + '&name=probe_00'
         response = self.client.get(urlf)
         dd = self.ar(response, 200)
-        self.assertTrue(d == dd)
+        self.assertTrue(len(dd) == 1)
         urlf = url + '?&session=' + str(self.session.id) + '&name=probe_01'
         response = self.client.get(urlf)
         dd = self.ar(response, 200)

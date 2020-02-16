@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions
-import django_filters
-from django_filters.rest_framework import FilterSet, CharFilter
+from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
 
 from experiments.models import ProbeInsertion, TrajectoryEstimate
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,)
@@ -11,11 +10,11 @@ Probe insertion objects REST filters and views
 
 
 class ProbeInsertionFilter(FilterSet):
-    subject = django_filters.CharFilter('session__subject__nickname')
-    date = django_filters.CharFilter('session__start_time__date')
-    experiment_number = django_filters.CharFilter('session__number')
-    name = django_filters.CharFilter('name')
-    session = django_filters.UUIDFilter('session')
+    subject = CharFilter('session__subject__nickname')
+    date = CharFilter('session__start_time__date')
+    experiment_number = CharFilter('session__number')
+    name = CharFilter('name')
+    session = UUIDFilter('session')
 
     class Meta:
         model = ProbeInsertion
@@ -42,6 +41,10 @@ Trajectory Estimates objects REST filters and views
 
 class TrajectoryEstimateFilter(FilterSet):
     provenance = CharFilter(method='provenance_filter')
+    subject = CharFilter('probe_insertion__session__subject__nickname')
+    date = CharFilter('probe_insertion__session__start_time__date')
+    experiment_number = CharFilter('probe_insertion__session__number')
+    session = UUIDFilter('probe_insertion__session__id')
 
     class Meta:
         model = TrajectoryEstimate

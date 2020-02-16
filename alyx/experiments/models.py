@@ -79,6 +79,14 @@ class TrajectoryEstimate(models.Model):
                                     name='unique_trajectory_per_provenance')
         ]
 
+    @property
+    def probe_name(self):
+        return self.probe_insertion.name
+
+    @property
+    def session(self):
+        return self.probe_insertion.session
+
 # class BrainLocation(BaseModel):
 #     """
 #     Allen Brain Atlas labels
