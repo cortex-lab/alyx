@@ -33,5 +33,19 @@ class ProbeModelAdmin(BaseAdmin):
     pass
 
 
+class TrajectoryEstimateAdmin(BaseAdmin):
+    exclude = ['probe_insertion']
+    readonly_fields = ['_probe_insertion']
+
+    def _probe_insertion(self, obj):
+        # this is to provide a link back to the session page
+        url = reverse('admin:%s_%s_change' % (obj.probe_insertion._meta.app_label,
+                                              obj.probe_insertion._meta.model_name),
+                      args=[obj.probe_insertion.id])
+        return format_html('<b><a href="{url}" ">{}</a></b>', obj.probe_insertion, url=url)
+    _probe_insertion.short_description = 'probe insertion'
+
+
+admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
 admin.site.register(ProbeModel, ProbeModelAdmin)

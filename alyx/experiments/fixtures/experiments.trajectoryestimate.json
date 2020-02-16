@@ -1,0 +1,32 @@
+[
+{
+ "model": "experiments.trajectoryestimate",
+ "pk": "3e6b2743-61f5-4aff-a20d-39c25e59b4eb",
+ "fields": {
+  "probe_insertion": "fbfe732c-3115-49d5-8496-a403fae82154",
+  "x": 0.5,
+  "y": 0.54,
+  "z": 0.54,
+  "depth": 1.89,
+  "theta": 1.0,
+  "phi": 15.0,
+  "roll": 15.0,
+  "provenance": 50
+ }
+},
+{
+ "model": "experiments.trajectoryestimate",
+ "pk": "e57761e2-c9e3-40f5-8a4e-3797ee36d1a8",
+ "fields": {
+  "probe_insertion": "fbfe732c-3115-49d5-8496-a403fae82154",
+  "x": 0.2,
+  "y": 0.41,
+  "z": 0.25,
+  "depth": 1.26,
+  "theta": 12.0,
+  "phi": 15.0,
+  "roll": 21.0,
+  "provenance": 10
+ }
+}
+]
