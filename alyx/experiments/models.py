@@ -6,6 +6,20 @@ from actions.models import EphysSession
 from alyx.base import BaseModel
 
 
+class CoordinateSystem(BaseModel):
+    """
+    Used to describe a 3D coordinate system.
+    The description is expected to provide:
+    -   3D origin
+    -   directions of axes
+    -   unit of axes
+    """
+    description = models.TextField(blank=True, max_length=4096, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class ProbeModel(BaseModel):
     """
     Metadata describing each probe model
@@ -33,6 +47,14 @@ class ProbeInsertion(BaseModel):
             models.UniqueConstraint(fields=['name', 'session'],
                                     name='unique_probe_insertion_name_per_session')
         ]
+
+    @property
+    def subject(self):
+        return self.session.subject.nickname
+
+    @property
+    def datetime(self):
+        return self.session.start_time
 
 
 class TrajectoryEstimate(models.Model):
@@ -72,6 +94,9 @@ class TrajectoryEstimate(models.Model):
     roll = models.FloatField(null=True,
                              validators=[MinValueValidator(0), MaxValueValidator(360)])
     provenance = models.IntegerField(default=10, choices=INSERTION_DATA_SOURCES)
+    coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
+                                          on_delete=models.SET_NULL,
+                                          help_text=('3D coordinate system used.'))
 
     class Meta:
         constraints = [
@@ -87,8 +112,10 @@ class TrajectoryEstimate(models.Model):
     def session(self):
         return self.probe_insertion.session
 
-# class BrainLocation(BaseModel):
-#     """
-#     Allen Brain Atlas labels
-#     """
-#     pass
+    @property
+    def subject(self):
+        return self.probe_insertion.session.subject.nickname
+
+    @property
+    def datetime(self):
+        return self.probe_insertion.session.start_time

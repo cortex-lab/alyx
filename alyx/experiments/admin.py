@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib.admin import TabularInline
 
-from experiments.models import TrajectoryEstimate, ProbeInsertion, ProbeModel
+from experiments.models import TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem
 from alyx.base import BaseAdmin
 
 
@@ -18,6 +18,8 @@ class ProbeInsertionInline(BaseAdmin):
     ordering = ('-session__start_time',)
     exclude = ['session']
     readonly_fields = ['_session']
+    list_display = ['name', 'datetime', 'subject', 'session']
+    list_display_links = ('name', 'subject', 'session',)
     inlines = (TrajectoryEstimateInline,)
 
     def _session(self, obj):
@@ -35,17 +37,21 @@ class ProbeModelAdmin(BaseAdmin):
 
 class TrajectoryEstimateAdmin(BaseAdmin):
     exclude = ['probe_insertion']
-    readonly_fields = ['_probe_insertion']
+    readonly_fields = ['_probe_insertion', 'session']
+    list_display = ['datetime', 'subject', '_probe_insertion', 'session']
+    list_display_links = ('datetime', 'subject', 'session',)
+    ordering = ['-probe_insertion__session__start_time']
 
     def _probe_insertion(self, obj):
         # this is to provide a link back to the session page
         url = reverse('admin:%s_%s_change' % (obj.probe_insertion._meta.app_label,
                                               obj.probe_insertion._meta.model_name),
                       args=[obj.probe_insertion.id])
-        return format_html('<b><a href="{url}" ">{}</a></b>', obj.probe_insertion, url=url)
+        return format_html('<b><a href="{url}" ">{}</a></b>', obj.probe_insertion.name, url=url)
     _probe_insertion.short_description = 'probe insertion'
 
 
 admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
 admin.site.register(ProbeModel, ProbeModelAdmin)
+admin.site.register(CoordinateSystem, BaseAdmin)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from actions.models import EphysSession
-from experiments.models import ProbeInsertion, TrajectoryEstimate, ProbeModel
+from experiments.models import ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem
 from actions.serializers import SessionListSerializer
 
 
@@ -50,6 +50,10 @@ class TrajectoryEstimateSerializer(serializers.HyperlinkedModelSerializer):
     provenance = TrajectoryProvenanceField(required=True)
     session = SessionListSerializer(read_only=True)
     probe_name = serializers.CharField(read_only=True)
+    coordinate_system = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name', many=False,
+        queryset=CoordinateSystem.objects.all(),
+    )
 
     class Meta:
         model = TrajectoryEstimate
