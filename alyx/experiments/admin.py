@@ -20,6 +20,7 @@ class ProbeInsertionInline(BaseAdmin):
     readonly_fields = ['_session']
     list_display = ['name', 'datetime', 'subject', 'session']
     list_display_links = ('name', 'subject', 'session',)
+    search_fields = ('session__subject__nickname',)
     inlines = (TrajectoryEstimateInline,)
 
     def _session(self, obj):
@@ -38,9 +39,11 @@ class ProbeModelAdmin(BaseAdmin):
 class TrajectoryEstimateAdmin(BaseAdmin):
     exclude = ['probe_insertion']
     readonly_fields = ['_probe_insertion', 'session']
-    list_display = ['datetime', 'subject', '_probe_insertion', 'session']
+    list_display = ['datetime', 'subject', '_probe_insertion', 'x', 'y', 'z', 'depth', 'theta',
+                    'phi', 'provenance', 'session']
     list_display_links = ('datetime', 'subject', 'session',)
-    ordering = ['-probe_insertion__session__start_time']
+    ordering = ['provenance', '-probe_insertion__session__start_time']
+    search_fields = ('probe_insertion__session__subject__nickname',)
 
     def _probe_insertion(self, obj):
         # this is to provide a link back to the session page
