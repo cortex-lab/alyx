@@ -41,6 +41,7 @@ class TrajectoryEstimateAdmin(BaseAdmin):
     readonly_fields = ['_probe_insertion', 'session']
     list_display = ['datetime', 'subject', '_probe_insertion', 'x', 'y', 'z', 'depth', 'theta',
                     'phi', 'provenance', 'session']
+    list_editable = ['x', 'y', 'z', 'depth', 'theta', 'phi']
     list_display_links = ('datetime', 'subject', 'session',)
     ordering = ['provenance', '-probe_insertion__session__start_time']
     search_fields = ('probe_insertion__session__subject__nickname',)
