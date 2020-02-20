@@ -928,10 +928,10 @@
  "pk": "5ec9b957-d0b8-4343-8d32-e2bc40ce4c5d",
  "fields": {
   "json": null,
-  "name": "onsetGoCue.times_mic",
+  "name": "audioOnsetGoCue.times_mic",
   "created_by": null,
   "description": "GoCue Times extracted from microphone data (s)",
-  "filename_pattern": "_iblmic_onsetGoCue.times_mic.*"
+  "filename_pattern": "_iblmic_audioOnsetGoCue.times_mic.*"
   }
  },
  {
