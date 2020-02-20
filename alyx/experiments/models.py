@@ -31,6 +31,9 @@ class ProbeModel(BaseModel):
                                    help_text="optional informal description e.g. "
                                    "'Michigan 4x4 tetrode'; 'Neuropixels phase 2 option 1'")
 
+    def __str__(self):
+        return self.probe_model
+
 
 class ProbeInsertion(BaseModel):
     """
