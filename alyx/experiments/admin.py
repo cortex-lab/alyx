@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib.admin import TabularInline
+from reversion.admin import VersionAdmin
 
 from experiments.models import TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem
 from alyx.base import BaseAdmin
@@ -36,7 +37,7 @@ class ProbeModelAdmin(BaseAdmin):
     pass
 
 
-class TrajectoryEstimateAdmin(BaseAdmin):
+class TrajectoryEstimateAdmin(VersionAdmin):
     exclude = ['probe_insertion']
     readonly_fields = ['_probe_insertion', 'session']
     list_display = ['datetime', 'subject', '_probe_insertion', 'x', 'y', 'z', 'depth', 'theta',
