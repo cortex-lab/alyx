@@ -1,0 +1,20 @@
+[
+{
+ "model": "experiments.coordinatesystem",
+ "pk": "3b00d02e-ea91-4a37-9427-d83de37a1b63",
+ "fields": {
+  "name": "Needles-Allen",
+  "json": null,
+  "description": "Coordinate system based on the Allen brain Atlas with an antero-posterior stretch and a dorso-ventral squeeze.\r\n\r\nOrigin Bregma, millimeters\r\nx: medio-lateral, right positive\r\ny: antero-posteror: front positive\r\nz: dorso-ventral: up positive.\r\n\r\nhttps://github.com/int-brain-lab/ibllib/blob/master/ibllib/atlas/atlas.py\r\nhttps://github.com/int-brain-lab/ibllib-matlab"
+ }
+},
+{
+ "model": "experiments.coordinatesystem",
+ "pk": "cbc64f28-6aa5-4331-a9fd-7648ffa13876",
+ "fields": {
+  "name": "IBL-Allen",
+  "json": null,
+  "description": "Coordinate system based on the Allen brain Atlas for mice.\r\n\r\nOrigin Bregma, millimeters\r\nx: medio-lateral, right positive\r\ny: antero-posteror: front positive\r\nz: dorso-ventral: up positive.\r\n\r\nThe API below works with several atlas resolutions:\r\nhttps://github.com/int-brain-lab/ibllib/blob/master/ibllib/atlas/atlas.py"
+ }
+}
+]

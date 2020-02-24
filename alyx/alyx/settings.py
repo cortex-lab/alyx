@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     'actions',
     'data',
     'misc',
+    'experiments',
 )
 
 MIDDLEWARE = (

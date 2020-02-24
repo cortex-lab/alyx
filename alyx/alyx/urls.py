@@ -34,6 +34,8 @@ admin.site.site_header = 'Alyx'
 urlpatterns = [
     path('', mv.api_root),
 
+    path('', include('experiments.urls')),
+
     path('admin/', admin.site.urls),
 
     path('admin-subjects/', include('subjects.urls')),

@@ -1,0 +1,24 @@
+[
+{
+ "model": "experiments.probemodel",
+ "pk": "96dccdfe-7206-4b65-bb17-0743c842acd0",
+ "fields": {
+  "name": "Neuropixel 3A",
+  "json": null,
+  "probe_manufacturer": "Imec",
+  "probe_model": "3A",
+  "description": null
+ }
+},
+ {
+ "model": "experiments.probemodel",
+ "pk": "057d9a20-aaa9-4f79-8b0c-c8729b4cf160",
+ "fields": {
+  "name": "Neuropixel 3B2",
+  "json": null,
+  "probe_manufacturer": "Imec",
+  "probe_model": "3B2",
+  "description": null
+ }
+}
+]
