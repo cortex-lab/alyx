@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
+from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter, NumberFilter
+from django.contrib.postgres.fields import ArrayField
 
 from experiments.models import ProbeInsertion, TrajectoryEstimate
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,)
@@ -19,6 +20,14 @@ class ProbeInsertionFilter(FilterSet):
     class Meta:
         model = ProbeInsertion
         exclude = ['json']
+        filter_overrides = {
+            ArrayField: {
+                'filter_class': NumberFilter,
+                'extra': lambda f: {
+                    'lookup_expr': 'icontains',
+                },
+            },
+        }
 
 
 class ProbeInsertionList(generics.ListCreateAPIView):

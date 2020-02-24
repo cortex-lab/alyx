@@ -4,7 +4,10 @@ from django.utils.html import format_html
 from django.contrib.admin import TabularInline
 from reversion.admin import VersionAdmin
 
-from experiments.models import TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem
+from mptt.admin import MPTTModelAdmin
+
+from experiments.models import (TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem,
+                                BrainRegions)
 from alyx.base import BaseAdmin
 
 
@@ -56,6 +59,13 @@ class TrajectoryEstimateAdmin(VersionAdmin):
     _probe_insertion.short_description = 'probe insertion'
 
 
+class BrainRegionsAdmin(MPTTModelAdmin):
+    list_display = ['name', 'id', 'acronym', 'parent', 'level']
+    list_display_links = ('id', 'name', 'parent')
+    search_fields = ('name', 'acronym', 'parent__name')
+
+
+admin.site.register(BrainRegions, BrainRegionsAdmin)
 admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
 admin.site.register(ProbeModel, ProbeModelAdmin)

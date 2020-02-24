@@ -120,13 +120,9 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = (
-    'test_without_migrations',
     'dal',
     'dal_select2',
-    'reversion',
     'django_admin_listfilter_dropdown',
-    'rangefilter',
-    'subjects',
     'django_filters',
     'django.contrib.admin',
     'django.contrib.contenttypes',
@@ -134,14 +130,20 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mptt',
     'polymorphic',
+    'rangefilter',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_docs',
+    'reversion',
+    'test_without_migrations',
+    # alyx-apps
     'actions',
     'data',
     'misc',
     'experiments',
+    'subjects',
 )
 
 MIDDLEWARE = (
