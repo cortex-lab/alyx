@@ -16,6 +16,7 @@ rm ./scripts/sync_ucl/cortexlab.sql
 
 cd alyx
 source ../venv/bin/activate
+./manage.py migrate --database cortexlab
 echo "Cascade deleting all non-IBL subjects"
 ./manage.py shell < ../scripts/sync_ucl/prune_cortexlab.py
 echo "Load pruned cortexlab data into ibl"
