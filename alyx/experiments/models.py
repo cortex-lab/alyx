@@ -16,7 +16,7 @@ Z_HELP_TEXT = ("brain surface dorso-ventral coordinate (um) of the insertion"
                ", up +, relative to Bregma")
 
 
-class BrainRegions(MPTTModel):
+class BrainRegion(MPTTModel):
     acronym = models.CharField(max_length=64, unique=True)
     name = models.CharField(max_length=255, unique=True)
     id = models.IntegerField(primary_key=True)
@@ -140,13 +140,6 @@ class TrajectoryEstimate(models.Model):
 
 
 class Channels(BaseModel):
-    INSERTION_DATA_SOURCES = [
-        (70, 'Ephys aligned histology track',),
-        (50, 'Histology track',),
-        (30, 'Micro-manipulator',),
-        (10, 'Planned',),
-    ]
-
     axial = models.FloatField(blank=True, null=True,
                               help_text=("Distance in micrometers along the probe from the tip."
                                          " 0 means the tip."))
@@ -155,7 +148,8 @@ class Channels(BaseModel):
     x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT)
     y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT)
     z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT)
-    brain_regions = models.IntegerField(choices=INSERTION_DATA_SOURCES, default=0)
+    brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
+                                     on_delete=models.SET_NULL)
     probe_insertion = models.ForeignKey(ProbeInsertion, null=True, blank=True,
                                         on_delete=models.CASCADE)
 

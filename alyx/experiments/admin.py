@@ -7,7 +7,7 @@ from reversion.admin import VersionAdmin
 from mptt.admin import MPTTModelAdmin
 
 from experiments.models import (TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem,
-                                BrainRegions)
+                                BrainRegion)
 from alyx.base import BaseAdmin
 
 
@@ -65,7 +65,7 @@ class BrainRegionsAdmin(MPTTModelAdmin):
     search_fields = ('name', 'acronym', 'parent__name')
 
 
-admin.site.register(BrainRegions, BrainRegionsAdmin)
+admin.site.register(BrainRegion, BrainRegionsAdmin)
 admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
 admin.site.register(ProbeModel, ProbeModelAdmin)

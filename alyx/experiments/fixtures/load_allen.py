@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 
-from experiments.models import BrainRegions
+from experiments.models import BrainRegion
 
 csv_file = "/var/www/alyx-dev/alyx/experiments/fixtures/allen_structure_tree.csv"
 
@@ -19,7 +19,7 @@ for d in data:
     name = d[2]
     acronym = d[3]
     parent = int(d[8] or '0')
-    br, _ = BrainRegions.objects.get_or_create(id=id, name=name, acronym=acronym)
+    br, _ = BrainRegion.objects.get_or_create(id=id, name=name, acronym=acronym)
     if parent != br.pk:
-        br.parent = BrainRegions.objects.get(id=parent)
+        br.parent = BrainRegion.objects.get(id=parent)
         br.save()
