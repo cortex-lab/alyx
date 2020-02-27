@@ -143,6 +143,7 @@ INSTALLED_APPS = (
     'data',
     'misc',
     'experiments',
+    'jobs',
     'subjects',
 )
 

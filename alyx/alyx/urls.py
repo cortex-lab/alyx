@@ -35,6 +35,7 @@ urlpatterns = [
     path('', mv.api_root),
 
     path('', include('experiments.urls')),
+    path('', include('jobs.urls')),
 
     path('admin/', admin.site.urls),
 
