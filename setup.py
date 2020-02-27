@@ -5,6 +5,9 @@ import os
 import os.path as op
 import shutil
 from django.utils.crypto import get_random_string
+import sys
+
+
 
 
 def _secret_key():
@@ -19,7 +22,7 @@ def _system(cmd):
 
 def _psql(sql, **kwargs):
     sql = sql.format(**kwargs)
-    cmd = 'sudo -u postgres psql -tc "%s"' % sql
+    cmd = 'sudo su - postgres -c "psql -tc \\"{}\\""'.format(sql)
     return _system(cmd)
 
 
@@ -34,6 +37,15 @@ def _replace_in_file(source_file, target_file, replacements=None, target_mode='w
         f.write(contents)
     if chmod:
         os.chmod(target_file, chmod)
+
+# Check if we are inside a virtual environment
+if not hasattr(sys, 'real_prefix'):
+    raise Warning('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ')
+    continue_anyway = input()
+    if continue_anyway not in  ("y", 'yes'):
+        print('Create a virtual environment from the repository root with: "virtualenv alyxvenv --python=python3"')
+        print('Enter a virtual environment from the repository root with: "source alyxvenv/bin/activate"')
+        sys.exit()
 
 
 # Prompt information.
@@ -62,13 +74,22 @@ if not out:
 
 
 # Set up the roles for the user.
-_psql("ALTER ROLE {DBUSER} SET client_encoding TO 'utf8';", DBUSER=DBUSER)
-_psql("ALTER ROLE {DBUSER} SET default_transaction_isolation TO 'read committed';", DBUSER=DBUSER)
-_psql("ALTER ROLE {DBUSER} SET timezone TO 'UTC';", DBUSER=DBUSER)
-_psql("GRANT ALL PRIVILEGES ON DATABASE {DBNAME} TO {DBUSER};", DBNAME=DBNAME, DBUSER=DBUSER)
-_psql("ALTER USER {DBUSER} WITH CREATEROLE;", DBUSER=DBUSER)
-_psql("ALTER USER {DBUSER} WITH SUPERUSER;", DBUSER=DBUSER)
-_psql("ALTER USER {DBUSER} WITH CREATEDB;", DBUSER=DBUSER)
+try:
+    _psql("ALTER ROLE {DBUSER} SET client_encoding TO 'utf8';", DBUSER=DBUSER)
+    _psql("ALTER ROLE {DBUSER} SET default_transaction_isolation TO 'read committed';", DBUSER=DBUSER)
+    _psql("ALTER ROLE {DBUSER} SET timezone TO 'UTC';", DBUSER=DBUSER)
+    _psql("GRANT ALL PRIVILEGES ON DATABASE {DBNAME} TO {DBUSER};", DBNAME=DBNAME, DBUSER=DBUSER)
+    _psql("ALTER USER {DBUSER} WITH CREATEROLE;", DBUSER=DBUSER)
+    _psql("ALTER USER {DBUSER} WITH SUPERUSER;", DBUSER=DBUSER)
+    _psql("ALTER USER {DBUSER} WITH CREATEDB;", DBUSER=DBUSER)
+    print('-----------------------------')
+    print('Database successfully created')
+except Exception as e:
+    print('Could not create database, error message:\n')
+    raise e
+
+
+
 
 
 repl = {
@@ -78,31 +99,44 @@ repl = {
     '%DBPASSWORD%': DBPASSWORD,
 }
 
-
-# Set up the settings file.
-_replace_in_file('alyx/alyx/settings_secret_template.py',
-                 'alyx/alyx/settings_secret.py',
-                 replacements=repl,
-                 )
-
-
-# Set up the .pgpass file to avoid typing the postgres password.
-_replace_in_file('scripts/templates/.pgpass_template', '~/.pgpass',
-                 replacements=repl, target_mode='a', chmod=0o600)
+try:
+    # Set up the settings file.
+    _replace_in_file('alyx/alyx/settings_secret_template.py',
+                     'alyx/alyx/settings_secret.py',
+                     replacements=repl,
+                     )
 
 
-# Set up the maintainance scripts.
-_replace_in_file('scripts/templates/load_db.sh', 'scripts/load_db.sh',
-                 replacements=repl, chmod=0o755)
-_replace_in_file('scripts/templates/dump_db.sh', 'scripts/dump_db.sh',
-                 replacements=repl, chmod=0o755)
+    # Set up the .pgpass file to avoid typing the postgres password.
+    _replace_in_file('scripts/templates/.pgpass_template', '~/.pgpass',
+                     replacements=repl, target_mode='a', chmod=0o600)
+
+
+    # Set up the maintainance scripts.
+    _replace_in_file('scripts/templates/load_db.sh', 'scripts/load_db.sh',
+                     replacements=repl, chmod=0o755)
+    _replace_in_file('scripts/templates/dump_db.sh', 'scripts/dump_db.sh',
+                     replacements=repl, chmod=0o755)
+    print('Configuration files successfully created from templates')
+except Exception as e:
+    print('Could not create configuration from templates, error message:\n')
+    raise e
 
 
 # Set up the database.
-_system('alyxvenv/bin/python alyx/manage.py makemigrations')
-_system('alyxvenv/bin/python alyx/manage.py migrate')
+try:
+    _system('python alyx/manage.py makemigrations')
+    _system('python alyx/manage.py migrate')
 
 
-_system('''echo "from misc.models import LabMember;'''
-        '''LabMember.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''
-        '''| alyxvenv/bin/python alyx/manage.py shell''')
+    _system('''echo "from misc.models import LabMember;'''
+            '''LabMember.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''
+            '''| python alyx/manage.py shell''')
+    print('Database successfully configured for Alyx')
+except Exception as e:
+    print('Could not configure database for Alyx, error message:\n')
+    raise e
+
+print('------------------------')
+print('Alyx setup successful <3')
+
