@@ -579,7 +579,9 @@ def globus_delete_local_datasets(datasets, dry=True):
         if dc['DATA'] == []:
             continue
         gtc.submit_delete(dc)
-    file_records.delete()
+    # remove file records
+    FileRecord.objects.filter(id__in=fr2delete).exclude(
+        data_repository__globus_is_personal=False).delete()
 
 
 def globus_delete_datasets(datasets, dry=True, local_only=False):
