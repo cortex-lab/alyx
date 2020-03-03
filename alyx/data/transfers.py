@@ -558,6 +558,7 @@ def globus_delete_local_datasets(datasets, dry=True):
             ls_local = _ls_globus(frloc)
             # if the data is not found on the local server, remove the file record from database
             if ls_local == [] or ls_local is None:
+                logger.info('NO FILE ON LOCAL, SKIP: ' + _filename_from_file_record(frloc))
                 fr2delete.append(frloc.id)
                 continue
             # if the file sizes don't match throw a warning and continue
@@ -580,8 +581,9 @@ def globus_delete_local_datasets(datasets, dry=True):
             continue
         gtc.submit_delete(dc)
     # remove file records
-    FileRecord.objects.filter(id__in=fr2delete).exclude(
-        data_repository__globus_is_personal=False).delete()
+    frecs = FileRecord.objects.filter(id__in=fr2delete).exclude(
+        data_repository__globus_is_personal=False)
+    frecs.delete()
 
 
 def globus_delete_datasets(datasets, dry=True, local_only=False):
