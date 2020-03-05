@@ -443,9 +443,9 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         gc = globus_transfer_client()
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
     if minsize:
-        dfs.filter(dataset__file_size__gte=minsize)
+        dfs = dfs.filter(dataset__file_size__gt=minsize)
     if maxsize:
-        dfs.filter(dataset__file_size__lt=maxsize)
+        dfs = dfs.exclude(dataset__file_size__gt=maxsize)
     if not dfs:
         return
     if lab:
