@@ -432,9 +432,22 @@ def bulk_transfer(dry_run=False, lab=None):
     repository does not exist.
     should be launched after bulk_sync() function
     """
+    # splits the jobs in one for small files and another for big files so that big raw
+    # ephys files don't hold the transfer of small behaviour/training files
+    _bulk_transfer(dry_run=dry_run, lab=lab, max_size=1024 ** 3)
+    _bulk_transfer(dry_run=dry_run, lab=lab, minsize=1024 ** 3)
+
+
+def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     if not dry_run:
         gc = globus_transfer_client()
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    if minsize:
+        dfs.filter(dataset__file_size__gte=minsize)
+    if maxsize:
+        dfs.filter(dataset__file_size__lt=maxsize)
+    if not dfs:
+        return
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
