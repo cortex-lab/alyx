@@ -434,7 +434,7 @@ def bulk_transfer(dry_run=False, lab=None):
     """
     # splits the jobs in one for small files and another for big files so that big raw
     # ephys files don't hold the transfer of small behaviour/training files
-    _bulk_transfer(dry_run=dry_run, lab=lab, max_size=1024 ** 3)
+    _bulk_transfer(dry_run=dry_run, lab=lab, maxsize=1024 ** 3)
     _bulk_transfer(dry_run=dry_run, lab=lab, minsize=1024 ** 3)
 
 
