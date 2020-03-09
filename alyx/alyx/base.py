@@ -19,10 +19,10 @@ from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
+from django.test import TestCase
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
-from rest_framework.test import APITestCase
 
 
 logger = logging.getLogger(__name__)
@@ -266,7 +266,10 @@ class JsonWidget(forms.Textarea):
 
     def format_value(self, value):
         out = super(JsonWidget, self).format_value(value)
-        out = json.dumps(json.loads(out), indent=1)
+        out = json.loads(out)
+        if out and not isinstance(out, dict):
+            out = json.loads(out)
+        out = json.dumps(out, indent=1)
         return out
 
 
@@ -275,7 +278,7 @@ class BaseAdmin(VersionAdmin):
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
                                   'cols': 60})},
-        JSONField: {'widget': JsonWidget()},
+        JSONField: {'widget': JsonWidget},
         models.UUIDField: {'widget': forms.TextInput(attrs={'size': 32})},
     }
     list_per_page = 50
@@ -342,7 +345,7 @@ class BaseInlineAdmin(admin.TabularInline):
     }
 
 
-class BaseTests(APITestCase):
+class BaseTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         globals()['DISABLE_MAIL'] = True
@@ -362,6 +365,12 @@ class BaseTests(APITestCase):
             return r.data['results']
         else:
             return r.data
+
+    def post(self, *args, **kwargs):
+        return self.client.post(*args, **kwargs, content_type='application/json')
+
+    def patch(self, *args, **kwargs):
+        return self.client.patch(*args, **kwargs, content_type='application/json')
 
 
 mysite = MyAdminSite()

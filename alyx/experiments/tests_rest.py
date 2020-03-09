@@ -20,7 +20,7 @@ class APISubjectsTests(BaseTests):
                      'name': 'probe_00',
                      'model': '3A'}
         url = reverse('probeinsertion-list')
-        response = self.client.post(url, insertion)
+        response = self.post(url, insertion)
         d = self.ar(response, 201)
 
         # test the list endpoint
@@ -46,7 +46,7 @@ class APISubjectsTests(BaseTests):
                      'name': 'probe_00',
                      'model': '3A'}
         url = reverse('probeinsertion-list')
-        response = self.client.post(url, insertion)
+        response = self.post(url, insertion)
         alyx_insertion = self.ar(response, 201)
 
         # create a trajectory
@@ -61,7 +61,7 @@ class APISubjectsTests(BaseTests):
                  'roll': 0,
                  'provenance': 'Micro-manipulator',
                  }
-        response = self.client.post(url, tdict)
+        response = self.post(url, tdict)
         alyx_trajectory = self.ar(response, 201)
 
         # test the filter/list

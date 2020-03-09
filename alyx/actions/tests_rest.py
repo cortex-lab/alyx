@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.timezone import now
 from datetime import timedelta
-import json
 
 from alyx import base
 from alyx.base import BaseTests
@@ -31,8 +30,8 @@ class APIActionsTests(BaseTests):
 
     def test_create_weighing(self):
         url = reverse('weighing-create')
-        data = {'subject': self.subject, 'weight': 12.3}
-        response = self.client.post(url, data)
+        data = {'subject': self.subject.nickname, 'weight': 12.3}
+        response = self.post(url, data)
         self.ar(response, 201)
         d = response.data
         self.assertTrue(d['date_time'])
@@ -43,9 +42,9 @@ class APIActionsTests(BaseTests):
         url = reverse('water-administration-create')
         ses_uuid = Session.objects.last().id
         water_type = WaterType.objects.last().name
-        data = {'subject': self.subject, 'water_administered': 1.23,
+        data = {'subject': self.subject.nickname, 'water_administered': 1.23,
                 'session': ses_uuid, 'water_type': water_type}
-        response = self.client.post(url, data)
+        response = self.post(url, data)
         self.ar(response, 201)
         d = response.data
         self.assertTrue(d['date_time'])
@@ -63,9 +62,8 @@ class APIActionsTests(BaseTests):
 
     def test_list_water_administration_filter(self):
         url = reverse('water-administration-create')
-        data = {'subject': self.subject, 'water_administered': 1.23}
-        response = self.client.post(url, data)
-
+        data = {'subject': self.subject.nickname, 'water_administered': 1.23}
+        response = self.post(url, data)
         url = reverse('water-administration-create') + '?nickname=' + self.subject.nickname
         response = self.client.get(url)
         d = self.ar(response)[0]
@@ -80,8 +78,8 @@ class APIActionsTests(BaseTests):
 
     def test_list_weighing_filter(self):
         url = reverse('weighing-create')
-        data = {'subject': self.subject, 'weight': 12.3}
-        response = self.client.post(url, data)
+        data = {'subject': self.subject.nickname, 'weight': 12.3}
+        response = self.post(url, data)
 
         url = reverse('weighing-create') + '?nickname=' + self.subject.nickname
         response = self.client.get(url)
@@ -90,10 +88,10 @@ class APIActionsTests(BaseTests):
 
     def test_water_requirement(self):
         # Create water administered and weighing.
-        self.client.post(reverse('water-administration-create'),
-                         {'subject': self.subject, 'water_administered': 1.23})
-        self.client.post(reverse('weighing-create'),
-                         {'subject': self.subject, 'weight': 12.3})
+        self.post(reverse('water-administration-create'),
+                  {'subject': self.subject.nickname, 'water_administered': 1.23})
+        self.post(reverse('weighing-create'),
+                  {'subject': self.subject.nickname, 'weight': 12.3})
 
         url = reverse('water-requirement', kwargs={'nickname': self.subject.nickname})
 
@@ -120,9 +118,9 @@ class APIActionsTests(BaseTests):
             assert d['records'][i]['weight'] > 0
 
     def test_sessions(self):
-        a_dict4json = {'String': 'this is not a JSON'}
-        ses_dict = {'subject': self.subject,
-                    'users': self.superuser,
+        a_dict4json = {'String': 'this is not a JSON', 'Integer': 4, 'List': ['titi', 4]}
+        ses_dict = {'subject': self.subject.nickname,
+                    'users': [self.superuser.username],
                     'project': self.projectX.name,
                     'narrative': 'auto-generated-session, test',
                     'start_time': '2018-07-09T12:34:56',
@@ -130,13 +128,13 @@ class APIActionsTests(BaseTests):
                     'type': 'Base',
                     'number': '1',
                     'parent_session': '',
-                    'lab': self.lab01,
+                    'lab': self.lab01.name,
                     'n_trials': 100,
                     'n_correct_trials': 75,
                     'task_protocol': self.test_protocol,
-                    'json': json.dumps(a_dict4json)}
+                    'json': a_dict4json}
         # Test the session creation
-        r = self.client.post(reverse('session-list'), ses_dict)
+        r = self.post(reverse('session-list'), data=ses_dict)
         self.ar(r, 201)
         s1_details = r.data
         # makes sure the task_protocol is returned
@@ -151,10 +149,10 @@ class APIActionsTests(BaseTests):
         # create another session for further testing
         ses_dict['start_time'] = '2018-07-11T12:34:56'
         ses_dict['end_time'] = '2018-07-11T12:34:57'
-        ses_dict['users'] = [self.superuser, self.superuser2]
-        ses_dict['lab'] = self.lab02
+        ses_dict['users'] = [self.superuser.username, self.superuser2.username]
+        ses_dict['lab'] = self.lab02.name
         ses_dict['n_correct_trials'] = 37
-        r = self.client.post(reverse('session-list'), ses_dict)
+        r = self.post(reverse('session-list'), data=ses_dict)
         s2 = self.ar(r, code=201)
         s2.pop('json')
         # Test the date range filter
@@ -208,6 +206,8 @@ class APIActionsTests(BaseTests):
         self.assertEqual(d, l[0])
         # test patch
         url = reverse('location-detail', args=[l[0]['name']])
-        json_dict = {'string': "look at me! I'm a new Json field"}
-        p = self.ar(self.client.patch(url, data={'json': json.dumps(json_dict)}))
+        json_dict = {'string': "look at me! I'm a Json field",
+                     'integer': 15,
+                     'list': ['tutu', 5]}
+        p = self.ar(self.patch(url, data={'json': json_dict}))
         self.assertEqual(p['json'], json_dict)

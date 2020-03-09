@@ -15,17 +15,17 @@ class APIDataTests(BaseTests):
         self.client.login(username='test', password='test')
 
         # Create some static data.
-        self.client.post(reverse('datarepositorytype-list'), {'name': 'drt'})
-        self.client.post(reverse('datarepository-list'), {'name': 'dr', 'hostname': 'hostname'})
-        self.client.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
-        self.client.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
-        self.client.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
-        self.client.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
+        self.post(reverse('datarepositorytype-list'), {'name': 'drt'})
+        self.post(reverse('datarepository-list'), {'name': 'dr', 'hostname': 'hostname'})
+        self.post(reverse('datasettype-list'), {'name': 'dst', 'filename_pattern': '--'})
+        self.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
+        self.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
+        self.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
         self.subject = self.ar(self.client.get(reverse('subject-list')))[0]['nickname']
 
         # create some more dataset types a.a, a.b, a.c, a.d etc...
         for let in 'abcd':
-            self.client.post(
+            self.post(
                 reverse('datasettype-list'),
                 {'name': 'a.' + let, 'filename_pattern': 'a.' + let + '.*'})
 
@@ -33,12 +33,14 @@ class APIDataTests(BaseTests):
         date = '2018-01-01T12:00'
         r = self.client.post(
             reverse('session-list'),
-            {'subject': self.subject, 'start_time': date})
+            data={'subject': self.subject, 'start_time': date})
+        self.ar(r, 201)
 
         url = r.data['url']
-        r = self.client.post(
+        self.ar(self.client.post(
             reverse('session-list'),
-            {'subject': self.subject, 'start_time': date, 'number': 2, 'parent_session': url})
+            {'subject': self.subject, 'start_time': date, 'number': 2,
+             'parent_session': url}), 201)
 
     def test_datarepositorytype(self):
         r = self.client.get(reverse('datarepositorytype-list'))
@@ -83,7 +85,7 @@ class APIDataTests(BaseTests):
                 'data_format': 'df',
                 'file_size': 1234,
                 }
-        r = self.client.post(reverse('dataset-list'), data)
+        r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
         r = self.client.get(reverse('dataset-list'))
         rdata = self.ar(r)[0]
@@ -102,7 +104,7 @@ class APIDataTests(BaseTests):
                 'data_repository': 'dr',
                 'relative_path': 'path/to/file',
                 }
-        r = self.client.post(reverse('filerecord-list'), data)
+        r = self.post(reverse('filerecord-list'), data)
         self.ar(r, 201)
 
         rdata = self.ar(self.client.get(reverse('filerecord-list')))[0]
@@ -124,7 +126,7 @@ class APIDataTests(BaseTests):
             'number': 2,
         }
         # Post the dataset.
-        r = self.client.post(reverse('dataset-list'), data)
+        r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
         # Make sure a session has been created.
         session = r.data['session']
@@ -148,9 +150,9 @@ class APIDataTests(BaseTests):
         data = [data, data.copy()]
         data[1]['created_datetime'] = '2018-02-21T12:00'
         data[1]['name'] = 'dataset-created-after'
-        r = self.client.post(reverse('dataset-list'), data[0])
+        r = self.post(reverse('dataset-list'), data[0])
         self.ar(r, 201)
-        r = self.client.post(reverse('dataset-list'), data[1])
+        r = self.post(reverse('dataset-list'), data[1])
         self.ar(r, 201)
         # only one has been created before 2018-01-01
         r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01')
@@ -168,13 +170,13 @@ class APIDataTests(BaseTests):
 
     def test_register_files(self):
         # create 4 repositories, 2 per lab
-        self.client.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
-        self.client.post(reverse('datarepository-list'), {'name': 'dra2', 'hostname': 'hosta2'})
-        self.client.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
-        self.client.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
+        self.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
+        self.post(reverse('datarepository-list'), {'name': 'dra2', 'hostname': 'hosta2'})
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
 
-        self.client.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1', 'dra2']})
-        self.client.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
+        self.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1', 'dra2']})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
 
         # start with registering 2 datasets on lab a, since the repo is not whithin the lab repos
         # we expect 3 file records to be created, do it twice: list and char to test format
@@ -242,7 +244,7 @@ class APIDataTests(BaseTests):
         data['path'] = '%s/2018-01-01/002' % self.subject
         data['filenames'] = 'dir/a.b.e1'
         with self.assertRaises(Exception):
-            self.client.post(reverse('register-file'), data)
+            self.post(reverse('register-file'), data)
 
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need
@@ -255,7 +257,7 @@ class APIDataTests(BaseTests):
                 'filesizes': '14564,45686',
                 'versions': '1.1.1,2.2.2',
                 }
-        r = self.client.post(reverse('register-file'), data)
+        r = self.post(reverse('register-file'), data)
         self.ar(r, 201)
         self._assert_registration(r, data)
         ds0 = Dataset.objects.get(name='a.b.e1')
@@ -274,7 +276,7 @@ class APIDataTests(BaseTests):
                 'filenames': 'a.b.e1,a.c.e2',
                 'name': 'dr',
                 }
-        r = self.client.post(reverse('register-file'), data)
+        r = self.post(reverse('register-file'), data)
         self.ar(r, 201)
         self._assert_registration(r, data)
 
@@ -285,7 +287,7 @@ class APIDataTests(BaseTests):
                 'filenames': 'a.b.e1,a.c.e2',
                 'name': 'dr',
                 }
-        r = self.client.post(reverse('register-file'), data)
+        r = self.post(reverse('register-file'), data)
         self.ar(r, 201)
         self._assert_registration(r, data)
 
@@ -318,7 +320,7 @@ class APIDataTests(BaseTests):
                     'data_format': 'df',
                     'file_size': 1234,
                     }
-            r = self.client.post(reverse('dataset-list'), data)
+            r = self.post(reverse('dataset-list'), data)
             self.ar(r, 201)
             pks.append(r.data['url'][r.data['url'].rindex('/') + 1:])
 
@@ -326,7 +328,7 @@ class APIDataTests(BaseTests):
         dpks = []
         pk = pks[0]
         for i in range(3):
-            r = self.client.post(reverse('new-download'), {
+            r = self.post(reverse('new-download'), {
                 'user': 'test',
                 'datasets': pk,
             })
@@ -341,7 +343,7 @@ class APIDataTests(BaseTests):
         self.ar(self.client.post(reverse('project-list'), {'name': 'tp3'}), 201)
 
         # test with one dataset and several projects, expected count is 4
-        r = self.client.post(reverse('new-download'), {
+        r = self.post(reverse('new-download'), {
             'user': 'test',
             'datasets': pk,
             'projects': 'tp1,tp2',
@@ -352,7 +354,7 @@ class APIDataTests(BaseTests):
         self.assertEqual([p.name for p in d.projects.all()], ['tp1', 'tp2'])
 
         # test with several datasets
-        r = self.client.post(reverse('new-download'), {
+        r = self.post(reverse('new-download'), {
             'user': 'test',
             'datasets': ','.join(pks),
             'projects': 'tp3',
