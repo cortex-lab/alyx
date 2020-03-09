@@ -1087,5 +1087,38 @@
       "description": "Whitening matrix applied by kilosort2, [nchannels, nchannels]",
       "filename_pattern": "kilosort.whitening_matrix.npy"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "02810655-413b-435e-a9ac-bcd35a9c3b19",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.channels",
+      "created_by": null,
+      "description": "Channel index for sample waveforms, [nspikes, nchannelsmax]",
+      "filename_pattern": "_phy_spikes_subset.channels.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "db943040-ba0a-4446-b46f-0448248d721a",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.spikes",
+      "created_by": null,
+      "description": "Spikes index for sample waveforms, [nspikes,]",
+      "filename_pattern": "_phy_spikes_subset.spikes.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "550388e1-87eb-47d2-ab7b-2793676cc11f",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.waveforms",
+      "created_by": null,
+      "description": "Sample waveforms, [nspikes, nsamples, nchannelsmax]",
+      "filename_pattern": "_phy_spikes_subset.waveforms.npy"
+    }
   }
 ]
