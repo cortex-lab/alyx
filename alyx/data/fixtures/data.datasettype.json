@@ -1076,5 +1076,16 @@
   "description": "Spectral Density for all channels (V**2/Hz)",
   "filename_pattern": "_iblqc_ephysSpectralDensity*.power.npy"
   }
- }
+ },
+  {
+    "model": "data.datasettype",
+    "pk": "6de900a3-20b4-4e73-be57-8e63bbfa73b5",
+    "fields": {
+      "json": null,
+      "name": "kilosort.whitening_matrix",
+      "created_by": null,
+      "description": "Whitening matrix applied by kilosort2, [nchannels, nchannels]",
+      "filename_pattern": "kilosort.whitening_matrix.npy"
+    }
+  }
 ]
