@@ -192,6 +192,29 @@ class SessionFilter(FilterSet):
                                               lookup_expr=('icontains'))
     json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
+    extended_qc = django_filters.CharFilter(field_name='extended_qc',
+                                            method=('filter_extended_qc'))
+
+    def filter_extended_qc(self, queryset, name, value):
+        # hacky custom json filter taking only scalar Bool / float / integer values
+        # exact/equal lookup: "?extended_qc=qc_bool,True"
+        # gte lookup: "?extended_qc=qc_pct__gte,0.5"
+        # chained lookups: "?extended_qc=qc_pct__gte,0.5,qc_bool,True"
+        fv = value.split(',')
+        i = 0
+        while i < len(fv):
+            field, val = fv[i], fv[i + 1]
+            i += 2
+            if val == 'True':
+                val = True
+            elif val == 'False':
+                val = False
+            elif val.replace('.', '', 1).isdigit():
+                val = float(val)
+            else:
+                raise ValueError("lookup " + value + " not understood")
+            queryset = queryset.filter(**{"extended_qc__" + field: val})
+        return queryset
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')

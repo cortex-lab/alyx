@@ -13,8 +13,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib.admin import TabularInline
 from rangefilter.filter import DateRangeFilter
 
-from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
-                       get_admin_url)
+from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod,
@@ -470,7 +469,7 @@ class SessionAdmin(BaseActionAdmin):
                     'task_protocol', 'qc', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
-        'repo_url', 'qc', 'project', ('type', 'task_protocol', ), 'number',
+        'repo_url', 'qc', 'extended_qc', 'project', ('type', 'task_protocol', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
@@ -481,7 +480,7 @@ class SessionAdmin(BaseActionAdmin):
                      'task_protocol')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['repo_url', 'task_protocol', 'weighing']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'extended_qc']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.contrib.postgres.fields import JSONField
 
 from alyx.base import BaseModel, modify_fields, alyx_mail
 from misc.models import Lab, LabLocation, LabMember
@@ -249,7 +250,11 @@ class Session(BaseAction):
         (20, 'NOT_SET',),
         (10, 'PASS',),
     ]
+
     qc = models.IntegerField(default=20, choices=QC_CHOICES)
+    extended_qc = JSONField(null=True, blank=True,
+                            help_text="Structured data about session QC,"
+                                      "formatted in a user-defined way")
 
     def save(self, *args, **kwargs):
         # Default project is the subject's project.
