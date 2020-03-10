@@ -2,8 +2,9 @@ from rest_framework import generics, permissions
 from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter, NumberFilter
 from django.contrib.postgres.fields import ArrayField
 
-from experiments.models import ProbeInsertion, TrajectoryEstimate
-from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,)
+from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel
+from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
+                                     ChannelSerializer)
 
 """
 Probe insertion objects REST filters and views
@@ -82,4 +83,23 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
 class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class ChannelList(generics.ListCreateAPIView):
+
+    def get_serializer(self, *args, **kwargs):
+        """ if an array is passed, set serializer to many """
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super(generics.ListCreateAPIView, self).get_serializer(*args, **kwargs)
+
+    queryset = Channel.objects.all()
+    serializer_class = ChannelSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Channel.objects.all()
+    serializer_class = ChannelSerializer
     permission_classes = (permissions.IsAuthenticated,)

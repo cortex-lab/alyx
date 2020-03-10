@@ -139,7 +139,7 @@ class TrajectoryEstimate(models.Model):
         return self.probe_insertion.session.start_time
 
 
-class Channels(BaseModel):
+class Channel(BaseModel):
     axial = models.FloatField(blank=True, null=True,
                               help_text=("Distance in micrometers along the probe from the tip."
                                          " 0 means the tip."))
@@ -154,4 +154,5 @@ class Channels(BaseModel):
                                         on_delete=models.CASCADE)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['name'], name='unique_name')]
+        constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'probe_insertion'],
+                                               name='unique_axial_lateral_probe_insertion')]

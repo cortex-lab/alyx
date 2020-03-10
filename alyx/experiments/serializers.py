@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from actions.models import EphysSession
-from experiments.models import ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem
+from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
+                                Channel, BrainRegion)
 from actions.serializers import SessionListSerializer
 
 
@@ -57,4 +58,19 @@ class TrajectoryEstimateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = TrajectoryEstimate
+        fields = '__all__'
+
+
+class ChannelSerializer(serializers.HyperlinkedModelSerializer):
+    probe_insertion = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='id', many=False,
+        queryset=ProbeInsertion.objects.all(),
+    )
+    brain_region = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='id', many=False,
+        queryset=BrainRegion.objects.all(),
+    )
+
+    class Meta:
+        model = Channel
         fields = '__all__'
