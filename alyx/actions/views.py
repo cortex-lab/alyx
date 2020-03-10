@@ -200,6 +200,9 @@ class SessionFilter(FilterSet):
     def filter_json(self, queryset, name, value):
         return base_json_filter('json', queryset, name, value)
 
+    def filter_json(self, queryset, name, value):
+        return base_json_filter('json', queryset, name, value)
+
     def filter_extended_qc(self, queryset, name, value):
         return base_json_filter('extended_qc', queryset, name, value)
 
