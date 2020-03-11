@@ -234,7 +234,7 @@ class Session(BaseAction):
                                        on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
     project = models.ForeignKey('subjects.Project', null=True, blank=True,
-                                on_delete=models.SET_NULL)
+                                on_delete=models.SET_NULL, verbose_name='Session Project')
     type = models.CharField(max_length=255, null=True, blank=True,
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,

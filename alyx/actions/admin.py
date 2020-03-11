@@ -473,8 +473,9 @@ class SessionAdmin(BaseActionAdmin):
         'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
-                   ('subject__projects', RelatedDropdownFilter),
+                   ('project', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
+                   ('subject__projects', RelatedDropdownFilter)
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
                      'task_protocol')
