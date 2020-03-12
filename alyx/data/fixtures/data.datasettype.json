@@ -1120,5 +1120,16 @@
       "description": "Sample waveforms, [nspikes, nsamples, nchannelsmax]",
       "filename_pattern": "_phy_spikes_subset.waveforms.npy"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "73ecfa96-b913-4807-ad35-e2c67f4ed01e",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_syncSquareUpdate.raw",
+      "created_by": null,
+      "description": "Timestamped sync square update commands",
+      "filename_pattern": "_iblrig_syncSquareUpdate.raw.csv"
+    }
   }
 ]
