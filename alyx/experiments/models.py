@@ -145,13 +145,13 @@ class Channel(BaseModel):
                                          " 0 means the tip."))
     lateral = models.FloatField(blank=True, null=True, help_text=("Distance in micrometers"
                                                                   " accross the probe"))
-    x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT)
-    y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT)
-    z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT)
+    x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
     brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
                                      on_delete=models.SET_NULL)
-    probe_insertion = models.ForeignKey(ProbeInsertion, null=True, blank=True,
-                                        on_delete=models.CASCADE)
+    trajectory_estimate = models.ForeignKey(TrajectoryEstimate, null=True, blank=True,
+                                            on_delete=models.CASCADE)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'probe_insertion'],
