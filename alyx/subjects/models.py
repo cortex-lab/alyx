@@ -173,7 +173,7 @@ class Subject(BaseModel):
     lab = models.ForeignKey(Lab, on_delete=models.CASCADE, default=default_lab)
 
     projects = models.ManyToManyField(
-        Project, blank=True,
+        Project, blank=True, verbose_name="Subject Projects",
         help_text='Project associated to this session')
 
     cage = models.CharField(max_length=64, null=True, blank=True)

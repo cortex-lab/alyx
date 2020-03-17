@@ -115,15 +115,12 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     )
 
     hash = serializers.CharField(required=False, allow_null=True)
-
     version = serializers.CharField(required=False, allow_null=True)
-
-    file_size = serializers.IntegerField(required=False)
-
-    experiment_number = serializers.SerializerMethodField()
-
+    file_size = serializers.IntegerField(required=False, allow_null=True)
+    collection = serializers.CharField(required=False, allow_null=True)
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
+    experiment_number = serializers.SerializerMethodField()
     # If session is not provided, use subject, start_time, number
     subject = serializers.SlugRelatedField(
         write_only=True, required=False, slug_field='nickname',
@@ -171,7 +168,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Dataset
         fields = ('url', 'name', 'created_by', 'created_datetime',
-                  'dataset_type', 'data_format',
+                  'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number')

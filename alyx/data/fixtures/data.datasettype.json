@@ -928,10 +928,10 @@
  "pk": "5ec9b957-d0b8-4343-8d32-e2bc40ce4c5d",
  "fields": {
   "json": null,
-  "name": "onsetGoCue.times_mic",
+  "name": "audioOnsetGoCue.times_mic",
   "created_by": null,
   "description": "GoCue Times extracted from microphone data (s)",
-  "filename_pattern": "_iblmic_onsetGoCue.times_mic.*"
+  "filename_pattern": "_iblmic_audioOnsetGoCue.times_mic.*"
   }
  },
  {
@@ -1076,5 +1076,60 @@
   "description": "Spectral Density for all channels (V**2/Hz)",
   "filename_pattern": "_iblqc_ephysSpectralDensity*.power.npy"
   }
- }
+ },
+  {
+    "model": "data.datasettype",
+    "pk": "6de900a3-20b4-4e73-be57-8e63bbfa73b5",
+    "fields": {
+      "json": null,
+      "name": "kilosort.whitening_matrix",
+      "created_by": null,
+      "description": "Whitening matrix applied by kilosort2, [nchannels, nchannels]",
+      "filename_pattern": "kilosort.whitening_matrix.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "02810655-413b-435e-a9ac-bcd35a9c3b19",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.channels",
+      "created_by": null,
+      "description": "Channel index for sample waveforms, [nspikes, nchannelsmax]",
+      "filename_pattern": "_phy_spikes_subset.channels.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "db943040-ba0a-4446-b46f-0448248d721a",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.spikes",
+      "created_by": null,
+      "description": "Spikes index for sample waveforms, [nspikes,]",
+      "filename_pattern": "_phy_spikes_subset.spikes.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "550388e1-87eb-47d2-ab7b-2793676cc11f",
+    "fields": {
+      "json": null,
+      "name": "_phy_spikes_subset.waveforms",
+      "created_by": null,
+      "description": "Sample waveforms, [nspikes, nsamples, nchannelsmax]",
+      "filename_pattern": "_phy_spikes_subset.waveforms.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "73ecfa96-b913-4807-ad35-e2c67f4ed01e",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_syncSquareUpdate.raw",
+      "created_by": null,
+      "description": "Timestamped sync square update commands",
+      "filename_pattern": "_iblrig_syncSquareUpdate.raw.csv"
+    }
+  }
 ]

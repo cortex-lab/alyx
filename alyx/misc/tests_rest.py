@@ -15,7 +15,7 @@ class APIActionsTests(BaseTests):
 
     def test_create_lab_membership(self):
         # first test creation of lab through rest endpoint
-        response = self.client.post(reverse('lab-list'), {'name': 'superlab'})
+        response = self.post(reverse('lab-list'), {'name': 'superlab'})
         d = self.ar(response, 201)
         self.assertTrue(d['name'])
         # create a membership

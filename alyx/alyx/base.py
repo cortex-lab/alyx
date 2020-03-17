@@ -19,10 +19,10 @@ from django.core.management import call_command
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
+from django.test import TestCase
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
-from rest_framework.test import APITestCase
 
 
 logger = logging.getLogger(__name__)
@@ -133,6 +133,7 @@ def alyx_mail(to, subject, text=''):
 
 ADMIN_PAGES = [('Common', ['Subjects',
                            'Sessions',
+                           'Ephys sessions',
                            'Surgeries',
                            'Breeding pairs',
                            'Litters',
@@ -164,6 +165,7 @@ ADMIN_PAGES = [('Common', ['Subjects',
                  'Other actions',
                  'Procedure types',
                  'Water types',
+                 'Probe models',
                  ]),
                ('Other', ['Genotype tests',
                           'Zygosities',
@@ -264,7 +266,10 @@ class JsonWidget(forms.Textarea):
 
     def format_value(self, value):
         out = super(JsonWidget, self).format_value(value)
-        out = json.dumps(json.loads(out), indent=1)
+        out = json.loads(out)
+        if out and not isinstance(out, dict):
+            out = json.loads(out)
+        out = json.dumps(out, indent=1)
         return out
 
 
@@ -273,7 +278,7 @@ class BaseAdmin(VersionAdmin):
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
                                   'cols': 60})},
-        JSONField: {'widget': JsonWidget()},
+        JSONField: {'widget': JsonWidget},
         models.UUIDField: {'widget': forms.TextInput(attrs={'size': 32})},
     }
     list_per_page = 50
@@ -340,7 +345,7 @@ class BaseInlineAdmin(admin.TabularInline):
     }
 
 
-class BaseTests(APITestCase):
+class BaseTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         globals()['DISABLE_MAIL'] = True
@@ -360,6 +365,34 @@ class BaseTests(APITestCase):
             return r.data['results']
         else:
             return r.data
+
+    def post(self, *args, **kwargs):
+        return self.client.post(*args, **kwargs, content_type='application/json')
+
+    def patch(self, *args, **kwargs):
+        return self.client.patch(*args, **kwargs, content_type='application/json')
+
+
+def base_json_filter(fieldname, queryset, name, value):
+    # hacky custom json filter taking only scalar Bool / float / integer values
+    # exact/equal lookup: "?extended_qc=qc_bool,True"
+    # gte lookup: "?extended_qc=qc_pct__gte,0.5"
+    # chained lookups: "?extended_qc=qc_pct__gte,0.5,qc_bool,True"
+    fv = value.split(',')
+    i = 0
+    while i < len(fv):
+        field, val = fv[i], fv[i + 1]
+        i += 2
+        if val == 'True':
+            val = True
+        elif val == 'False':
+            val = False
+        elif val.replace('.', '', 1).isdigit():
+            val = float(val)
+        else:
+            raise ValueError("lookup " + value + " not understood")
+        queryset = queryset.filter(**{fieldname + '__' + field: val})
+    return queryset
 
 
 mysite = MyAdminSite()

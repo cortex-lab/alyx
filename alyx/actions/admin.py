@@ -10,11 +10,11 @@ from django.db.models import Case, When
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django.contrib.admin import TabularInline
 from rangefilter.filter import DateRangeFilter
 
-from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin,
-                       get_admin_url)
-from .models import (OtherAction, ProcedureType, Session, Surgery, VirusInjection,
+from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
+from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod,
                      )
@@ -22,6 +22,7 @@ from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
+from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
 
@@ -468,18 +469,19 @@ class SessionAdmin(BaseActionAdmin):
                     'task_protocol', 'qc', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
-        'repo_url', 'qc', 'project', ('type', 'task_protocol', ), 'number',
+        'repo_url', 'qc', 'extended_qc', 'project', ('type', 'task_protocol', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
-                   ('subject__projects', RelatedDropdownFilter),
+                   ('project', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
+                   ('subject__projects', RelatedDropdownFilter)
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
                      'task_protocol')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['repo_url', 'task_protocol', 'weighing']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'extended_qc']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project
@@ -542,6 +544,22 @@ class SessionAdmin(BaseActionAdmin):
                       args=[wei[0].id])
         return format_html('<b><a href="{url}" ">{} g </a></b>', wei[0].weight, url=url)
     weighing.short_description = 'weight before session'
+
+
+class ProbeInsertionInline(TabularInline):
+    fk_name = "session"
+    show_change_link = True
+    model = ProbeInsertion
+    fields = ('name', 'model')
+    extra = 0
+
+
+class EphysSessionAdmin(SessionAdmin):
+    inlines = [ProbeInsertionInline, WaterAdminInline, DatasetInline, NoteInline]
+
+    def get_queryset(self, request):
+        qs = super(EphysSessionAdmin, self).get_queryset(request)
+        return qs.filter(task_protocol__icontains='ephys')
 
 
 class NotificationUserFilter(DefaultListFilter):
@@ -609,6 +627,7 @@ admin.site.register(WaterAdministration, WaterAdministrationAdmin)
 admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 
 admin.site.register(Session, SessionAdmin)
+admin.site.register(EphysSession, EphysSessionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 

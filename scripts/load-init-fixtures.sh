@@ -15,3 +15,6 @@ source ../alyxvenv/bin/activate
 ./manage.py loaddata ./misc/fixtures/misc.food.json
 
 ./manage.py loaddata ./subjects/fixtures/subjects.source.json
+
+./manage.py loaddata ./experiments/fixtures/experiments.coordinatesystem.json
+./manage.py loaddata ./experiments/fixtures/experiments.probemodel.json

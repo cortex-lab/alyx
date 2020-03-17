@@ -70,6 +70,11 @@ def _create_missing_file_records(dry_run=False):
 
 
 class Command(BaseCommand):
+    """
+        ./manage.py files bulksync --lab=cortexlab --dry
+        ./manage.py files bulktransfer --lab=cortexlab --dry
+        ./manage.py files removelocal --lab=churchlandlab --dry --before=2019-05-15 --limit=5
+    """
     help = "Manage files"
 
     def add_arguments(self, parser):
@@ -81,6 +86,7 @@ class Command(BaseCommand):
         parser.add_argument('--path', help='path')
         parser.add_argument('--limit', help='limit to a maximum number of datasets')
         parser.add_argument('--user', help='select datasets created by a given user')
+        parser.add_argument('--before', help='select datasets before a given date')
 
     def handle(self, *args, **options):
         action = options.get('action')
@@ -91,6 +97,44 @@ class Command(BaseCommand):
         user = options.get('user')
         dry = options.get('dry')
         lab = options.get('lab')
+        before = options.get('before')
+
+        if action == 'removelocal':
+            if limit is None:
+                limit = 1000
+            else:
+                limit = int(limit)
+            if lab is None:
+                self.stdout.write(self.style.ERROR("Lab name should be specified to delete "
+                                                   "files on local server. Exiting now."))
+                return
+            if before is None:
+                self.stdout.write(self.style.ERROR("Date beforeshould be specified: use the "
+                                                   "--before=yyyy-mm-dd flag. Exiting now."))
+                return
+            dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',
+                      '_iblrig_Camera.raw']
+            frecs = FileRecord.objects.filter(
+                ~Q(data_repository__name__icontains='flatiron'),
+                dataset__dataset_type__name__in=dtypes,
+                exists=True,
+                dataset__session__start_time__date__lte=before,
+                dataset__session__lab__name=lab
+            )
+            dsets = frecs.values_list('dataset', flat=True)
+            dsets = Dataset.objects.filter(id__in=dsets).order_by('session__start_time')[:limit]
+            if dsets.count() == 0:
+                self.stdout.write(self.style.WARNING("Empty dataset list. Exiting now."))
+                return
+            self.stdout.write("Deletion list:")
+            for dset in dsets:
+                self.stdout.write(dset.name + " " + str(dset.session))
+            reply = input('Continue ? Y/N [Y]:')
+            if reply not in ["", "Y", "y", "Yes", "YES"]:
+                self.stdout.write("exiting")
+                return
+            logging.getLogger(__name__).setLevel(logging.INFO)
+            transfers.globus_delete_local_datasets(dsets, dry=dry)
 
         if action == 'bulksync':
             _create_missing_file_records_main_globus(dry_run=dry, lab=lab)
