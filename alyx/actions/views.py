@@ -195,6 +195,7 @@ class SessionFilter(FilterSet):
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
+    project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
 
     def filter_json(self, queryset, name, value):
         return base_json_filter('json', queryset, name, value)
