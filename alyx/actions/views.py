@@ -17,6 +17,7 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from alyx.base import base_json_filter
 from subjects.models import Subject
 from .water_control import water_control, date as get_date
 from .models import (
@@ -190,8 +191,17 @@ class SessionFilter(FilterSet):
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
-    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    json = django_filters.CharFilter(field_name='json', method=('filter_json'))
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
+    extended_qc = django_filters.CharFilter(field_name='extended_qc',
+                                            method=('filter_extended_qc'))
+    project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
+
+    def filter_json(self, queryset, name, value):
+        return base_json_filter('json', queryset, name, value)
+
+    def filter_extended_qc(self, queryset, name, value):
+        return base_json_filter('extended_qc', queryset, name, value)
 
     def filter_users(self, queryset, name, value):
         users = value.split(',')

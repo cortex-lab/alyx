@@ -108,6 +108,7 @@ class NoteAdmin(ImageWidgetAdmin):
     list_display_links = ['date_time']
     image_fields = ['image']
     fields = ['user', 'date_time', 'text', 'image', 'content_type', 'object_id']
+    ordering = ('-date_time',)
 
 
 class NoteInline(GenericTabularInline):
@@ -116,6 +117,7 @@ class NoteInline(GenericTabularInline):
     fields = ('user', 'date_time', 'text', 'image')
     image_fields = ('image',)
     classes = ['collapse']
+    ordering = ('-date_time',)
 
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(

@@ -117,6 +117,37 @@ class APIActionsTests(BaseTests):
         for i in range(2, 5):
             assert d['records'][i]['weight'] > 0
 
+    def test_extended_qc(self):
+        extended_qc = [
+            {'tutu_bool': True, 'tata_pct': 0.3},
+            {'tutu_bool': False, 'tata_pct': 0.4},
+            {'tutu_bool': False, 'tata_pct': 0.5},
+            {'tutu_bool': True, 'tata_pct': 0.6}]
+        ses = Session.objects.all()
+        # patch the first 4 sessions the QCs above
+        for i, ext_qc in enumerate(extended_qc):
+            r = self.patch(reverse('session-detail', args=[ses[i].pk]),
+                           data={'extended_qc': ext_qc})
+            data = self.ar(r)
+            self.assertEqual(data['extended_qc'], ext_qc)
+
+        def check_filt(filt, qs):
+            d = self.ar(self.client.get(reverse('session-list') + filt))
+            uuids = Session.objects.filter(pk__in=[dd['url'][-36:] for dd in d]
+                                           ).values_list('pk', flat=True)
+            self.assertTrue(set(qs.values_list('pk', flat=True)) == set(uuids))
+
+        check_filt("?extended_qc=tutu_bool,True",
+                   Session.objects.filter(extended_qc__tutu_bool=True))
+        check_filt("?extended_qc=tutu_bool,False",
+                   Session.objects.filter(extended_qc__tutu_bool=False))
+        check_filt("?extended_qc=tata_pct__gte,0.5",
+                   Session.objects.filter(extended_qc__tata_pct__gte=0.5))
+
+        check_filt("?extended_qc=tata_pct__lt,0.5,tutu_bool,True",
+                   Session.objects.filter(extended_qc__tata_pct__lt=0.5,
+                                          extended_qc__tutu_bool=True))
+
     def test_sessions(self):
         a_dict4json = {'String': 'this is not a JSON', 'Integer': 4, 'List': ['titi', 4]}
         ses_dict = {'subject': self.subject.nickname,
