@@ -1085,7 +1085,7 @@
       "name": "kilosort.whitening_matrix",
       "created_by": null,
       "description": "Whitening matrix applied by kilosort2, [nchannels, nchannels]",
-      "filename_pattern": "kilosort.whitening_matrix.npy"
+      "filename_pattern": "_kilosort_whitening.matrix.npy"
     }
   },
   {

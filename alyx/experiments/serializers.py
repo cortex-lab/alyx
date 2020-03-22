@@ -62,9 +62,9 @@ class TrajectoryEstimateSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ChannelSerializer(serializers.HyperlinkedModelSerializer):
-    probe_insertion = serializers.SlugRelatedField(
+    trajectory_estimate = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id', many=False,
-        queryset=ProbeInsertion.objects.all(),
+        queryset=TrajectoryEstimate.objects.all(),
     )
     brain_region = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id', many=False,

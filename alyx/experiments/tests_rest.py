@@ -84,6 +84,17 @@ class APISubjectsTests(BaseTests):
     def test_create_list_delete_channels(self):
         # create the probe insertion
         pi = self.ar(self.post(reverse('probeinsertion-list'), self.dict_insertion), 201)
+        tdict = {'probe_insertion': pi['url'][-36:],
+                 'x': -4521.2,
+                 'y': 2415.0,
+                 'z': 0,
+                 'phi': 80,
+                 'theta': 10,
+                 'depth': 5000,
+                 'roll': 0,
+                 'provenance': 'Micro-manipulator',
+                 }
+        traj = self.ar(self.post(reverse('trajectoryestimate-list'), tdict), 201)
         # post a single channel
         channel_dict = {
             'x': 111.1,
@@ -92,7 +103,7 @@ class APISubjectsTests(BaseTests):
             'axial': 20,
             'lateral': 40,
             'brain_region': 1133,
-            'probe_insertion': pi['url'][-36:]
+            'trajectory_estimate': traj
         }
         self.ar(self.post(reverse('channel-list'), channel_dict), 201)
         # post a list of channels

@@ -154,5 +154,5 @@ class Channel(BaseModel):
                                             on_delete=models.CASCADE)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'probe_insertion'],
-                                               name='unique_axial_lateral_probe_insertion')]
+        constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'trajectory_estimate'],
+                                               name='unique_axial_lateral_trajectory_estimate')]
