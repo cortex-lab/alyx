@@ -103,7 +103,7 @@ class APISubjectsTests(BaseTests):
             'axial': 20,
             'lateral': 40,
             'brain_region': 1133,
-            'trajectory_estimate': traj
+            'trajectory_estimate': traj['url'][-36:]
         }
         self.ar(self.post(reverse('channel-list'), channel_dict), 201)
         # post a list of channels
