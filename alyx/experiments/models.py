@@ -60,11 +60,10 @@ class ProbeInsertion(BaseModel):
     """
     Describe an electrophysiology probe insertion used for recording
     """
-    session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE)
-    model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL)
-    coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
-                                          on_delete=models.SET_NULL,
-                                          help_text=('3D coordinate system used for channels'))
+    session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE,
+                                related_name='probe_insertion')
+    model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
+                              related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
@@ -149,9 +148,9 @@ class Channel(BaseModel):
     y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
     z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
     brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
-                                     on_delete=models.SET_NULL)
+                                     on_delete=models.SET_NULL, related_name='channels')
     trajectory_estimate = models.ForeignKey(TrajectoryEstimate, null=True, blank=True,
-                                            on_delete=models.CASCADE)
+                                            on_delete=models.CASCADE, related_name='channels')
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'trajectory_estimate'],

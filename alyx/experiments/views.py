@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter, NumberFilter
-from django.contrib.postgres.fields import ArrayField
+from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
 
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
@@ -21,14 +20,6 @@ class ProbeInsertionFilter(FilterSet):
     class Meta:
         model = ProbeInsertion
         exclude = ['json']
-        filter_overrides = {
-            ArrayField: {
-                'filter_class': NumberFilter,
-                'extra': lambda f: {
-                    'lookup_expr': 'icontains',
-                },
-            },
-        }
 
 
 class ProbeInsertionList(generics.ListCreateAPIView):
@@ -86,6 +77,15 @@ class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
+class ChannelFilter(FilterSet):
+    session = UUIDFilter('trajectory_estimate__probe_insertion__session')
+    probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
+
+    class Meta:
+        model = Channel
+        exclude = ['json']
+
+
 class ChannelList(generics.ListCreateAPIView):
 
     def get_serializer(self, *args, **kwargs):
@@ -97,6 +97,7 @@ class ChannelList(generics.ListCreateAPIView):
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_class = ChannelFilter
 
 
 class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):

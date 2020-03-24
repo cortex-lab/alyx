@@ -39,7 +39,7 @@ class APISubjectsTests(BaseTests):
         self.assertTrue(dd == [])
 
         # test the delete endpoint
-        response = self.client.delete(url + '/' + d[0]['url'][-36:])
+        response = self.client.delete(url + '/' + d[0]['id'])
         self.ar(response, 204)
 
     def test_create_list_delete_trajectory(self):
@@ -53,7 +53,7 @@ class APISubjectsTests(BaseTests):
 
         # create a trajectory
         url = reverse('trajectoryestimate-list')
-        tdict = {'probe_insertion': alyx_insertion['url'][-36:],
+        tdict = {'probe_insertion': alyx_insertion['id'],
                  'x': -4521.2,
                  'y': 2415.0,
                  'z': 0,
@@ -67,24 +67,24 @@ class APISubjectsTests(BaseTests):
         alyx_trajectory = self.ar(response, 201)
 
         # test the filter/list
-        urlf = (url + '?&probe_insertion=' + alyx_insertion['url'][-36:] +
+        urlf = (url + '?&probe_insertion=' + alyx_insertion['id'] +
                 '&provenance=Micro-manipulator')
         traj = self.ar(self.client.get(urlf))
         self.assertTrue(len(traj) == 1)
 
-        urlf = (url + '?&probe_insertion=' + alyx_insertion['url'][-36:] +
+        urlf = (url + '?&probe_insertion=' + alyx_insertion['id'] +
                 '&provenance=Planned')
         traj = self.ar(self.client.get(urlf))
         self.assertTrue(len(traj) == 0)
 
         # test the delete endpoint
-        response = self.client.delete(url + '/' + alyx_trajectory['url'][-36:])
+        response = self.client.delete(url + '/' + alyx_trajectory['id'])
         self.ar(response, 204)
 
     def test_create_list_delete_channels(self):
         # create the probe insertion
         pi = self.ar(self.post(reverse('probeinsertion-list'), self.dict_insertion), 201)
-        tdict = {'probe_insertion': pi['url'][-36:],
+        tdict = {'probe_insertion': pi['id'],
                  'x': -4521.2,
                  'y': 2415.0,
                  'z': 0,
@@ -103,7 +103,7 @@ class APISubjectsTests(BaseTests):
             'axial': 20,
             'lateral': 40,
             'brain_region': 1133,
-            'trajectory_estimate': traj['url'][-36:]
+            'trajectory_estimate': traj['id']
         }
         self.ar(self.post(reverse('channel-list'), channel_dict), 201)
         # post a list of channels
