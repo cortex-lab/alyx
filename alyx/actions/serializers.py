@@ -111,16 +111,19 @@ class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
 
 class SessionListSerializer(BaseActionSerializer):
+    project = serializers.SlugRelatedField(read_only=False,
+                                           slug_field='name',
+                                           queryset=Project.objects.all())
 
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'lab')
+        queryset = queryset.select_related('subject', 'lab', 'project')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'url', 'task_protocol')
+        fields = ('subject', 'start_time', 'number', 'lab', 'project', 'url', 'task_protocol')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
