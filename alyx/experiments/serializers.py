@@ -106,7 +106,7 @@ class ChannelSessionSerializer(serializers.ModelSerializer):
 
 class _TrajectoryFilterSerializer(serializers.ListSerializer):
     def to_representation(self, qs):
-        qs = qs.all().order_by('provenance')
+        qs = qs.all().order_by('-provenance')
         return super(_TrajectoryFilterSerializer, self).to_representation(qs)
 
 
@@ -118,7 +118,7 @@ class TrajectoryEstimateSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrajectoryEstimate
         list_serializer_class = _TrajectoryFilterSerializer
-        exclude = ('-probe_insertion',)
+        exclude = ('probe_insertion',)
 
 
 class ProbeInsertionSessionSerializer(serializers.ModelSerializer):
