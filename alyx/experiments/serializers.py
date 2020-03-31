@@ -30,7 +30,7 @@ class SessionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'url', 'task_protocol')
+        fields = ('subject', 'start_time', 'number', 'lab', 'id', 'task_protocol')
 
 
 class TrajectoryEstimateSerializer(serializers.ModelSerializer):
@@ -104,6 +104,12 @@ class ChannelSessionSerializer(serializers.ModelSerializer):
         exclude = ('json', 'trajectory_estimate', 'name')
 
 
+class _TrajectoryFilterSerializer(serializers.ListSerializer):
+    def to_representation(self, qs):
+        qs = qs.all().order_by('provenance')
+        return super(_TrajectoryFilterSerializer, self).to_representation(qs)
+
+
 class TrajectoryEstimateSessionSerializer(serializers.ModelSerializer):
     coordinate_system = serializers.SlugRelatedField(read_only=True, slug_field='name')
     channels = ChannelSessionSerializer(read_only=True, many=True)
@@ -111,8 +117,8 @@ class TrajectoryEstimateSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TrajectoryEstimate
-        exclude = ('probe_insertion',)
-        # list_serializer_class = _TrajectoryFilterSerializer
+        list_serializer_class = _TrajectoryFilterSerializer
+        exclude = ('-probe_insertion',)
 
 
 class ProbeInsertionSessionSerializer(serializers.ModelSerializer):
