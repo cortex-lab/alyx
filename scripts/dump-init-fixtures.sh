@@ -17,3 +17,7 @@ source ../alyxvenv/bin/activate
 ./manage.py dumpdata misc.food --indent 1 -o ./misc/fixtures/misc.food.json
 
 ./manage.py dumpdata subjects.source --indent 1 -o ./subjects/fixtures/subjects.source.json
+
+./manage.py dumpdata experiments.coordinatesystem --indent 1 -o ./experiments/fixtures/experiments.coordinatesystem.json
+./manage.py dumpdata experiments.probemodel --indent 1 -o ./experiments/fixtures/experiments.probemodel.json
+./manage.py dumpdata experiments.brainregions --indent 1 -o ./experiments/fixtures/experiments.brainregions.json

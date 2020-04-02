@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions
 from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
 
-from experiments.models import ProbeInsertion, TrajectoryEstimate
-from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,)
+from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel
+from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
+                                     ChannelSerializer)
 
 """
 Probe insertion objects REST filters and views
@@ -42,6 +43,7 @@ Trajectory Estimates objects REST filters and views
 class TrajectoryEstimateFilter(FilterSet):
     provenance = CharFilter(method='provenance_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
+    project = CharFilter('probe_insertion__session__project__name')
     date = CharFilter('probe_insertion__session__start_time__date')
     experiment_number = CharFilter('probe_insertion__session__number')
     session = UUIDFilter('probe_insertion__session__id')
@@ -73,4 +75,33 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
 class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class ChannelFilter(FilterSet):
+    session = UUIDFilter('trajectory_estimate__probe_insertion__session')
+    probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
+
+    class Meta:
+        model = Channel
+        exclude = ['json']
+
+
+class ChannelList(generics.ListCreateAPIView):
+
+    def get_serializer(self, *args, **kwargs):
+        """ if an array is passed, set serializer to many """
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super(generics.ListCreateAPIView, self).get_serializer(*args, **kwargs)
+
+    queryset = Channel.objects.all()
+    serializer_class = ChannelSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = ChannelFilter
+
+
+class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Channel.objects.all()
+    serializer_class = ChannelSerializer
     permission_classes = (permissions.IsAuthenticated,)

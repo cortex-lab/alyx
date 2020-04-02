@@ -18,3 +18,4 @@ source ../alyxvenv/bin/activate
 
 ./manage.py loaddata ./experiments/fixtures/experiments.coordinatesystem.json
 ./manage.py loaddata ./experiments/fixtures/experiments.probemodel.json
+./manage.py loaddata ./experiments/fixtures/experiments.brainregion.json
