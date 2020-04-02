@@ -7,4 +7,6 @@ urlpatterns = [
     path('trajectories', ev.TrajectoryEstimateList.as_view(), name="trajectoryestimate-list"),
     path('trajectories/<uuid:pk>', ev.TrajectoryEstimateDetail.as_view(),
          name="trajectoryestimate-detail"),
+    path('channels', ev.ChannelList.as_view(), name="channel-list"),
+    path('channels/<uuid:pk>', ev.ChannelDetail.as_view(), name="channel-detail"),
 ]

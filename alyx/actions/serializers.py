@@ -8,6 +8,7 @@ from .models import (ProcedureType, Session, WaterAdministration, Weighing, Wate
 from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
+from experiments.serializers import ProbeInsertionSessionSerializer
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
@@ -110,23 +111,26 @@ class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
 
 class SessionListSerializer(BaseActionSerializer):
+    project = serializers.SlugRelatedField(read_only=False,
+                                           slug_field='name',
+                                           queryset=Project.objects.all())
 
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'lab')
+        queryset = queryset.select_related('subject', 'lab', 'project')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'url', 'task_protocol')
+        fields = ('subject', 'start_time', 'number', 'lab', 'project', 'url', 'task_protocol')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
-
+    probe_insertion = ProbeInsertionSessionSerializer(read_only=True, many=True)
     project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
                                            queryset=Project.objects.all(), required=False)
 
@@ -138,12 +142,13 @@ class SessionDetailSerializer(BaseActionSerializer):
             'data_dataset_session_related__file_records',
             'data_dataset_session_related__file_records__data_repository',
             'wateradmin_session_related',
+            'probe_insertion',
         )
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = SESSION_FIELDS + ('json',)
+        fields = SESSION_FIELDS + ('json',) + ('probe_insertion',)
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):

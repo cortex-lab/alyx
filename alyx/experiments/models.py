@@ -1,9 +1,30 @@
+import uuid
+
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-import uuid
+from mptt.models import MPTTModel, TreeForeignKey
+
 from actions.models import EphysSession
 from alyx.base import BaseModel
+
+X_HELP_TEXT = ("brain surface medio-lateral coordinate (um) of"
+               "the insertion, right +, relative to Bregma")
+Y_HELP_TEXT = ("brain surface antero-posterior coordinate (um) of the "
+               "insertion, front +, relative to Bregma")
+Z_HELP_TEXT = ("brain surface dorso-ventral coordinate (um) of the insertion"
+               ", up +, relative to Bregma")
+
+
+class BrainRegion(MPTTModel):
+    acronym = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    id = models.IntegerField(primary_key=True)
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
+                            related_name='children')
+
+    def __str__(self):
+        return self.name
 
 
 class CoordinateSystem(BaseModel):
@@ -39,8 +60,10 @@ class ProbeInsertion(BaseModel):
     """
     Describe an electrophysiology probe insertion used for recording
     """
-    session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE)
-    model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL)
+    session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE,
+                                related_name='probe_insertion')
+    model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
+                              related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
@@ -75,19 +98,10 @@ class TrajectoryEstimate(models.Model):
     probe_insertion = models.ForeignKey(ProbeInsertion, blank=True, null=True,
                                         on_delete=models.CASCADE,
                                         related_name='trajectory_estimate')
-    x = models.FloatField(null=True, help_text="brain surface medio-lateral coordinate (um) of"
-                                               "the insertion, right +, relative to Bregma",
-                          verbose_name='x-ml (um)')
-    y = models.FloatField(null=True,
-                          help_text="brain surface antero-posterior coordinate (um) of the "
-                                    "insertion, front +, relative to Bregma",
-                          verbose_name='y-ap (um)')
-    z = models.FloatField(null=True,
-                          help_text="brain surface dorso-ventral coordinate (um) of the insertion"
-                                    ", up +, relative to Bregma",
-                          verbose_name='z-dv (um)')
-    depth = models.FloatField(null=True,
-                              help_text="probe insertion depth (um)")
+    x = models.FloatField(null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y = models.FloatField(null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z = models.FloatField(null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    depth = models.FloatField(null=True, help_text="probe insertion depth (um)")
     theta = models.FloatField(null=True,
                               help_text="Polar angle ie. from vertical, (degrees) [0-180]",
                               validators=[MinValueValidator(0), MaxValueValidator(180)])
@@ -122,3 +136,22 @@ class TrajectoryEstimate(models.Model):
     @property
     def datetime(self):
         return self.probe_insertion.session.start_time
+
+
+class Channel(BaseModel):
+    axial = models.FloatField(blank=True, null=True,
+                              help_text=("Distance in micrometers along the probe from the tip."
+                                         " 0 means the tip."))
+    lateral = models.FloatField(blank=True, null=True, help_text=("Distance in micrometers"
+                                                                  " accross the probe"))
+    x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
+                                     on_delete=models.SET_NULL, related_name='channels')
+    trajectory_estimate = models.ForeignKey(TrajectoryEstimate, null=True, blank=True,
+                                            on_delete=models.CASCADE, related_name='channels')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'trajectory_estimate'],
+                                               name='unique_axial_lateral_trajectory_estimate')]
