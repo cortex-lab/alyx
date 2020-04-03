@@ -28,6 +28,9 @@ class SessionListSerializer(serializers.ModelSerializer):
         queryset = queryset.select_related('subject', 'lab')
         return queryset.order_by('-start_time')
 
+    subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
+    lab = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
     class Meta:
         model = Session
         fields = ('subject', 'start_time', 'number', 'lab', 'id', 'task_protocol')
