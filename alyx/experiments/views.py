@@ -47,6 +47,7 @@ class TrajectoryEstimateFilter(FilterSet):
     date = CharFilter('probe_insertion__session__start_time__date')
     experiment_number = CharFilter('probe_insertion__session__number')
     session = UUIDFilter('probe_insertion__session__id')
+    probe = CharFilter('probe_insertion__name')
 
     class Meta:
         model = TrajectoryEstimate
@@ -66,6 +67,19 @@ class TrajectoryEstimateFilter(FilterSet):
 
 
 class TrajectoryEstimateList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **provenance**: probe insertion provenance
+        must one of the strings among those choices:
+        'Ephys aligned histology track', 'Histology track', 'Micro-manipulator', 'Planned'
+        `/trajectories?provenance=Planned`
+    -   **subject: subject nickname: `/trajectories?subject=Algernon`
+    -   **date**: session date: `/trajectories?date=2020-01-15`
+    -   **experiment_number**: session number `/trajectories?experiment_number=1`
+    -   **session**: `/trajectories?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **probe**: probe_insertion name `/trajectories?probe=probe01`
+    """
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
     permission_classes = (permissions.IsAuthenticated,)
