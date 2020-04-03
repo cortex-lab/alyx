@@ -17,9 +17,15 @@
         }
 
         function result_template(item) {
-            return template(item.text,
+            var text = template(item.text,
                 element.attr('data-html') !== undefined || element.attr('data-result-html') !== undefined
             );
+
+            if (item.create_id) {
+                return $('<span></span>').text(text).addClass('dal-create')
+            } else {
+                return text
+            }
         }
 
         function selected_template(item) {
