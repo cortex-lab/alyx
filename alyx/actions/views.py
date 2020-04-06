@@ -269,7 +269,25 @@ class WaterAdministrationFilter(FilterSet):
 
 class SessionAPIList(generics.ListCreateAPIView):
     """
-    List and create sessions - view in summary form
+        get: **FILTERS**
+
+    -   **subject**: subject nickname `/sessions?subject=Algernon`
+    -   **dataset_types**: dataset type
+    -   **number**: session number
+    -   **users**: experimenters (exact)
+    -   **date_range**: date `/sessions?date_range=2020-01-12,2020-01-16`
+    -   **lab**: lab name (exact)
+    -   **task_protocol** (icontains)
+    -   **location**: location name (icontains)
+    -   **project**: project name (icontains)
+    -   **json**: queries on json fields, for example here `tutu`
+        -   exact/equal lookup: `/sessions?extended_qc=tutu,True`,
+        -   gte lookup: `/sessions/?extended_qc=tutu__gte,0.5`,
+    -   **extended_qc** queries on json fields, for example here `qc_bool` and `qc_pct`,
+        -   exact/equal lookup: `/sessions?extended_qc=qc_bool,True`,
+        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte,0.5`,
+        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte,0.5,qc_bool,True`,
+    -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
