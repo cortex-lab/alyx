@@ -62,7 +62,7 @@ class TrajectoryEstimateAdmin(VersionAdmin):
 class BrainRegionsAdmin(MPTTModelAdmin):
     list_display = ['name', 'id', 'acronym', 'parent', 'level']
     list_display_links = ('id', 'name', 'parent')
-    search_fields = ('name', 'acronym', 'parent__name')
+    search_fields = ('name', 'acronym', 'parent__name', 'id')
 
 
 admin.site.register(BrainRegion, BrainRegionsAdmin)
