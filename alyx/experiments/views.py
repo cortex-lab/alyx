@@ -95,6 +95,7 @@ class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
 class ChannelFilter(FilterSet):
     session = UUIDFilter('trajectory_estimate__probe_insertion__session')
     probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
+    subject = CharFilter('trajectory_estimate__probe_insertion__session__subject__nickname')
 
     class Meta:
         model = Channel
@@ -102,6 +103,13 @@ class ChannelFilter(FilterSet):
 
 
 class ChannelList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **subject: subject nickname: `/channels?subject=Algernon`
+    -   **session**: UUID `/channels?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **probe_insertion**: UUID  `/channels?probe_insertion=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    """
 
     def get_serializer(self, *args, **kwargs):
         """ if an array is passed, set serializer to many """
