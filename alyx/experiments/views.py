@@ -96,6 +96,7 @@ class ChannelFilter(FilterSet):
     session = UUIDFilter('trajectory_estimate__probe_insertion__session')
     probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
     subject = CharFilter('trajectory_estimate__probe_insertion__session__subject__nickname')
+    lab = CharFilter('trajectory_estimate__probe_insertion__session__lab__name')
 
     class Meta:
         model = Channel
@@ -108,6 +109,7 @@ class ChannelList(generics.ListCreateAPIView):
 
     -   **subject: subject nickname: `/channels?subject=Algernon`
     -   **session**: UUID `/channels?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **lab**: lab name `/channels?lab=wittenlab`
     -   **probe_insertion**: UUID  `/channels?probe_insertion=aad23144-0e52-4eac-80c5-c4ee2decb198`
     """
 
