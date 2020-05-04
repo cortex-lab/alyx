@@ -221,10 +221,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         One repository or lab is mandatory, as this is the repository where the files
         currently exist It can be identified either by name (recommended) or hostname
         (compatibility).
-
         The client side REST query should look like this:
 
-        ```
+        ```python
         r_ = {'created_by': 'user_name_alyx',
               'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
@@ -242,12 +241,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         For backward compatibility the following is allowed (projects are labs the repo lookup
         is done on the hostname instead of the repository name):
-        ```
-         r_ = {
-              ...
-              'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
-              'projects': 'alyx_lab_name',  # optional, alias of lab field above
-              ...
+        ```python
+         r_ = {'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
+               'projects': 'alyx_lab_name',  # optional, alias of lab field above
               }
         ```
 
