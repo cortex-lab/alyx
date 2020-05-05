@@ -9,6 +9,8 @@ from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
 from experiments.serializers import ProbeInsertionSessionSerializer
+from misc.serializers import NoteSerializer
+
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
@@ -133,6 +135,7 @@ class SessionDetailSerializer(BaseActionSerializer):
     probe_insertion = ProbeInsertionSessionSerializer(read_only=True, many=True)
     project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
                                            queryset=Project.objects.all(), required=False)
+    notes = NoteSerializer(read_only=True, many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -148,7 +151,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = SESSION_FIELDS + ('json',) + ('probe_insertion',)
+        fields = SESSION_FIELDS + ('json',) + ('probe_insertion', 'notes')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
