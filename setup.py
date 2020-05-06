@@ -6,6 +6,7 @@ import os.path as op
 import shutil
 from django.utils.crypto import get_random_string
 import sys
+from warnings import warn
 
 
 
@@ -39,8 +40,8 @@ def _replace_in_file(source_file, target_file, replacements=None, target_mode='w
         os.chmod(target_file, chmod)
 
 # Check if we are inside a virtual environment
-if not hasattr(sys, 'real_prefix'):
-    raise Warning('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ')
+if not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:      
+    warn('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ', RuntimeWarning)
     continue_anyway = input()
     if continue_anyway not in  ("y", 'yes'):
         print('Create a virtual environment from the repository root with: "virtualenv alyxvenv --python=python3"')
