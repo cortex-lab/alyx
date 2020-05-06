@@ -16,6 +16,7 @@ class ProbeInsertionFilter(FilterSet):
     experiment_number = CharFilter('session__number')
     name = CharFilter('name')
     session = UUIDFilter('session')
+    model = CharFilter('model__name')
 
     class Meta:
         model = ProbeInsertion
@@ -23,6 +24,16 @@ class ProbeInsertionFilter(FilterSet):
 
 
 class ProbeInsertionList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+    -   **name**: probe insertion name `/trajectories?name=probe00`
+    -   **subject: subject nickname: `/insertions?subject=Algernon`
+    -   **date**: session date: `/inssertions?date=2020-01-15`
+    -   **experiment_number**: session number `/insertions?experiment_number=1`
+    -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **model**: probe model name `/insertions?model=3A`
+
+    """
     queryset = ProbeInsertion.objects.all()
     serializer_class = ProbeInsertionSerializer
     permission_classes = (permissions.IsAuthenticated,)
