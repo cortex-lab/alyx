@@ -439,8 +439,16 @@ def bulk_transfer(dry_run=False, lab=None):
 
 
 def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
-    if not dry_run:
-        gc = globus_transfer_client()
+    """
+    Transfer in bulk data to Flat Iron. 2 transfers are created according to file-size so that
+    smaller files get in earlier. The query of data/.FileRecord records to transfer is based
+    on the exists flag (True) and the globus personal (False).
+    :param dry_run: (bool)
+    :param lab: (str) lab name: only transfer files from this lab
+    :param maxsize: (int) maximum file size for transfer (allows to split small and big transfers)
+    :param minsize: (int) minimum file size for transfer (see above)
+    :return:
+    """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
     if minsize:
         dfs = dfs.filter(dataset__file_size__gt=minsize)
@@ -450,6 +458,20 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         return
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
+    _globus_transfer_filerecords(dfs, dry=dry_run)
+
+
+def _globus_transfer_filerecords(dfs, dry=True):
+    """
+    Transfers the file records. The query set has to contain only is_globus_personal=False flag
+    (ie. they are server side file records). The algorithm creates a transfer object for each
+    unique pair of globus source / globus destination ids and launches the transfers at the end.
+    :param dfs: file records queryset
+    :param dry:
+    :return:
+    """
+    if not dry:
+        gc = globus_transfer_client()
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
     pri_repos = DataRepository.objects.filter(globus_is_personal=False)
     sec_repos = DataRepository.objects.filter(globus_is_personal=True)
@@ -472,7 +494,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         # if the transfer doesn't exist, create it:
         if tm[ipri][isec] == 0:
             label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
-            if not dry_run:
+            if not dry:
                 tm[ipri][isec] = globus_sdk.TransferData(
                     gc,
                     source_endpoint=sec_repos[isec].globus_endpoint_id,
@@ -483,11 +505,11 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         # add the transfer to the current task
         destination_file = _filename_from_file_record(ds, add_uuid=True)
         source_file = _filename_from_file_record(src_file)
-        if not dry_run:
+        if not dry:
             tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
         logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
-    if dry_run:
+    if dry:
         return
     for t in tm.flatten():
         if t == 0:
@@ -522,6 +544,16 @@ def _get_session(subject=None, date=None, number=None, user=None):
         session.parent_session = base
         session.save()
     return session
+
+
+def globus_transfer_datasets(dsets, dry=True):
+    """
+    :param dsets: Dataset queryset
+    :param dry:
+    :return:
+    """
+    frecs = FileRecord.objects.filter(data_repository__globus_is_personal=False, dataset__in=dsets)
+    _globus_transfer_filerecords(frecs, dry=dry)
 
 
 def globus_delete_local_datasets(datasets, dry=True):
