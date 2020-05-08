@@ -20,7 +20,7 @@ class JobStatusField(serializers.Field):
         return status[0][0]
 
 
-class JobSerializer(serializers.HyperlinkedModelSerializer):
+class JobSerializer(serializers.ModelSerializer):
     task = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='name', many=False,
         queryset=Task.objects.all(),
@@ -37,3 +37,10 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Job
         fields = ['task', 'version', 'session', 'data_repository']
+
+
+class TaskSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Task
+        fields = '__all__'
