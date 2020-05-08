@@ -447,7 +447,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :param lab: (str) lab name: only transfer files from this lab
     :param maxsize: (int) maximum file size for transfer (allows to split small and big transfers)
     :param minsize: (int) minimum file size for transfer (see above)
-    :return:
+    :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
     if minsize:
@@ -458,7 +458,8 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         return
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
-    _globus_transfer_filerecords(dfs, dry=dry_run)
+    gc, tm = _globus_transfer_filerecords(dfs, dry=dry_run)
+    return gc, tm
 
 
 def _globus_transfer_filerecords(dfs, dry=True):
@@ -468,10 +469,9 @@ def _globus_transfer_filerecords(dfs, dry=True):
     unique pair of globus source / globus destination ids and launches the transfers at the end.
     :param dfs: file records queryset
     :param dry:
-    :return:
+    :return: globus_client, transfer_matrix (an array of transfer objects)
     """
-    if not dry:
-        gc = globus_transfer_client()
+    gc = None if dry else globus_transfer_client()
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
     pri_repos = DataRepository.objects.filter(globus_is_personal=False)
     sec_repos = DataRepository.objects.filter(globus_is_personal=True)
@@ -515,6 +515,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
+    return gc, tm
 
 
 def _get_session(subject=None, date=None, number=None, user=None):
@@ -550,10 +551,11 @@ def globus_transfer_datasets(dsets, dry=True):
     """
     :param dsets: Dataset queryset
     :param dry:
-    :return:
+    :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     frecs = FileRecord.objects.filter(data_repository__globus_is_personal=False, dataset__in=dsets)
-    _globus_transfer_filerecords(frecs, dry=dry)
+    gc, tm = _globus_transfer_filerecords(frecs, dry=dry)
+    return gc, tm
 
 
 def globus_delete_local_datasets(datasets, dry=True):
