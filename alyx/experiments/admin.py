@@ -70,7 +70,7 @@ class BrainRegionsAdmin(MPTTModelAdmin):
         url = reverse('admin:%s_%s_change' % (obj._meta.app_label,
                                               obj._meta.model_name), args=[obj.id])
         return format_html("<a href='{url}'>{} ({})</a>", str(obj.parent),
-                           str(obj.parent.id), url=url)
+                           str(obj.parent.id if obj.parent else ''), url=url)
 
     def _parents_description(self, obj):
         descriptions = []
