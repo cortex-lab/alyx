@@ -25,7 +25,7 @@ class JobList(generics.ListCreateAPIView):
     -   **lab**: lab name from session table `/jobs?lab=churchlandlab`
     -   **pipeline**: pipeline field from task `/jobs?pipeline=ephys`
     """
-    queryset = Job.objects.all()
+    queryset = Job.objects.all().order_by('task__priority', 'task__level')
     serializer_class = JobSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = JobFilter
