@@ -22,6 +22,8 @@ class BrainRegion(MPTTModel):
     id = models.IntegerField(primary_key=True)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
                             related_name='children')
+    ontology = models.CharField(max_length=64, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
