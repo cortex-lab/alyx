@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from data.models import DataRepository, Dataset
+from data.models import DataRepository
 from actions.models import Session
 from alyx.base import BaseModel
 
@@ -12,13 +12,15 @@ class Task(BaseModel):
     Provides a model for a Job, with priorities and resources
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=128)
-    parent = models.ManyToManyField('self', on_delete=models.CASCADE, null=True, blank=True,
-                                    related_name='children')
+    name = models.CharField(max_length=128, unique=True)
+    parents = models.ManyToManyField('self', blank=True, related_name='children',
+                                     symmetrical=False)
     priority = models.SmallIntegerField(blank=True, null=True)
     io_charge = models.SmallIntegerField(blank=True, null=True)
+    level = models.SmallIntegerField(blank=True, null=True)
     gpu = models.SmallIntegerField(blank=True, null=True)
     cpu = models.SmallIntegerField(blank=True, null=True)
+    ram = models.SmallIntegerField(blank=True, null=True)
     pipeline = models.CharField(max_length=128, blank=True, null=True)
 
     def __str__(self):
@@ -32,11 +34,10 @@ class Job(BaseModel):
     STATUS_DATA_SOURCES = [
         (10, 'Waiting',),
         (20, 'Ready',),
-        (30, 'Running',),
+        (30, 'Started',),
         (40, 'Errored',),
         (50, 'Complete',),
     ]
-
     session = models.ForeignKey(Session, blank=True, null=True,
                                 on_delete=models.CASCADE,
                                 related_name='jobs')
@@ -45,16 +46,29 @@ class Job(BaseModel):
                                         on_delete=models.CASCADE,
                                         related_name='jobs')
     status = models.IntegerField(default=10, choices=STATUS_DATA_SOURCES)
-    log = models.ForeignKey(Dataset, blank=True, null=True,
-                            on_delete=models.SET_NULL,
-                            related_name='job')
+    log = models.TextField(blank=True, null=True)
     timestamp = models.DateTimeField(null=True, blank=True, auto_now=True)
 
     task = models.ForeignKey(Task, null=True, blank=True,
-                             on_delete=models.SET_NULL)
+                             on_delete=models.CASCADE)
 
     version = models.CharField(blank=True, null=True, max_length=64,
                                help_text="version of the algorithm generating the file")
 
     def __str__(self):
         return self.name + '  ' + str(self.session)
+
+    @property
+    def parents(self):
+        jobs = Job.objects.filter(task__in=self.task.parent.all(), session=self.session)
+        return jobs.values_list('pk', flat=True)
+
+    @property
+    def level(self):
+        return self.task.level
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['task', 'session'],
+                                    name='unique_job_task_per_session')
+        ]
