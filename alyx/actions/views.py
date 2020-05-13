@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 
 from alyx.base import base_json_filter
 from subjects.models import Subject
-from .water_control import water_control, date as get_date
+from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
     Weighing, WaterType, LabLocation)
@@ -150,7 +150,7 @@ class TrainingListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(TrainingListView, self).get_context_data(**kwargs)
         reqdate = self.kwargs.get('date', None) or date.today().strftime('%Y-%m-%d')
-        reqdate = get_date(reqdate)
+        reqdate = to_date(reqdate)
         monday = last_monday(reqdate=reqdate)
         self.monday = monday
         previous_week = (monday - timedelta(days=7)).strftime('%Y-%m-%d')
