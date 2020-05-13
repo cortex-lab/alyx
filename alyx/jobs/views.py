@@ -10,10 +10,23 @@ class JobFilter(FilterSet):
     lab = CharFilter('session__lab__name')
     task = CharFilter('task__name')
     pipeline = CharFilter(field_name='task__pipeline', lookup_expr='iexact')
+    status = CharFilter(method='status_filter')
 
     class Meta:
         model = Job
         exclude = ['json']
+
+    def status_filter(self, queryset, name, value):
+        choices = Job._meta.get_field('status').choices
+        # create a dictionary string -> integer
+        value_map = {v.lower(): k for k, v in choices}
+        # get the integer value for the input string
+        try:
+            value = value_map[value.lower().strip()]
+        except KeyError:
+            raise ValueError("Invalid status, choices are: " +
+                             ', '.join([ch[1] for ch in choices]))
+        return queryset.filter(status=value)
 
 
 class JobList(generics.ListCreateAPIView):

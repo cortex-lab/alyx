@@ -21,7 +21,8 @@ class Task(BaseModel):
     gpu = models.SmallIntegerField(blank=True, null=True)
     cpu = models.SmallIntegerField(blank=True, null=True)
     ram = models.SmallIntegerField(blank=True, null=True)
-    pipeline = models.CharField(max_length=128, blank=True, null=True)
+    pipeline = models.CharField(max_length=128, blank=True, null=True,
+                                help_text="This is usually the Python module name on the workers")
 
     def __str__(self):
         return self.name
@@ -66,6 +67,10 @@ class Job(BaseModel):
     @property
     def level(self):
         return self.task.level
+
+    @property
+    def pipeline(self):
+        return self.task.pipeline
 
     class Meta:
         constraints = [

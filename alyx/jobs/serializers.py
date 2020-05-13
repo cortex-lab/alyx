@@ -5,14 +5,14 @@ from jobs.models import Job, Task
 
 class JobStatusField(serializers.Field):
 
-    def to_representation(self, int_provenance):
+    def to_representation(self, int_status):
         choices = Job._meta.get_field('status').choices
-        status = [ch for ch in choices if ch[0] == int_provenance]
+        status = [ch for ch in choices if ch[0] == int_status]
         return status[0][1]
 
-    def to_internal_value(self, str_provenance):
+    def to_internal_value(self, str_status):
         choices = Job._meta.get_field('status').choices
-        status = [ch for ch in choices if ch[1] == str_provenance]
+        status = [ch for ch in choices if ch[1] == str_status]
         if len(status) == 0:
             raise serializers.ValidationError("Invalid status, choices are: " +
                                               ', '.join([ch[1] for ch in choices]))
@@ -33,6 +33,7 @@ class JobSerializer(serializers.ModelSerializer):
     )
     status = JobStatusField(required=False)
     parents = serializers.ReadOnlyField()
+    pipeline = serializers.ReadOnlyField()
 
     class Meta:
         model = Job
