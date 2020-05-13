@@ -1,9 +1,9 @@
 from rest_framework import generics, permissions
 from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
 
-from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel
+from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
-                                     ChannelSerializer)
+                                     ChannelSerializer, BrainRegionSerializer)
 
 """
 Probe insertion objects REST filters and views
@@ -118,7 +118,7 @@ class ChannelList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
 
-    -   **subject: subject nickname: `/channels?subject=Algernon`
+    -   **subject**: subject nickname: `/channels?subject=Algernon`
     -   **session**: UUID `/channels?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **lab**: lab name `/channels?lab=wittenlab`
     -   **probe_insertion**: UUID  `/channels?probe_insertion=aad23144-0e52-4eac-80c5-c4ee2decb198`
@@ -139,4 +139,36 @@ class ChannelList(generics.ListCreateAPIView):
 class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class BrainRegionFilter(FilterSet):
+    acronym = CharFilter(lookup_expr='iexact')
+    description = CharFilter(lookup_expr='icontains')
+    name = CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = BrainRegion
+        fields = ('id', 'acronym', 'description', 'name', 'parent')
+
+
+class BrainRegionList(generics.ListAPIView):
+    """
+    get: **FILTERS**
+
+    -   **id**: Allen primary key: `/brain-regions?id=687`
+    -   **acronym**: iexact on acronym `/brain-regions?acronym=RSPv5`
+    -   **name*: icontains on name `/brain-regions?name=retrosplenial`
+    -   **description*: icontains on description `/brain-regions?description=RSPv5`
+    -   **parent*: get child nodes `/brain-regions?parent=315`
+    """
+    queryset = BrainRegion.objects.all()
+    serializer_class = BrainRegionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = BrainRegionFilter
+
+
+class BrainRegionDetail(generics.RetrieveUpdateAPIView):
+    queryset = BrainRegion.objects.all()
+    serializer_class = BrainRegionSerializer
     permission_classes = (permissions.IsAuthenticated,)

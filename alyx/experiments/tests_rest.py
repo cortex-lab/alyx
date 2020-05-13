@@ -19,6 +19,28 @@ class APISubjectsTests(BaseTests):
                                'name': 'probe_00',
                                'model': '3A'}
 
+    def test_brain_regions_rest(self):
+        # test the list view
+        url = reverse('brainregion-list')
+        br = self.ar(self.client.get(url + "?id=687"))
+        self.assertTrue(len(br) == 1 and br[0]['id'] == 687)
+        brs = self.ar(self.client.get(url + "?name=retrosplenial"))
+        self.assertTrue(len(brs) > 15)  # at least 15 brain areas retrosplenial
+        brs = self.ar(self.client.get(url + "?parent=315"))
+        self.assertTrue(set([br['parent'] for br in brs]) == set([315]) and len(brs) > 10)
+        # test the details view
+        url = reverse('brainregion-detail', args=[687])
+        br2 = self.ar(self.client.get(url))
+        self.assertTrue(br[0] == br2)
+        # test patching the description
+        self.ar(self.patch(url, data={'description': 'I was there'}))
+        br3 = self.ar(self.client.get(url))
+        self.assertTrue(br3['description'] == 'I was there')
+        # and makes sure one can't patch anything else
+        self.patch(url, data={'description': 'I was there', 'acronym': 'tutu'})
+        br3 = self.ar(self.client.get(url))
+        self.assertTrue(br3['acronym'] != 'tutu')
+
     def test_create_list_delete_probe_insertion(self):
         # test the create endpoint
         url = reverse('probeinsertion-list')

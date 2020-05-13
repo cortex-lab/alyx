@@ -92,10 +92,15 @@ class ProbeInsertionSerializer(serializers.ModelSerializer):
 
 
 class BrainRegionSerializer(serializers.ModelSerializer):
+    # we do not want anybody to update the ontology from rest ! Only the description
+    id = serializers.IntegerField(read_only=True)
+    acronym = serializers.CharField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    parent = serializers.SlugRelatedField(read_only=True, slug_field='id')
 
     class Meta:
         model = BrainRegion
-        fields = ('id', 'acronym', 'name', 'description')
+        fields = ('id', 'acronym', 'name', 'description', 'parent')
 
 
 class ChannelSessionSerializer(serializers.ModelSerializer):
