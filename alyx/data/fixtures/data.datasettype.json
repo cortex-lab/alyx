@@ -260,7 +260,7 @@
    "name": "trials.intervals",
    "created_by": null,
    "description": "2 column array giving each trials start (i.e. beginning of quiescent period) and stop (i.e. end of iti) times of trials in universal seconds",
-   "filename_pattern": "*trials.intervals.*"
+   "filename_pattern": "*trials.intervals*.*"
   }
  },
  {
@@ -283,6 +283,17 @@
    "created_by": null,
    "description": "0 based index corresponding to the raw file sync channel used [0-15 on 3A, 0-8 on 3B]",
    "filename_pattern": "_spikeglx_sync.channels*.npy"
+  }
+ },
+  {
+  "model": "data.datasettype",
+  "pk": "79f7f786-f77a-4e80-97a5-65f68264049e",
+  "fields": {
+   "json": null,
+   "name": "trials.stimOff_times",
+   "created_by": null,
+   "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
+   "filename_pattern": "*trials.stimOff_times.*"
   }
  },
  {
