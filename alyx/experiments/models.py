@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from mptt.models import MPTTModel, TreeForeignKey
@@ -117,6 +118,8 @@ class TrajectoryEstimate(models.Model):
     coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
                                           on_delete=models.SET_NULL,
                                           help_text=('3D coordinate system used.'))
+    json = JSONField(null=True, blank=True,
+                     help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         constraints = [
