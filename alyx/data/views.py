@@ -57,6 +57,7 @@ class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_fields = ('name', 'globus_is_personal')
     lookup_field = 'name'
 
 
@@ -106,6 +107,7 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class DatasetFilter(FilterSet):
     subject = django_filters.CharFilter('session__subject__nickname')
+    lab = django_filters.CharFilter('session__lab__name')
     created_date = django_filters.CharFilter('created_datetime__date')
     date = django_filters.CharFilter('session__start_time__date')
     created_by = django_filters.CharFilter('created_by__username')
@@ -122,6 +124,18 @@ class DatasetFilter(FilterSet):
 
 
 class DatasetList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **subject**: subject nickname: `/datasets?subject=Algernon`
+    -   **lab**: lab name `/datsets?lab=wittenlab`
+    -   **created_date**: dataset registration date `/datasets?created_date=2020-02-16`
+    -   **date**: session start time date `/datasets?date=2020-02-16`
+    -   **created_by**: lab member creation `/datasets?created_by=root`
+    -   **experiment_number**: session number  `/datasets?experiment_number=1`
+    -   **created_date_gte**: greater/equal creation date  `/datasets?created_date_gte=2020-02-16`
+    -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
+    """
     queryset = Dataset.objects.all()
     queryset = DatasetSerializer.setup_eager_loading(queryset)
     serializer_class = DatasetSerializer
@@ -137,13 +151,31 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 # FileRecord
 # ------------------------------------------------------------------------------------------------
+class FileRecordFilter(FilterSet):
+    lab = django_filters.CharFilter('dataset__session__lab__name')
+    data_repository = django_filters.CharFilter('data_repository__name')
+    globus_is_personal = django_filters.BooleanFilter('data_repository__globus_is_personal')
+
+    class Meta:
+        model = FileRecord
+        exclude = ['json']
+
 
 class FileRecordList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **dataset**: dataset UUID: `/files?dataset=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **exists**: Bool `/files?exists=False`
+    -   **lab**: lab name `/files?lab=wittenlab`
+    -   **data_repository**: data repository name `/files?data_repository=mainen_lab_SR`
+    -   **globus_is_personal**: bool type of Globus endpoint `/files?globus_is_personal=True`
+    """
     queryset = FileRecord.objects.all()
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
     serializer_class = FileRecordSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_fields = ('exists', 'dataset')
+    filter_class = FileRecordFilter
 
 
 class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -221,10 +253,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         One repository or lab is mandatory, as this is the repository where the files
         currently exist It can be identified either by name (recommended) or hostname
         (compatibility).
-
         The client side REST query should look like this:
 
-        ```
+        ```python
         r_ = {'created_by': 'user_name_alyx',
               'name': 'repository_name_alyx',  # optional, will be added if doesn't match lab
               'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
@@ -242,12 +273,9 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         For backward compatibility the following is allowed (projects are labs the repo lookup
         is done on the hostname instead of the repository name):
-        ```
-         r_ = {
-              ...
-              'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
-              'projects': 'alyx_lab_name',  # optional, alias of lab field above
-              ...
+        ```python
+         r_ = {'hostname': 'repo_hostname_alyx', # optional, will be added if doesn't match lab
+               'projects': 'alyx_lab_name',  # optional, alias of lab field above
               }
         ```
 
@@ -410,15 +438,13 @@ class DownloadFilter(FilterSet):
 
 class DownloadList(generics.ListAPIView):
     """
-    Example: `https://alyx.internationalbrainlab.org/downloads`
+    get: **FILTERS**
 
-    Filter implementation examples:
-
-    -   `/downloads?user=jimmyjazz` on User
-    -   `/downloads?json=processing` insensitive contains on JSON
-    -   `/downloads?count=5`  download counts
-    -   `/downloads?dataset_type=camera` insensitive contains on dataset type
-    """  # noqa
+    -   **user**: Labmember name: `/downloads?user=jimmyjazz`
+    -   **json**: icontains on json: `/downloads?json=processing`
+    -   **count**: count number: `/downloads?count=5`
+    -   **dataset_type**: icontains on dataset type`/downloads?dataset_type=camera`
+    """
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
     permission_classes = (permissions.IsAuthenticated,)

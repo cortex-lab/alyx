@@ -6,7 +6,7 @@ from datetime import timedelta
 from alyx import base
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
-from misc.models import Lab
+from misc.models import Lab, Note, ContentType
 from actions.models import Session, WaterType, WaterAdministration
 
 
@@ -213,6 +213,12 @@ class APIActionsTests(BaseTests):
         d = self.ar(self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09'))
         d = self.ar(self.client.get(d[0]['url']))
         self.assertEqual(d['wateradmin_session_related'][0]['water_administered'], 1)
+        # test the Notes
+        ct = ContentType.objects.filter(model='session')[0]
+        Note.objects.create(user=self.superuser, text='gnagnagna', content_type=ct,
+                            object_id=s1['url'][-36:])
+        d = self.ar(self.client.get(reverse('session-detail', args=[s1['url'][-36:]])))
+        self.assertTrue(d['notes'][0]['text'] == 'gnagnagna')
 
     def test_list_retrieve_water_restrictions(self):
         url = reverse('water-restriction-list')

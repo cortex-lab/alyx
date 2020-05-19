@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from mptt.models import MPTTModel, TreeForeignKey
@@ -22,6 +23,8 @@ class BrainRegion(MPTTModel):
     id = models.IntegerField(primary_key=True)
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
                             related_name='children')
+    ontology = models.CharField(max_length=64, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -64,6 +67,7 @@ class ProbeInsertion(BaseModel):
                                 related_name='probe_insertion')
     model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
                               related_name='probe_insertion')
+    serial = models.CharField(max_length=255, blank=True, help_text="Probe serial number")
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
@@ -107,13 +111,15 @@ class TrajectoryEstimate(models.Model):
                               validators=[MinValueValidator(0), MaxValueValidator(180)])
     phi = models.FloatField(null=True,
                             help_text="Azimuth from right (degrees), anti-clockwise, [0-360]",
-                            validators=[MinValueValidator(0), MaxValueValidator(360)])
+                            validators=[MinValueValidator(-180), MaxValueValidator(360)])
     roll = models.FloatField(null=True,
                              validators=[MinValueValidator(0), MaxValueValidator(360)])
     provenance = models.IntegerField(default=10, choices=INSERTION_DATA_SOURCES)
     coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
                                           on_delete=models.SET_NULL,
                                           help_text=('3D coordinate system used.'))
+    json = JSONField(null=True, blank=True,
+                     help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         constraints = [

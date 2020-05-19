@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.contrib.postgres.fields import JSONField
 
 from alyx.base import BaseModel, modify_fields, alyx_mail
-from misc.models import Lab, LabLocation, LabMember
+from misc.models import Lab, LabLocation, LabMember, Note
 
 
 logger = logging.getLogger(__name__)
@@ -273,6 +273,10 @@ class Session(BaseAction):
         except Exception:
             string = "Session %s for %s" % (str(self.pk)[:8], self.subject)
         return string
+
+    @property
+    def notes(self):
+        return Note.objects.filter(object_id=self.pk)
 
 
 class EphysSession(Session):

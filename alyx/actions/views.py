@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 
 from alyx.base import base_json_filter
 from subjects.models import Subject
-from .water_control import water_control, date as get_date
+from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
     Weighing, WaterType, LabLocation)
@@ -150,7 +150,7 @@ class TrainingListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(TrainingListView, self).get_context_data(**kwargs)
         reqdate = self.kwargs.get('date', None) or date.today().strftime('%Y-%m-%d')
-        reqdate = get_date(reqdate)
+        reqdate = to_date(reqdate)
         monday = last_monday(reqdate=reqdate)
         self.monday = monday
         previous_week = (monday - timedelta(days=7)).strftime('%Y-%m-%d')
@@ -269,7 +269,25 @@ class WaterAdministrationFilter(FilterSet):
 
 class SessionAPIList(generics.ListCreateAPIView):
     """
-    List and create sessions - view in summary form
+        get: **FILTERS**
+
+    -   **subject**: subject nickname `/sessions?subject=Algernon`
+    -   **dataset_types**: dataset type
+    -   **number**: session number
+    -   **users**: experimenters (exact)
+    -   **date_range**: date `/sessions?date_range=2020-01-12,2020-01-16`
+    -   **lab**: lab name (exact)
+    -   **task_protocol** (icontains)
+    -   **location**: location name (icontains)
+    -   **project**: project name (icontains)
+    -   **json**: queries on json fields, for example here `tutu`
+        -   exact/equal lookup: `/sessions?extended_qc=tutu,True`,
+        -   gte lookup: `/sessions/?extended_qc=tutu__gte,0.5`,
+    -   **extended_qc** queries on json fields, for example here `qc_bool` and `qc_pct`,
+        -   exact/equal lookup: `/sessions?extended_qc=qc_bool,True`,
+        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte,0.5`,
+        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte,0.5,qc_bool,True`,
+    -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)

@@ -9,4 +9,6 @@ urlpatterns = [
          name="trajectoryestimate-detail"),
     path('channels', ev.ChannelList.as_view(), name="channel-list"),
     path('channels/<uuid:pk>', ev.ChannelDetail.as_view(), name="channel-detail"),
+    path('brain-regions', ev.BrainRegionList.as_view(), name="brainregion-list"),
+    path('brain-regions/<int:pk>', ev.BrainRegionDetail.as_view(), name="brainregion-detail"),
 ]

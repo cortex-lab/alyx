@@ -60,9 +60,29 @@ class TrajectoryEstimateAdmin(VersionAdmin):
 
 
 class BrainRegionsAdmin(MPTTModelAdmin):
-    list_display = ['name', 'id', 'acronym', 'parent', 'level']
-    list_display_links = ('id', 'name', 'parent')
-    search_fields = ('name', 'acronym', 'parent__name')
+    list_display = ['name', 'id', 'acronym', '_parent', 'level']
+    list_display_links = ('id', 'name', '_parent')
+    search_fields = ('name', 'acronym', 'parent__name', 'id', 'description')
+    readonly_fields = ('id', 'name', 'acronym', '_parent', 'ontology', '_parents_description')
+    exclude = ('parent',)
+
+    def _parent(self, obj):
+        url = reverse('admin:%s_%s_change' % (obj._meta.app_label,
+                                              obj._meta.model_name), args=[obj.id])
+        return format_html("<a href='{url}'>{} ({})</a>", str(obj.parent),
+                           str(obj.parent.id if obj.parent else ''), url=url)
+
+    def _parents_description(self, obj):
+        descriptions = []
+
+        for anc in obj.get_ancestors():
+            if anc.description is not None:
+                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
+        for anc in obj.get_children():
+            if anc.description is not None:
+                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
+
+        return "\n\n".join(descriptions)
 
 
 admin.site.register(BrainRegion, BrainRegionsAdmin)

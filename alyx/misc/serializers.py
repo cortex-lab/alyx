@@ -2,8 +2,15 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 from subjects.models import Subject
-from misc.models import Lab
+from misc.models import Lab, Note
 from data.models import DataRepository
+
+
+class NoteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Note
+        fields = ('user', 'date_time', 'content_type', 'object_id', 'text', 'image')
 
 
 class UserSerializer(serializers.ModelSerializer):

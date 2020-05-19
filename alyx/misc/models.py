@@ -127,7 +127,7 @@ class Note(BaseModel):
     object_id = models.UUIDField()
     content_object = GenericForeignKey()
 
-    def save(self):
+    def save(self, **kwargs):
         if self.image:
             # Resize image
             with Image.open(self.image) as im:
@@ -142,9 +142,9 @@ class Note(BaseModel):
                     self.image = InMemoryUploadedFile(
                         output, 'ImageField', self.image.name,
                         im.format, sys.getsizeof(output), None)
-                    super(Note, self).save()
+                    super(Note, self).save(**kwargs)
         else:
-            super(Note, self).save()
+            super(Note, self).save(**kwargs)
 
 
 class CageType(BaseModel):
