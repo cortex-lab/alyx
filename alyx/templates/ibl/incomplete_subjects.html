@@ -19,7 +19,12 @@
     </thead>
     <tbody>
         {% for obj in object_list %}
+        {# stylize by error type #}
+        {% if obj in error_map.missing %}
+        <tr style="color:#000">
+        {% else %}
         <tr>
+        {% endif %}
             <td>{{ obj.nickname }}</td>
             <td>{{ obj.birth_date }}</td>
             <td>{{ obj.sex }}</td>
@@ -32,6 +37,7 @@
         {% endfor %}
     </tbody>
 </table>
+
 {% if is_paginated %}
 <div class="pagination" style="padding-top:10px">
     <span class="step-links">

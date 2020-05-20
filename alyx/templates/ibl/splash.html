@@ -14,7 +14,6 @@
     <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.Default.css"/>
 
     <script type="text/javascript">
-/*
       window.onload = function() {
         var locations = [
           {% for lab in lab_list %}
@@ -83,7 +82,7 @@
           }
           return L.featureGroup(group);
         } */
-      }*/
+      }
     </script>
 {% endblock %}
 
@@ -140,7 +139,7 @@
 {% for o in subject_lab_count %}
 <dd class="graph">
   <span class="text">{{ o.institution }}: {{ o.count }}</span>
-  <span class="bar" style="width: {{ o.pct }}%"></span>
+  <span class="bar" style="width: {% widthratio o.count subject_count 100 %}%"></span>
 </dd>
 {% endfor %}
 </dl>

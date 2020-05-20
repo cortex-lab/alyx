@@ -17,12 +17,9 @@ from django.views.generic.list import ListView
 
 def count_per_lab(labs, subjects):
     for lab in labs:
-        lab_count = subjects.filter(lab__id=lab.id).count()
         yield {
                 'institution': lab.institution,
-                'count': lab_count,
-                'pct': round((lab_count / subjects.count()) * 100),
-                'total': subjects.count()
+                'count': subjects.filter(lab__id=lab.id).count()
                 }
 
 
@@ -99,6 +96,7 @@ class SubjectIncompleteListView(ListView):
         context = super(SubjectIncompleteListView, self).get_context_data(**kwargs)
         context['site_header'] = 'Alyx'
         context['title'] = 'Incomplete records'
+        context['error_map'] = self.error_map
         return context
 
     def get_queryset(self):
@@ -117,7 +115,7 @@ class SubjectIncompleteListView(ListView):
              Q(cull__cull_reason__isnull=True)))
 
         # TODO Add more sets and combine based on filter
-        error_map = {
+        self.error_map = {
             'missing': missing
         }
 
