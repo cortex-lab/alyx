@@ -37,7 +37,8 @@ class Job(BaseModel):
         (20, 'Ready',),
         (30, 'Started',),
         (40, 'Errored',),
-        (50, 'Complete',),
+        (50, 'Empty'),
+        (60, 'Complete',),
     ]
     session = models.ForeignKey(Session, blank=True, null=True,
                                 on_delete=models.CASCADE,
