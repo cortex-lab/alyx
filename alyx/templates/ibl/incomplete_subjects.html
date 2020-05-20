@@ -27,7 +27,7 @@
             <td>{{ obj.strain }}</td>
             <td>{{ obj.line }}</td>
             <td>{{ obj.litter }}</td>
-            <td>{{ obj.cull__cull_reason }}</td>
+            <td>{{ obj.cull__cull_reason|default:"unknown" }}</td>
         </tr>
         {% endfor %}
     </tbody>
