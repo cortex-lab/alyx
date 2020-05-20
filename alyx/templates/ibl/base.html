@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+  <title>{{ title }}</title>
+  <link rel="shortcut icon" type="image/x-icon" href="{% static "ibl/favicon.png" %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700,700i,400i">
+  <link rel="stylesheet" type="text/css" href="{% static "ibl/style.css" %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div id="wrapper">
+    <div id="nav-bar">
+    <img src="{% static "ibl/IBL+Logo+RGB_IBL+Blue.png" %}" style="max-height:100px;max-width:400px;" alt="International Brain Lab logo" />
+      <div id="nav-menu">
+        <ul class="ul">
+          <li>
+            <a href="{% url 'home' %}" class="active">Home</a>
+          </li>
+          <li>
+            <a href="{% url 'admin:index' %}">Enter Database</a>
+          </li>
+          <li>
+              <a href="/docs">REST Documentation</a>
+          </li>
+          <li>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'admin:logout' %}?next=/">Logout</a>
+            {% else %}
+            <a href="{% url 'admin:login' %}">Login</a>
+            {% endif %}
+          </li>
+          <li>
+              <a href="{% url 'training' %}">Training View</a>
+          </li>
+          <li>
+              <a href="https://internationalbrainlab.org/">Main Site</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="parallax">
+      {% block main_content %}
+      {% endblock %}
+    </div>
+    <div class="content_section">
+      {% block section %}
+      {% endblock %}
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,153 @@
+body {
+    font-family: Roboto Condensed;
+    margin: 0;
+}
+
+#wrapper {
+    overflow: hidden;
+}
+
+#nav-bar {
+    display: table;
+    width: 100%;
+    margin: 0 auto;
+    padding: 25px 80px;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+
+.cf::before, .cf::after {
+    content: " ";
+    display: table;
+}
+
+#nav-menu {
+    display: table-cell;
+    width: 70%;
+    text-align: right;
+    vertical-align: middle;
+}
+
+#nav-menu ul {
+    list-style: none;
+    line-height: 1em;
+    font-size: 12px;
+}
+
+#nav-menu li {
+    display: inline-block;
+    cursor: pointer;
+    margin: 0 0 0 30px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: uppercase;
+    font-style: normal;
+    letter-spacing: 2px;
+    text-decoration: none;
+    line-height: 2em;
+}
+
+#nav-menu a {
+    color: #c4c4c4;
+    text-decoration: none;
+}
+
+#nav-menu .active {
+    color: #1c1c1c;
+}
+
+#nav-menu a:hover {
+    color: rgba(196,196,196,.7);
+    text-decoration: none;
+}
+
+#nav-menu a:visited {
+    color: #6598b8
+}
+
+.parallax {
+    background-image: url("BANNER-BW-model_network_brainbow.jpg");
+    padding: 80px 120px;
+
+    /* scrolling paralax effect */
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover
+}
+
+h1 {
+    text-align: center;
+    font-size: 87px;
+    font-weight: 400;
+    text-transform: none;
+    font-style: normal;
+    letter-spacing: 2.39px;
+    text-decoration: none;
+    max-width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    color: #000;
+    position: relative;
+}
+
+.content_section {
+    padding: 10px 120px;
+
+}
+
+.content_section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.content_section td, .content_section th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.content_section td a:hover {color: black}
+
+.content_section tr:hover {background-color: rgba(196,196,196,.7)}
+
+.content_section  th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #2299dd;
+    color: white;
+}
+
+p {
+    text-align: left;
+    font-family: Arial;
+    font-size: 1.2em;
+    font-weight: 400;
+    text-transform: none;
+    font-style: normal;
+    letter-spacing: .8px;
+    line-height: 1.6em;
+    text-decoration: none;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto;
+    position: relative;
+}
+
+a {
+    color: black;
+}
+
+a:hover {
+    color: rgba(196,196,196,.7)
+}
+
+
+#map {
+    width: 100%;
+    height: 530px;
+}
+

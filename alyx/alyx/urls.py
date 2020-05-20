@@ -8,6 +8,7 @@ from subjects import views as sv
 from actions import views as av
 from data import views as dv
 from misc import views as mv
+from ibl import views as ibl
 
 
 register_file = dv.RegisterFileViewSet.as_view({
@@ -32,15 +33,19 @@ user_detail = mv.UserViewSet.as_view({
 admin.site.site_header = 'Alyx'
 
 urlpatterns = [
-    path('', mv.api_root),
+    path('', ibl.splash, name='home'),
 
-    path('', include('experiments.urls')),
+    path('rest', mv.api_root),
 
+    path('rest', include('experiments.urls')),
+    
     path('admin/', admin.site.urls),
 
     path('admin-subjects/', include('subjects.urls')),
 
     path('admin-actions/', include('actions.urls')),
+
+    path('incomplete/', include('ibl.urls')),
 
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
 
@@ -76,7 +81,7 @@ urlpatterns = [
     path('dataset-types/<str:name>', dv.DatasetTypeDetail.as_view(),
          name="datasettype-detail"),
 
-    path('docs/', include_docs_urls(title='Alyx REST API documentation')),
+    path('docs/', include_docs_urls(title='Alyx REST API documentation'), name='d'),
 
     path('downloads', dv.DownloadList.as_view(),
          name="download-list"),
@@ -127,6 +132,8 @@ urlpatterns = [
 
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
+
+    path('training', av.TrainingListView.as_view()),
 
     re_path('^uploaded/(?P<img_url>.*)', mv.UploadedView.as_view(), name='uploaded'),
 

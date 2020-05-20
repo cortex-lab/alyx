@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+{% block content %}
+
+<table>
+    <thead>
+        <tr>
+            <th>name</th>
+            <th>birth date</th>
+            <th>sex</th>
+            <th>cage</th>
+            <th>strain</th>
+            <th>line</th>
+            <th>litter</th>
+            <th>cull reason</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obj in object_list %}
+        <tr>
+            <td>{{ obj.nickname }}</td>
+            <td>{{ obj.birth_date }}</td>
+            <td>{{ obj.sex }}</td>
+            <td>{{ obj.cage }}</td>
+            <td>{{ obj.strain }}</td>
+            <td>{{ obj.line }}</td>
+            <td>{{ obj.litter }}</td>
+            <td>{{ obj.cull__cull_reason }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if is_paginated %}
+<div class="pagination" style="padding-top:10px">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block title %}
+{{ title }}
+{% endblock %}

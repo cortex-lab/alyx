@@ -1,0 +1,148 @@
+{% extends "ibl/base.html" %}
+{% load humanize static %}
+
+{% block title %}
+{{ title }}
+{% endblock %}
+
+{% block head %}
+    <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static "ibl/hist.css" %}">
+    <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css"/>
+    <script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css"/>
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.Default.css"/>
+
+    <script type="text/javascript">
+/*
+      window.onload = function() {
+        var locations = [
+          {% for lab in lab_list %}
+          "{{ lab.address }}"{% if not forloop.last %},{% endif %}
+		  {% endfor %}
+        ] // TODO Combine to one loop
+		var titles = [
+		  {% for lab in lab_list %}
+		  "{{ lab.institution }}"{% if not forloop.last %},{% endif %}
+		  {% endfor %}
+		]
+        L.mapquest.key = '{{ map_key }}';
+
+		
+        // Geocode lab locations, then call the createMap callback
+        L.mapquest.geocoding().geocode(locations, createMap);
+
+        function createMap(error, response) {
+          // Initialize the Map
+          var map = L.mapquest.map('map', {
+            layers: L.mapquest.tileLayer('map'),
+            center: [0, 0],
+            zoom: 2
+          });
+
+          // Generate the feature group containing markers from the geocoded locations
+          //var featureGroup = generateMarkersFeatureGroup(response);
+		  var clusterGroup = generateMarkersClusterGroup(response);
+
+          // Add markers to the map and zoom to the features
+          //featureGroup.addTo(map);
+          //map.fitBounds(featureGroup.getBounds());
+
+		  map.fitBounds(clusterGroup.getBounds());
+		  map.addLayer(clusterGroup);
+        }
+
+		function generateMarkersClusterGroup(response) {
+		  var markers = L.markerClusterGroup();
+		  for (var i = 0; i < response.results.length; i++) {
+			var location = response.results[i].locations[0]; // Get first result
+            var locationLatLng = location.latLng;
+			var title = titles[i];
+			var marker = L.marker(locationLatLng, {
+              title: title,
+              icon: L.mapquest.icons.marker()
+            });
+            marker.bindPopup(title);
+            markers.addLayer(marker);
+		  }
+		  return markers
+        }
+
+        /*
+        function generateMarkersFeatureGroup(response) {
+          var group = [];
+          for (var i = 0; i < response.results.length; i++) {
+            var location = response.results[i].locations[0]; // Get first result
+            var locationLatLng = location.latLng;
+
+            // Create a marker for each location
+            var marker = L.marker(locationLatLng, {icon: L.mapquest.icons.marker()})
+              .bindPopup(location.adminArea5 + ', ' + location.adminArea3);
+
+            group.push(marker);
+          }
+          return L.featureGroup(group);
+        } */
+      }*/
+    </script>
+{% endblock %}
+
+{% block main_content %}
+<h1>Alyx Database</h1>
+{% endblock %}
+
+{% block section %}
+<p>Welcome, {{ name }}!</p>
+<p>{{ user.is_authenticated|yesno:"You are one of,There are" }} {{ user_count|apnumber }} users from {{ lab_count|apnumber }} different labs around the world contributing data to the IBL Alyx.  So far {{ user.is_authenticated|yesno:"we have,there are" }} {{ session_count|apnumber|intcomma|intword}} registered experimental sessions{% if user_session_count %} (to which you've contributed {{ user_session_count|apnumber|intcomma }}!){% endif %}, producing  {{ file_count|intcomma|intword}} files totaling over {{ total_size|filesizeformat }} of data!</p>
+<p>There are currently {{ subject_count|apnumber|intcomma }} live mice registered, {{ ephys_subject_count|apnumber }} of which are undergoing recordings. </p> 
+<p><a href="{% url 'admin:index' %}">Click here</a> to view and make changes to the database</p>
+
+<!-- Sexy map of lab locations -->
+<div id="map"></div>
+
+
+<h2>Recent Sessions</h2>
+{% if recent_sessions %}
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Subject</th>
+      <th># Trials</th>
+      <th>Water received</th>
+      <th># Datasets</th>
+      <th>Task Protocol</th>
+    </tr>
+  </thead>
+{% for session in recent_sessions %}
+  <tbody>
+    <tr>
+        <td><a href="{{ session.get_absolute_url }}">{{ session.start_time|date:"Y-m-d" }}</a></td>
+        <td>{{ session.subject.nickname }}</td>
+        <td>{{ session.n_trials|intcomma }}</td>
+        <td>{{ session.water|floatformat:-2 }} ml</td>
+        <td>{{ session.n_datasets }}</td>
+        <td>{{ session.task_protocol|default:"unknown" }}</td>
+    </tr>
+  </tbody>
+{% endfor %}
+</table>
+{% else %}
+<p>{{ user.is_authenticated|yesno:"You have,There are" }} no recent sessions</p>
+{% endif %}
+<br />
+
+<dl>
+  <dt>
+    Number of mice per lab
+  </dt>
+
+{% for o in subject_lab_count %}
+<dd class="graph">
+  <span class="text">{{ o.institution }}: {{ o.count }}</span>
+  <span class="bar" style="width: {{ o.pct }}%"></span>
+</dd>
+{% endfor %}
+</dl>
+<br />
+{% endblock %}

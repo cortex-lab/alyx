@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+{% load humanize %}
+
+{% block title %}Cop Dashboard{% endblock %}
+
+{% block content %}
+
+<p>Hello, {{ user }}!</p>
+<p>There are {{ session_count|intcomma }} sessions in Alyx!  Let's make sure they all contain quality data...</p>
+{% lorem 5 p %}
+
+{% endblock %}
+
+{% block session_qc %}
+
+{% endblock %}

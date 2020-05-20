@@ -130,6 +130,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'mptt',
     'polymorphic',
     'rangefilter',
@@ -144,6 +145,7 @@ INSTALLED_APPS = (
     'misc',
     'experiments',
     'subjects',
+    'ibl',
 )
 
 MIDDLEWARE = (
