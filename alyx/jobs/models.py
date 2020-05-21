@@ -33,8 +33,7 @@ class Job(BaseModel):
     Describes a job, which is an instance of a Task
     """
     STATUS_DATA_SOURCES = [
-        (10, 'Waiting',),
-        (20, 'Ready',),
+        (20, 'Waiting',),
         (30, 'Started',),
         (40, 'Errored',),
         (50, 'Empty'),
@@ -62,7 +61,7 @@ class Job(BaseModel):
 
     @property
     def parents(self):
-        jobs = Job.objects.filter(task__in=self.task.parent.all(), session=self.session)
+        jobs = Job.objects.filter(task__in=self.task.parents.all(), session=self.session)
         return jobs.values_list('pk', flat=True)
 
     @property
