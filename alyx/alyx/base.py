@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import os.path as op
 from polymorphic.models import PolymorphicModel
 import sys
@@ -20,6 +21,8 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
+from django_filters import CharFilter
+from django_filters.rest_framework import FilterSet
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -373,26 +376,65 @@ class BaseTests(TestCase):
         return self.client.patch(*args, **kwargs, content_type='application/json')
 
 
-def base_json_filter(fieldname, queryset, name, value):
-    # hacky custom json filter taking only scalar Bool / float / integer values
+class BaseFilterSet(FilterSet):
+    """
+    Base class for Alyx filters. Adds a custom django filter for extensible queries using
+    Django syntax. For example this is a query on a start_time field of a REST accessible model:
+    sessions?django=start_time__date__lt,2017-06-05'
+    """
+    django = CharFilter(field_name='', method=('django_filter'))
+
+    def django_filter(self, queryset, _, value):
+        kwargs = _custom_filter_parser(value)
+        queryset = queryset.filter(**kwargs)
+        return queryset
+
+    class Meta:
+        abstract = True
+
+
+def base_json_filter(fieldname, queryset, _, value):
+    """
+    function that filters the queryset from a cutom REST query. To be used directly as
+    a method for a FilterSet object. For example:
     # exact/equal lookup: "?extended_qc=qc_bool,True"
     # gte lookup: "?extended_qc=qc_pct__gte,0.5"
-    # chained lookups: "?extended_qc=qc_pct__gte,0.5,qc_bool,True"
-    fv = value.split(',')
+    # chained lookups: "?extended_qc=qc_pct__gte,0.5;qc_bool,True"
+    """
+    kwargs = _custom_filter_parser(value, arg_prefix=fieldname + '__')
+    queryset = queryset.filter(**kwargs)
+    return queryset
+
+
+def _custom_filter_parser(value, arg_prefix=''):
+    """
+    # parses the value string provided to custom filters json and Django via REST api
+    :param value: string returned by the rest request: examples:
+        "qc_pct__gte,0.5,qc_bool,True"
+         "myfield,[4, 9]]"
+    :param arg_prefix:
+    :return: dictionary that can be fed directly to a Django filter() query
+    """
+    # split by commas only if they are outside list brackets (I know... we all love regex)
+    fv = re.split(r",(?=(((?!\]).)*\[)|[^\[\]]*$)", value)
+    fv = list(filter(lambda x: x not in [None, '[', '('], fv))
     i = 0
+    out_dict = {}
     while i < len(fv):
         field, val = fv[i], fv[i + 1]
         i += 2
-        if val == 'True':
+        if val == 'None':
+            val = None
+        elif val.lower() == 'true':
             val = True
-        elif val == 'False':
+        elif val.lower() == 'false':
             val = False
         elif val.replace('.', '', 1).isdigit():
             val = float(val)
-        else:
-            raise ValueError("lookup " + value + " not understood")
-        queryset = queryset.filter(**{fieldname + '__' + field: val})
-    return queryset
+        elif val.startswith(('(', '[')) and val.endswith((')', ']')):
+            val = eval(val)
+        out_dict[arg_prefix + field] = val
+    return out_dict
 
 
 mysite = MyAdminSite()

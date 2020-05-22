@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
+from django_filters.rest_framework import CharFilter, UUIDFilter
 
+from alyx.base import BaseFilterSet
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
                                      ChannelSerializer, BrainRegionSerializer)
@@ -10,7 +11,7 @@ Probe insertion objects REST filters and views
 """
 
 
-class ProbeInsertionFilter(FilterSet):
+class ProbeInsertionFilter(BaseFilterSet):
     subject = CharFilter('session__subject__nickname')
     date = CharFilter('session__start_time__date')
     experiment_number = CharFilter('session__number')
@@ -51,7 +52,7 @@ Trajectory Estimates objects REST filters and views
 """
 
 
-class TrajectoryEstimateFilter(FilterSet):
+class TrajectoryEstimateFilter(BaseFilterSet):
     provenance = CharFilter(method='provenance_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
     project = CharFilter('probe_insertion__session__project__name')
@@ -103,7 +104,7 @@ class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class ChannelFilter(FilterSet):
+class ChannelFilter(BaseFilterSet):
     session = UUIDFilter('trajectory_estimate__probe_insertion__session')
     probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
     subject = CharFilter('trajectory_estimate__probe_insertion__session__subject__nickname')
@@ -142,7 +143,7 @@ class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class BrainRegionFilter(FilterSet):
+class BrainRegionFilter(BaseFilterSet):
     acronym = CharFilter(lookup_expr='iexact')
     description = CharFilter(lookup_expr='icontains')
     name = CharFilter(lookup_expr='icontains')

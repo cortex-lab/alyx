@@ -12,12 +12,11 @@ from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 
 import django_filters
-from django_filters.rest_framework import FilterSet
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from alyx.base import base_json_filter
+from alyx.base import base_json_filter, BaseFilterSet
 from subjects.models import Subject
 from .water_control import water_control, to_date
 from .models import (
@@ -177,7 +176,7 @@ def weighing_plot(request, subject_id=None):
     return wc.plot()
 
 
-class SessionFilter(FilterSet):
+class SessionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
                                               method='filter_dataset_types')
@@ -251,7 +250,7 @@ class SessionFilter(FilterSet):
         }
 
 
-class WeighingFilter(FilterSet):
+class WeighingFilter(BaseFilterSet):
     nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:
@@ -259,7 +258,7 @@ class WeighingFilter(FilterSet):
         exclude = ['json']
 
 
-class WaterAdministrationFilter(FilterSet):
+class WaterAdministrationFilter(BaseFilterSet):
     nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:
@@ -284,9 +283,10 @@ class SessionAPIList(generics.ListCreateAPIView):
         -   exact/equal lookup: `/sessions?extended_qc=tutu,True`,
         -   gte lookup: `/sessions/?extended_qc=tutu__gte,0.5`,
     -   **extended_qc** queries on json fields, for example here `qc_bool` and `qc_pct`,
-        -   exact/equal lookup: `/sessions?extended_qc=qc_bool,True`,
-        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte,0.5`,
-        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte,0.5,qc_bool,True`,
+        values and fields come by pairs, using semi-colon as a separator
+        -   exact/equal lookup: `/sessions?extended_qc=qc_bool;True`,
+        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte;0.5`,
+        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte;0.5;qc_bool;True`,
     -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
     """
     queryset = Session.objects.all()
@@ -384,7 +384,7 @@ class WaterRequirement(APIView):
         return Response(data)
 
 
-class WaterRestrictionFilter(FilterSet):
+class WaterRestrictionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:
