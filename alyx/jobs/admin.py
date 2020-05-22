@@ -6,6 +6,7 @@ from alyx.base import BaseAdmin
 
 class JobAdmin(BaseAdmin):
     readonly_fields = ['session', 'log']
+    list_display = ['status', 'task', 'parents', 'level', 'session']
 
 
 class TaskAdmin(BaseAdmin):
