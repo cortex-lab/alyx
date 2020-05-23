@@ -195,6 +195,13 @@ class SessionFilter(BaseFilterSet):
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
     project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
+    brain_region = django_filters.CharFilter(
+        field_name='probe_insertion__trajectory_estimate__channels__brain_region__name',
+        lookup_expr='icontains')
+    atlas_acronym = django_filters.CharFilter(
+        field_name='probe_insertion__trajectory_estimate__channels__brain_region__acronym')
+    atlas_id = django_filters.NumberFilter(
+        field_name='probe_insertion__trajectory_estimate__channels__brain_region')
 
     def filter_json(self, queryset, name, value):
         return base_json_filter('json', queryset, name, value)
@@ -288,6 +295,12 @@ class SessionAPIList(generics.ListCreateAPIView):
         -   gte lookup: `/sessions/?extended_qc=qc_pct__gte;0.5`,
         -   chained lookups: `/sessions/?extended_qc=qc_pct__gte;0.5;qc_bool;True`,
     -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
+    -   **brain_region**: returns a session if any channel name icontains the value:
+        `/sessions?brain_region=vis`
+    -   **atlas_acronym**: returns a session if any of its channels name exactly matches the value
+        `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
+    -   **atlas_id**: returns a session if any of its channels id matches the provided value:
+        `/sessions?atlas_id=950`, cf Allen CCFv2017
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
