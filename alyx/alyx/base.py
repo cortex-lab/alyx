@@ -386,7 +386,7 @@ class BaseFilterSet(FilterSet):
 
     def django_filter(self, queryset, _, value):
         kwargs = _custom_filter_parser(value)
-        queryset = queryset.filter(**kwargs)
+        queryset = queryset.filter(**kwargs).distinct()
         return queryset
 
     class Meta:
