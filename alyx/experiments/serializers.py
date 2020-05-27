@@ -100,7 +100,7 @@ class BrainRegionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BrainRegion
-        fields = ('id', 'acronym', 'name', 'description', 'parent')
+        fields = ('id', 'acronym', 'name', 'description', 'parent', 'related_descriptions')
 
 
 class ChannelSessionSerializer(serializers.ModelSerializer):

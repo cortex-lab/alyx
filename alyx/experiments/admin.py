@@ -60,29 +60,25 @@ class TrajectoryEstimateAdmin(VersionAdmin):
 
 
 class BrainRegionsAdmin(MPTTModelAdmin):
-    list_display = ['name', 'id', 'acronym', '_parent', 'level']
+    list_display = ['name', 'id', 'acronym', '_parent', 'level', 'description']
     list_display_links = ('id', 'name', '_parent')
     search_fields = ('name', 'acronym', 'parent__name', 'id', 'description')
-    readonly_fields = ('id', 'name', 'acronym', '_parent', 'ontology', '_parents_description')
+    readonly_fields = ('id', 'name', 'acronym', '_parent', 'ontology', 'level',
+                       '_related_descriptions')
     exclude = ('parent',)
 
     def _parent(self, obj):
+        if obj.parent is None:
+            return
         url = reverse('admin:%s_%s_change' % (obj._meta.app_label,
-                                              obj._meta.model_name), args=[obj.id])
+                                              obj._meta.model_name), args=[obj.parent.id])
         return format_html("<a href='{url}'>{} ({})</a>", str(obj.parent),
                            str(obj.parent.id if obj.parent else ''), url=url)
 
-    def _parents_description(self, obj):
-        descriptions = []
-
-        for anc in obj.get_ancestors():
-            if anc.description is not None:
-                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
-        for anc in obj.get_children():
-            if anc.description is not None:
-                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
-
-        return "\n\n".join(descriptions)
+    def _related_descriptions(self, obj):
+        descriptions = obj.related_descriptions
+        return "\n\n".join(["{} (id: {}, level:{}): \n {}".format(
+            d['name'], d['id'], d['level'], d['description']) for d in descriptions])
 
 
 admin.site.register(BrainRegion, BrainRegionsAdmin)

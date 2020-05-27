@@ -29,6 +29,23 @@ class BrainRegion(MPTTModel):
     def __str__(self):
         return self.name
 
+    @property
+    def related_descriptions(self):
+        """ returns a string containing all descriptions from parents and childs"""
+        descriptions = []
+        try:
+            for anc in self.get_ancestors():
+                if anc.description is not None:
+                    descriptions.append({'id': anc.id, 'name': str(anc),
+                                         'description': anc.description, 'level': anc.level})
+            for anc in self.get_children():
+                if anc.description is not None:
+                    descriptions.append({'id': anc.id, 'name': str(anc),
+                                         'description': anc.description, 'level': anc.level})
+        except ValueError:
+            print("ERROR  " + str(self.id) + "  " + str(self.name))
+        return descriptions
+
 
 class CoordinateSystem(BaseModel):
     """
