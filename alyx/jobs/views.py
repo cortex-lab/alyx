@@ -2,10 +2,12 @@ from rest_framework import generics, permissions
 
 from jobs.models import Job, Task
 from jobs.serializers import JobSerializer, TaskSerializer
-from django_filters.rest_framework import FilterSet, CharFilter
+from django_filters.rest_framework import CharFilter
+
+from alyx.base import BaseFilterSet
 
 
-class JobFilter(FilterSet):
+class JobFilter(BaseFilterSet):
     data_repository = CharFilter('data_repository__name')
     lab = CharFilter('session__lab__name')
     task = CharFilter('task__name')
@@ -54,7 +56,7 @@ class TaskList(generics.ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_fields = ('name', )
+    filter_fields = ('name', 'pipeline')
 
 
 class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
