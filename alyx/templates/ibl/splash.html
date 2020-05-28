@@ -12,26 +12,40 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
     <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css"/>
     <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.Default.css"/>
+    {{ lab_list|json_script:"lab-data" }}
 
     <script type="text/javascript">
       window.onload = function() {
-        var locations = [
-          {% for lab in lab_list %}
-          "{{ lab.address }}"{% if not forloop.last %},{% endif %}
-		  {% endfor %}
-        ] // TODO Combine to one loop
-		var titles = [
-		  {% for lab in lab_list %}
-		  "{{ lab.institution }}"{% if not forloop.last %},{% endif %}
-		  {% endfor %}
-		]
+        var labs = JSON.parse(document.getElementById('lab-data').textContent);
+        var n_labs = labs.json.length;
         L.mapquest.key = '{{ map_key }}';
 
-		
-        // Geocode lab locations, then call the createMap callback
-        L.mapquest.geocoding().geocode(locations, createMap);
+	    try {	
+          var locations = [];
+          for (let i = 0; i < n_labs; i++) {
+              if (!labs['json'][i] && labs['address'][i]) { locations.push(labs['address'][i]) }
+          }
+
+          if (locations) {
+            // Geocode lab locations, then call the createMap callback
+            L.mapquest.geocoding().geocode(locations, createMap);
+          } else {
+            // No geocode required
+            var response = [];
+            createMap(null, response);
+          }
+        } catch(err) {
+            hideMap();
+            console.error(err);
+        }
 
         function createMap(error, response) {
+          // On error, hide the map container
+          if (error == true || error.length === 0) {
+            console.error(error);
+            hideMap();
+            return
+          }
           // Initialize the Map
           var map = L.mapquest.map('map', {
             layers: L.mapquest.tileLayer('map'),
@@ -40,48 +54,43 @@
           });
 
           // Generate the feature group containing markers from the geocoded locations
-          //var featureGroup = generateMarkersFeatureGroup(response);
 		  var clusterGroup = generateMarkersClusterGroup(response);
 
           // Add markers to the map and zoom to the features
-          //featureGroup.addTo(map);
-          //map.fitBounds(featureGroup.getBounds());
-
 		  map.fitBounds(clusterGroup.getBounds());
 		  map.addLayer(clusterGroup);
         }
 
 		function generateMarkersClusterGroup(response) {
 		  var markers = L.markerClusterGroup();
-		  for (var i = 0; i < response.results.length; i++) {
-			var location = response.results[i].locations[0]; // Get first result
-            var locationLatLng = location.latLng;
-			var title = titles[i];
-			var marker = L.marker(locationLatLng, {
-              title: title,
+          var locationLatLng;
+
+		  for (var i = n_labs-1; i >= 0; i--) {
+            let jsn = labs.json[i];
+            if (jsn) {
+                // TODO Insecure; remove parse and throw error instead
+                if (typeof jsn === 'string' || jsn instanceof String) {jsn = JSON.parse(jsn);}
+                locationLatLng = new L.LatLng(jsn.lat, jsn.lng);
+            } else {
+                if (response.results.length === 0) {continue}
+			    let res = response.results.pop();
+                locationLatLng = res.locations[0].latLng; // Get first result
+            }
+            //if (!locationLatLng) {continue}
+            var marker = L.marker(locationLatLng, {
+              title: labs['institution'][i],
               icon: L.mapquest.icons.marker()
             });
-            marker.bindPopup(title);
+            marker.bindPopup(labs['institution'][i]);
             markers.addLayer(marker);
 		  }
 		  return markers
         }
 
-        /*
-        function generateMarkersFeatureGroup(response) {
-          var group = [];
-          for (var i = 0; i < response.results.length; i++) {
-            var location = response.results[i].locations[0]; // Get first result
-            var locationLatLng = location.latLng;
+        function hideMap() {
+           document.getElementById('map').style.display = 'none'; 
+        }
 
-            // Create a marker for each location
-            var marker = L.marker(locationLatLng, {icon: L.mapquest.icons.marker()})
-              .bindPopup(location.adminArea5 + ', ' + location.adminArea3);
-
-            group.push(marker);
-          }
-          return L.featureGroup(group);
-        } */
       }
     </script>
 {% endblock %}

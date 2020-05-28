@@ -1,4 +1,5 @@
 import re
+import json
 
 from django.http import HttpResponse
 from django.template import loader
@@ -15,14 +16,6 @@ from subjects.models import Subject
 from django.views.generic.list import ListView
 
 
-def count_per_lab(labs, subjects):
-    for lab in labs:
-        yield {
-                'institution': lab.institution,
-                'count': subjects.filter(lab__id=lab.id).count()
-                }
-
-
 @require_safe
 def splash(request):
 
@@ -34,9 +27,13 @@ def splash(request):
     session_count = Session.objects.all().count()
     user_session_count = Session.objects.filter(type='Experiment', users__username__in=[username]).count()
     user_count = LabMember.objects.all().count()
-    lab = Lab.objects.all()
+    lab = Lab.objects.all().values('institution', 'json', 'address')
+    # Fetch and convert to dict of lists.  We will pass this to the javascipt
+    lab_values = list(lab)
+    lab_values = {k: [d[k] for d in lab_values] for k in lab_values[0]}
+    lab_values['json'] = [json.loads(s) if s is str else s for s in lab_values['json']]
+    print(lab_values)
 
-    #line = ', '.join([re.sub('[!@#$"<>]', '', a['address']) for a in lab])
     datasets = Dataset.objects.all().exclude(file_records__exists=False)
     file_count = datasets.count()
     total_size = datasets.aggregate(Sum('file_size'))
@@ -52,8 +49,7 @@ def splash(request):
     ephys_subject_count = live_subjects.annotate(
             num_ephys=n_ephys).filter(num_ephys__gt=0).count()
 
-    lab_counts = count_per_lab(lab, live_subjects)
-    print(lab_counts)
+    lab_counts = lab.filter(subject__in=live_subjects).annotate(count=Count('subject__id'))
 
     n = 5
     last_n_sessions = (Session.objects.all()
@@ -81,7 +77,7 @@ def splash(request):
             'ephys_subject_count': ephys_subject_count,
             'recent_sessions': last_n_sessions[:n],
             'site_header': 'Welcome to Alyx',
-            'lab_list': lab,
+            'lab_list': lab_values,
             'map_key': map_key,
             'title': 'Alyx'
     }
