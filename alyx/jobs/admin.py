@@ -1,18 +1,13 @@
 from django.contrib import admin
 
-from jobs.models import Job, Task
+from jobs.models import Task
 from alyx.base import BaseAdmin
-
-
-class JobAdmin(BaseAdmin):
-    readonly_fields = ['session', 'log']
-    list_display = ['status', 'task', 'parents', 'level', 'session']
 
 
 class TaskAdmin(BaseAdmin):
     exclude = ['json']
-    list_display = ['name', 'gpu', 'cpu']
+    readonly_fields = ['session', 'log']
+    list_display = ['status', 'session', 'version', 'level']
 
 
-admin.site.register(Job, JobAdmin)
 admin.site.register(Task, TaskAdmin)
