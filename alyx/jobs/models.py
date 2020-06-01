@@ -41,7 +41,7 @@ class Task(models.Model):
                                      symmetrical=False)
 
     def __str__(self):
-        return self.module + '  ' + str(self.session)
+        return self.name + '  ' + str(self.session) + '  ' + self.get_status_display()
 
     class Meta:
         constraints = [
