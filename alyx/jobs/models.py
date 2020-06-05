@@ -28,7 +28,10 @@ class Task(models.Model):
     time_out_secs = models.SmallIntegerField(blank=True, null=True)
     time_elapsed_secs = models.FloatField(blank=True, null=True)
     executable = models.CharField(max_length=128, blank=True, null=True,
-                                  help_text="This is usually the Python class name on the workers")
+                                  help_text="Usually the Python class name on the workers")
+    graph = models.CharField(
+        max_length=64, blank=True, null=True,
+        help_text="The name of the graph containing a set of related and possibly dependent tasks")
     status = models.IntegerField(default=10, choices=STATUS_DATA_SOURCES)
     log = models.TextField(blank=True, null=True)
     session = models.ForeignKey(Session, blank=True, null=True,
@@ -39,6 +42,7 @@ class Task(models.Model):
     # dependency pattern for the task graph
     parents = models.ManyToManyField('self', blank=True, related_name='children',
                                      symmetrical=False)
+    datetime = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name + '  ' + str(self.session) + '  ' + self.get_status_display()
