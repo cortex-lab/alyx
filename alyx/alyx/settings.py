@@ -120,8 +120,8 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = (
-    'dal',
-    'dal_select2',
+    # 'dal',
+    # 'dal_select2',
     'django_admin_listfilter_dropdown',
     'django_filters',
     'django.contrib.admin',
