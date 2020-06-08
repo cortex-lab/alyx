@@ -135,6 +135,7 @@ class TrajectoryEstimate(models.Model):
     coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
                                           on_delete=models.SET_NULL,
                                           help_text=('3D coordinate system used.'))
+    datetime = models.DateTimeField(auto_now=True, verbose_name='last update')
     json = JSONField(null=True, blank=True,
                      help_text="Structured data, formatted in a user-defined way")
 
@@ -143,6 +144,10 @@ class TrajectoryEstimate(models.Model):
             models.UniqueConstraint(fields=['provenance', 'probe_insertion'],
                                     name='unique_trajectory_per_provenance')
         ]
+
+    def __str__(self):
+        return "%s  %s/%s" % \
+               (self.get_provenance_display(), str(self.session), self.probe_insertion.name)
 
     @property
     def probe_name(self):
@@ -155,10 +160,6 @@ class TrajectoryEstimate(models.Model):
     @property
     def subject(self):
         return self.probe_insertion.session.subject.nickname
-
-    @property
-    def datetime(self):
-        return self.probe_insertion.session.start_time
 
 
 class Channel(BaseModel):
@@ -178,3 +179,7 @@ class Channel(BaseModel):
     class Meta:
         constraints = [models.UniqueConstraint(fields=['axial', 'lateral', 'trajectory_estimate'],
                                                name='unique_axial_lateral_trajectory_estimate')]
+
+    def save(self, *args, **kwargs):
+        super(Channel, self).save(*args, **kwargs)
+        self.trajectory_estimate.save()  # this will bump the datetime auto-update of trajectory

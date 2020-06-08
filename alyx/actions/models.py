@@ -266,12 +266,12 @@ class Session(BaseAction):
 
     def __str__(self):
         try:
-            string = "Session %s for %s/%s/%s" % (str(self.pk)[:8],
-                                                  self.subject,
-                                                  str(self.start_time)[:10],
-                                                  str(self.number).zfill(3))
+            string = "%s/%s/%s/%s" % (str(self.pk)[:8],
+                                      self.subject,
+                                      str(self.start_time)[:10],
+                                      str(self.number).zfill(3))
         except Exception:
-            string = "Session %s for %s" % (str(self.pk)[:8], self.subject)
+            string = "%s/%s" % (str(self.pk)[:8], self.subject)
         return string
 
     @property
