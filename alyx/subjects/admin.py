@@ -764,8 +764,6 @@ def _bp_subjects(line, sex):
     qs = Subject.objects.filter(line=line, sex=sex,
                                 responsible_user__is_stock_manager=True).order_by('nickname')
     ids = [item.id for item in qs]
-    qs = Subject.objects.filter(responsible_user__is_stock_manager=True,
-                                sex=sex)
     if ids:
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
         qs = qs.order_by(preserved, 'nickname')
@@ -808,7 +806,9 @@ class BreedingPairAdmin(BaseAdmin):
     list_select_related = ('line', 'father', 'mother1', 'mother2')
     fields = ['name', 'line', 'start_date', 'end_date',
               'father', 'mother1', 'mother2', 'cage', 'description']
-    autocomplete_fields = ('father', 'mother1', 'mother2')
+    # NOTE: disabling autocomplete fields here because of a django bug:
+    # https://code.djangoproject.com/ticket/29707
+    # autocomplete_fields = ('father', 'mother1', 'mother2')
     list_filter = [BreedingPairFilter,
                    ('line', LineDropdownFilter),
                    ]
