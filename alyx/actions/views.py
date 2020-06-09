@@ -12,12 +12,11 @@ from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 
 import django_filters
-from django_filters.rest_framework import FilterSet
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from alyx.base import base_json_filter
+from alyx.base import base_json_filter, BaseFilterSet
 from subjects.models import Subject
 from .water_control import water_control, to_date
 from .models import (
@@ -177,7 +176,7 @@ def weighing_plot(request, subject_id=None):
     return wc.plot()
 
 
-class SessionFilter(FilterSet):
+class SessionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
                                               method='filter_dataset_types')
@@ -196,6 +195,29 @@ class SessionFilter(FilterSet):
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
     project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
+    # brain region filters
+    atlas_name = django_filters.CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = django_filters.NumberFilter(field_name='pk', method='atlas')
+    histology = django_filters.BooleanFilter(field_name='histology', method='has_histology')
+
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        from experiments.models import BrainRegion
+        brs = BrainRegion.objects.filter(**{name: value}).get_descendants()
+        return queryset.filter(
+            probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
+
+    def has_histology(self, queryset, name, value):
+        """returns sessions whose subjects have an histology session available"""
+        if value:
+            fcn_query = queryset.filter
+        else:
+            fcn_query = queryset.exclude
+        return fcn_query(subject__actions_sessions__procedures__name='Histology').distinct()
 
     def filter_json(self, queryset, name, value):
         return base_json_filter('json', queryset, name, value)
@@ -251,7 +273,7 @@ class SessionFilter(FilterSet):
         }
 
 
-class WeighingFilter(FilterSet):
+class WeighingFilter(BaseFilterSet):
     nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:
@@ -259,7 +281,7 @@ class WeighingFilter(FilterSet):
         exclude = ['json']
 
 
-class WaterAdministrationFilter(FilterSet):
+class WaterAdministrationFilter(BaseFilterSet):
     nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:
@@ -284,10 +306,19 @@ class SessionAPIList(generics.ListCreateAPIView):
         -   exact/equal lookup: `/sessions?extended_qc=tutu,True`,
         -   gte lookup: `/sessions/?extended_qc=tutu__gte,0.5`,
     -   **extended_qc** queries on json fields, for example here `qc_bool` and `qc_pct`,
-        -   exact/equal lookup: `/sessions?extended_qc=qc_bool,True`,
-        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte,0.5`,
-        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte,0.5,qc_bool,True`,
+        values and fields come by pairs, using semi-colon as a separator
+        -   exact/equal lookup: `/sessions?extended_qc=qc_bool;True`,
+        -   gte lookup: `/sessions/?extended_qc=qc_pct__gte;0.5`,
+        -   chained lookups: `/sessions/?extended_qc=qc_pct__gte;0.5;qc_bool;True`,
     -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
+    -   **brain_region**: returns a session if any channel name icontains the value:
+        `/sessions?brain_region=vis`
+    -   **atlas_acronym**: returns a session if any of its channels name exactly matches the value
+        `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
+    -   **atlas_id**: returns a session if any of its channels id matches the provided value:
+        `/sessions?atlas_id=950`, cf Allen CCFv2017
+    -   **histology**: returns sessions for which the subject has an histology session:
+        `/sessions?histology=True`
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
@@ -384,7 +415,7 @@ class WaterRequirement(APIView):
         return Response(data)
 
 
-class WaterRestrictionFilter(FilterSet):
+class WaterRestrictionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
 
     class Meta:

@@ -40,7 +40,7 @@ def _replace_in_file(source_file, target_file, replacements=None, target_mode='w
         os.chmod(target_file, chmod)
 
 # Check if we are inside a virtual environment
-if not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:      
+if not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:
     warn('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ', RuntimeWarning)
     continue_anyway = input()
     if continue_anyway not in  ("y", 'yes'):
@@ -126,13 +126,13 @@ except Exception as e:
 
 # Set up the database.
 try:
-    _system('python alyx/manage.py makemigrations')
-    _system('python alyx/manage.py migrate')
+    _system('python3 alyx/manage.py makemigrations')
+    _system('python3 alyx/manage.py migrate')
 
 
     _system('''echo "from misc.models import LabMember;'''
             '''LabMember.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''
-            '''| python alyx/manage.py shell''')
+            '''| python3 alyx/manage.py shell''')
     print('Database successfully configured for Alyx')
 except Exception as e:
     print('Could not configure database for Alyx, error message:\n')
@@ -140,4 +140,3 @@ except Exception as e:
 
 print('------------------------')
 print('Alyx setup successful <3')
-

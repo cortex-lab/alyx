@@ -7,7 +7,7 @@ from reversion.admin import VersionAdmin
 from mptt.admin import MPTTModelAdmin
 
 from experiments.models import (TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem,
-                                BrainRegion)
+                                BrainRegion, Channel)
 from alyx.base import BaseAdmin
 
 
@@ -40,14 +40,20 @@ class ProbeModelAdmin(BaseAdmin):
     pass
 
 
+class ChannelAdmin(BaseAdmin):
+    list_display = ['trajectory_estimate', 'x', 'y', 'z', 'brain_region', 'axial', 'lateral']
+    search_fields = ('trajectory_estimate__pk',)
+    readonly_fields = ['trajectory_estimate', 'brain_region']
+
+
 class TrajectoryEstimateAdmin(VersionAdmin):
     exclude = ['probe_insertion']
-    readonly_fields = ['_probe_insertion', 'session']
-    list_display = ['datetime', 'subject', '_probe_insertion', 'x', 'y', 'z', 'depth', 'theta',
-                    'phi', 'provenance', 'session']
+    readonly_fields = ['datetime', '_probe_insertion', 'session', '_channel_count']
+    list_display = ['datetime', 'subject', '_probe_insertion', 'provenance', '_channel_count',
+                    'x', 'y', 'z', 'depth', 'theta', 'phi', 'session']
     list_editable = ['x', 'y', 'z', 'depth', 'theta', 'phi']
     list_display_links = ('datetime', 'subject', 'session',)
-    ordering = ['provenance', '-probe_insertion__session__start_time']
+    ordering = ['-provenance', '-probe_insertion__session__start_time']
     search_fields = ('probe_insertion__session__subject__nickname',)
 
     def _probe_insertion(self, obj):
@@ -56,33 +62,39 @@ class TrajectoryEstimateAdmin(VersionAdmin):
                                               obj.probe_insertion._meta.model_name),
                       args=[obj.probe_insertion.id])
         return format_html('<b><a href="{url}" ">{}</a></b>', obj.probe_insertion.name, url=url)
-    _probe_insertion.short_description = 'probe insertion'
+    _probe_insertion.short_description = 'probe'
+
+    def _channel_count(self, obj):
+        count = obj.channels.all().count()
+        if count:
+            info = (Channel._meta.app_label, Channel._meta.model_name)
+            url = reverse('admin:%s_%s_changelist' % info)
+            return format_html('<b><a href="{url}?q={pk}" ">{}</a></b>', count, pk=obj.id, url=url)
+        else:
+            return count
+    _channel_count.short_description = 'channel count'
 
 
 class BrainRegionsAdmin(MPTTModelAdmin):
-    list_display = ['name', 'id', 'acronym', '_parent', 'level']
+    list_display = ['name', 'id', 'acronym', '_parent', 'level', 'description']
     list_display_links = ('id', 'name', '_parent')
     search_fields = ('name', 'acronym', 'parent__name', 'id', 'description')
-    readonly_fields = ('id', 'name', 'acronym', '_parent', 'ontology', '_parents_description')
+    readonly_fields = ('id', 'name', 'acronym', '_parent', 'ontology', 'level',
+                       '_related_descriptions')
     exclude = ('parent',)
 
     def _parent(self, obj):
+        if obj.parent is None:
+            return
         url = reverse('admin:%s_%s_change' % (obj._meta.app_label,
-                                              obj._meta.model_name), args=[obj.id])
+                                              obj._meta.model_name), args=[obj.parent.id])
         return format_html("<a href='{url}'>{} ({})</a>", str(obj.parent),
                            str(obj.parent.id if obj.parent else ''), url=url)
 
-    def _parents_description(self, obj):
-        descriptions = []
-
-        for anc in obj.get_ancestors():
-            if anc.description is not None:
-                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
-        for anc in obj.get_children():
-            if anc.description is not None:
-                descriptions.append(str(anc) + " (" + str(anc.id) + "): \n    " + anc.description)
-
-        return "\n\n".join(descriptions)
+    def _related_descriptions(self, obj):
+        descriptions = obj.related_descriptions
+        return "\n\n".join(["{} (id: {}, level:{}): \n {}".format(
+            d['name'], d['id'], d['level'], d['description']) for d in descriptions])
 
 
 admin.site.register(BrainRegion, BrainRegionsAdmin)
@@ -90,3 +102,4 @@ admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
 admin.site.register(ProbeModel, ProbeModelAdmin)
 admin.site.register(CoordinateSystem, BaseAdmin)
+admin.site.register(Channel, ChannelAdmin)

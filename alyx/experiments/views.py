@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
+from django_filters.rest_framework import CharFilter, UUIDFilter
 
+from alyx.base import BaseFilterSet
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
                                      ChannelSerializer, BrainRegionSerializer)
@@ -10,7 +11,7 @@ Probe insertion objects REST filters and views
 """
 
 
-class ProbeInsertionFilter(FilterSet):
+class ProbeInsertionFilter(BaseFilterSet):
     subject = CharFilter('session__subject__nickname')
     date = CharFilter('session__start_time__date')
     experiment_number = CharFilter('session__number')
@@ -26,8 +27,9 @@ class ProbeInsertionFilter(FilterSet):
 class ProbeInsertionList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
+
     -   **name**: probe insertion name `/trajectories?name=probe00`
-    -   **subject: subject nickname: `/insertions?subject=Algernon`
+    -   **subject**: subject nickname: `/insertions?subject=Algernon`
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
@@ -51,7 +53,7 @@ Trajectory Estimates objects REST filters and views
 """
 
 
-class TrajectoryEstimateFilter(FilterSet):
+class TrajectoryEstimateFilter(BaseFilterSet):
     provenance = CharFilter(method='provenance_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
     project = CharFilter('probe_insertion__session__project__name')
@@ -103,7 +105,7 @@ class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class ChannelFilter(FilterSet):
+class ChannelFilter(BaseFilterSet):
     session = UUIDFilter('trajectory_estimate__probe_insertion__session')
     probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
     subject = CharFilter('trajectory_estimate__probe_insertion__session__subject__nickname')
@@ -142,7 +144,7 @@ class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class BrainRegionFilter(FilterSet):
+class BrainRegionFilter(BaseFilterSet):
     acronym = CharFilter(lookup_expr='iexact')
     description = CharFilter(lookup_expr='icontains')
     name = CharFilter(lookup_expr='icontains')
@@ -158,9 +160,9 @@ class BrainRegionList(generics.ListAPIView):
 
     -   **id**: Allen primary key: `/brain-regions?id=687`
     -   **acronym**: iexact on acronym `/brain-regions?acronym=RSPv5`
-    -   **name*: icontains on name `/brain-regions?name=retrosplenial`
-    -   **description*: icontains on description `/brain-regions?description=RSPv5`
-    -   **parent*: get child nodes `/brain-regions?parent=315`
+    -   **name**: icontains on name `/brain-regions?name=retrosplenial`
+    -   **description**: icontains on description `/brain-regions?description=RSPv5`
+    -   **parent**: get child nodes `/brain-regions?parent=315`
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
