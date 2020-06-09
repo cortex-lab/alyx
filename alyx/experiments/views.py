@@ -27,8 +27,9 @@ class ProbeInsertionFilter(BaseFilterSet):
 class ProbeInsertionList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
+
     -   **name**: probe insertion name `/trajectories?name=probe00`
-    -   **subject: subject nickname: `/insertions?subject=Algernon`
+    -   **subject**: subject nickname: `/insertions?subject=Algernon`
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
@@ -159,9 +160,9 @@ class BrainRegionList(generics.ListAPIView):
 
     -   **id**: Allen primary key: `/brain-regions?id=687`
     -   **acronym**: iexact on acronym `/brain-regions?acronym=RSPv5`
-    -   **name*: icontains on name `/brain-regions?name=retrosplenial`
-    -   **description*: icontains on description `/brain-regions?description=RSPv5`
-    -   **parent*: get child nodes `/brain-regions?parent=315`
+    -   **name**: icontains on name `/brain-regions?name=retrosplenial`
+    -   **description**: icontains on description `/brain-regions?description=RSPv5`
+    -   **parent**: get child nodes `/brain-regions?parent=315`
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
