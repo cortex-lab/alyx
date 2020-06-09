@@ -38,7 +38,7 @@ class BrainRegion(MPTTModel):
                 if anc.description is not None:
                     descriptions.append({'id': anc.id, 'name': str(anc),
                                          'description': anc.description, 'level': anc.level})
-            for anc in self.get_children():
+            for anc in self.get_descendants():
                 if anc.description is not None:
                     descriptions.append({'id': anc.id, 'name': str(anc),
                                          'description': anc.description, 'level': anc.level})

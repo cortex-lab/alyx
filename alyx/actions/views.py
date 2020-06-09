@@ -195,13 +195,29 @@ class SessionFilter(BaseFilterSet):
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
     project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
-    brain_region = django_filters.CharFilter(
-        field_name='probe_insertion__trajectory_estimate__channels__brain_region__name',
-        lookup_expr='icontains')
-    atlas_acronym = django_filters.CharFilter(
-        field_name='probe_insertion__trajectory_estimate__channels__brain_region__acronym')
-    atlas_id = django_filters.NumberFilter(
-        field_name='probe_insertion__trajectory_estimate__channels__brain_region')
+    # brain region filters
+    atlas_name = django_filters.CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = django_filters.NumberFilter(field_name='pk', method='atlas')
+    histology = django_filters.BooleanFilter(field_name='histology', method='has_histology')
+
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        from experiments.models import BrainRegion
+        brs = BrainRegion.objects.filter(**{name: value}).get_descendants()
+        return queryset.filter(
+            probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
+
+    def has_histology(self, queryset, name, value):
+        """returns sessions whose subjects have an histology session available"""
+        if value:
+            fcn_query = queryset.filter
+        else:
+            fcn_query = queryset.exclude
+        return fcn_query(subject__actions_sessions__procedures__name='Histology').distinct()
 
     def filter_json(self, queryset, name, value):
         return base_json_filter('json', queryset, name, value)
