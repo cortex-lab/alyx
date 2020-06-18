@@ -1011,6 +1011,17 @@
    "filename_pattern": "templates.waveforms.npy"
   }
  },
+    {
+  "model": "data.datasettype",
+  "pk": "1257f1c3-de6b-4d57-877d-1df12fcba074",
+  "fields": {
+   "json": null,
+   "name": "templates.amps",
+   "created_by": null,
+   "description": "Average peak/trough amplitude of templates",
+   "filename_pattern": "templates.amps.npy"
+  }
+ },
    {
  "model": "data.datasettype",
  "pk": "9baab957-63d9-408d-ad65-1b163ffcd50b",
