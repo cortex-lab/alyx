@@ -319,6 +319,11 @@ class SessionAPIList(generics.ListCreateAPIView):
         `/sessions?atlas_id=950`, cf Allen CCFv2017
     -   **histology**: returns sessions for which the subject has an histology session:
         `/sessions?histology=True`
+    -   **django**: generic filter allowing lookups (same syntax as json filter)
+        `/sessions?django=project__name__icontains,matlab
+        filters sessions that have matlab in the project name
+        `/sessions?django=~project__name__icontains,matlab
+        does the exclusive set: filters sessions that do not have matlab in the project name
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)

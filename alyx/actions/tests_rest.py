@@ -254,3 +254,8 @@ class APIActionsTests(BaseTests):
                                     '?django=start_time__date__lt,2017-06-05'))
         fcount = Session.objects.filter(start_time__date__lt='2017-06-05').count()
         self.assertTrue(len(d) == fcount)
+        # performs the reverse query and makes sure we have all the sessions
+        resp = (self.client.get(reverse('session-list') +
+                                '?django=~start_time__date__lt,2017-06-05'))
+        self.ar(resp)
+        self.assertTrue(len(d) + resp.data['count'] == Session.objects.count())
