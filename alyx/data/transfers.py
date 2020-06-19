@@ -237,8 +237,9 @@ def _create_dataset_file_records(
     if a hash/filesize is provided, label the dataset with it
     if there was a hash and or filesize in the datset and the provided items are different,
     then set the existing file records exists field to False
+    If the hash doesn't exist and/or can't be verified, assume that the dataset is patched
     """
-    is_patched = False
+    is_patched = True
     if hash is not None:
         if dataset.hash is not None:
             is_patched = not(dataset.hash == hash)
