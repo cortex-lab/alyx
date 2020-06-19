@@ -440,9 +440,9 @@ class DatasetInline(BaseInlineAdmin):
     show_change_link = True
     model = Dataset
     extra = 1
-    fields = ('name', 'dataset_type', '_online', 'version', 'created_by', 'created_datetime')
-    readonly_fields = ('name', 'dataset_type', '_online', 'version', 'created_by',
-                       'created_datetime')
+    fields = ('name', 'dataset_type', 'collection', '_online', 'version', 'created_by',
+              'created_datetime')
+    readonly_fields = fields
     ordering = ("name",)
 
     def _online(self, obj):
