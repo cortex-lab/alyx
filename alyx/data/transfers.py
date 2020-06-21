@@ -245,7 +245,6 @@ def _create_dataset_file_records(
         dataset.hash = hash
     if file_size is not None:
         dataset.file_size = file_size
-        is_patched = not(dataset.file_size == file_size)
     # Validate the fields.
     dataset.full_clean()
     dataset.save()
