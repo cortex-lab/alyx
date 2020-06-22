@@ -7,6 +7,7 @@ class BaseCustomFilterTest(TestCase):
     def test_parser(self):
         fixtures = [
             ('gnagna,["NYU-21", "SH014"]', {"gnagna": ["NYU-21", "SH014"]}),  # list
+            ("gnagna,['NYU-21', 'SH014']", {"gnagna": ["NYU-21", "SH014"]}),  # list
             ('fieldname,None', {"fieldname": None}),  # None
             ('fieldname,true', {"fieldname": True}),  # True insensitive
             ('fieldname,True', {"fieldname": True}),  # True

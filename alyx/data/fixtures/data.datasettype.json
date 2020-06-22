@@ -639,6 +639,17 @@
  },
  {
   "model": "data.datasettype",
+  "pk": "a66e41a2-09b8-4761-9fbb-5fe5168cc088",
+  "fields": {
+   "json": null,
+   "name": "wheelMoves.peakAmplitude",
+   "created_by": null,
+   "description": "amplitude of the wheel move",
+   "filename_pattern": "*wheelMoves.peakAmplitude.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
   "pk": "e0c77fba-1e8d-435a-b57e-b33c867ede83",
   "fields": {
    "json": null,
@@ -712,6 +723,17 @@
    "created_by": null,
    "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset",
    "filename_pattern": "*trials.goCue_times.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "921d2a34-9bcf-430f-a762-2f4051902e56",
+  "fields": {
+   "json": null,
+   "name": "trials.firstMovement_times",
+   "created_by": null,
+   "description": "Movement onset (absolute from session start) extracted from the rotary encoder ",
+   "filename_pattern": "*trials.firstMovement_times.*"
   }
  },
  {
