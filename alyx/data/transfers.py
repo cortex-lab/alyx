@@ -516,7 +516,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry:
-        return
+        return None, None
     for t in tm.flatten():
         if t == 0:
             continue
