@@ -87,6 +87,7 @@ class Command(BaseCommand):
         parser.add_argument('--limit', help='limit to a maximum number of datasets')
         parser.add_argument('--user', help='select datasets created by a given user')
         parser.add_argument('--before', help='select datasets before a given date')
+        parser.add_argument('--local-only', help='only actuates on local lab servers')
 
     def handle(self, *args, **options):
         action = options.get('action')
@@ -98,6 +99,7 @@ class Command(BaseCommand):
         dry = options.get('dry')
         lab = options.get('lab')
         before = options.get('before')
+        local_only = options.get('local_only', False)
 
         if action == 'removelocal':
             if limit is None:
@@ -138,7 +140,7 @@ class Command(BaseCommand):
 
         if action == 'bulksync':
             _create_missing_file_records_main_globus(dry_run=dry, lab=lab)
-            transfers.bulk_sync(dry_run=dry, lab=lab)
+            transfers.bulk_sync(dry_run=dry, lab=lab, local_only=local_only)
 
         if action == 'bulktransfer':
             transfers.bulk_transfer(dry_run=dry, lab=lab)
