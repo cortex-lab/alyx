@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+
+{% block content %}
+{% for graph in graphs %}
+    <p><a href="{% url 'tasks_status_graph' graph %}">{{ graph }}</a></p>
+{% endfor %}
+
+<table>
+<thead>
+    <tr>
+        <th>session eid</th>
+        <th>subject</th>
+        <th>session date</th>
+        <th>number</th>
+        {% for task in task_names %}
+            <th>{{ task }}</th>
+        {% endfor %}
+    </tr>
+</thead>
+
+<tbody>
+{% for obj in object_list %}
+    <tr>
+        <td><a href="{{ obj.url }}">{{ obj.id }}</a></td>
+        <td>{{ obj.subject.nickname  }}</td>
+        <td>{{ obj.start_time }}</td>
+        <td>{{ obj.number }}</td>
+        {% for task in obj.tasks.all|dictsort:"name" %}
+            {% if task.status == 20 or task.status == 30%}  {# waiting / started black #}
+                <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 40 %}  {# error red #}
+                <td><a style="color:Tomato" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 50 %}  {# empty orange #}
+                <td><a style="color:Orange" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 60 %}  {# complete green #}
+                <td><a style="color:MediumSeaGreen" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
+{% endblock %}

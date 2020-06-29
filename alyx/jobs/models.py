@@ -36,7 +36,7 @@ class Task(models.Model):
     log = models.TextField(blank=True, null=True)
     session = models.ForeignKey(Session, blank=True, null=True,
                                 on_delete=models.CASCADE,
-                                related_name='jobs')
+                                related_name='tasks')
     version = models.CharField(blank=True, null=True, max_length=64,
                                help_text="version of the algorithm generating the file")
     # dependency pattern for the task graph

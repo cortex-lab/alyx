@@ -1,10 +1,37 @@
 from rest_framework import generics, permissions
 
-from jobs.models import Task
-from jobs.serializers import TaskSerializer
 from django_filters.rest_framework import CharFilter
+from django.views.generic.list import ListView
 
 from alyx.base import BaseFilterSet
+
+from jobs.models import Task
+from jobs.serializers import TaskSerializer
+from actions.models import Session
+
+
+class TasksStatusView(ListView):
+    template_name = 'tasks.html'
+
+    def get_context_data(self, **kwargs):
+        graph = self.kwargs.get('graph', None)
+        context = super(TasksStatusView, self).get_context_data(**kwargs)
+        context['graphs'] = list(Task.objects.all().values_list('graph', flat=True).distinct())
+        if graph:
+            context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
+                'name', flat=True).distinct())
+            context['task_names'].sort()
+        else:
+            context['task_names'] = []
+        context['title'] = 'Tasks Recap'
+        context['site_header'] = 'Alyx'
+        return context
+
+    def get_queryset(self):
+        graph = self.kwargs.get('graph', None)
+        if graph:
+            return Session.objects.filter(
+                tasks__graph=self.kwargs['graph']).distinct().order_by("-start_time")
 
 
 class TaskFilter(BaseFilterSet):
