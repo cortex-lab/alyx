@@ -9,6 +9,8 @@ class TaskAdmin(BaseAdmin):
     exclude = ['json']
     readonly_fields = ['session', 'log', 'parents']
     list_display = ['name', 'graph', 'status_str', 'datetime', 'session_str', 'version', 'level']
+    search_fields = ('graph', 'session__lab__name', 'session__subject__nickname')
+    ordering = ('-session__start_time',)
 
     # this is a ready-only interface
     def has_change_permission(self, request, obj=None):
