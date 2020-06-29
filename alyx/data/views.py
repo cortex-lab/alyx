@@ -57,7 +57,7 @@ class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_fields = ('name', 'globus_is_personal')
+    filter_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
     lookup_field = 'name'
 
 
