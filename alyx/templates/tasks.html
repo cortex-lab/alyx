@@ -28,8 +28,10 @@
         <td>{{ obj.start_time }}</td>
         <td>{{ obj.number }}</td>
         {% for task in obj.tasks.all|dictsort:"name" %}
-            {% if task.status == 20 or task.status == 30%}  {# waiting / started black #}
+            {% if task.status == 20%}  {# waiting #}
                 <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 30%}  {# started black #}
+                <td><a style="color:Black" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 40 %}  {# error red #}
                 <td><a style="color:Tomato" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 50 %}  {# empty orange #}
