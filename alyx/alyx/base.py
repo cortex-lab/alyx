@@ -381,12 +381,18 @@ class BaseFilterSet(FilterSet):
     Base class for Alyx filters. Adds a custom django filter for extensible queries using
     Django syntax. For example this is a query on a start_time field of a REST accessible model:
     sessions?django=start_time__date__lt,2017-06-05'
+    if a ~ is prepended to the field name, performs an exclude instead of a filter
+    sessions?django=~start_time__date__lt,2017-06-05'
     """
     django = CharFilter(field_name='', method=('django_filter'))
 
     def django_filter(self, queryset, _, value):
         kwargs = _custom_filter_parser(value)
-        queryset = queryset.filter(**kwargs).distinct()
+        for k in kwargs:
+            if k.startswith('~'):
+                queryset = queryset.exclude(**{k[1:]: kwargs[k]}).distinct()
+            else:
+                queryset = queryset.filter(**{k: kwargs[k]}).distinct()
         return queryset
 
     class Meta:

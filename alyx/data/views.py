@@ -57,7 +57,7 @@ class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_fields = ('name', 'globus_is_personal')
+    filter_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
     lookup_field = 'name'
 
 
@@ -244,6 +244,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
     def create(self, request):
         """
+        Endpoint to create a register a dataset record through the REST API.
+
         The session is retrieved by the ALF convention in the relative path, so this field has to
         match the format Subject/Date/Number as shown below.
 
@@ -279,6 +281,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               }
         ```
 
+        If the dataset already exists, it will use the file hash to deduce if the file has been
+        patched or not (ie. the filerecords will be created as not existing)
         """
         user = request.data.get('created_by', None)
         if user:

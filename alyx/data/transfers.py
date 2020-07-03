@@ -237,15 +237,15 @@ def _create_dataset_file_records(
     if a hash/filesize is provided, label the dataset with it
     if there was a hash and or filesize in the datset and the provided items are different,
     then set the existing file records exists field to False
+    If the hash doesn't exist and/or can't be verified, assume that the dataset is patched
     """
-    is_patched = False
+    is_patched = True
     if hash is not None:
         if dataset.hash is not None:
             is_patched = not(dataset.hash == hash)
         dataset.hash = hash
     if file_size is not None:
         dataset.file_size = file_size
-        is_patched = not(dataset.file_size == file_size)
     # Validate the fields.
     dataset.full_clean()
     dataset.save()
@@ -351,13 +351,17 @@ def transfers_required(dataset):
             }
 
 
-def bulk_sync(dry_run=False, lab=None):
+def bulk_sync(dry_run=False, lab=None, local_only=False):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
     Only the files belonging to a dataset for which one main repository as a missing file are
     checked on the Globus endpoints (a main repository is a repository with the
     globus_is_personnal field set to False). Also fills dataset size if non-existent.
     This is meant to be launched before the transfer() function
+    :param dry_run (False) just prints the files if True
+    :param lab (optional) specific lab name only
+    :param local_only: (False) if set to True, only local files will be checked. This is useful
+    for patching files
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
     if lab:
@@ -366,6 +370,8 @@ def bulk_sync(dry_run=False, lab=None):
     dsets = Dataset.objects.filter(pk__in=dfs.values_list('dataset').distinct())
     all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
         'dataset__created_datetime')
+    if local_only:
+        all_files = all_files.filter(data_repository__globus_is_personal=True)
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for l in list(fvals):
@@ -510,7 +516,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry:
-        return
+        return None, None
     for t in tm.flatten():
         if t == 0:
             continue
