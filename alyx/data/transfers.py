@@ -364,6 +364,7 @@ def bulk_sync(dry_run=False, lab=None, local_only=False):
     for patching files
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = dfs.filter(json__transfer_pending=True)
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
@@ -420,6 +421,9 @@ def bulk_sync(dry_run=False, lab=None, local_only=False):
         # update the filerecord exists field if needed
         if qf.exists != exists:
             qf.exists = exists
+            # sets the json field to None so that the transfer pending flag is nulled
+            if exists:
+                qf.json = None
             qf.save()
             logger.info(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
                         qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
@@ -456,6 +460,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = dfs.exclude(json__transfer_pending=True)
     if minsize:
         dfs = dfs.filter(dataset__file_size__gt=minsize)
     if maxsize:
@@ -521,6 +526,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
+    dfs.update(json={'transfer_pending': True})
     return gc, tm
 
 
