@@ -375,7 +375,7 @@ def bulk_sync(dry_run=False, lab=None):
         dataset__in=dsets).order_by('-dataset__created_datetime')
     # checks all local files by default, and only transfer pending files for the server
     all_files = all_files.filter(
-        Q(data_repository__globus_is_personal=True | Q(json__transfer_pending=True)))
+        Q(data_repository__globus_is_personal=True) | Q(json__transfer_pending=True))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for l in list(fvals):
@@ -408,7 +408,7 @@ def bulk_sync(dry_run=False, lab=None):
         if _last_path != cpath:
             _last_path = cpath
             try:
-                logger.info(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
+                print(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
                 ls_result = gc.operation_ls(_last_ep, path=_last_path)
             except globus_sdk.exc.TransferAPIError:
                 ls_result = []
@@ -428,8 +428,8 @@ def bulk_sync(dry_run=False, lab=None):
             if exists:
                 qf.json = None
             qf.save()
-            logger.info(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
-                        qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
+            print(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
+                  qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
 
 
 def _filename_from_file_record(fr, add_uuid=False):
@@ -521,7 +521,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         source_file = _filename_from_file_record(src_file)
         if not dry:
             tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
-        logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
+        print(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry:
         return None, None
