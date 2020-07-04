@@ -351,28 +351,31 @@ def transfers_required(dataset):
             }
 
 
-def bulk_sync(dry_run=False, lab=None, local_only=False):
+def bulk_sync(dry_run=False, lab=None):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
-    Only the files belonging to a dataset for which one main repository as a missing file are
-    checked on the Globus endpoints (a main repository is a repository with the
-    globus_is_personnal field set to False). Also fills dataset size if non-existent.
     This is meant to be launched before the transfer() function
+    Local filerecord =  data_repository__globus_is_personal=True
+    Server filerecord =  data_repository__globus_is_personal=False
+    The algorithm looks at datasets for which the server data file does not exist. For each
+        -   the locals filerecords are checked and their exist flag updated
+        -   the server filerecords that have a json__transfer_pending=True flag are checked and
+    their exist flags updated
     :param dry_run (False) just prints the files if True
     :param lab (optional) specific lab name only
     :param local_only: (False) if set to True, only local files will be checked. This is useful
     for patching files
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
-    dfs = dfs.filter(json__transfer_pending=True)
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
     dsets = Dataset.objects.filter(pk__in=dfs.values_list('dataset').distinct())
-    all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
-        'dataset__created_datetime')
-    if local_only:
-        all_files = all_files.filter(data_repository__globus_is_personal=True)
+    all_files = FileRecord.objects.filter(
+        dataset__in=dsets).order_by('-dataset__created_datetime')
+    # checks all local files by default, and only transfer pending files for the server
+    all_files = all_files.filter(
+        Q(data_repository__globus_is_personal=True | Q(json__transfer_pending=True)))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for l in list(fvals):
