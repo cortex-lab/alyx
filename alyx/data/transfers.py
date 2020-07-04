@@ -500,6 +500,8 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if not src_file:
             logger.warning(str(ds.data_repository.name) + ':' + ds.relative_path +
                            ' is nowhere to ' + 'be found in local AND remote repositories')
+            ds.json = {'local_missing': True}
+            ds.save()
             continue
         isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
                     None)
