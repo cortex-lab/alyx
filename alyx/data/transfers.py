@@ -531,7 +531,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
-    dfs.update(json={'transfer_pending': True})
+    dfs.exclude(json__local_missing=True).update(json={'transfer_pending': True})
     return gc, tm
 
 
