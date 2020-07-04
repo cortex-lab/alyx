@@ -63,7 +63,7 @@ class TaskList(generics.ListCreateAPIView):
     -   **lab**: lab name from session table `/jobs?lab=churchlandlab`
     -   **pipeline**: pipeline field from task `/jobs?pipeline=ephys`
     """
-    queryset = Task.objects.all().order_by('level', '-priority')
+    queryset = Task.objects.all().order_by('level', '-priority', '-session__start_time')
     serializer_class = TaskSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = TaskFilter
