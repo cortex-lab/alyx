@@ -259,6 +259,7 @@ def _create_dataset_file_records(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
         if is_new or is_patched:
             fr.exists = exists
+            fr.json = None  # this is important if a dataset is patched during an ongoing transfer
         # Validate the fields.
         fr.full_clean()
         fr.save()
