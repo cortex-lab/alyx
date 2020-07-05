@@ -30,6 +30,8 @@
         {% for task in obj.tasks.all|dictsort:"name" %}
             {% if task.status == 20%}  {# waiting #}
                 <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 25%}  {# held purple #}
+                <td><a style="color:Purple" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 30%}  {# started black #}
                 <td><a style="color:Black" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 40 %}  {# error red #}
