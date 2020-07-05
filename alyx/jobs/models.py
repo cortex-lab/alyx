@@ -11,6 +11,7 @@ class Task(models.Model):
     """
     STATUS_DATA_SOURCES = [
         (20, 'Waiting',),
+        (25, 'Held',),
         (30, 'Started',),
         (40, 'Errored',),
         (50, 'Empty'),
