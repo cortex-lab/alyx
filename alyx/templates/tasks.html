@@ -3,9 +3,18 @@
 
 
 {% block content %}
+<p>
 {% for graph in graphs %}
-    <p><a href="{% url 'tasks_status_graph' graph %}">{{ graph }}</a></p>
+    <a href="{% url 'tasks_status_graph' graph=graph %}">{{ graph }}</a>
 {% endfor %}
+ </p>
+<p>
+{% for lab in labs %}
+{#    <a href="{% url 'tasks_status_graph_lab' graph=view.kwargs['graph'] lab=lab %}">{{ lab }}</a>#}
+    <a href="{% url 'tasks_status_graph_lab' graph=view.kwargs.graph lab=lab %}">{{ lab }}</a>
+{% endfor %}
+ </p>
+
 
 <table>
 <thead>

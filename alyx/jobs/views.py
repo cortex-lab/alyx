@@ -17,6 +17,8 @@ class TasksStatusView(ListView):
         graph = self.kwargs.get('graph', None)
         context = super(TasksStatusView, self).get_context_data(**kwargs)
         context['graphs'] = list(Task.objects.all().values_list('graph', flat=True).distinct())
+        context['labs'] = list(
+            Task.objects.all().values_list('session__lab__name', flat=True).distinct())
         if graph:
             context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
                 'name', flat=True).distinct())
@@ -29,9 +31,13 @@ class TasksStatusView(ListView):
 
     def get_queryset(self):
         graph = self.kwargs.get('graph', None)
+        lab = self.kwargs.get('lab', None)
+        qs = Session.objects.all()
+        if lab:
+            qs = qs.filter(lab__name=lab)
         if graph:
-            return Session.objects.filter(
-                tasks__graph=self.kwargs['graph']).distinct().order_by("-start_time")
+            qs = qs.filter(tasks__graph=self.kwargs['graph'])
+        return qs.distinct().order_by("-start_time")
 
 
 class TaskFilter(BaseFilterSet):
