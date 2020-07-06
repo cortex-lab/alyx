@@ -425,10 +425,10 @@ def bulk_sync(dry_run=False, lab=None):
         # update the filerecord exists field if needed
         if qf.exists != exists:
             qf.exists = exists
+            qf.save()
             # sets the json field to None so that the transfer pending flag is nulled
             if exists:
-                qf.json = None
-            qf.save()
+                qf.dataset.file_records.update(json=None)
             print(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
                   qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
 
