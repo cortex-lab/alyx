@@ -3,17 +3,24 @@
 
 
 {% block content %}
-<p>
-{% for graph in graphs %}
-    <a href="{% url 'tasks_status_graph' graph=graph %}">{{ graph }}</a>
-{% endfor %}
- </p>
-<p>
-{% for lab in labs %}
-{#    <a href="{% url 'tasks_status_graph_lab' graph=view.kwargs['graph'] lab=lab %}">{{ lab }}</a>#}
-    <a href="{% url 'tasks_status_graph_lab' graph=view.kwargs.graph lab=lab %}">{{ lab }}</a>
-{% endfor %}
- </p>
+<table>
+    <thead>
+        <tr>
+        {% for graph in graphs %}
+            <th><a href="{% url 'tasks_status_graph' graph=graph %}">{{ graph }}</a></th>
+        {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for lab in labs %}
+            <tr>
+            {% for graph in graphs %}
+                <td><a href="{% url 'tasks_status_graph_lab' graph=graph lab=lab %}">{{ lab }}</a></td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 
 <table>
@@ -55,6 +62,24 @@
 {% endfor %}
 </tbody>
 </table>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
 
 {% endblock %}
 

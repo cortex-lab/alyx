@@ -12,13 +12,15 @@ from actions.models import Session
 
 class TasksStatusView(ListView):
     template_name = 'tasks.html'
+    paginate_by = 50
 
     def get_context_data(self, **kwargs):
         graph = self.kwargs.get('graph', None)
         context = super(TasksStatusView, self).get_context_data(**kwargs)
         context['graphs'] = list(Task.objects.all().values_list('graph', flat=True).distinct())
-        context['labs'] = list(
-            Task.objects.all().values_list('session__lab__name', flat=True).distinct())
+        context['labs'] = list(Task.objects.all().values_list(
+            'session__lab__name', flat=True).distinct())
+        context['labs'].sort()
         if graph:
             context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
                 'name', flat=True).distinct())
