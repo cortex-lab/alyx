@@ -1,10 +1,11 @@
+from django.db.models import Q, Count, Max
 from rest_framework import generics, permissions
-
 from django_filters.rest_framework import CharFilter
 from django.views.generic.list import ListView
 
 from alyx.base import BaseFilterSet
 
+from misc.models import Lab
 from jobs.models import Task
 from jobs.serializers import TaskSerializer
 from actions.models import Session
@@ -18,9 +19,13 @@ class TasksStatusView(ListView):
         graph = self.kwargs.get('graph', None)
         context = super(TasksStatusView, self).get_context_data(**kwargs)
         context['graphs'] = list(Task.objects.all().values_list('graph', flat=True).distinct())
-        context['labs'] = list(Task.objects.all().values_list(
-            'session__lab__name', flat=True).distinct())
-        context['labs'].sort()
+        # annotate the labs for template display
+        cw = Count('session__tasks', filter=Q(session__tasks__status=20))
+        ls = Max('session__start_time', filter=Q(session__tasks__isnull=False))
+        lj = Max('session__tasks__datetime')
+        context['labs'] = Lab.objects.annotate(
+            count_waiting=cw, last_session=ls, last_job=lj).order_by('name')
+
         if graph:
             context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
                 'name', flat=True).distinct())
