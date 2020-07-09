@@ -207,7 +207,7 @@ class SessionFilter(BaseFilterSet):
         Hierarchical tree search"
         """
         from experiments.models import BrainRegion
-        brs = BrainRegion.objects.filter(**{name: value}).get_descendants()
+        brs = BrainRegion.objects.filter(**{name: value}).get_descendants(include_self=True)
         return queryset.filter(
             probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
 
