@@ -31,10 +31,9 @@
 <table>
 <thead>
     <tr>
-        <th>session eid</th>
-        <th>subject</th>
-        <th>session date</th>
-        <th>number</th>
+        <th>session</th>
+        <th>project</th>
+{#        <th>qc</th>#}
         {% for task in task_names %}
             <th>{{ task }}</th>
         {% endfor %}
@@ -44,10 +43,9 @@
 <tbody>
 {% for obj in object_list %}
     <tr>
-        <td><a href="{{ obj.url }}">{{ obj.id }}</a></td>
-        <td>{{ obj.subject.nickname  }}</td>
-        <td>{{ obj.start_time }}</td>
-        <td>{{ obj.number }}</td>
+        <td><a href="{% url 'admin:actions_session_change' obj.id %}">{{ obj | stringformat:"s"}}</a></td>
+        <td>{{ obj.project.name}}</td>
+{#        <td>{{ obj.qc }}</td>#}
         {% for task in obj.tasks.all|dictsort:"name" %}
             {% if task.status == 20%}  {# waiting #}
                 <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
