@@ -318,6 +318,9 @@ class SessionAPIList(generics.ListCreateAPIView):
         `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
     -   **atlas_id**: returns a session if any of its channels id matches the provided value:
         `/sessions?atlas_id=950`, cf Allen CCFv2017
+    -   **qc**: returns sessions for which the qc statuses matches provided string. Should be
+    one of CRITICAL, ERROR, WARNING, NOT_SET, PASS
+        `/sessions?qc=CRITICAL`
     -   **histology**: returns sessions for which the subject has an histology session:
         `/sessions?histology=True`
     -   **django**: generic filter allowing lookups (same syntax as json filter)
