@@ -8,6 +8,7 @@ import sys
 import pytz
 import uuid
 from collections import OrderedDict
+from rest_framework import serializers
 
 from django import forms
 from django.db import models
@@ -395,6 +396,21 @@ class BaseFilterSet(FilterSet):
                 queryset = queryset.filter(**{k: kwargs[k]}).distinct()
         return queryset
 
+    def enum_field_filter(self, queryset, name, value):
+        """
+        Method to be used in the filterset class for enum fields
+        """
+        choices = queryset.model._meta.get_field(name).choices
+        # create a dictionary string -> integer
+        value_map = {v.lower(): k for k, v in choices}
+        # get the integer value for the input string
+        try:
+            value = value_map[value.lower().strip()]
+        except KeyError:
+            raise ValueError("Invalid" + name + ", choices are: " +
+                             ', '.join([ch[1] for ch in choices]))
+        return queryset.filter(**{name: value})
+
     class Meta:
         abstract = True
 
@@ -441,6 +457,29 @@ def _custom_filter_parser(value, arg_prefix=''):
             val = eval(val)
         out_dict[arg_prefix + field] = val
     return out_dict
+
+
+class BaseSerializerEnumField(serializers.Field):
+    """
+    Field serializer for an int model field with enumerated choices.
+    This provides the string representation of the model for the rest requests and filters
+    """
+
+    @property
+    def choices(self):
+        model = self.context['view'].queryset.model
+        return model._meta.get_field(self.field_name).choices
+
+    def to_representation(self, int_rep):
+        status = [ch for ch in self.choices if ch[0] == int_rep]
+        return status[0][1]
+
+    def to_internal_value(self, str_rep):
+        status = [ch for ch in self.choices if ch[1] == str_rep]
+        if len(status) == 0:
+            raise serializers.ValidationError("Invalid " + self.field_name + ", choices are: " +
+                                              ', '.join([ch[1] for ch in self.choices]))
+        return status[0][0]
 
 
 mysite = MyAdminSite()

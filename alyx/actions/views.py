@@ -190,6 +190,7 @@ class SessionFilter(BaseFilterSet):
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
+    qc = django_filters.CharFilter(method='enum_field_filter')
     json = django_filters.CharFilter(field_name='json', method=('filter_json'))
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',

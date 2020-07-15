@@ -49,23 +49,11 @@ class TasksStatusView(ListView):
 
 class TaskFilter(BaseFilterSet):
     lab = CharFilter('session__lab__name')
-    status = CharFilter(method='status_filter')
+    status = CharFilter(method='enum_field_filter')
 
     class Meta:
         model = Task
         exclude = ['json']
-
-    def status_filter(self, queryset, name, value):
-        choices = Task._meta.get_field('status').choices
-        # create a dictionary string -> integer
-        value_map = {v.lower(): k for k, v in choices}
-        # get the integer value for the input string
-        try:
-            value = value_map[value.lower().strip()]
-        except KeyError:
-            raise ValueError("Invalid status, choices are: " +
-                             ', '.join([ch[1] for ch in choices]))
-        return queryset.filter(status=value)
 
 
 class TaskList(generics.ListCreateAPIView):

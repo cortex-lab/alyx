@@ -3,6 +3,7 @@ from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
+from alyx.base import BaseSerializerEnumField
 from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
@@ -136,6 +137,7 @@ class SessionDetailSerializer(BaseActionSerializer):
     project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
                                            queryset=Project.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
+    qc = BaseSerializerEnumField(required=False)
 
     @staticmethod
     def setup_eager_loading(queryset):

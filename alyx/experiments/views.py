@@ -54,7 +54,7 @@ Trajectory Estimates objects REST filters and views
 
 
 class TrajectoryEstimateFilter(BaseFilterSet):
-    provenance = CharFilter(method='provenance_filter')
+    provenance = CharFilter(method='enum_field_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
     project = CharFilter('probe_insertion__session__project__name')
     date = CharFilter('probe_insertion__session__start_time__date')
@@ -65,18 +65,6 @@ class TrajectoryEstimateFilter(BaseFilterSet):
     class Meta:
         model = TrajectoryEstimate
         exclude = ['json']
-
-    def provenance_filter(self, queryset, name, value):
-        choices = TrajectoryEstimate._meta.get_field('provenance').choices
-        # create a dictionary string -> integer
-        value_map = {v.lower(): k for k, v in choices}
-        # get the integer value for the input string
-        try:
-            value = value_map[value.lower().strip()]
-        except KeyError:
-            raise ValueError("Invalid provenance, choices are: " +
-                             ', '.join([ch[1] for ch in choices]))
-        return queryset.filter(provenance=value)
 
 
 class TrajectoryEstimateList(generics.ListCreateAPIView):
