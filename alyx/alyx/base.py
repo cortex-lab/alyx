@@ -467,7 +467,7 @@ class BaseSerializerEnumField(serializers.Field):
 
     @property
     def choices(self):
-        model = self.context['view'].queryset.model
+        model = self.parent.Meta.model
         return model._meta.get_field(self.field_name).choices
 
     def to_representation(self, int_rep):
