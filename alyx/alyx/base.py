@@ -24,6 +24,7 @@ from django.utils import termcolors, timezone
 from django.test import TestCase
 from django_filters import CharFilter
 from django_filters.rest_framework import FilterSet
+from rest_framework.views import exception_handler
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -480,6 +481,24 @@ class BaseSerializerEnumField(serializers.Field):
             raise serializers.ValidationError("Invalid " + self.field_name + ", choices are: " +
                                               ', '.join([ch[1] for ch in self.choices]))
         return status[0][0]
+
+
+def rest_filters_exception_handler(exc, context):
+    """
+    Custom exception handler that provides context (field names etc...) for poorly formed
+    REST queries
+    """
+    response = exception_handler(exc, context)
+
+    from rest_framework.response import Response
+    # Now add the HTTP status code to the response.
+    if response is not None:
+        response.data['status_code'] = response.status_code
+    else:
+        data = {'status_code': 500, 'detail': str(exc)}
+        response = Response(data, status=500)
+
+    return response
 
 
 mysite = MyAdminSite()
