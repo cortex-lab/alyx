@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import re
 import os.path as op
 from polymorphic.models import PolymorphicModel
 import sys
@@ -429,6 +428,28 @@ def base_json_filter(fieldname, queryset, _, value):
     return queryset
 
 
+def split_comma_outside_brackets(value):
+    """ For custom filters splits by comma if they are not whithin brackets. See
+    test_base.py for examples"""
+    fv = []
+    word = ''
+    close_char = ''
+    for c in value:
+        if c == ',' and close_char == '':
+            fv.append(word)
+            word = ''
+            continue
+        elif c == '[':
+            close_char = ']'
+        elif c == '(':
+            close_char = ')'
+        elif c == close_char:
+            close_char = ''
+        word += c
+    fv.append(word)
+    return fv
+
+
 def _custom_filter_parser(value, arg_prefix=''):
     """
     # parses the value string provided to custom filters json and Django via REST api
@@ -439,8 +460,7 @@ def _custom_filter_parser(value, arg_prefix=''):
     :return: dictionary that can be fed directly to a Django filter() query
     """
     # split by commas only if they are outside list brackets (I know... we all love regex)
-    fv = re.split(r",(?=(((?!\]).)*\[)|[^\[\]]*$)", value)
-    fv = list(filter(lambda x: x not in [None, '[', '('], fv))
+    fv = split_comma_outside_brackets(value)
     i = 0
     out_dict = {}
     while i < len(fv):
