@@ -14,6 +14,7 @@ class Task(models.Model):
         (25, 'Held',),
         (30, 'Started',),
         (40, 'Errored',),
+        (45, 'Abandoned',),
         (50, 'Empty'),
         (60, 'Complete',),
     ]
