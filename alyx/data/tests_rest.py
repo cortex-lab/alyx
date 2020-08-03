@@ -243,8 +243,8 @@ class APIDataTests(BaseTests):
         # but registering a dataset using a subollection that matches another raises an error
         data['path'] = '%s/2018-01-01/002' % self.subject
         data['filenames'] = 'dir/a.b.e1'
-        with self.assertRaises(Exception):
-            self.post(reverse('register-file'), data)
+        # the dataset already exists and results in a 500 integrity error
+        self.ar(self.post(reverse('register-file'), data), 500)
 
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need

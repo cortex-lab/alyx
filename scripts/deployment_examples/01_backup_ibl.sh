@@ -1,4 +1,4 @@
-backup_dir="/var/www/alyx-main/alyx-backups/$(date +%Y-%m-%d)"
+backup_dir="/mnt/xvdf/alyx-backups/$(date +%Y-%m-%d)"
 mkdir -p "$backup_dir"
 
 # Full SQL dump.

@@ -1,13 +1,13 @@
 import json
 import logging
 import os
-import re
 import os.path as op
 from polymorphic.models import PolymorphicModel
 import sys
 import pytz
 import uuid
 from collections import OrderedDict
+from rest_framework import serializers
 
 from django import forms
 from django.db import models
@@ -23,6 +23,7 @@ from django.utils import termcolors, timezone
 from django.test import TestCase
 from django_filters import CharFilter
 from django_filters.rest_framework import FilterSet
+from rest_framework.views import exception_handler
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -395,6 +396,21 @@ class BaseFilterSet(FilterSet):
                 queryset = queryset.filter(**{k: kwargs[k]}).distinct()
         return queryset
 
+    def enum_field_filter(self, queryset, name, value):
+        """
+        Method to be used in the filterset class for enum fields
+        """
+        choices = queryset.model._meta.get_field(name).choices
+        # create a dictionary string -> integer
+        value_map = {v.lower(): k for k, v in choices}
+        # get the integer value for the input string
+        try:
+            value = value_map[value.lower().strip()]
+        except KeyError:
+            raise ValueError("Invalid" + name + ", choices are: " +
+                             ', '.join([ch[1] for ch in choices]))
+        return queryset.filter(**{name: value})
+
     class Meta:
         abstract = True
 
@@ -412,6 +428,28 @@ def base_json_filter(fieldname, queryset, _, value):
     return queryset
 
 
+def split_comma_outside_brackets(value):
+    """ For custom filters splits by comma if they are not whithin brackets. See
+    test_base.py for examples"""
+    fv = []
+    word = ''
+    close_char = ''
+    for c in value:
+        if c == ',' and close_char == '':
+            fv.append(word)
+            word = ''
+            continue
+        elif c == '[':
+            close_char = ']'
+        elif c == '(':
+            close_char = ')'
+        elif c == close_char:
+            close_char = ''
+        word += c
+    fv.append(word)
+    return fv
+
+
 def _custom_filter_parser(value, arg_prefix=''):
     """
     # parses the value string provided to custom filters json and Django via REST api
@@ -422,8 +460,7 @@ def _custom_filter_parser(value, arg_prefix=''):
     :return: dictionary that can be fed directly to a Django filter() query
     """
     # split by commas only if they are outside list brackets (I know... we all love regex)
-    fv = re.split(r",(?=(((?!\]).)*\[)|[^\[\]]*$)", value)
-    fv = list(filter(lambda x: x not in [None, '[', '('], fv))
+    fv = split_comma_outside_brackets(value)
     i = 0
     out_dict = {}
     while i < len(fv):
@@ -441,6 +478,47 @@ def _custom_filter_parser(value, arg_prefix=''):
             val = eval(val)
         out_dict[arg_prefix + field] = val
     return out_dict
+
+
+class BaseSerializerEnumField(serializers.Field):
+    """
+    Field serializer for an int model field with enumerated choices.
+    This provides the string representation of the model for the rest requests and filters
+    """
+
+    @property
+    def choices(self):
+        model = self.parent.Meta.model
+        return model._meta.get_field(self.field_name).choices
+
+    def to_representation(self, int_rep):
+        status = [ch for ch in self.choices if ch[0] == int_rep]
+        return status[0][1]
+
+    def to_internal_value(self, str_rep):
+        status = [ch for ch in self.choices if ch[1] == str_rep]
+        if len(status) == 0:
+            raise serializers.ValidationError("Invalid " + self.field_name + ", choices are: " +
+                                              ', '.join([ch[1] for ch in self.choices]))
+        return status[0][0]
+
+
+def rest_filters_exception_handler(exc, context):
+    """
+    Custom exception handler that provides context (field names etc...) for poorly formed
+    REST queries
+    """
+    response = exception_handler(exc, context)
+
+    from rest_framework.response import Response
+    # Now add the HTTP status code to the response.
+    if response is not None:
+        response.data['status_code'] = response.status_code
+    else:
+        data = {'status_code': 500, 'detail': str(exc)}
+        response = Response(data, status=500)
+
+    return response
 
 
 mysite = MyAdminSite()

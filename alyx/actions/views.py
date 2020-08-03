@@ -190,6 +190,7 @@ class SessionFilter(BaseFilterSet):
     lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
+    qc = django_filters.CharFilter(method='enum_field_filter')
     json = django_filters.CharFilter(field_name='json', method=('filter_json'))
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
@@ -207,7 +208,7 @@ class SessionFilter(BaseFilterSet):
         Hierarchical tree search"
         """
         from experiments.models import BrainRegion
-        brs = BrainRegion.objects.filter(**{name: value}).get_descendants()
+        brs = BrainRegion.objects.filter(**{name: value}).get_descendants(include_self=True)
         return queryset.filter(
             probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
 
@@ -317,6 +318,9 @@ class SessionAPIList(generics.ListCreateAPIView):
         `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
     -   **atlas_id**: returns a session if any of its channels id matches the provided value:
         `/sessions?atlas_id=950`, cf Allen CCFv2017
+    -   **qc**: returns sessions for which the qc statuses matches provided string. Should be
+    one of CRITICAL, ERROR, WARNING, NOT_SET, PASS
+        `/sessions?qc=CRITICAL`
     -   **histology**: returns sessions for which the subject has an histology session:
         `/sessions?histology=True`
     -   **django**: generic filter allowing lookups (same syntax as json filter)

@@ -259,6 +259,7 @@ def _create_dataset_file_records(
             dataset=dataset, data_repository=repo, relative_path=relative_path)
         if is_new or is_patched:
             fr.exists = exists
+            fr.json = None  # this is important if a dataset is patched during an ongoing transfer
         # Validate the fields.
         fr.full_clean()
         fr.save()
@@ -351,13 +352,16 @@ def transfers_required(dataset):
             }
 
 
-def bulk_sync(dry_run=False, lab=None, local_only=False):
+def bulk_sync(dry_run=False, lab=None):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
-    Only the files belonging to a dataset for which one main repository as a missing file are
-    checked on the Globus endpoints (a main repository is a repository with the
-    globus_is_personnal field set to False). Also fills dataset size if non-existent.
     This is meant to be launched before the transfer() function
+    Local filerecord =  data_repository__globus_is_personal=True
+    Server filerecord =  data_repository__globus_is_personal=False
+    The algorithm looks at datasets for which the server data file does not exist. For each
+        -   the locals filerecords are checked and their exist flag updated
+        -   the server filerecords that have a json__transfer_pending=True flag are checked and
+    their exist flags updated
     :param dry_run (False) just prints the files if True
     :param lab (optional) specific lab name only
     :param local_only: (False) if set to True, only local files will be checked. This is useful
@@ -368,10 +372,11 @@ def bulk_sync(dry_run=False, lab=None, local_only=False):
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
     dsets = Dataset.objects.filter(pk__in=dfs.values_list('dataset').distinct())
-    all_files = FileRecord.objects.filter(pk__in=dsets.values('file_records')).order_by(
-        'dataset__created_datetime')
-    if local_only:
-        all_files = all_files.filter(data_repository__globus_is_personal=True)
+    all_files = FileRecord.objects.filter(
+        dataset__in=dsets).order_by('-dataset__created_datetime')
+    # checks all local files by default, and only transfer pending files for the server
+    all_files = all_files.filter(
+        Q(data_repository__globus_is_personal=True) | Q(json__transfer_pending=True))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for l in list(fvals):
@@ -404,7 +409,7 @@ def bulk_sync(dry_run=False, lab=None, local_only=False):
         if _last_path != cpath:
             _last_path = cpath
             try:
-                logger.info(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
+                print(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
                 ls_result = gc.operation_ls(_last_ep, path=_last_path)
             except globus_sdk.exc.TransferAPIError:
                 ls_result = []
@@ -421,8 +426,11 @@ def bulk_sync(dry_run=False, lab=None, local_only=False):
         if qf.exists != exists:
             qf.exists = exists
             qf.save()
-            logger.info(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
-                        qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
+            # sets the json field to None so that the transfer pending flag is nulled
+            if exists:
+                qf.dataset.file_records.update(json=None)
+            print(str(c) + '/' + str(nfiles) + ' ' + str(qf.data_repository.name) + ':' +
+                  qf.relative_path + ' exist set to ' + str(exists) + ' in Alyx')
 
 
 def _filename_from_file_record(fr, add_uuid=False):
@@ -456,6 +464,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = dfs.exclude(json__transfer_pending=True)
     if minsize:
         dfs = dfs.filter(dataset__file_size__gt=minsize)
     if maxsize:
@@ -492,6 +501,8 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if not src_file:
             logger.warning(str(ds.data_repository.name) + ':' + ds.relative_path +
                            ' is nowhere to ' + 'be found in local AND remote repositories')
+            ds.json = {'local_missing': True}
+            ds.save()
             continue
         isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
                     None)
@@ -513,7 +524,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         source_file = _filename_from_file_record(src_file)
         if not dry:
             tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
-        logger.info(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
+        print(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry:
         return None, None
@@ -521,6 +532,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
+    dfs.exclude(json__local_missing=True).update(json={'transfer_pending': True})
     return gc, tm
 
 

@@ -1,23 +1,8 @@
 from rest_framework import serializers
+from alyx.base import BaseSerializerEnumField
 from actions.models import EphysSession, Session
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
                                 Channel, BrainRegion)
-
-
-class TrajectoryProvenanceField(serializers.Field):
-
-    def to_representation(self, int_provenance):
-        choices = TrajectoryEstimate._meta.get_field('provenance').choices
-        provenance = [ch for ch in choices if ch[0] == int_provenance]
-        return provenance[0][1]
-
-    def to_internal_value(self, str_provenance):
-        choices = TrajectoryEstimate._meta.get_field('provenance').choices
-        provenance = [ch for ch in choices if ch[1] == str_provenance]
-        if len(provenance) == 0:
-            raise serializers.ValidationError("Invalid provenance, choices are: " +
-                                              ', '.join([ch[1] for ch in choices]))
-        return provenance[0][0]
 
 
 class SessionListSerializer(serializers.ModelSerializer):
@@ -48,7 +33,7 @@ class TrajectoryEstimateSerializer(serializers.ModelSerializer):
     theta = serializers.FloatField(required=True, allow_null=True)
     phi = serializers.FloatField(required=True, allow_null=True)
     roll = serializers.FloatField(required=False, allow_null=True)
-    provenance = TrajectoryProvenanceField(required=True)
+    provenance = BaseSerializerEnumField(required=True)
     session = SessionListSerializer(read_only=True)
     probe_name = serializers.CharField(read_only=True)
     coordinate_system = serializers.SlugRelatedField(
@@ -121,7 +106,7 @@ class _TrajectoryFilterSerializer(serializers.ListSerializer):
 class TrajectoryEstimateSessionSerializer(serializers.ModelSerializer):
     coordinate_system = serializers.SlugRelatedField(read_only=True, slug_field='name')
     channels = ChannelSessionSerializer(read_only=True, many=True)
-    provenance = TrajectoryProvenanceField()
+    provenance = BaseSerializerEnumField()
 
     class Meta:
         model = TrajectoryEstimate
