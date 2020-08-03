@@ -55,6 +55,8 @@
                 <td><a style="color:Black" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 40 %}  {# error red #}
                 <td><a style="color:Tomato" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 45 %}  {# abandoned maroon #}
+                <td><a style="color:Maroon" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 50 %}  {# empty orange #}
                 <td><a style="color:Orange" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 60 %}  {# complete green #}
