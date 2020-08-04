@@ -761,8 +761,10 @@ class BreedingPairFilter(DefaultListFilter):
 
 
 def _bp_subjects(line, sex):
-    qs = Subject.objects.filter(line=line, sex=sex,
-                                responsible_user__is_stock_manager=True).order_by('nickname')
+    qs = Subject.objects.filter(sex=sex, responsible_user__is_stock_manager=True)
+    if line:
+        qs = qs.filter(line=line)
+    qs = qs.order_by('nickname')
     ids = [item.id for item in qs]
     if ids:
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
