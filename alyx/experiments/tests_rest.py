@@ -19,6 +19,17 @@ class APISubjectsTests(BaseTests):
                                'name': 'probe_00',
                                'model': '3A'}
 
+    def test_brain_regions_rest_filter(self):
+        # test the custom filters get_descendants and get_ancestors
+        url = reverse('brainregion-list')
+        br = self.ar(self.client.get(url + "?ancestors=688"))
+        self.assertTrue(len(br) == 4)
+        br = self.ar(self.client.get(url + "?ancestors=CTX"))
+        self.assertTrue(len(br) == 4)
+        response = self.client.get(url + "?descendants=688")
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(response.data['count'] == 567)
+
     def test_brain_regions_rest(self):
         # test the list view
         url = reverse('brainregion-list')
