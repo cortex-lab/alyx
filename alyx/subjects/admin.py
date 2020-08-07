@@ -761,8 +761,10 @@ class BreedingPairFilter(DefaultListFilter):
 
 
 def _bp_subjects(line, sex):
-    qs = Subject.objects.filter(line=line, sex=sex,
-                                responsible_user__is_stock_manager=True).order_by('nickname')
+    qs = Subject.objects.filter(sex=sex, responsible_user__is_stock_manager=True)
+    if line:
+        qs = qs.filter(line=line)
+    qs = qs.order_by('nickname')
     ids = [item.id for item in qs]
     if ids:
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
@@ -999,15 +1001,39 @@ class LineFilter(DefaultListFilter):
             return queryset.all()
 
 
+class LineForm(forms.ModelForm):
+    bsu_strain_code = forms.CharField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(LineForm, self).__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        bsu_strain_code = self.cleaned_data.get('bsu_strain_code', None)
+        if self.instance:
+            if not self.instance.json:
+                self.instance.json = {}
+            if bsu_strain_code or self.instance.json.get('bsu_strain_code', None):
+                self.instance.json['bsu_strain_code'] = bsu_strain_code
+        return super(LineForm, self).save(commit=commit)
+
+    class Meta:
+        model = Line
+        fields = '__all__'
+
+
 class LineAdmin(BaseAdmin):
+    form = LineForm
+
     fields = ['name', 'nickname', 'target_phenotype', 'is_active',
               'strain', 'species', 'description',
               'subject_autoname_index',
               'breeding_pair_autoname_index',
               'litter_autoname_index',
-              'source', 'source_identifier', 'source_url', 'expression_data_url'
+              'source', 'source_identifier',
+              'bsu_strain_code',
+              'source_url', 'expression_data_url'
               ]
-    list_display = ['name', 'nickname', 'target_phenotype', 'strain',
+    list_display = ['name', 'nickname', 'target_phenotype', 'strain', 'bsu_strain_code',
                     'source_link', 'expression', 'is_active']
     list_select_related = ('strain',)
     ordering = ['nickname']
@@ -1034,6 +1060,9 @@ class LineAdmin(BaseAdmin):
                            expression_text=t,
                            )
 
+    def bsu_strain_code(self, obj):
+        return (obj.json or {}).get('bsu_strain_code', None)
+
     def get_formsets_with_inlines(self, request, obj=None, *args, **kwargs):
         # Make the parent instance accessible from the inline admin.
         # http://stackoverflow.com/a/24427952/1595060
@@ -1044,7 +1073,11 @@ class LineAdmin(BaseAdmin):
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
         request._obj_ = obj
-        return super(LineAdmin, self).get_form(request, obj, **kwargs)
+        form = super(LineAdmin, self).get_form(request, obj, **kwargs)
+        if obj:
+            bsu_strain_code = (obj.json or {}).get('bsu_strain_code', None)
+            form.base_fields['bsu_strain_code'].initial = bsu_strain_code
+        return form
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
