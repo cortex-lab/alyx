@@ -784,7 +784,8 @@ class BreedingPairAdminForm(forms.ModelForm):
             p = getattr(self.instance, w, None)
             if p and p.cage:
                 self.fields['cage'].initial = p.cage
-            self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
+            if w in self.fields:
+                self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
     def save(self, commit=True):
         cage = self.cleaned_data.get('cage')
