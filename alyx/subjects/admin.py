@@ -880,7 +880,7 @@ class BreedingPairAdmin(BaseAdmin):
 class LitterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(LitterForm, self).__init__(*args, **kwargs)
-        if self.instance.line:
+        if self.instance.line and 'breeding_pair' in self.fields:
             self.fields['breeding_pair'].queryset = BreedingPair.objects.filter(
                 line=self.instance.line,
             )
