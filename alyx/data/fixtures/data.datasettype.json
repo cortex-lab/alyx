@@ -1175,5 +1175,27 @@
       "description": "Timestamped sync square update commands",
       "filename_pattern": "_iblrig_syncSquareUpdate.raw.csv"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a45137ea-d4bf-444d-aa83-d29950195cde",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.frame_counter",
+      "created_by": null,
+      "description": "Frame counter value from camera for each frame",
+      "filename_pattern": "_iblrig_*Camera.frame_counter.bin"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "28554b3d-e4c7-47ac-b247-4ba31a994332",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.GPIO",
+      "created_by": null,
+      "description": "GPIO pin state for each camera frame",
+      "filename_pattern": "_iblrig_*Camera.GPIO.bin"
+    }
   }
 ]
