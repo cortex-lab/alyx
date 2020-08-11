@@ -136,10 +136,20 @@ class BrainRegionFilter(BaseFilterSet):
     acronym = CharFilter(lookup_expr='iexact')
     description = CharFilter(lookup_expr='icontains')
     name = CharFilter(lookup_expr='icontains')
+    ancestors = CharFilter(field_name='ancestors', method='filter_ancestors')
+    descendants = CharFilter(field_name='descendants', method='filter_descendants')
 
     class Meta:
         model = BrainRegion
         fields = ('id', 'acronym', 'description', 'name', 'parent')
+
+    def filter_descendants(self, queryset, _, pk):
+        r = BrainRegion.objects.get(pk=pk) if pk.isdigit() else BrainRegion.objects.get(acronym=pk)
+        return r.get_descendants(include_self=True).exclude(id=0)
+
+    def filter_ancestors(self, queryset, _, pk):
+        r = BrainRegion.objects.get(pk=pk) if pk.isdigit() else BrainRegion.objects.get(acronym=pk)
+        return r.get_ancestors(include_self=True).exclude(pk=0)
 
 
 class BrainRegionList(generics.ListAPIView):
@@ -151,6 +161,8 @@ class BrainRegionList(generics.ListAPIView):
     -   **name**: icontains on name `/brain-regions?name=retrosplenial`
     -   **description**: icontains on description `/brain-regions?description=RSPv5`
     -   **parent**: get child nodes `/brain-regions?parent=315`
+    -   **ancestors**: get all ancestors for a given ID
+    -   **descendants**: get all descendants for a given ID
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer

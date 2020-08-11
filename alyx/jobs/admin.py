@@ -12,8 +12,11 @@ class TaskAdmin(BaseAdmin):
     search_fields = ('graph', 'session__lab__name', 'session__subject__nickname')
     ordering = ('-session__start_time',)
 
-    # def has_change_permission(self, request, obj=None):
-    #     return False
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        if obj:
+            return obj.session.lab.name in request.user.lab
 
     def session_str(self, obj):
         url = get_admin_url(obj.session)
