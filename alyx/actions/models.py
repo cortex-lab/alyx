@@ -245,13 +245,13 @@ class Session(BaseAction):
 
     QC_CHOICES = [
         (50, 'CRITICAL',),
-        (40, 'ERROR',),
+        (40, 'FAIL',),
         (30, 'WARNING',),
-        (20, 'NOT_SET',),
+        (0, 'NOT_SET',),
         (10, 'PASS',),
     ]
 
-    qc = models.IntegerField(default=20, choices=QC_CHOICES)
+    qc = models.IntegerField(default=0, choices=QC_CHOICES)
     extended_qc = JSONField(null=True, blank=True,
                             help_text="Structured data about session QC,"
                                       "formatted in a user-defined way")
