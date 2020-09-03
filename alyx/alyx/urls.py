@@ -41,6 +41,8 @@ urlpatterns = [
 
     path('admin-subjects/', include('subjects.urls')),
 
+    path('reports/', include('reports.urls')),
+
     path('admin-actions/', include('actions.urls')),
 
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
