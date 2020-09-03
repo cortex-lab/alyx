@@ -1,5 +1,11 @@
 <html>
     <body>
-        It is {{ now }}
+        Number of repeated sites {{ total }}
+        <br>
+        <ul>
+        {% for l in labs %}
+            <li>{{ l.name }} : {{ l.nrep }}</li>
+        {% endfor %}
+        </ul>
     </body>
 </html>
