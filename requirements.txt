@@ -1,4 +1,4 @@
-django
+django==3.0.7
 coreapi
 psycopg2-binary
 drfdocs
