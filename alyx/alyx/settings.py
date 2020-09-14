@@ -145,6 +145,7 @@ INSTALLED_APPS = (
     'misc',
     'experiments',
     'subjects',
+    'incomplete',
     'ibl',
 )
 

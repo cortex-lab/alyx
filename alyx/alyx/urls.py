@@ -45,7 +45,7 @@ urlpatterns = [
 
     path('admin-actions/', include('actions.urls')),
 
-    path('incomplete/', include('ibl.urls')),
+    path('admin-incomplete/', include('incomplete.urls')),
 
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
 

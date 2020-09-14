@@ -32,7 +32,6 @@ def splash(request):
     lab_values = list(lab)
     lab_values = {k: [d[k] for d in lab_values] for k in lab_values[0]}
     lab_values['json'] = [json.loads(s) if s is str else s for s in lab_values['json']]
-    print(lab_values)
 
     datasets = Dataset.objects.all().exclude(file_records__exists=False)
     file_count = datasets.count()
@@ -83,36 +82,3 @@ def splash(request):
     }
     return HttpResponse(template.render(context, request))
 
-
-class SubjectIncompleteListView(ListView):
-    template_name = 'ibl/incomplete_subjects.html'
-    paginate_by = 30
-   
-    def get_context_data(self, **kwargs):
-        context = super(SubjectIncompleteListView, self).get_context_data(**kwargs)
-        context['site_header'] = 'Alyx'
-        context['title'] = 'Incomplete records'
-        context['error_map'] = self.error_map
-        return context
-
-    def get_queryset(self):
-        user = self.request.user.username
-        #subject = Subject.objects.filter(responsible_user__username__in=user)
-        missing = (Subject.objects.filter(
-            Q(lab__isnull=True) | 
-            Q(sex__in='U') | 
-            Q(birth_date__isnull=True) | 
-            Q(cage__isnull=True) | 
-            Q(strain__isnull=True) | 
-            Q(line__isnull=True) | 
-            Q(litter__isnull=True) | 
-            Q(species__isnull=True) | 
-            (Q(death_date__isnull=False) | Q(cull__isnull=False)) & 
-             Q(cull__cull_reason__isnull=True)))
-
-        # TODO Add more sets and combine based on filter
-        self.error_map = {
-            'missing': missing
-        }
-
-        return missing

@@ -89,13 +89,19 @@ class IncompleteAdmin(BaseAdmin):
     list_per_page = 5
     list_filter = [ResponsibleUserListFilter, SubjectAliveListFilter, 'lab']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        print('hi')
+        print( self.fields)
+
     def get_form(self, request, obj=None, **kwargs):
         """Attempted to add 'required' attribute to the input dialogs in order to
         style them in CSS (red background for empty / unassigned fields) however 
         I'm unable to find the widgets
         """
         form = super(BaseAdmin, self).get_form(request, obj=None, **kwargs)
-        form.fields['cage'].widget.attrs.update({'required' : 'required'})
+        css = {'style': 'outline:none;border-color:#9ecaed;box-shadow: 0 0 10px #9ecaed'}
+        form.fields['cage'].widget.attrs.update({'style': 'background-color:red;'})
         return form
 
     def has_add_permission(self, request, obj=None):
