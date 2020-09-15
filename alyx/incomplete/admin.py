@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.db.models import Q
-from .models import Incomplete
+from .models import Subject as IncompleteSubject, ProbeInsertion as IncompleteProbeInsertion
 from alyx.base import BaseAdmin, DefaultListFilter
 from subjects.models import Subject
+from experiments.models import ProbeInsertion
 from pprint import pprint
 
 # Filters | NB: Failed to import from subjects
@@ -82,7 +83,7 @@ class LabMemberListFilter(DefaultListFilter):
 # https://docs.djangoproject.com/en/3.0/ref/forms/models/#django.forms.models.modelform_factory
 # https://stackoverflow.com/questions/7562573/how-do-i-get-django-forms-to-show-the-html-required-attribute/37738828#37738828
 # https://stackoverflow.com/questions/10838415/access-form-field-attributes-in-templated-django
-class IncompleteAdmin(BaseAdmin):
+class SubjectAdmin(BaseAdmin):
     list_display = ['nickname', 'birth_date', 'line', 'strain', 'sex', 'cage', 'species', 'cull_reason_']
     list_editable = ['birth_date', 'line', 'strain', 'sex', 'cage', 'species']
     #autocomplete_fields = ['cage']
@@ -91,7 +92,6 @@ class IncompleteAdmin(BaseAdmin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        print('hi')
         print( self.fields)
 
     def get_form(self, request, obj=None, **kwargs):
@@ -129,4 +129,44 @@ class IncompleteAdmin(BaseAdmin):
              Q(cull__cull_reason__isnull=True)))
         return missing
 
-admin.site.register(Incomplete, IncompleteAdmin)
+admin.site.register(IncompleteSubject, SubjectAdmin)
+
+
+class ProbeInsertionAdmin(BaseAdmin):
+    list_display = ['name', 'trajectory_estimate_']
+    list_editable = []
+    #autocomplete_fields = ['cage']
+    list_per_page = 5
+    #list_filter = [ResponsibleUserListFilter, SubjectAliveListFilter, 'lab']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        print( self.fields)
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Attempted to add 'required' attribute to the input dialogs in order to
+        style them in CSS (red background for empty / unassigned fields) however 
+        I'm unable to find the widgets
+        """
+        form = super(BaseAdmin, self).get_form(request, obj=None, **kwargs)
+        css = {'style': 'outline:none;border-color:#9ecaed;box-shadow: 0 0 10px #9ecaed'}
+        form.fields['cage'].widget.attrs.update({'style': 'background-color:red;'})
+        return form
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def trajectory_estimate_(self, obj):
+        if hasattr(obj, 'trajectory_estimate'):
+            return obj.trajectory_estimate.provenance
+    trajectory_estimate_.short_description = 'trajectory estimate provinance'
+
+    def get_queryset(self, request):
+        missing = (ProbeInsertion.objects.filter(
+            Q(trajectory_estimate__isnull=False) | Q(trajectory_estimate__provenance=10)))
+        return missing
+
+admin.site.register(IncompleteProbeInsertion, ProbeInsertionAdmin)
