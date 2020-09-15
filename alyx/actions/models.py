@@ -245,13 +245,13 @@ class Session(BaseAction):
 
     QC_CHOICES = [
         (50, 'CRITICAL',),
-        (40, 'ERROR',),
+        (40, 'FAIL',),
         (30, 'WARNING',),
-        (20, 'NOT_SET',),
+        (0, 'NOT_SET',),
         (10, 'PASS',),
     ]
 
-    qc = models.IntegerField(default=20, choices=QC_CHOICES)
+    qc = models.IntegerField(default=0, choices=QC_CHOICES)
     extended_qc = JSONField(null=True, blank=True,
                             help_text="Structured data about session QC,"
                                       "formatted in a user-defined way")
@@ -266,12 +266,12 @@ class Session(BaseAction):
 
     def __str__(self):
         try:
-            string = "Session %s for %s/%s/%s" % (str(self.pk)[:8],
-                                                  self.subject,
-                                                  str(self.start_time)[:10],
-                                                  str(self.number).zfill(3))
+            string = "%s/%s/%s/%s" % (str(self.pk)[:8],
+                                      self.subject,
+                                      str(self.start_time)[:10],
+                                      str(self.number).zfill(3))
         except Exception:
-            string = "Session %s for %s" % (str(self.pk)[:8], self.subject)
+            string = "%s/%s" % (str(self.pk)[:8], self.subject)
         return string
 
     @property

@@ -205,6 +205,18 @@
  },
   {
   "model": "data.dataformat",
+  "pk": "b2797026-4c9a-474f-be2c-41f02a2bde17",
+  "fields": {
+   "json": "",
+   "name": "parquet",
+   "description": "Apache Parquet Table in columnar format",
+   "file_extension": ".pqt",
+   "matlab_loader_function": "parquetread",
+   "python_loader_function": "pyarrow.parquet.read_table"
+  }
+ },
+  {
+  "model": "data.dataformat",
   "pk": "f002a248-177d-4e29-b30a-aef3c0b52eff",
   "fields": {
    "json": "",

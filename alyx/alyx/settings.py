@@ -120,8 +120,8 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = (
-    'dal',
-    'dal_select2',
+    # 'dal',
+    # 'dal_select2',
     'django_admin_listfilter_dropdown',
     'django_filters',
     'django.contrib.admin',
@@ -144,6 +144,7 @@ INSTALLED_APPS = (
     'data',
     'misc',
     'experiments',
+    'jobs',
     'subjects',
     'incomplete',
     'ibl',
@@ -198,6 +199,7 @@ REST_FRAMEWORK = {
     # 'DEFAULT_RENDERER_CLASSES': (
     #     'rest_framework.renderers.JSONRenderer',
     # ),
+    'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'PAGE_SIZE': 250,
 }

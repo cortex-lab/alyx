@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework import generics, permissions
 
+from alyx.base import BaseFilterSet
 from .serializers import UserSerializer, LabSerializer
 from .models import Lab
 from alyx.settings import MEDIA_ROOT
@@ -69,11 +70,20 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
 
+class LabFilter(BaseFilterSet):
+    pass
+
+    class Meta:
+        model = Lab
+        exclude = ['json']
+
+
 class LabList(generics.ListCreateAPIView):
     queryset = Lab.objects.all()
     serializer_class = LabSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
+    filter_class = LabFilter
 
 
 class LabDetail(generics.RetrieveUpdateDestroyAPIView):

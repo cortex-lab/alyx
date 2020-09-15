@@ -6,8 +6,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
-from django_filters.rest_framework import FilterSet
 
+from alyx.base import BaseFilterSet
 from subjects.models import Subject, Project
 from misc.models import Lab
 from .models import (DataRepositoryType,
@@ -57,7 +57,7 @@ class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_fields = ('name', 'globus_is_personal')
+    filter_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
     lookup_field = 'name'
 
 
@@ -105,7 +105,7 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 # Dataset
 # ------------------------------------------------------------------------------------------------
 
-class DatasetFilter(FilterSet):
+class DatasetFilter(BaseFilterSet):
     subject = django_filters.CharFilter('session__subject__nickname')
     lab = django_filters.CharFilter('session__lab__name')
     created_date = django_filters.CharFilter('created_datetime__date')
@@ -151,7 +151,7 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 # FileRecord
 # ------------------------------------------------------------------------------------------------
-class FileRecordFilter(FilterSet):
+class FileRecordFilter(BaseFilterSet):
     lab = django_filters.CharFilter('dataset__session__lab__name')
     data_repository = django_filters.CharFilter('data_repository__name')
     globus_is_personal = django_filters.BooleanFilter('data_repository__globus_is_personal')
@@ -244,6 +244,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
     def create(self, request):
         """
+        Endpoint to create a register a dataset record through the REST API.
+
         The session is retrieved by the ALF convention in the relative path, so this field has to
         match the format Subject/Date/Number as shown below.
 
@@ -279,6 +281,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               }
         ```
 
+        If the dataset already exists, it will use the file hash to deduce if the file has been
+        patched or not (ie. the filerecords will be created as not existing)
         """
         user = request.data.get('created_by', None)
         if user:
@@ -424,7 +428,7 @@ class DownloadDetail(generics.RetrieveUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class DownloadFilter(FilterSet):
+class DownloadFilter(BaseFilterSet):
     json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
     dataset = django_filters.CharFilter('dataset__name')
     user = django_filters.CharFilter('user__username')

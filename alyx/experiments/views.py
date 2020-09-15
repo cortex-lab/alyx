@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import FilterSet, CharFilter, UUIDFilter
+from django_filters.rest_framework import CharFilter, UUIDFilter
 
+from alyx.base import BaseFilterSet
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
 from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
                                      ChannelSerializer, BrainRegionSerializer)
@@ -10,7 +11,7 @@ Probe insertion objects REST filters and views
 """
 
 
-class ProbeInsertionFilter(FilterSet):
+class ProbeInsertionFilter(BaseFilterSet):
     subject = CharFilter('session__subject__nickname')
     date = CharFilter('session__start_time__date')
     experiment_number = CharFilter('session__number')
@@ -26,8 +27,9 @@ class ProbeInsertionFilter(FilterSet):
 class ProbeInsertionList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
+
     -   **name**: probe insertion name `/trajectories?name=probe00`
-    -   **subject: subject nickname: `/insertions?subject=Algernon`
+    -   **subject**: subject nickname: `/insertions?subject=Algernon`
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
@@ -51,8 +53,8 @@ Trajectory Estimates objects REST filters and views
 """
 
 
-class TrajectoryEstimateFilter(FilterSet):
-    provenance = CharFilter(method='provenance_filter')
+class TrajectoryEstimateFilter(BaseFilterSet):
+    provenance = CharFilter(method='enum_field_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
     project = CharFilter('probe_insertion__session__project__name')
     date = CharFilter('probe_insertion__session__start_time__date')
@@ -63,18 +65,6 @@ class TrajectoryEstimateFilter(FilterSet):
     class Meta:
         model = TrajectoryEstimate
         exclude = ['json']
-
-    def provenance_filter(self, queryset, name, value):
-        choices = TrajectoryEstimate._meta.get_field('provenance').choices
-        # create a dictionary string -> integer
-        value_map = {v.lower(): k for k, v in choices}
-        # get the integer value for the input string
-        try:
-            value = value_map[value.lower().strip()]
-        except KeyError:
-            raise ValueError("Invalid provenance, choices are: " +
-                             ', '.join([ch[1] for ch in choices]))
-        return queryset.filter(provenance=value)
 
 
 class TrajectoryEstimateList(generics.ListCreateAPIView):
@@ -103,7 +93,7 @@ class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class ChannelFilter(FilterSet):
+class ChannelFilter(BaseFilterSet):
     session = UUIDFilter('trajectory_estimate__probe_insertion__session')
     probe_insertion = UUIDFilter('trajectory_estimate__probe_insertion')
     subject = CharFilter('trajectory_estimate__probe_insertion__session__subject__nickname')
@@ -142,14 +132,24 @@ class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
-class BrainRegionFilter(FilterSet):
+class BrainRegionFilter(BaseFilterSet):
     acronym = CharFilter(lookup_expr='iexact')
     description = CharFilter(lookup_expr='icontains')
     name = CharFilter(lookup_expr='icontains')
+    ancestors = CharFilter(field_name='ancestors', method='filter_ancestors')
+    descendants = CharFilter(field_name='descendants', method='filter_descendants')
 
     class Meta:
         model = BrainRegion
         fields = ('id', 'acronym', 'description', 'name', 'parent')
+
+    def filter_descendants(self, queryset, _, pk):
+        r = BrainRegion.objects.get(pk=pk) if pk.isdigit() else BrainRegion.objects.get(acronym=pk)
+        return r.get_descendants(include_self=True).exclude(id=0)
+
+    def filter_ancestors(self, queryset, _, pk):
+        r = BrainRegion.objects.get(pk=pk) if pk.isdigit() else BrainRegion.objects.get(acronym=pk)
+        return r.get_ancestors(include_self=True).exclude(pk=0)
 
 
 class BrainRegionList(generics.ListAPIView):
@@ -158,9 +158,11 @@ class BrainRegionList(generics.ListAPIView):
 
     -   **id**: Allen primary key: `/brain-regions?id=687`
     -   **acronym**: iexact on acronym `/brain-regions?acronym=RSPv5`
-    -   **name*: icontains on name `/brain-regions?name=retrosplenial`
-    -   **description*: icontains on description `/brain-regions?description=RSPv5`
-    -   **parent*: get child nodes `/brain-regions?parent=315`
+    -   **name**: icontains on name `/brain-regions?name=retrosplenial`
+    -   **description**: icontains on description `/brain-regions?description=RSPv5`
+    -   **parent**: get child nodes `/brain-regions?parent=315`
+    -   **ancestors**: get all ancestors for a given ID
+    -   **descendants**: get all descendants for a given ID
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer

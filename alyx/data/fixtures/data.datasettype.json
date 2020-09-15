@@ -639,6 +639,17 @@
  },
  {
   "model": "data.datasettype",
+  "pk": "a66e41a2-09b8-4761-9fbb-5fe5168cc088",
+  "fields": {
+   "json": null,
+   "name": "wheelMoves.peakAmplitude",
+   "created_by": null,
+   "description": "amplitude of the wheel move",
+   "filename_pattern": "*wheelMoves.peakAmplitude.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
   "pk": "e0c77fba-1e8d-435a-b57e-b33c867ede83",
   "fields": {
    "json": null,
@@ -712,6 +723,17 @@
    "created_by": null,
    "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset",
    "filename_pattern": "*trials.goCue_times.*"
+  }
+ },
+ {
+  "model": "data.datasettype",
+  "pk": "921d2a34-9bcf-430f-a762-2f4051902e56",
+  "fields": {
+   "json": null,
+   "name": "trials.firstMovement_times",
+   "created_by": null,
+   "description": "Movement onset (absolute from session start) extracted from the rotary encoder ",
+   "filename_pattern": "*trials.firstMovement_times.*"
   }
  },
  {
@@ -1011,6 +1033,17 @@
    "filename_pattern": "templates.waveforms.npy"
   }
  },
+    {
+  "model": "data.datasettype",
+  "pk": "1257f1c3-de6b-4d57-877d-1df12fcba074",
+  "fields": {
+   "json": null,
+   "name": "templates.amps",
+   "created_by": null,
+   "description": "Average peak/trough amplitude of templates",
+   "filename_pattern": "templates.amps.npy"
+  }
+ },
    {
  "model": "data.datasettype",
  "pk": "9baab957-63d9-408d-ad65-1b163ffcd50b",
@@ -1141,6 +1174,28 @@
       "created_by": null,
       "description": "Timestamped sync square update commands",
       "filename_pattern": "_iblrig_syncSquareUpdate.raw.csv"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a45137ea-d4bf-444d-aa83-d29950195cde",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.frame_counter",
+      "created_by": null,
+      "description": "Frame counter value from camera for each frame",
+      "filename_pattern": "_iblrig_*Camera.frame_counter.bin"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "28554b3d-e4c7-47ac-b247-4ba31a994332",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.GPIO",
+      "created_by": null,
+      "description": "GPIO pin state for each camera frame",
+      "filename_pattern": "_iblrig_*Camera.GPIO.bin"
     }
   }
 ]

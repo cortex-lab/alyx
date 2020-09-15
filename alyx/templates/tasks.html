@@ -1,0 +1,101 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block content %}
+<table>
+    <thead>
+        <tr>
+        {% for graph in graphs %}
+            <th><a href="{% url 'tasks_status_graph' graph=graph %}">{{ graph }}</a></th>
+        {% endfor %}
+        <th>Queued</th>
+        <th>Last Job Activity</th>
+        <th>Last Session Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lab in labs %}
+            <tr>
+            {% for graph in graphs %}
+                <td><a href="{% url 'tasks_status_graph_lab' graph=graph lab=lab.name %}">{{ lab.name }}</a></td>
+            {% endfor %}
+            <td>{{ lab.count_waiting }}</td>
+            <td>{{ lab.last_job }}</td>
+            <td>{{ lab.last_session }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<table>
+<thead>
+    <tr>
+        <th>session</th>
+        <th>project</th>
+        <th>protocol</th>
+        <th>qc</th>
+        {% for task in task_names %}
+            <th>{{ task }}</th>
+        {% endfor %}
+    </tr>
+</thead>
+
+<tbody>
+{% for obj in object_list %}
+    <tr>
+        <td><a href="{% url 'admin:actions_session_change' obj.id %}">{{ obj | stringformat:"s"}}</a></td>
+        <td>{{ obj.project.name }}</td>
+        <td>{{ obj.task_protocol }}</td>
+        {% if obj.qc == 50%}  {# CRITICAL red #}
+            <td><a style="color:Tomato">{{ obj.get_qc_display }}</a></td>
+        {% elif obj.qc == 20%}  {# NOT_SET - #}
+            <td>-</td>
+        {% else %}
+            <td>{{ obj.get_qc_display }}</td>
+        {% endif %}
+        {% for task in obj.tasks.all|dictsort:"name" %}
+            {% if task.status == 20%}  {# waiting #}
+                <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 25%}  {# held purple #}
+                <td><a style="color:Purple" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 30%}  {# started black #}
+                <td><a style="color:Black" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 40 %}  {# error red #}
+                <td><a style="color:Tomato" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 45 %}  {# abandoned maroon #}
+                <td><a style="color:Maroon" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 50 %}  {# empty orange #}
+                <td><a style="color:Orange" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% elif task.status == 60 %}  {# complete green #}
+                <td><a style="color:MediumSeaGreen" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
+{% endblock %}

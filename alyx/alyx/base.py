@@ -7,6 +7,7 @@ import sys
 import pytz
 import uuid
 from collections import OrderedDict
+from rest_framework import serializers
 
 from django import forms
 from django.db import models
@@ -20,6 +21,9 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
+from django_filters import CharFilter
+from django_filters.rest_framework import FilterSet
+from rest_framework.views import exception_handler
 
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -132,6 +136,7 @@ def alyx_mail(to, subject, text=''):
 
 
 ADMIN_PAGES = [('Common', ['Subjects',
+                           'Cull_subjects',
                            'Sessions',
                            'Ephys sessions',
                            'Surgeries',
@@ -321,7 +326,9 @@ class BaseAdmin(VersionAdmin):
         # List of allowed users for the subject.
         allowed = getattr(resp_user, 'allowed_users', None)
         allowed = set(allowed.all() if allowed else [])
-        # Add the repsonsible user or user(s) to the list of allowed users.
+        if resp_user:
+            allowed.add(resp_user)
+        # Add the responsible user or user(s) to the list of allowed users.
         if hasattr(obj, 'responsible_user'):
             allowed.add(obj.responsible_user)
         if hasattr(obj, 'user'):
@@ -373,26 +380,148 @@ class BaseTests(TestCase):
         return self.client.patch(*args, **kwargs, content_type='application/json')
 
 
-def base_json_filter(fieldname, queryset, name, value):
-    # hacky custom json filter taking only scalar Bool / float / integer values
+class BaseFilterSet(FilterSet):
+    """
+    Base class for Alyx filters. Adds a custom django filter for extensible queries using
+    Django syntax. For example this is a query on a start_time field of a REST accessible model:
+    sessions?django=start_time__date__lt,2017-06-05'
+    if a ~ is prepended to the field name, performs an exclude instead of a filter
+    sessions?django=~start_time__date__lt,2017-06-05'
+    """
+    django = CharFilter(field_name='', method=('django_filter'))
+
+    def django_filter(self, queryset, _, value):
+        kwargs = _custom_filter_parser(value)
+        for k in kwargs:
+            if k.startswith('~'):
+                queryset = queryset.exclude(**{k[1:]: kwargs[k]}).distinct()
+            else:
+                queryset = queryset.filter(**{k: kwargs[k]}).distinct()
+        return queryset
+
+    def enum_field_filter(self, queryset, name, value):
+        """
+        Method to be used in the filterset class for enum fields
+        """
+        choices = queryset.model._meta.get_field(name).choices
+        # create a dictionary string -> integer
+        value_map = {v.lower(): k for k, v in choices}
+        # get the integer value for the input string
+        try:
+            value = value_map[value.lower().strip()]
+        except KeyError:
+            raise ValueError("Invalid" + name + ", choices are: " +
+                             ', '.join([ch[1] for ch in choices]))
+        return queryset.filter(**{name: value})
+
+    class Meta:
+        abstract = True
+
+
+def base_json_filter(fieldname, queryset, _, value):
+    """
+    function that filters the queryset from a cutom REST query. To be used directly as
+    a method for a FilterSet object. For example:
     # exact/equal lookup: "?extended_qc=qc_bool,True"
     # gte lookup: "?extended_qc=qc_pct__gte,0.5"
-    # chained lookups: "?extended_qc=qc_pct__gte,0.5,qc_bool,True"
-    fv = value.split(',')
+    # chained lookups: "?extended_qc=qc_pct__gte,0.5;qc_bool,True"
+    """
+    kwargs = _custom_filter_parser(value, arg_prefix=fieldname + '__')
+    queryset = queryset.filter(**kwargs)
+    return queryset
+
+
+def split_comma_outside_brackets(value):
+    """ For custom filters splits by comma if they are not whithin brackets. See
+    test_base.py for examples"""
+    fv = []
+    word = ''
+    close_char = ''
+    for c in value:
+        if c == ',' and close_char == '':
+            fv.append(word)
+            word = ''
+            continue
+        elif c == '[':
+            close_char = ']'
+        elif c == '(':
+            close_char = ')'
+        elif c == close_char:
+            close_char = ''
+        word += c
+    fv.append(word)
+    return fv
+
+
+def _custom_filter_parser(value, arg_prefix=''):
+    """
+    # parses the value string provided to custom filters json and Django via REST api
+    :param value: string returned by the rest request: examples:
+        "qc_pct__gte,0.5,qc_bool,True"
+         "myfield,[4, 9]]"
+    :param arg_prefix:
+    :return: dictionary that can be fed directly to a Django filter() query
+    """
+    # split by commas only if they are outside list brackets (I know... we all love regex)
+    fv = split_comma_outside_brackets(value)
     i = 0
+    out_dict = {}
     while i < len(fv):
         field, val = fv[i], fv[i + 1]
         i += 2
-        if val == 'True':
+        if val == 'None':
+            val = None
+        elif val.lower() == 'true':
             val = True
-        elif val == 'False':
+        elif val.lower() == 'false':
             val = False
         elif val.replace('.', '', 1).isdigit():
             val = float(val)
-        else:
-            raise ValueError("lookup " + value + " not understood")
-        queryset = queryset.filter(**{fieldname + '__' + field: val})
-    return queryset
+        elif val.startswith(('(', '[')) and val.endswith((')', ']')):
+            val = eval(val)
+        out_dict[arg_prefix + field] = val
+    return out_dict
+
+
+class BaseSerializerEnumField(serializers.Field):
+    """
+    Field serializer for an int model field with enumerated choices.
+    This provides the string representation of the model for the rest requests and filters
+    """
+
+    @property
+    def choices(self):
+        model = self.parent.Meta.model
+        return model._meta.get_field(self.field_name).choices
+
+    def to_representation(self, int_rep):
+        status = [ch for ch in self.choices if ch[0] == int_rep]
+        return status[0][1]
+
+    def to_internal_value(self, str_rep):
+        status = [ch for ch in self.choices if ch[1] == str_rep]
+        if len(status) == 0:
+            raise serializers.ValidationError("Invalid " + self.field_name + ", choices are: " +
+                                              ', '.join([ch[1] for ch in self.choices]))
+        return status[0][0]
+
+
+def rest_filters_exception_handler(exc, context):
+    """
+    Custom exception handler that provides context (field names etc...) for poorly formed
+    REST queries
+    """
+    response = exception_handler(exc, context)
+
+    from rest_framework.response import Response
+    # Now add the HTTP status code to the response.
+    if response is not None:
+        response.data['status_code'] = response.status_code
+    else:
+        data = {'status_code': 500, 'detail': str(exc)}
+        response = Response(data, status=500)
+
+    return response
 
 
 mysite = MyAdminSite()

@@ -19,6 +19,17 @@ class APISubjectsTests(BaseTests):
                                'name': 'probe_00',
                                'model': '3A'}
 
+    def test_brain_regions_rest_filter(self):
+        # test the custom filters get_descendants and get_ancestors
+        url = reverse('brainregion-list')
+        br = self.ar(self.client.get(url + "?ancestors=688"))
+        self.assertTrue(len(br) == 4)
+        br = self.ar(self.client.get(url + "?ancestors=CTX"))
+        self.assertTrue(len(br) == 4)
+        response = self.client.get(url + "?descendants=688")
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(response.data['count'] == 567)
+
     def test_brain_regions_rest(self):
         # test the list view
         url = reverse('brainregion-list')
@@ -29,16 +40,23 @@ class APISubjectsTests(BaseTests):
         brs = self.ar(self.client.get(url + "?parent=315"))
         self.assertTrue(set([br['parent'] for br in brs]) == set([315]) and len(brs) > 10)
         # test the details view
-        url = reverse('brainregion-detail', args=[687])
-        br2 = self.ar(self.client.get(url))
+        url_id = reverse('brainregion-detail', args=[687])
+        br2 = self.ar(self.client.get(url_id))
         self.assertTrue(br[0] == br2)
         # test patching the description
-        self.ar(self.patch(url, data={'description': 'I was there'}))
-        br3 = self.ar(self.client.get(url))
+        self.ar(self.patch(url_id, data={'description': 'I was there'}))
+        br3 = self.ar(self.client.get(url_id))
         self.assertTrue(br3['description'] == 'I was there')
+        # add a description to the parent
+        parent = self.ar(self.client.get(reverse('brainregion-detail', args=[br3['parent']])))
+        self.ar(self.patch(
+            reverse('brainregion-detail', args=[parent['parent']]),
+            data={'description': 'grandpa'}))
+        parent = self.ar(self.client.get(reverse('brainregion-detail', args=[br3['parent']])))
+        self.assertTrue(len(parent['related_descriptions']) == 2)
         # and makes sure one can't patch anything else
-        self.patch(url, data={'description': 'I was there', 'acronym': 'tutu'})
-        br3 = self.ar(self.client.get(url))
+        self.patch(url_id, data={'description': 'I was there', 'acronym': 'tutu'})
+        br3 = self.ar(self.client.get(url_id))
         self.assertTrue(br3['acronym'] != 'tutu')
 
     def test_create_list_delete_probe_insertion(self):

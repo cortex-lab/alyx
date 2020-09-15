@@ -36,6 +36,8 @@ urlpatterns = [
     path('', ibl.splash, name='home'),
 
     path('rest', mv.api_root),
+    
+    path('rest', include('jobs.urls')),
 
     path('rest', include('experiments.urls')),
     

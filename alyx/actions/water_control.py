@@ -338,11 +338,16 @@ class WaterControl(object):
     def percentage_weight_html(self, date=None):
         status = self.weight_status(date=date)
         pct_wei = self.percentage_weight(date=date)
+
+        # Determine the color.
         colour_code = '008000'
-        if status == 1:  # orange colour code for reminders
+        if not self.is_water_restricted(date=date):
+            colour_code = '333333'
+        elif status == 1:  # orange colour code for reminders
             colour_code = 'FFA500'
-        if status == 2:  # red colour code for errors
+        elif status == 2:  # red colour code for errors
             colour_code = 'FF0000'
+
         if pct_wei == 0:
             return '-'
         else:

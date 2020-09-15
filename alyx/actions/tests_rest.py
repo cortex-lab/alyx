@@ -117,7 +117,7 @@ class APIActionsTests(BaseTests):
         for i in range(2, 5):
             assert d['records'][i]['weight'] > 0
 
-    def test_extended_qc(self):
+    def test_extended_qc_filters(self):
         extended_qc = [
             {'tutu_bool': True, 'tata_pct': 0.3},
             {'tutu_bool': False, 'tata_pct': 0.4},
@@ -248,3 +248,14 @@ class APIActionsTests(BaseTests):
                      'list': ['tutu', 5]}
         p = self.ar(self.patch(url, data={'json': json_dict}))
         self.assertEqual(p['json'], json_dict)
+
+    def test_custom_django_filters(self):
+        d = self.ar(self.client.get(reverse('session-list') +
+                                    '?django=start_time__date__lt,2017-06-05'))
+        fcount = Session.objects.filter(start_time__date__lt='2017-06-05').count()
+        self.assertTrue(len(d) == fcount)
+        # performs the reverse query and makes sure we have all the sessions
+        resp = (self.client.get(reverse('session-list') +
+                                '?django=~start_time__date__lt,2017-06-05'))
+        self.ar(resp)
+        self.assertTrue(len(d) + resp.data['count'] == Session.objects.count())

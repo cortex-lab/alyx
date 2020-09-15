@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 import django_filters
-from django_filters.rest_framework import FilterSet
 
+from alyx.base import BaseFilterSet
 from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
@@ -10,7 +10,7 @@ from .serializers import (SubjectListSerializer,
                           )
 
 
-class SubjectFilter(FilterSet):
+class SubjectFilter(BaseFilterSet):
     alive = django_filters.BooleanFilter('cull', lookup_expr='isnull')
     responsible_user = django_filters.CharFilter('responsible_user__username')
     stock = django_filters.BooleanFilter('responsible_user', method='filter_stock')
