@@ -616,6 +616,7 @@ def globus_delete_local_datasets(datasets, dry=True):
         if fr_server is None:
             logger.warning(str(ds.session) + '/' + ds.collection +
                            '/' + ds.name + " doesnt exist on server - skipping")
+            continue
         ls_server = _ls_globus(fr_server, add_uuid=True)
         # if the file is not found on the remote server, do nothing
         if ls_server == [] or ls_server is None:
