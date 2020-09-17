@@ -133,7 +133,7 @@ admin.site.register(IncompleteSubject, SubjectAdmin)
 
 
 class ProbeInsertionAdmin(BaseAdmin):
-    list_display = ['name', 'trajectory_estimate_']
+    list_display = ['name', 'session', 'model', 'serial']
     list_editable = []
     #autocomplete_fields = ['cage']
     list_per_page = 5
@@ -161,12 +161,13 @@ class ProbeInsertionAdmin(BaseAdmin):
 
     def trajectory_estimate_(self, obj):
         if hasattr(obj, 'trajectory_estimate'):
-            return obj.trajectory_estimate.provenance
+            return obj.trajectory_estimate.get('provenance')
     trajectory_estimate_.short_description = 'trajectory estimate provinance'
 
     def get_queryset(self, request):
         missing = (ProbeInsertion.objects.filter(
-            Q(trajectory_estimate__isnull=False) | Q(trajectory_estimate__provenance=10)))
+            Q(session__data_dataset_session_related__dataset_type__name__in=['ephysData.raw.ap']) & 
+            (Q(trajectory_estimate__isnull=False) | Q(trajectory_estimate__provenance=10))))
         return missing
 
 admin.site.register(IncompleteProbeInsertion, ProbeInsertionAdmin)
