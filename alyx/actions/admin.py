@@ -481,7 +481,7 @@ class SessionAdmin(BaseActionAdmin):
                      'task_protocol')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'extended_qc']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project
