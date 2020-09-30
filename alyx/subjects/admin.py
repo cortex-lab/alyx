@@ -818,7 +818,10 @@ class BreedingPairAdmin(BaseAdmin):
     inlines = [LitterInline]
 
     def cage(self, obj):
-        return obj.father.cage if obj.father else None
+        for _ in ('father', 'mother1', 'mother2'):
+            parent = getattr(obj, _, None)
+            if parent and parent.cage:
+                return parent.cage
 
     def line_l(self, obj):
         url = get_admin_url(obj.line)
