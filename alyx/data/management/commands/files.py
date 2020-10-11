@@ -126,9 +126,12 @@ class Command(BaseCommand):
             if dsets.count() == 0:
                 self.stdout.write(self.style.WARNING("Empty dataset list. Exiting now."))
                 return
+            siz = 0
             self.stdout.write("Deletion list:")
             for dset in dsets:
                 self.stdout.write(dset.name + " " + str(dset.session))
+                siz += dset.file_records or 0
+            self.stdout.write("Freed space (Go) {:0.3f}".format(float(siz) / (1024 ** 3)))
             reply = input('Continue ? Y/N [Y]:')
             if reply not in ["", "Y", "y", "Yes", "YES"]:
                 self.stdout.write("exiting")
