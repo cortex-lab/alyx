@@ -1206,7 +1206,7 @@
       "name": "clusters.brainLocationIds_ccf_2017",
       "created_by": null,
       "description": "Brain location id of clusters following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
-      "filename_pattern": "clusters.brainLocationsIds*.npy"
+      "filename_pattern": "clusters.brainLocationIds*.npy"
     }
   },
   {
