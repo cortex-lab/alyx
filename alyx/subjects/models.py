@@ -139,7 +139,7 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
-    nickname_validator = validators.RegexValidator(r'^[-._~\w]+$',
+    nickname_validator = validators.RegexValidator(r'^[-._~\+\*\w]+$',
                                                    "Nicknames must only contain letters, "
                                                    "numbers, or any of -._~.")
 
