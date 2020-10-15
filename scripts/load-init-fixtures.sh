@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 cd ../alyx
-source ../alyxvenv/bin/activate
+#source ../alyxvenv/bin/activate
 
 ./manage.py loaddata ./actions/fixtures/actions.proceduretype.json
 ./manage.py loaddata ./actions/fixtures/actions.watertype.json

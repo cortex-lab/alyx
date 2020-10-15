@@ -1,6 +1,3 @@
-import os.path as op
-
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
@@ -163,21 +160,6 @@ class DatasetType(BaseModel):
 
     class Meta:
         ordering = ('name',)
-
-    def clean(self):
-        # Check that no existing file matches the newly-created dataset type.
-        from data.transfers import _filename_matches_pattern
-        # Only test file records that are not associated with the current dataset type.
-        for fr in FileRecord.objects.exclude(dataset__dataset_type__name=self.name):
-            filename = op.basename(fr.relative_path)
-            if _filename_matches_pattern(filename, self.filename_pattern):
-                # Override the dataset's type ?
-                # fr.dataset.dataset_type = self
-                # fr.dataset.save()
-                # Raise an error.
-                raise ValidationError(
-                    "The dataset type %s with filename pattern %s matches %s" % (
-                        self.name, self.filename_pattern, fr.dataset))
 
     def __str__(self):
         return "<DatasetType %s>" % self.name

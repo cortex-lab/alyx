@@ -1197,5 +1197,61 @@
       "description": "GPIO pin state for each camera frame",
       "filename_pattern": "_iblrig_*Camera.GPIO.bin"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "f075a694-20f3-422a-86a5-577e3d34fa27",
+    "fields": {
+      "json": null,
+      "name": "clusters.brainLocationIds_ccf_2017",
+      "created_by": null,
+      "description": "Brain location id of clusters following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
+      "filename_pattern": "clusters.brainLocationIds*.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "0916d181-94af-43a6-87b3-b499f940d424",
+    "fields": {
+      "json": null,
+      "name": "clusters.brainLocationAcronyms_ccf_2017",
+      "created_by": null,
+      "description": "Brain location acronym of clusters following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
+      "filename_pattern": "clusters.brainLocationAcronyms*.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "36605ac4-eb3c-4748-888f-02a14b6b86a1",
+    "fields": {
+      "json": null,
+      "name": "clusters.mlapdv",
+      "created_by": null,
+      "description": "3d location of the cluster relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um)",
+      "filename_pattern": "clusters.mlapdv.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "08bde7fe-82bd-4697-8cf7-f1ee28467f34",
+    "fields": {
+      "json": null,
+      "name": "channels.brainLocationIds_ccf_2017",
+      "created_by": null,
+      "description": "Brain location id of channels following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
+      "filename_pattern": "channels.brainLocationIds*.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "5d2986b7-4ca7-44a2-8a9d-0df8dbf4b7be",
+    "fields": {
+      "json": null,
+      "name": "channels.mlapdv",
+      "created_by": null,
+      "description": "3d location of the channels relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um)",
+      "filename_pattern": "channels.mlapdv.npy"
+    }
   }
 ]
+

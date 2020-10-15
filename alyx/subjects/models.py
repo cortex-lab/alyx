@@ -139,7 +139,7 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
-    nickname_validator = validators.RegexValidator(r'^[-._~\w]+$',
+    nickname_validator = validators.RegexValidator(r'^[-._~\+\*\w]+$',
                                                    "Nicknames must only contain letters, "
                                                    "numbers, or any of -._~.")
 
@@ -179,7 +179,7 @@ class Subject(BaseModel):
     cage = models.CharField(max_length=64, null=True, blank=True)
     request = models.ForeignKey('SubjectRequest', null=True, blank=True,
                                 on_delete=models.SET_NULL)
-    implant_weight = models.FloatField(null=True, blank=True, help_text="Implant weight in grams")
+    implant_weight = models.FloatField(null=True, blank=False, help_text="Implant weight in grams")
     ear_mark = models.CharField(max_length=32, blank=True)
     protocol_number = models.CharField(max_length=1, choices=PROTOCOL_NUMBERS,
                                        default=settings.DEFAULT_PROTOCOL)

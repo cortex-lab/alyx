@@ -129,10 +129,11 @@ class BaseActionForm(forms.ModelForm):
             # These ids first in the list of subjects.
             if ids:
                 preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-                self.fields['subject'].queryset = Subject.objects.all().order_by(preserved,
-                                                                                 'nickname')
+                self.fields['subject'].queryset = Subject.objects.filter(
+                    cull__isnull=True).order_by(preserved, 'nickname')
             else:
-                self.fields['subject'].queryset = Subject.objects.all().order_by('nickname')
+                self.fields['subject'].queryset = Subject.objects.filter(
+                    cull__isnull=True).order_by('nickname')
 
 
 class BaseActionAdmin(BaseAdmin):
@@ -256,7 +257,7 @@ class WaterRestrictionForm(forms.ModelForm):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
-            kwargs['queryset'] = Subject.objects.all().order_by('nickname')
+            kwargs['queryset'] = Subject.objects.filter(cull__isnull=True).order_by('nickname')
             subject_id = self._get_last_subject(request)
             if subject_id:
                 subject = Subject.objects.get(id=subject_id)
@@ -481,7 +482,7 @@ class SessionAdmin(BaseActionAdmin):
                      'task_protocol')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'extended_qc']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project
