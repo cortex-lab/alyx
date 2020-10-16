@@ -7,7 +7,7 @@ from alyx.base import BaseSerializerEnumField
 from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
-from data.models import Dataset, DatasetType, FileRecord
+from data.models import Dataset, DatasetType, FileRecord, DataRepository
 from misc.models import LabLocation, Lab
 from experiments.serializers import ProbeInsertionSessionSerializer
 from misc.serializers import NoteSerializer
@@ -91,10 +91,11 @@ class LabLocationSerializer(serializers.ModelSerializer):
 class FilterDatasetSerializer(serializers.ListSerializer):
 
     def to_representation(self, dsets):
-        frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
-        pkd = frs.filter(exists=True, data_repository__globus_is_personal=True
-                         ).values_list("dataset", flat=True)
-        dsets = dsets.filter(pk__in=pkd)
+        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
+            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
+            pkd = frs.filter(exists=True, data_repository__globus_is_personal=False
+                             ).values_list("dataset", flat=True)
+            dsets = dsets.filter(pk__in=pkd)
         return super(FilterDatasetSerializer, self).to_representation(dsets)
 
 
