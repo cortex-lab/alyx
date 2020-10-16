@@ -130,7 +130,7 @@ class Command(BaseCommand):
             self.stdout.write("Deletion list:")
             for dset in dsets:
                 self.stdout.write(dset.name + " " + str(dset.session))
-                siz += dset.file_records or 0
+                siz += dset.file_size or 0
             self.stdout.write("Freed space (Go) {:0.3f}".format(float(siz) / (1024 ** 3)))
             reply = input('Continue ? Y/N [Y]:')
             if reply not in ["", "Y", "y", "Yes", "YES"]:
