@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from alyx.base import BaseSerializerEnumField
-from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType,
+from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType, FileRecord, DataRepository
@@ -263,3 +263,16 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url',
                   'session', 'adlib')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
+
+
+class SurgerySerializer(serializers.ModelSerializer):
+
+    subject = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='nickname',
+        queryset=Subject.objects.all()
+    )
+
+    class Meta:
+        model = Surgery
+        fields = '__all__'

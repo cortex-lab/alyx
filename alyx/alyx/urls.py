@@ -126,6 +126,8 @@ urlpatterns = [
     path('subjects/<str:nickname>', sv.SubjectDetail.as_view(),
          name="subject-detail"),
 
+    path('surgeries', av.SurgeriesList.as_view(), name="surgeries-list"),
+
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
 

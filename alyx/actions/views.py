@@ -21,10 +21,11 @@ from subjects.models import Subject
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation)
+    Weighing, WaterType, LabLocation, Surgery)
 from .serializers import (LabLocationSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
+                          SurgerySerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
@@ -459,3 +460,12 @@ class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'
+
+
+class SurgeriesList(generics.ListAPIView):
+    """
+    Lists Surgeries
+    """
+    queryset = Surgery.objects.all()
+    serializer_class = SurgerySerializer
+    permission_classes = (permissions.IsAuthenticated,)
