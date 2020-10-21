@@ -11,31 +11,37 @@ Documentation: http://alyx.readthedocs.io
 ## Installation
 
 ### Setup Python/Django and the database
-Alyx has only been tested on Ubuntu (16.04 and 18.04). It could work on other systems but with no guarantees.
+Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04). Latest recommended. 
+It could work on other systems but with no guarantees.
+
+Go to the directory of your choice (for example: `/var/www/alyx-main`)
 
 ```
-$ sudo apt-get update
-$ sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
-$ sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
-$ sudo mkdir uploaded
-$ sudo chmod 775 -fR uploaded
-$ sudo chown www-data:www-data -fR uploaded
-$ git clone https://github.com/cortex-lab/alyx.git
-$ cd alyx
-$ virtualenv alyxvenv --python=python3
-$ source ./alyxvenv/bin/activate
-$ pip install -r requirements.txt
-$ python setup.py
-Enter a database name [labdb]:
-Enter a postgres username [labdbuser]:
-Enter a postgres password:
-...
-$ python alyx/manage.py check
-$ python alyx/manage.py runserver
+sudo apt-get update
+sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
+sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
+sudo mkdir uploaded
+sudo chmod 775 -fR uploaded
+sudo chown www-data:www-data -fR uploaded
+git clone https://github.com/cortex-lab/alyx.git
+cd alyx
+virtualenv alyxvenv --python=python3
+source ./alyxvenv/bin/activate
+pip install -r requirements.txt
+python setup.py
+
+    ...
+    $ Enter a database name [labdb]:
+    $ Enter a postgres username [labdbuser]:
+    $ Enter a postgres password:
+    ...
+
+python alyx/manage.py check
+python alyx/manage.py runserver
 
 # An then initialize fixtures (ie. load default objects in the database)
-cd scripts
-./load-init-fixtures.sh
+cd alyx
+../scripts/load-init-fixtures.sh
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
@@ -46,8 +52,7 @@ Note that the postgres username and password are distinct from Alyx (Django) use
 ### Web deployment
 Install apache, and wsgi module, then make sure it's enabled
 
-    sudo apt-get install apache2
-    sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+    sudo apt-get install apache2 libapache2-mod-wsgi-py3
     sudo a2enmod wsgi
 
 Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
