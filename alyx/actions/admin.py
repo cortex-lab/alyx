@@ -242,7 +242,7 @@ class WaterRestrictionForm(forms.ModelForm):
     implant_weight = forms.FloatField()
 
     def save(self, commit=True):
-        implant_weight = self.cleaned_data.get('implant_weight', None)
+        implant_weight = self.cleaned_data.get('implant_weight')
         subject = self.cleaned_data.get('subject', None)
         if implant_weight:
             subject.implant_weight = implant_weight
@@ -269,7 +269,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         subject = getattr(obj, 'subject', None)
         iw = getattr(subject, 'implant_weight', None)
         rw = subject.water_control.weight() if subject else None
-        form.base_fields['implant_weight'].initial = iw or 0
+        form.base_fields['implant_weight'].initial = iw
         if self.has_change_permission(request, obj):
             form.base_fields['reference_weight'].initial = rw or 0
         return form
