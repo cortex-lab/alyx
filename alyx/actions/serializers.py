@@ -9,7 +9,7 @@ from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weigh
 from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType, FileRecord, DataRepository
 from misc.models import LabLocation, Lab
-from experiments.serializers import ProbeInsertionSessionSerializer
+from experiments.serializers import ProbeInsertionSerializer
 from misc.serializers import NoteSerializer
 
 
@@ -145,7 +145,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
-    probe_insertion = ProbeInsertionSessionSerializer(read_only=True, many=True)
+    probe_insertion = ProbeInsertionSerializer(read_only=True, many=True)
     project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
                                            queryset=Project.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
