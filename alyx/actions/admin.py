@@ -130,7 +130,7 @@ class BaseActionForm(forms.ModelForm):
             if ids:
                 preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
                 self.fields['subject'].queryset = Subject.objects.filter(
-                    cull__isnull=True).order_by(preserved, 'nickname')
+                    pk__in=ids).order_by(preserved, 'nickname')
             else:
                 self.fields['subject'].queryset = Subject.objects.filter(
                     cull__isnull=True).order_by('nickname')
