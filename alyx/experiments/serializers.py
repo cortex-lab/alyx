@@ -70,6 +70,7 @@ class ProbeInsertionSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='probe_model',
         queryset=ProbeModel.objects.all(),
     )
+    session_info = SessionListSerializer(read_only=True, source='session')
 
     class Meta:
         model = ProbeInsertion
