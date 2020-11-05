@@ -1255,7 +1255,7 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "",
+    "pk": "efdf0ab6-1d56-4936-9f4f-242113d215e1",
     "fields": {
       "json": null,
       "name": "_ibl_passivePeriods.intervalsTable",
@@ -1266,7 +1266,7 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "",
+    "pk": "647ecd82-d357-434c-a921-6670f849606d",
     "fields": {
       "json": null,
       "name": "_ibl_passiveRFM.times",
@@ -1277,7 +1277,7 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "",
+    "pk": "4375f1a9-8465-4ef1-86b0-8d51b373a38b",
     "fields": {
       "json": null,
       "name": "_ibl_passiveGabor.table",
@@ -1288,7 +1288,7 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "",
+    "pk": "ea4cb820-2f13-48b2-9695-cbc927e2fa3a",
     "fields": {
       "json": null,
       "name": "_ibl_passiveStims.table",
