@@ -1260,8 +1260,8 @@
       "json": null,
       "name": "_ibl_passivePeriods.intervalsTable",
       "created_by": null,
-      "description": "Parquet table of times of different passiveCW periode: columns = ['passiveProtocol', 'spontaneousActivity', 'RFM', 'taskReplay'], lines = ['start', 'stop']",
-      "filename_pattern": "_ibl_passivePeriods.intervalsTable.parquet*.npy"
+      "description": "Table of times for different passiveCW periode: columns = ['passiveProtocol', 'spontaneousActivity', 'RFM', 'taskReplay'], lines = ['start', 'stop']",
+      "filename_pattern": "_ibl_passivePeriods.intervalsTable*.csv"
     }
   },
   {
@@ -1283,7 +1283,7 @@
       "name": "_ibl_passiveGabor.table",
       "created_by": null,
       "description": "Gabor patch presentations table: columns = [start, stop, position, contrast, phase], lines = nPresentations (180)",
-      "filename_pattern": "_ibl_passiveGabor.table*.parquet"
+      "filename_pattern": "_ibl_passiveGabor.table*.csv"
     }
   },
   {
@@ -1294,7 +1294,7 @@
       "name": "_ibl_passiveStims.table",
       "created_by": null,
       "description": "All other stimuli times: columns = [valveOn, valveOff, toneOn, toneOff, noiseOn, noiseOff], lines = nStims = 40",
-      "filename_pattern": "_ibl_passiveStims.table*.parquet"
+      "filename_pattern": "_ibl_passiveStims.table*.csv"
     }
   }
 ]
