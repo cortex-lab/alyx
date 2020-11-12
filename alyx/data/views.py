@@ -117,10 +117,23 @@ class DatasetFilter(BaseFilterSet):
                                                      lookup_expr='gte')
     created_date_lte = django_filters.DateTimeFilter('created_datetime__date',
                                                      lookup_expr='lte')
+    exists = django_filters.BooleanFilter(method='filter_exists')
 
     class Meta:
         model = Dataset
         exclude = ['json']
+
+    def filter_exists(self, dsets, name, value):
+        """
+        Filters datasets for which at least one file record Globus not personal exists.
+        Only if the database has any globus non-personal repositories (ie. servers)
+        """
+        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
+            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
+            pkd = frs.filter(exists=value, data_repository__globus_is_personal=False
+                             ).values_list("dataset", flat=True)
+            dsets = dsets.filter(pk__in=pkd)
+        return dsets
 
 
 class DatasetList(generics.ListCreateAPIView):
@@ -135,6 +148,8 @@ class DatasetList(generics.ListCreateAPIView):
     -   **experiment_number**: session number  `/datasets?experiment_number=1`
     -   **created_date_gte**: greater/equal creation date  `/datasets?created_date_gte=2020-02-16`
     -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
+    -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
+    server repo (boolean)  `/datasets?exists=True`
     """
     queryset = Dataset.objects.all()
     queryset = DatasetSerializer.setup_eager_loading(queryset)
