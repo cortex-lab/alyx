@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     'django_admin_listfilter_dropdown',
     'django_filters',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sessions',

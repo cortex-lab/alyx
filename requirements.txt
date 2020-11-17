@@ -10,6 +10,7 @@ django-reversion
 django-test-without-migrations
 django-admin-rangefilter
 django-mptt
+docutils
 flake8
 colorlog
 django-admin-list-filter-dropdown
