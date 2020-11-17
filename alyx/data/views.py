@@ -139,7 +139,6 @@ class DatasetFilter(BaseFilterSet):
 class DatasetList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
-
     -   **subject**: subject nickname: `/datasets?subject=Algernon`
     -   **lab**: lab name `/datsets?lab=wittenlab`
     -   **created_date**: dataset registration date `/datasets?created_date=2020-02-16`
@@ -150,6 +149,8 @@ class DatasetList(generics.ListCreateAPIView):
     -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
     -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
     server repo (boolean)  `/datasets?exists=True`
+
+    [===> dataset model reference](/admin/doc/models/data.dataset)
     """
     queryset = Dataset.objects.all()
     queryset = DatasetSerializer.setup_eager_loading(queryset)
@@ -185,6 +186,8 @@ class FileRecordList(generics.ListCreateAPIView):
     -   **lab**: lab name `/files?lab=wittenlab`
     -   **data_repository**: data repository name `/files?data_repository=mainen_lab_SR`
     -   **globus_is_personal**: bool type of Globus endpoint `/files?globus_is_personal=True`
+
+    [===> file record model reference](/admin/doc/models/data.filerecord)
     """
     queryset = FileRecord.objects.all()
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
@@ -463,6 +466,7 @@ class DownloadList(generics.ListAPIView):
     -   **json**: icontains on json: `/downloads?json=processing`
     -   **count**: count number: `/downloads?count=5`
     -   **dataset_type**: icontains on dataset type`/downloads?dataset_type=camera`
+
     """
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer

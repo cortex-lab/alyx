@@ -329,6 +329,8 @@ class SessionAPIList(generics.ListCreateAPIView):
         filters sessions that have matlab in the project name
         `/sessions?django=~project__name__icontains,matlab
         does the exclusive set: filters sessions that do not have matlab in the project name
+
+    [===> session model reference](/admin/doc/models/actions.session)
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)

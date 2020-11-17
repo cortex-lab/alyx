@@ -37,6 +37,7 @@ urlpatterns = [
     path('', include('experiments.urls')),
     path('', include('jobs.urls')),
 
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
 
     path('admin-subjects/', include('subjects.urls')),

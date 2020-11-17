@@ -63,6 +63,8 @@ class TaskList(generics.ListCreateAPIView):
     -   **session**: uuid `/jobs?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **lab**: lab name from session table `/jobs?lab=churchlandlab`
     -   **pipeline**: pipeline field from task `/jobs?pipeline=ephys`
+
+    [===> task model reference](/admin/doc/models/jobs.task)
     """
     queryset = Task.objects.all().order_by('level', '-priority', '-session__start_time')
     serializer_class = TaskSerializer
