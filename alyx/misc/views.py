@@ -25,6 +25,9 @@ def api_root(request, format=None):
     and weighings. This should be reasonably self-documented; standard REST options
     are supported by sending an `OPTIONS /api/subjects/` for example. This is in alpha
     and endpoints are subject to change at short notice!
+
+    **[ ===> Models documentation](/admin/doc/models)**
+
     """
     return Response({
         'users-url': reverse('user-list', request=request, format=format),

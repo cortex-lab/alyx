@@ -35,6 +35,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **model**: probe model name `/insertions?model=3A`
 
+    [===> probe insertion model reference](/admin/doc/models/experiments.probeinsertion)
     """
     queryset = ProbeInsertion.objects.all()
     serializer_class = ProbeInsertionSerializer
@@ -80,6 +81,8 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/trajectories?experiment_number=1`
     -   **session**: `/trajectories?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **probe**: probe_insertion name `/trajectories?probe=probe01`
+
+    [===> trajectory model reference](/admin/doc/models/experiments.trajectoryestimate)
     """
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
@@ -112,6 +115,8 @@ class ChannelList(generics.ListCreateAPIView):
     -   **session**: UUID `/channels?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **lab**: lab name `/channels?lab=wittenlab`
     -   **probe_insertion**: UUID  `/channels?probe_insertion=aad23144-0e52-4eac-80c5-c4ee2decb198`
+
+    [===> channel model reference](/admin/doc/models/experiments.channel)
     """
 
     def get_serializer(self, *args, **kwargs):
@@ -163,6 +168,8 @@ class BrainRegionList(generics.ListAPIView):
     -   **parent**: get child nodes `/brain-regions?parent=315`
     -   **ancestors**: get all ancestors for a given ID
     -   **descendants**: get all descendants for a given ID
+
+    [===> brain region model reference](/admin/doc/models/experiments.brainregion)
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
