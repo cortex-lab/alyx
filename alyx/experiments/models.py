@@ -131,7 +131,8 @@ class TrajectoryEstimate(models.Model):
                             validators=[MinValueValidator(-180), MaxValueValidator(360)])
     roll = models.FloatField(null=True,
                              validators=[MinValueValidator(0), MaxValueValidator(360)])
-    provenance = models.IntegerField(default=10, choices=INSERTION_DATA_SOURCES)
+    _phelp = ' / '.join([str(s[0]) + ': ' + s[1] for s in INSERTION_DATA_SOURCES])
+    provenance = models.IntegerField(default=10, choices=INSERTION_DATA_SOURCES, help_text=_phelp)
     coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
                                           on_delete=models.SET_NULL,
                                           help_text=('3D coordinate system used.'))

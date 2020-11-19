@@ -251,7 +251,8 @@ class Session(BaseAction):
         (10, 'PASS',),
     ]
 
-    qc = models.IntegerField(default=0, choices=QC_CHOICES)
+    qc = models.IntegerField(default=0, choices=QC_CHOICES,
+                             help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
     extended_qc = JSONField(null=True, blank=True,
                             help_text="Structured data about session QC,"
                                       "formatted in a user-defined way")
