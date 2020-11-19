@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_urls static admin_list %}
+{% load i18n admin_urls static admin_list%}
+{% load jobs_template_tags %} {# custom template tags in app #}
 
 {% block content %}
 <table>
@@ -11,6 +12,7 @@
         <th>Queued</th>
         <th>Last Job Activity</th>
         <th>Last Session Date</th>
+        <th>Space left (Tb)</th>
         </tr>
     </thead>
     <tbody>
@@ -22,6 +24,7 @@
             <td>{{ lab.count_waiting }}</td>
             <td>{{ lab.last_job }}</td>
             <td>{{ lab.last_session }}</td>
+            <td>{{ space_left|index:forloop.counter0 }}</td>
             </tr>
         {% endfor %}
     </tbody>
@@ -54,8 +57,12 @@
         {% else %}
             <td>{{ obj.get_qc_display }}</td>
         {% endif %}
-        {% for task in obj.tasks.all|dictsort:"name" %}
-            {% if task.status == 20%}  {# waiting #}
+
+        {% for task in obj.tasks.all|filter_tasks:task_names %}
+{#      {% for task in obj.tasks.all|dictsort:"name" %}#}
+            {% if task is None %}  {# waiting #}
+                <td>-</td>
+            {% elif task.status == 20%}  {# waiting #}
                 <td><a href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 25%}  {# held purple #}
                 <td><a style="color:Purple" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>

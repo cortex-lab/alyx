@@ -3,6 +3,8 @@ from rest_framework import generics, permissions
 from django_filters.rest_framework import CharFilter
 from django.views.generic.list import ListView
 
+import numpy as np
+
 from alyx.base import BaseFilterSet
 
 from misc.models import Lab
@@ -25,11 +27,14 @@ class TasksStatusView(ListView):
         lj = Max('session__tasks__datetime')
         context['labs'] = Lab.objects.annotate(
             count_waiting=cw, last_session=ls, last_job=lj).order_by('name')
-
+        context['health'] = []
+        used = np.array(context['labs'].values_list('json__raid_used', flat=True), dtype=np.float)
+        tot = np.array(context['labs'].values_list('json__raid_total', flat=True), dtype=np.float)
+        context['space_left'] = np.round((tot - used) / 1000, decimals=1)
         if graph:
-            context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
-                'name', flat=True).distinct())
-            context['task_names'].sort()
+            context['task_names'] = list(
+                Task.objects.filter(graph=graph).order_by("-priority").order_by(
+                    "level").values_list('name', flat=True).distinct())
         else:
             context['task_names'] = []
         context['title'] = 'Tasks Recap'
