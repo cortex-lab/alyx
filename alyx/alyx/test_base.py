@@ -22,3 +22,7 @@ class BaseCustomFilterTest(TestCase):
 
         for fix in fixtures:
             self.assertEqual(_custom_filter_parser(fix[0]), fix[1])
+
+        def value_error_on_duplicate_field():
+            _custom_filter_parser('toto,abc,toto,1')
+        self.assertRaises(ValueError, value_error_on_duplicate_field)
