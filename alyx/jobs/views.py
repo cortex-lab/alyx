@@ -32,9 +32,12 @@ class TasksStatusView(ListView):
         tot = np.array(context['labs'].values_list('json__raid_total', flat=True), dtype=np.float)
         context['space_left'] = np.round((tot - used) / 1000, decimals=1)
         if graph:
+            # here the empty order_by is to fix a low level SQL bug with distinct when called
+            # on value lists and unique together constraints. bof.
+            # https://code.djangoproject.com/ticket/16058
             context['task_names'] = list(
                 Task.objects.filter(graph=graph).order_by("-priority").order_by(
-                    "level").values_list('name', flat=True).distinct())
+                    "level").order_by().values_list('name', flat=True).distinct())
         else:
             context['task_names'] = []
         context['title'] = 'Tasks Recap'
