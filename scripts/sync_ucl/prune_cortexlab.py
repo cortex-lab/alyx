@@ -5,6 +5,7 @@ from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery, NotificationRule, Notification
 from misc.models import Lab, LabMember, LabLocation
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
+from experiments.models import ProbeInsertion
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
@@ -81,6 +82,14 @@ users_to_leave.delete()
 NotificationRule.objects.using('cortexlab').all().delete()
 Notification.objects.using('cortexlab').filter(sent_at__isnull=True).delete()
 
+# probe insertion objects may have been updated upstreams. In this case the insertion update MO
+# was to delete the probe insertion before repopulating downstream tables. This creates
+# an integrity error on import. To avoid this the duplicate insertions have to be removed
+# before import
+session_pname = set(ProbeInsertion.objects.using('cortexlab').values_list('session', 'name')
+                    ).intersection(set(ProbeInsertion.objects.values_list('session', 'name')))
+for sp in session_pname:
+    ProbeInsertion.objects.get(session=sp[0], name=sp[1]).delete()
 
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
