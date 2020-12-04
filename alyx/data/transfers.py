@@ -671,8 +671,25 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
     if local_only:
         file_records = file_records.filter(data_repository__globus_is_personal=True)
         file_records = file_records.exclude(data_repository__name__icontains='flatiron')
-    globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
-                                                flat=True).distinct()
+    globus_delete_file_records(file_records, dry=dry)
+
+    if not local_only:
+        for ds in datasets:
+            ds.delete()
+
+
+def globus_delete_file_records(file_records, dry=True):
+    """
+    For each filecord in the queryset, attempt a Globus delete for all physical file-records
+    associated. Admin territory.
+    :param file_records:
+    :param dry: default True
+    :return:
+    """
+    # first get the list of Globus endpoints concerned
+    globus_endpoints = file_records.values_list(
+        'data_repository__globus_endpoint_id', flat=True).distinct()
+    related_datasets = file_records.values_list('datasets', flat=True).distinct()
 
     # create a globus delete_client for each globus endpoint
     gtc = globus_transfer_client()
@@ -693,12 +710,13 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
             logger.warning(endpoint_info.data['display_name'] + 'is offline. SKIPPING.')
             continue
         frs = FileRecord.objects.filter(
-            dataset__in=datasets, data_repository__globus_endpoint_id=ge).order_by('relative_path')
+            dataset__in=related_datasets,
+            data_repository__globus_endpoint_id=ge).order_by('relative_path')
         for fr in frs:
             add_uuid = not fr.data_repository.globus_is_personal
             file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
             if dry:
-                logger.info(file2del)
+                logger.warning(file2del)
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
@@ -711,7 +729,7 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
                         else:
                             raise err
                     if Path(file2del).name in ls_current_path:
-                        logger.info('DELETE: ' + file2del)
+                        logger.warning('DELETE: ' + file2del)
                         delete_clients[i].add_item(file2del)
     # launch the deletion jobs and remove records from the database
     if dry:
@@ -721,8 +739,5 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
         if dc['DATA'] == []:
             continue
         gtc.submit_delete(dc)
-
+    # ideally here we would make some synchronous process and some error handling
     file_records.delete()
-    if not local_only:
-        for ds in datasets:
-            ds.delete()
