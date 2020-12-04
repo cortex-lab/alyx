@@ -689,7 +689,7 @@ def globus_delete_file_records(file_records, dry=True):
     # first get the list of Globus endpoints concerned
     globus_endpoints = file_records.values_list(
         'data_repository__globus_endpoint_id', flat=True).distinct()
-    related_datasets = file_records.values_list('datasets', flat=True).distinct()
+    related_datasets = file_records.values_list('dataset', flat=True).distinct()
 
     # create a globus delete_client for each globus endpoint
     gtc = globus_transfer_client()
