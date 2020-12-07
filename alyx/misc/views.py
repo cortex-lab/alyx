@@ -102,12 +102,6 @@ class NoteList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = BaseFilterSet
 
-    # def post(self, request, *args, **kwargs):
-    #     serializer = NoteSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data)
-
 
 class NoteDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Note.objects.all()
