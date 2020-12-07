@@ -2,6 +2,7 @@ django==3.0.7
 coreapi
 psycopg2-binary
 drfdocs
+django-cleanup
 django-polymorphic
 djangorestframework
 django-autocomplete-light

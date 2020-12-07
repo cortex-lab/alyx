@@ -11,8 +11,8 @@ from rest_framework.reverse import reverse
 from rest_framework import generics, permissions
 
 from alyx.base import BaseFilterSet
-from .serializers import UserSerializer, LabSerializer
-from .models import Lab
+from .serializers import UserSerializer, LabSerializer, NoteSerializer
+from .models import Lab, Note
 from alyx.settings import MEDIA_ROOT
 
 
@@ -94,6 +94,25 @@ class LabDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LabSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
+
+
+class NoteList(generics.ListCreateAPIView):
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_class = BaseFilterSet
+
+    # def post(self, request, *args, **kwargs):
+    #     serializer = NoteSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+
+
+class NoteDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
 
 class UploadedView(views.APIView):

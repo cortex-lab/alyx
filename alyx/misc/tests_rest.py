@@ -40,3 +40,7 @@ class APIActionsTests(BaseTests):
     def test_user_rest(self):
         response = self.client.get(reverse('user-list') + '/test')
         self.ar(response, 200)
+
+    def test_note_rest(self):
+        user = self.ar(self.client.get(reverse('user-list')), 200)
+        user[0]['username']

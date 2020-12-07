@@ -1,5 +1,5 @@
 from django.conf.urls import include
-from django.urls import path, re_path
+from django.urls import path
 from django.contrib import admin
 from rest_framework.authtoken import views as authv
 from rest_framework.documentation import include_docs_urls
@@ -7,7 +7,6 @@ from rest_framework.documentation import include_docs_urls
 from subjects import views as sv
 from actions import views as av
 from data import views as dv
-from misc import views as mv
 
 
 register_file = dv.RegisterFileViewSet.as_view({
@@ -21,19 +20,11 @@ new_download = dv.DownloadViewSet.as_view({
     'post': 'create'
 })
 
-user_list = mv.UserViewSet.as_view({
-    'get': 'list'
-})
-
-user_detail = mv.UserViewSet.as_view({
-    'get': 'retrieve'
-})
 
 admin.site.site_header = 'Alyx'
 
 urlpatterns = [
-    path('', mv.api_root),
-
+    path('', include('misc.urls')),
     path('', include('experiments.urls')),
     path('', include('jobs.urls')),
 
@@ -92,12 +83,6 @@ urlpatterns = [
     path('files/<uuid:pk>', dv.FileRecordDetail.as_view(),
          name="filerecord-detail"),
 
-    path('labs', mv.LabList.as_view(),
-         name="lab-list"),
-
-    path('labs/<str:name>', mv.LabDetail.as_view(),
-         name="lab-detail"),
-
     path('locations', av.LabLocationList.as_view(),
          name="location-list"),
 
@@ -131,14 +116,6 @@ urlpatterns = [
 
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
-
-    re_path('^uploaded/(?P<img_url>.*)', mv.UploadedView.as_view(), name='uploaded'),
-
-    path('users', user_list,
-         name='user-list'),
-
-    path('users/<str:username>', user_detail,
-         name='user-detail'),
 
     path('water-administrations', av.WaterAdministrationAPIListCreate.as_view(),
          name="water-administration-create"),

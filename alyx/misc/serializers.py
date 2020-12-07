@@ -1,16 +1,23 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from subjects.models import Subject
-from misc.models import Lab, Note
+from misc.models import Lab, Note, LabMember
 from data.models import DataRepository
 
 
 class NoteSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        read_only=False, slug_field='username', queryset=LabMember.objects.all())
+    content_type = serializers.SlugRelatedField(
+        read_only=False, slug_field='model', queryset=ContentType.objects.all(),
+    )
+    image = serializers.ImageField(use_url=True, required=False)
 
     class Meta:
         model = Note
-        fields = ('user', 'date_time', 'content_type', 'object_id', 'text', 'image')
+        fields = ('id', 'user', 'date_time', 'content_type', 'object_id', 'text', 'image')
 
 
 class UserSerializer(serializers.ModelSerializer):
