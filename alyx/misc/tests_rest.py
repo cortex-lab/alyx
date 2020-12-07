@@ -43,4 +43,12 @@ class APIActionsTests(BaseTests):
 
     def test_note_rest(self):
         user = self.ar(self.client.get(reverse('user-list')), 200)
-        user[0]['username']
+        from subjects.models import Subject
+        sub = Subject.objects.first()
+        my_note = {'user': user[0]['username'],
+                   'content_type': 'subject',
+                   'object_id': sub.pk,
+                   'text': "gnagnagna"}
+        my_note = self.ar(self.client.post(reverse('note-list'), data=my_note), 201)
+        self.assertTrue(my_note['user'] == user[0]['username'])
+        self.assertTrue(self.client.delete(reverse('note-detail', args=[my_note['id']])), 204)
