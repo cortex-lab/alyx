@@ -5,13 +5,17 @@ from django.contrib.contenttypes.models import ContentType
 from subjects.models import Subject
 from misc.models import Lab, Note, LabMember
 from data.models import DataRepository
+from alyx.base import BaseSerializerContentTypeField
 
 
 class NoteSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
         read_only=False, slug_field='username', queryset=LabMember.objects.all())
-    content_type = serializers.SlugRelatedField(
-        read_only=False, slug_field='model', queryset=ContentType.objects.all(),
+
+    content_type = BaseSerializerContentTypeField(
+        read_only=False, slug_field='model',
+        queryset=ContentType.objects.filter(
+            app_label__in=['actions', 'data', 'experiments', 'jobs', 'subjects']),
     )
     image = serializers.ImageField(use_url=True, required=False)
 
