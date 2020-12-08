@@ -116,7 +116,6 @@ class NoteInline(GenericTabularInline):
     extra = 1
     fields = ('user', 'date_time', 'text', 'image')
     image_fields = ('image',)
-    classes = ['collapse']
     ordering = ('-date_time',)
 
     formfield_overrides = {

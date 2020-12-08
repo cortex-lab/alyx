@@ -146,6 +146,7 @@ INSTALLED_APPS = (
     'experiments',
     'jobs',
     'subjects',
+    'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
 MIDDLEWARE = (
