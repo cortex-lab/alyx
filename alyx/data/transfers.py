@@ -376,11 +376,11 @@ def bulk_sync(dry_run=False, lab=None):
         dataset__in=dsets).order_by('-dataset__created_datetime')
     # checks all local files by default, and only transfer pending files for the server
     all_files = all_files.filter(
-        Q(data_repository__globus_is_personal=True) | Q(json__transfer_pending=True))
+        Q(data_repository__globus_is_personal=True) | Q(json__has_key="transfer_pending"))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
-        for l in list(fvals):
-            print(l)
+        for fval in list(fvals):
+            print(fval)
         return fvals
 
     gc = globus_transfer_client()
@@ -463,8 +463,11 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :param minsize: (int) minimum file size for transfer (see above)
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
-    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
-    dfs = dfs.exclude(json__transfer_pending=True)
+    dfs = FileRecord.objects.filter(
+        (Q(exists=False, data_repository__globus_is_personal=False) |
+         Q(json__has_key="mismatch_hash")) &
+        ~Q(json__has_key="transfer_pending")
+    )
     if minsize:
         dfs = dfs.filter(dataset__file_size__gt=minsize)
     if maxsize:
