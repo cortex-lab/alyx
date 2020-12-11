@@ -367,7 +367,9 @@ def bulk_sync(dry_run=False, lab=None):
     :param local_only: (False) if set to True, only local files will be checked. This is useful
     for patching files
     """
-    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = FileRecord.objects.filter(
+        Q(exists=False, data_repository__globus_is_personal=False) |
+        Q(json__has_key="mismatch_hash"))
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
@@ -376,7 +378,8 @@ def bulk_sync(dry_run=False, lab=None):
         dataset__in=dsets).order_by('-dataset__created_datetime')
     # checks all local files by default, and only transfer pending files for the server
     all_files = all_files.filter(
-        Q(data_repository__globus_is_personal=True) | Q(json__has_key="transfer_pending"))
+        Q(data_repository__globus_is_personal=True) |
+        Q(json__has_key="transfer_pending"))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for fval in list(fvals):
@@ -510,6 +513,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
                     None)
         if isec is None:
+            print("no _isec")
             continue
         # if the transfer doesn't exist, create it:
         if tm[ipri][isec] == 0:
@@ -535,7 +539,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
-    dfs.exclude(json__local_missing=True).update(json={'transfer_pending': True})
+    dfs.exclude(json__has_key="local_missing").update(json={'transfer_pending': True})
     return gc, tm
 
 
