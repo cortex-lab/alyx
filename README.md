@@ -23,7 +23,7 @@ $ git clone https://github.com/cortex-lab/alyx.git
 $ cd alyx
 $ virtualenv alyxvenv --python=python3
 $ source ./alyxvenv/bin/activate
-$ pip install -r requirements.txt
+$ pip install -r alyx/requirements.txt
 $ python setup.py
 Enter a database name [labdb]:
 Enter a postgres username [labdbuser]:
