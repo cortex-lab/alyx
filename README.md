@@ -34,8 +34,7 @@ $ python alyx/manage.py check
 $ python alyx/manage.py runserver
 
 # An then initialize fixtures (ie. load default objects in the database)
-cd scripts
-./load-init-fixtures.sh
+alyx/load-init-fixtures.sh
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
