@@ -109,7 +109,7 @@ class NoteAdmin(ImageWidgetAdmin):
     image_fields = ['image']
     fields = ['user', 'date_time', 'text', 'image', 'content_type', 'object_id']
     ordering = ('-date_time',)
-
+    search_fields = ['text',]
 
 class NoteInline(GenericTabularInline):
     model = Note

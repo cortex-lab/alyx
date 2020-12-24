@@ -381,7 +381,7 @@
    "name": "clusters.metrics",
    "created_by": null,
    "description": "Quality control metrics at the cluster level. Fields may vary.",
-   "filename_pattern": "clusters.metrics*.csv"
+   "filename_pattern": "clusters.metrics*.pqt"
   }
  },
   {
