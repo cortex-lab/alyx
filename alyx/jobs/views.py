@@ -28,9 +28,9 @@ class TasksStatusView(ListView):
         context['labs'] = Lab.objects.annotate(
             count_waiting=cw, last_session=ls, last_job=lj).order_by('name')
         context['health'] = []
-        used = np.array(context['labs'].values_list('json__raid_used', flat=True), dtype=np.float)
-        tot = np.array(context['labs'].values_list('json__raid_total', flat=True), dtype=np.float)
-        context['space_left'] = np.round((tot - used) / 1000, decimals=1)
+        space = np.array(context['labs'].values_list(
+            'json__raid_available', flat=True), dtype=np.float)
+        context['space_left'] = np.round(space / 1000, decimals=1)
         if graph:
             # here the empty order_by is to fix a low level SQL bug with distinct when called
             # on value lists and unique together constraints. bof.
