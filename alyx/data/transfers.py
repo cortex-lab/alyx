@@ -680,9 +680,11 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
         file_records = file_records.exclude(data_repository__name__icontains='flatiron')
     globus_delete_file_records(file_records, dry=dry)
 
-    if not local_only:
-        for ds in datasets:
-            ds.delete()
+    if dry or local_only:
+        return
+
+    for ds in datasets:
+        ds.delete()
 
 
 def globus_delete_file_records(file_records, dry=True):
@@ -736,7 +738,8 @@ def globus_delete_file_records(file_records, dry=True):
                         else:
                             raise err
                     if Path(file2del).name in ls_current_path:
-                        logger.warning('DELETE: ' + file2del)
+                        logger.warning(
+                            'DELETE: ' + file2del + ' on ' + str(fr.data_repository.name))
                         delete_clients[i].add_item(file2del)
     # launch the deletion jobs and remove records from the database
     if dry:
