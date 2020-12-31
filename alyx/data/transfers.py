@@ -706,10 +706,9 @@ def globus_delete_file_records(file_records, dry=True):
         delete_clients = []
         for ge in globus_endpoints:
             delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
-
     # appends each file for deletion
-    current_path = None
     for i, ge in enumerate(globus_endpoints):
+        current_path = None
         # get endpoint status before continuing
         endpoint_info = gtc.get_endpoint(ge)
         # if the endpoint is not globus_connect (ie. not personal) this returns None
@@ -730,16 +729,16 @@ def globus_delete_file_records(file_records, dry=True):
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
-                try:
-                    ls_current_path = [f['name'] for f in
-                                       gtc.operation_ls(ge, path=current_path)]
-                except globus_sdk.exc.TransferAPIError as err:
-                    if 'ClientError.NotFound' in str(err):
-                        logger.warning(
-                            'DIR NOT FOUND: ' + file2del + ' on ' + str(fr.data_repository.name))
-                        ls_current_path = []
-                    else:
-                        raise err
+                    try:
+                        ls_current_path = [f['name'] for f in
+                                           gtc.operation_ls(ge, path=current_path)]
+                    except globus_sdk.exc.TransferAPIError as err:
+                        if 'ClientError.NotFound' in str(err):
+                            logger.warning('DIR NOT FOUND: ' + file2del + ' on ' +
+                                           str(fr.data_repository.name))
+                            ls_current_path = []
+                        else:
+                            raise err
                 if Path(file2del).name in ls_current_path:
                     logger.warning(
                         'DELETE: ' + file2del + ' on ' + str(fr.data_repository.name))
