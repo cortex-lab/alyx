@@ -753,6 +753,9 @@ def globus_delete_file_records(file_records, dry=True):
     # launch the deletion jobs and remove records from the database
     for dc in delete_clients:
         # submitting a deletion without data will create an error
+        if dc['DATA'] == []:
+            logger.warning('SUBMIT DELETE SKIPPED AS NO DATA: ' + str(dc))
+            continue
         logger.warning('SUBMIT DELETE: ' + str(dc))
         gtc.submit_delete(dc)
     # ideally here we would make some synchronous process and some error handling
