@@ -721,6 +721,7 @@ def globus_delete_file_records(file_records, dry=True):
         frs = FileRecord.objects.filter(
             dataset__in=related_datasets,
             data_repository__globus_endpoint_id=ge).order_by('relative_path')
+        logger.info(str(frs.count()) + ' files to delete on ' + endpoint_info.data['display_name'])
         for fr in frs:
             add_uuid = not fr.data_repository.globus_is_personal
             file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
@@ -729,25 +730,30 @@ def globus_delete_file_records(file_records, dry=True):
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
-                    try:
-                        ls_current_path = [f['name'] for f in
-                                           gtc.operation_ls(ge, path=current_path)]
-                    except globus_sdk.exc.TransferAPIError as err:
-                        if 'ClientError.NotFound' in str(err):
-                            ls_current_path = []
-                        else:
-                            raise err
-                    if Path(file2del).name in ls_current_path:
+                try:
+                    ls_current_path = [f['name'] for f in
+                                       gtc.operation_ls(ge, path=current_path)]
+                except globus_sdk.exc.TransferAPIError as err:
+                    if 'ClientError.NotFound' in str(err):
                         logger.warning(
-                            'DELETE: ' + file2del + ' on ' + str(fr.data_repository.name))
-                        delete_clients[i].add_item(file2del)
+                            'DIR NOT FOUND: ' + file2del + ' on ' + str(fr.data_repository.name))
+                        ls_current_path = []
+                    else:
+                        raise err
+                if Path(file2del).name in ls_current_path:
+                    logger.warning(
+                        'DELETE: ' + file2del + ' on ' + str(fr.data_repository.name))
+                    delete_clients[i].add_item(file2del)
+                else:
+                    logger.warning(
+                        'FILE NOT FOUND: ' + file2del + ' on ' + str(fr.data_repository.name))
     # launch the deletion jobs and remove records from the database
     if dry:
         return
+    # launch the deletion jobs and remove records from the database
     for dc in delete_clients:
         # submitting a deletion without data will create an error
-        if dc['DATA'] == []:
-            continue
+        logger.warning('SUBMIT DELETE: ' + str(dc))
         gtc.submit_delete(dc)
     # ideally here we would make some synchronous process and some error handling
     file_records.delete()
