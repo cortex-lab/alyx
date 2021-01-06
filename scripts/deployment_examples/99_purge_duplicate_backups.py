@@ -9,7 +9,7 @@ from dateutil.parser import isoparse
 
 # HOST = "flatiron"  # for local testing
 HOST = "alyx@ibl.flatironinstitute.org"
-CMD = "ssh -q -p 61022 -t {host} 'ls -s1 /mnt/ibl/json/*.sql.gz'".format(host=HOST)
+CMD = "ssh -q -p 62022 -t {host} 'ls -s1 /mnt/ibl/json/*.sql.gz'".format(host=HOST)
 KEEP_DAYS = 7
 
 parser = argparse.ArgumentParser(description='Removes local backup files if they exist on the flatiron remote server')
