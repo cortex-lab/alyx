@@ -16,7 +16,8 @@ def current_datetime(request):
 
     te = TrajectoryEstimate.objects.filter(
         provenance=10, x=-2243, y=-2000,
-        probe_insertion__session__subject__projects__name='ibl_neuropixel_brainwide_01')
+        probe_insertion__session__subject__projects__name='ibl_neuropixel_brainwide_01',
+        probe_insertion__session__qc__lt=50)
 
     labs = Lab.objects.all()
     labs = labs.annotate(
