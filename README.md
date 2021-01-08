@@ -10,8 +10,7 @@ Documentation: http://alyx.readthedocs.io
 
 ## Installation
 
-### Setup Python/Django and the database
-Alyx has only been tested on Ubuntu (16.04 and 18.04). It could work on other systems but with no guarantees.
+### [Ubuntu] Setup Python/Django and the database
 
 ```
 $ sudo apt-get update
@@ -42,7 +41,8 @@ Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You ca
 The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the `alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual environment with the dependencies (including django), and it creates all the required SQL tables.
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
-### Web deployment
+### [Ubuntu] Web deployment
+
 Install apache, and wsgi module, then make sure it's enabled
 
     sudo apt-get install apache2
@@ -53,7 +53,7 @@ Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sit
 -   make sure the paths within the file match the alyx installation path.
 -   update Servername parameter `ServerName  alyx.internationalbrainlab.org`
 -   it should match the [alyx/alyx/settings_lab.py](alyx/alyx/settings_lab.py) `ALLOWED_HOSTS` parameter
-    
+
 
 Activate the website
 
@@ -70,6 +70,32 @@ Restart the server, 2 commands are provided here for reference. Reload is recomm
 Location of error logs if the server fails to start
 
     /var/log/apache2/
+
+### [macOS] Local installation of alyx
+
+* Install Python 3 (using the [official installer](https://www.python.org/downloads/mac-osx/), or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html)). Make sure pip is installed.
+* Install [Postgress.app](https://postgresapp.com/downloads.html)
+* Open a Terminal.
+* Type `git`, press Enter, and follow the instructions to install git.
+* Type `sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;`
+* Type `sudo mkdir -p /etc/paths.d && echo /Applications/Postgres.app/Contents/Versions/latest/bin | sudo tee /etc/paths.d/postgresapp`
+* Open Postgres.app, and press initialize/start to start the server.
+* Close the terminal, open a new one, and go to a directory where you'll download alyx into.
+* Type `git clone git@github.com:cortex-lab/alyx.git`
+* `cd alyx`
+* Type `pip install -r requirements.txt`
+* Type `pip uninstall python-magic`
+* Type `pip install python-magic-bin`
+* Type `python setup.py`, and follow the instructions.
+* If everything went well you should see no error message and the message `Alyx setup successful <3`.
+* Type `python alyx/manage.py check`. You should see the message `System check identified no issues (0 silenced).`
+* To reinitialize your local database, type `alyx/manage.py reset_db --noinput`
+* To clone an existing alyx database from a backup, get an `alyx_full.sql.gz` in your alyx folder, and type `gunzip -f alyx_full.sql.gz`
+* Then type `psql -h localhost -U labdbuser -d labdb -f alyx_full.sql` — this command might take a few minutes with large backups
+* Type `python manage.py migrate`
+* To run the development server, type `python alyx/manage.py runserver`
+* Go to `http://localhost:8000/admin/`
+
 
 ## Contribution
 
@@ -92,7 +118,7 @@ $ /manage.py test -n
 2. Full test on alyx-dev with migrations
 3. On Monday morning, merge dev to master
 4. Update alyx-dev to master
-5. Make SQL migrations  
+5. Make SQL migrations
     -   `./manage.py makemigrations`
     -   should output `No changes detected` as migrations are provided by the repository
 6. Migrate
