@@ -95,7 +95,7 @@ Location of error logs if the server fails to start
 * Close the terminal, open a new one, and go to a directory where you'll download alyx into.
 * Type `git clone git@github.com:cortex-lab/alyx.git`
 * `cd alyx`
-* Type `pip install -r requirements.txt`
+* Type `pip install -r alyx/requirements.txt`
 * Type `pip uninstall python-magic`
 * Type `pip install python-magic-bin`
 * Type `python setup.py`, and follow the instructions.
