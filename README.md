@@ -10,6 +10,18 @@ Documentation: http://alyx.readthedocs.io
 
 ## Installation
 
+### [Docker] Simplified/Unified installation across Windows/MacOS/Linux
+
+Install [Docker](https://www.docker.com)
+
+In your preferred terminal app
+
+    git clone https://github.com/cortex-lab/alyx.git
+    cd alyx/alyx
+    docker-compose up -d
+
+Direct your browser to [http://localhost:8000/admin/](http://localhost:8000/admin/), and log in with `admin:admin`.
+
 ### [Ubuntu] Setup Python/Django and the database
 
 ```
@@ -95,7 +107,6 @@ Location of error logs if the server fails to start
 * Type `python manage.py migrate`
 * To run the development server, type `python alyx/manage.py runserver`
 * Go to `http://localhost:8000/admin/`
-
 
 ## Contribution
 

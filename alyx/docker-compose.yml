@@ -7,13 +7,17 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db:/var/lib/postgresql/data
   web:
     build: .
     command: ./launch.sh
     volumes:
       - .:/code
     ports:
-      - "80:80"
+      - "8000:80"
     depends_on:
       - db
 
+volumes:
+  db:
