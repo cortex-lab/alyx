@@ -15,14 +15,14 @@ def current_datetime(request):
     pins = ProbeInsertion.objects.filter(
         session__subject__projects__name='ibl_neuropixel_brainwide_01',
         session__qc__lt=50)
-    cam_note = []
+    cam_notes = []
     for pi in pins:
         note = pi.session.notes.filter(text__icontains='Camera images').first()
         if note is None:
             url = 'https://upload.wikimedia.org/wikipedia/commons/4/45/Carré_rouge.svg'
         else:
             url = note.image.url
-        cam_note.append(url)
+        cam_notes.append(url)
 
     # # Notes
     # notes_camera = Note.objects.filter(text__icontains='Camera images')
@@ -44,8 +44,7 @@ def current_datetime(request):
         "labs": labs,
         "traj": traj,
         "pins": pins,
-        "notes_camera": cam_note,
-        "zip_var": zip(pins, cam_note)
+        "zip_var": zip(pins, cam_notes)
     }
 
     return HttpResponse(template.render(context, request))
