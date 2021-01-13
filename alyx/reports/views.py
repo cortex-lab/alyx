@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template import loader
 
 from experiments.models import TrajectoryEstimate, ProbeInsertion
+from misc.models import Note
 from django.db.models import Count, Q
 from misc.models import Lab
 
@@ -11,9 +12,20 @@ def current_datetime(request):
     template = loader.get_template('reports/simple.html')
 
     # BRAINWIDE INSERTIONS
-    ins = ProbeInsertion.objects.filter(
+    pins = ProbeInsertion.objects.filter(
         session__subject__projects__name='ibl_neuropixel_brainwide_01',
         session__qc__lt=50)
+    cam_note = []
+    for pi in pins:
+        note = pi.session.notes.filter(text__icontains='Camera images').first()
+        if note is None:
+            url = 'https://upload.wikimedia.org/wikipedia/commons/4/45/Carré_rouge.svg'
+        else:
+            url = note.image.url
+        cam_note.append(url)
+
+    # # Notes
+    # notes_camera = Note.objects.filter(text__icontains='Camera images')
 
     # REP SITE
     traj = TrajectoryEstimate.objects.filter(
@@ -31,7 +43,12 @@ def current_datetime(request):
         "total": traj.count(),
         "labs": labs,
         "traj": traj,
-        "ins": ins
+        "pins": pins,
+        "notes_camera": cam_note,
+        "zip_var": zip(pins, cam_note)
     }
 
     return HttpResponse(template.render(context, request))
+
+# Q1 : how to link item to insertion when they relate to session
+# Q2 : how to put new fields in (e.g. result of test for datasets)

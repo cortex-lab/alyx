@@ -18,12 +18,13 @@
     </tr>
 </thead>
 <tbody>
-{% for obj in ins %}
+{% for pin, cam_note in zip_var %}
     <tr> {# app_model_change #}
-        <td><a href="{% url 'admin:actions_session_change' obj.session_id %}">{{ obj.session_id | stringformat:"s"}}</a></td>
+        <td><a href="{% url 'admin:actions_session_change' pin.session_id %}">{{ pin.session_id | stringformat:"s"}}</a></td>
+        <td><a href="{% url 'admin:experiments_probeinsertion_change' pin.id %}">{{ pin.id | stringformat:"s"}}</a></td>
+{#        <td><img src="/uploaded/2020/12/15/KS014__2019-12-03__16693458-0801-4d35-a3f1-9115c7e5acfd.16693458-0801-4d35-a3_qHhjf1l.png" width="120"/></td>#}
 {#        <td>{{obj.id}}</td>  {# probe_insertion_id #}
-        <td><a href="{% url 'admin:experiments_probeinsertion_change' obj.id %}">{{ obj.id | stringformat:"s"}}</a></td>
-        <td><img src="/uploaded/2020/12/15/KS014__2019-12-03__16693458-0801-4d35-a3f1-9115c7e5acfd.16693458-0801-4d35-a3_qHhjf1l.png" width="120"/></td>
+        <td><img src={{ cam_note }} width="120"/></td>
     </tr>
 
 {% endfor %}
