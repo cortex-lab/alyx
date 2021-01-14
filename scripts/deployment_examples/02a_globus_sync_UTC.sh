@@ -14,9 +14,13 @@ cd alyx
 ./manage.py files bulksync --lab=hoferlab
 ./manage.py files bulktransfer --lab=hoferlab
 
+./manage.py files bulksync --lab=hausserlab
+./manage.py files bulktransfer --lab=hausserlab
+
 sleep 900
 
 ./manage.py files bulksync --lab=cortexlab
 ./manage.py files bulksync --lab=mainenlab
 ./manage.py files bulksync --lab=mrsicflogellab
 ./manage.py files bulksync --lab=hoferlab
+./manage.py files bulksync --lab=hausserlab

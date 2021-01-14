@@ -4,10 +4,12 @@ from getpass import getpass
 import os
 import os.path as op
 import shutil
+import platform
 from django.utils.crypto import get_random_string
 import sys
 from warnings import warn
 
+MACOS = platform.system() == 'Darwin'
 
 
 
@@ -23,7 +25,10 @@ def _system(cmd):
 
 def _psql(sql, **kwargs):
     sql = sql.format(**kwargs)
-    cmd = 'sudo su - postgres -c "psql -tc \\"{}\\""'.format(sql)
+    if MACOS:
+        cmd = 'psql -tc "{}"'.format(sql)
+    else:
+        cmd = 'sudo su - postgres -c "psql -tc \\"{}\\""'.format(sql)
     return _system(cmd)
 
 
@@ -40,7 +45,7 @@ def _replace_in_file(source_file, target_file, replacements=None, target_mode='w
         os.chmod(target_file, chmod)
 
 # Check if we are inside a virtual environment
-if not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:
+if not MACOS and not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:
     warn('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ', RuntimeWarning)
     continue_anyway = input()
     if continue_anyway not in  ("y", 'yes'):
