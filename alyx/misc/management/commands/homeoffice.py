@@ -108,8 +108,10 @@ class Command(BaseCommand):
         display("Killed and used in TOTAL, protocols 2, 3, 4", used(kt))
 
         display("Transgenic killed and genotyped %s - %s", tkg, start_date, end_date)
-        display("Transgenic killed and genotyped (negative) %s - %s", [s for s in tkg if s.is_negative()], start_date, end_date)
-        display("Transgenic killed and genotyped (not used) %s - %s", not_used(tkg), start_date, end_date)
+        display("Transgenic killed and genotyped (negative) %s - %s",
+                [s for s in tkg if s.is_negative()], start_date, end_date)
+        display("Transgenic killed and genotyped (not used) %s - %s",
+                not_used(tkg), start_date, end_date)
 
         display("Genotyped and used %s - %s", used(g), start_date, end_date)
 
