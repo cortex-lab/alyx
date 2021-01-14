@@ -1296,6 +1296,16 @@
       "description": "All other stimuli times: columns = [valveOn, valveOff, toneOn, toneOff, noiseOn, noiseOff], lines = nStims = 40",
       "filename_pattern": "_ibl_passiveStims.table*.csv"
     }
+  },
+   {
+    "model": "data.datasettype",
+    "pk": "2be5a2b1-4f52-4570-a2ac-3412dde50cc3",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.laser_stimulation",
+      "created_by": null,
+      "description": "Whether or not the laser was actuating during the trial (outcome): 0:no laser, 1: laser, np.nan: no info",
+      "filename_pattern": "_ibl_trials.laser_stimulation.npy"
+    }
   }
 ]
-
