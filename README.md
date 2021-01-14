@@ -10,6 +10,18 @@ Documentation: http://alyx.readthedocs.io
 
 ## Installation
 
+### [Docker] Simplified/Unified installation across Windows/MacOS/Linux
+
+Install [Docker](https://www.docker.com)
+
+In your preferred terminal app
+
+    git clone https://github.com/cortex-lab/alyx.git
+    cd alyx/alyx
+    docker-compose up -d
+
+Direct your browser to [http://localhost:8000/admin/](http://localhost:8000/admin/), and log in with `admin:admin`.
+
 ### [Ubuntu] Setup Python/Django and the database
 
 ```
@@ -23,7 +35,7 @@ $ git clone https://github.com/cortex-lab/alyx.git
 $ cd alyx
 $ virtualenv alyxvenv --python=python3
 $ source ./alyxvenv/bin/activate
-$ pip install -r requirements.txt
+$ pip install -r alyx/requirements.txt
 $ python setup.py
 Enter a database name [labdb]:
 Enter a postgres username [labdbuser]:
@@ -33,8 +45,7 @@ $ python alyx/manage.py check
 $ python alyx/manage.py runserver
 
 # An then initialize fixtures (ie. load default objects in the database)
-cd scripts
-./load-init-fixtures.sh
+alyx/load-init-fixtures.sh
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
@@ -84,7 +95,7 @@ Location of error logs if the server fails to start
 * Close the terminal, open a new one, and go to a directory where you'll download alyx into.
 * Type `git clone git@github.com:cortex-lab/alyx.git`
 * `cd alyx`
-* Type `pip install -r requirements.txt`
+* Type `pip install -r alyx/requirements.txt`
 * Type `pip uninstall python-magic`
 * Type `pip install python-magic-bin`
 * Type `python setup.py`, and follow the instructions.
@@ -96,7 +107,6 @@ Location of error logs if the server fails to start
 * Type `python manage.py migrate`
 * To run the development server, type `python alyx/manage.py runserver`
 * Go to `http://localhost:8000/admin/`
-
 
 ## Contribution
 

@@ -38,6 +38,19 @@ if 'TRAVIS' in os.environ:
         }
     }
 
+if os.path.exists('/.dockerenv'):
+    print('loading docker DB defaults')
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'postgres',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': 'db',
+            'PORT': '',
+        }
+    }
+    print(f'{DATABASES}')
 
 # Custom User model with UUID primary key
 AUTH_USER_MODEL = 'misc.LabMember'
