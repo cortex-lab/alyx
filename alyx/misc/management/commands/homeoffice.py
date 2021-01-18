@@ -32,6 +32,10 @@ def killed_total():
     return Q(death_date__gte='2000-01-01', protocol_number__in=['2', '3', '4'])
 
 
+def killed_4(start_date, end_date):
+    return Q(death_date__gte=start_date, death_date__lte=end_date, protocol_number='4')
+
+
 def genotyped(start_date, end_date):
     return Q(genotype_date__gte=start_date, genotype_date__lte=end_date)
 
@@ -97,15 +101,18 @@ class Command(BaseCommand):
         end_date = options.get('end_date')
 
         k = Subject.objects.filter(killed(start_date, end_date)).order_by('cull__date')
-        kt = Subject.objects.filter(killed_total()).order_by('cull__date')
+        # kt = Subject.objects.filter(killed_total()).order_by('cull__date')
         g = Subject.objects.filter(genotyped('2000-01-01', '2100-01-01')).order_by('genotype_date')
         tkg = transgenic(k & g)
+        s = Subject.objects.all().order_by('cull__date')
 
         print("Between %s and %s" % (start_date, end_date))
 
         display("All animals", Subject.objects.all().order_by('nickname'))
         display("Transgenic killed %s - %s", transgenic(k), start_date, end_date)
-        display("Killed and used in TOTAL, protocols 2, 3, 4", used(kt))
+        display("Killed and used in TOTAL, protocols 2, 3, 4", used(k))
+        display("Killed with protocol 4, %s - %s",
+                s.filter(killed_4(start_date, end_date)), start_date, end_date)
 
         display("Transgenic killed and genotyped %s - %s", tkg, start_date, end_date)
         display("Transgenic killed and genotyped (negative) %s - %s",
@@ -113,6 +120,7 @@ class Command(BaseCommand):
         display("Transgenic killed and genotyped (not used) %s - %s",
                 not_used(tkg), start_date, end_date)
 
+        g = Subject.objects.filter(genotyped(start_date, end_date)).order_by('genotype_date')
         display("Genotyped and used %s - %s", used(g), start_date, end_date)
 
         tkng = transgenic(k).exclude(genotyped('2000-01-01', '2100-01-01'))
