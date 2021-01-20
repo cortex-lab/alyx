@@ -1307,5 +1307,16 @@
       "description": "Whether or not the laser was actuating during the trial (outcome): 0:no laser, 1: laser, np.nan: no info",
       "filename_pattern": "_ibl_trials.laser_stimulation.npy"
     }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "272873c9-7c77-4bdf-8401-f31eb3fc5369",
+    "fields": {
+      "json": null,
+      "name": "_kilosort_raw.output",
+      "created_by": null,
+      "description": "Spike sorting output from kilosort",
+      "filename_pattern": "_kilosort_raw.output*.tar"
+    }
   }
 ]
