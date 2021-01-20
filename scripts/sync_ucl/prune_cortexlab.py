@@ -85,11 +85,11 @@ Notification.objects.using('cortexlab').filter(sent_at__isnull=True).delete()
 # probe insertion objects may have been updated upstreams. In this case the insertion update MO
 # was to delete the probe insertion before repopulating downstream tables. This creates
 # an integrity error on import. To avoid this the duplicate insertions have to be removed
-# before import
+# from cortex lab before import. IBL always priority
 session_pname = set(ProbeInsertion.objects.using('cortexlab').values_list('session', 'name')
                     ).intersection(set(ProbeInsertion.objects.values_list('session', 'name')))
 for sp in session_pname:
-    ProbeInsertion.objects.get(session=sp[0], name=sp[1]).delete()
+    ProbeInsertion.objects.using('cortexlab').get(session=sp[0], name=sp[1]).delete()
 
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
