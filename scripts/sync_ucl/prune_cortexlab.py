@@ -58,6 +58,9 @@ repos = list(DataRepository.objects.all().values_list('pk', flat=True))
 FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete()
 DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
+# sync the datasets
+
+
 # import projects from cortexlab. remove those that don't correspond to any session
 pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
 pk_projs += list(Project.objects.values_list('pk', flat=True))
@@ -90,6 +93,23 @@ session_pname = set(ProbeInsertion.objects.using('cortexlab').values_list('sessi
                     ).intersection(set(ProbeInsertion.objects.values_list('session', 'name')))
 for sp in session_pname:
     ProbeInsertion.objects.using('cortexlab').get(session=sp[0], name=sp[1]).delete()
+
+"""Sync the datasets. If a dataset already exist on both database but has a different hash
+then it means its' been patched. In this case we set the filerecord from the server
+to exist=False and reset the json field"""
+
+dfields = ('pk', 'hash')
+cds = Dataset.objects.using('cortexlab').values_list(*dfields)
+cds_pk = [ds[0] for ds in cds]
+
+ids = Dataset.objects.filter(pk__in=cds_pk).values_list(*dfields)
+ids_pk = [ds[0] for ds in ids]
+ids_md5 = [ds[1] for ds in ids]
+cds = Dataset.objects.using('cortexlab').filter(pk__in=ids_pk).values_list(*dfields)
+
+dpk = [s[0] for s in set(cds).difference(set(ids))]
+FileRecord.objects.filter(data_repository__globus_is_personal=False, dataset__in=dpk).update(
+    exists=False, json=None)
 
 # those are the init fixtures that could have different names depending on the location
 # (ibl_cortexlab versus cortexlab for example)
