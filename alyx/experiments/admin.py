@@ -25,7 +25,7 @@ class ProbeInsertionInline(BaseAdmin):
     readonly_fields = ['_session']
     list_display = ['name', 'datetime', 'subject', 'session']
     list_display_links = ('name', 'subject', 'session',)
-    search_fields = ('session__subject__nickname', 'session_pk')
+    search_fields = ('session__subject__nickname', 'session__pk')
     inlines = (TrajectoryEstimateInline, NoteInline)
 
     def _session(self, obj):
