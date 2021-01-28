@@ -479,7 +479,7 @@ class SessionAdmin(BaseActionAdmin):
                    ('subject__projects', RelatedDropdownFilter)
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
-                     'task_protocol')
+                     'task_protocol', 'pk')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc']
