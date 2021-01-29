@@ -22,10 +22,10 @@ class TrajectoryEstimateInline(TabularInline):
 class ProbeInsertionInline(BaseAdmin):
     ordering = ('-session__start_time',)
     exclude = ['session']
-    readonly_fields = ['_session']
+    readonly_fields = ['_session', 'modified_datetime']
     list_display = ['name', 'datetime', 'subject', 'session']
     list_display_links = ('name', 'subject', 'session',)
-    search_fields = ('session__subject__nickname', 'session__pk')
+    search_fields = ('session__subject__nickname', 'session__pk', 'id')
     inlines = (TrajectoryEstimateInline, NoteInline)
 
     def _session(self, obj):

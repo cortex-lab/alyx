@@ -82,8 +82,8 @@ class FileRecordInline(BaseInlineAdmin):
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
-              'session_ro', 'collection']
-    readonly_fields = ['name_', 'session_ro', '_online']
+              'session_ro', 'collection', 'modified_datetime']
+    readonly_fields = ['name_', 'session_ro', '_online', 'modified_datetime']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]

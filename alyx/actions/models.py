@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.postgres.fields import JSONField
 
-from alyx.base import BaseModel, modify_fields, alyx_mail
+from alyx.base import BaseModel, modify_fields, alyx_mail, BaseManager
 from misc.models import Lab, LabLocation, LabMember, Note
 
 
@@ -230,6 +230,8 @@ class Session(BaseAction):
 
     If the fields (e.g. users) of a subsession are null, they should inherited from the parent.
     """
+    objects = BaseManager()
+
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
@@ -256,6 +258,9 @@ class Session(BaseAction):
     extended_qc = JSONField(null=True, blank=True,
                             help_text="Structured data about session QC,"
                                       "formatted in a user-defined way")
+
+    modified_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                             verbose_name='last updated')
 
     def save(self, *args, **kwargs):
         # Default project is the subject's project.

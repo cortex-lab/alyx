@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields
+from alyx.base import BaseModel, modify_fields, BaseManager
 
 
 def _related_string(field):
@@ -210,7 +210,7 @@ def default_data_format():
     return DataFormat.objects.get_or_create(name='unknown')[0].pk
 
 
-class DatasetManager(models.Manager):
+class DatasetManager(BaseManager):
     def get_queryset(self):
         qs = super(DatasetManager, self).get_queryset()
         qs = qs.select_related('dataset_type', 'data_format')
@@ -254,6 +254,9 @@ class Dataset(BaseExperimentalData):
     data_format = models.ForeignKey(
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
+
+    modified_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                             verbose_name='last updated')
 
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
@@ -310,6 +313,7 @@ class FileRecord(BaseModel):
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )
 
+
     class Meta:
         unique_together = (('data_repository', 'relative_path'),)
 
@@ -319,6 +323,10 @@ class FileRecord(BaseModel):
             return None
         from data.transfers import _add_uuid_to_filename
         return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
+
+    def save(self, *args, **kwargs):
+        super(FileRecord, self).save(*args, **kwargs)
+        self.dataset.save()
 
     def __str__(self):
         return "<FileRecord '%s' by %s>" % (self.relative_path, self.dataset.created_by)
