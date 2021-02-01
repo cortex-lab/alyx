@@ -357,9 +357,11 @@ class BaseQuerySet(models.QuerySet):
         if "modified_datetime" in kwargs:
             super(BaseQuerySet, self).update(**kwargs)
         else:
-            super(BaseQuerySet, self).update(**kwargs, updated=timezone.now())
+            super(BaseQuerySet, self).update(**kwargs, modified_datetime=timezone.now())
+
 
 BaseManager = models.Manager.from_queryset(BaseQuerySet)
+
 
 class BaseTests(TestCase):
     @classmethod

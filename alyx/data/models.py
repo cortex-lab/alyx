@@ -313,7 +313,6 @@ class FileRecord(BaseModel):
     exists = models.BooleanField(
         default=False, help_text="Whether the file exists in the data repository", )
 
-
     class Meta:
         unique_together = (('data_repository', 'relative_path'),)
 

@@ -171,7 +171,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
-                  'subject', 'date', 'number')
+                  'subject', 'date', 'number', 'modified_datetime')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},
