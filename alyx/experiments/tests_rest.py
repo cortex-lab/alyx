@@ -68,6 +68,7 @@ class APISubjectsTests(BaseTests):
         # test the list endpoint
         response = self.client.get(url)
         d = self.ar(response, 200)
+
         # test the session filter
         urlf = url + '?&session=' + str(self.session.id) + '&name=probe_00'
         response = self.client.get(urlf)
@@ -81,6 +82,63 @@ class APISubjectsTests(BaseTests):
         # test the delete endpoint
         response = self.client.delete(url + '/' + d[0]['id'])
         self.ar(response, 204)
+
+    def test_probe_insertion_dataset_interaction(self):
+        # First create two insertions and attach to session
+        probe_names = ['probe00', 'probe01']
+        insertions = []
+        for name in probe_names:
+            insertion = {'session': str(self.session.id),
+                         'name': name,
+                         'model': '3A'}
+            url = reverse('probeinsertion-list')
+            insertions.append(self.ar(self.post(url, insertion), 201))
+
+        # Need to make the dataformat and the dataset_type in database
+        self.post(reverse('dataformat-list'), {'name': 'df', 'file_extension': '.-'})
+        self.post(reverse('datasettype-list'), {'name': 'dset0', 'filename_pattern': '--'})
+        self.post(reverse('datasettype-list'), {'name': 'dset1', 'filename_pattern': '-.'})
+
+        # Now attach datasets to the session with collection that contains probe_names
+        dsets = ['dset0', 'dset1', 'dset0']
+        collection = ['probe00', 'probe00', 'probe01']
+        for dset, col in zip(dsets, collection):
+            data = {'name': dset,
+                    'dataset_type': dset,
+                    'data_format': 'df',
+                    'file_size': 1234,
+                    'collection': f'alf/{col}',
+                    'subject': self.session.subject.nickname,
+                    'date': str(self.session.start_time.date())
+                    }
+            url = reverse('dataset-list')
+            self.ar(self.post(url, data), 201)
+
+        # Test that probeinsertion details serializer returns datasets associated with probe
+        urlf = (reverse('probeinsertion-detail', args=[insertions[0]['id']]))
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins['datasets']) == 2)
+
+        # Test that dataset filter with probe id returns datasets associated with probe
+        urlf = (reverse('dataset-list') + '?&probe_insertion=' + insertions[0]['id'])
+        datasets = self.ar(self.client.get(urlf))
+        self.assertTrue(len(datasets) == 2)
+
+        # Test that probe insertion filter with dataset_type specified returns correct insertions
+        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset0')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 2)
+
+        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset1')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 1)
+        self.assertTrue(probe_ins[0]['id'] == insertions[0]['id'])
+
+        # does not include dataset
+        urlf = (reverse('probeinsertion-list') + '?&no_dataset_type=dset1')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 1)
+        self.assertTrue(probe_ins[0]['id'] == insertions[1]['id'])
 
     def test_create_list_delete_trajectory(self):
         # first create a probe insertion

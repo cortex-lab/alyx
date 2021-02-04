@@ -9,6 +9,7 @@ import django_filters
 
 from alyx.base import BaseFilterSet
 from subjects.models import Subject, Project
+from experiments.models import ProbeInsertion
 from misc.models import Lab
 from .models import (DataRepositoryType,
                      DataRepository,
@@ -118,6 +119,7 @@ class DatasetFilter(BaseFilterSet):
     created_date_lte = django_filters.DateTimeFilter('created_datetime__date',
                                                      lookup_expr='lte')
     exists = django_filters.BooleanFilter(method='filter_exists')
+    probe_insertion = django_filters.UUIDFilter(method='probe_insertion_filter')
 
     class Meta:
         model = Dataset
@@ -135,6 +137,14 @@ class DatasetFilter(BaseFilterSet):
             dsets = dsets.filter(pk__in=pkd)
         return dsets
 
+    def probe_insertion_filter(self, dsets, _, pk):
+        """
+        Filter datasets that have collection name the same as probe id
+        """
+        probe = ProbeInsertion.objects.get(pk=pk)
+        dsets = dsets.filter(session=probe.session, collection__icontains=probe.name)
+        return dsets
+
 
 class DatasetList(generics.ListCreateAPIView):
     """
@@ -149,6 +159,7 @@ class DatasetList(generics.ListCreateAPIView):
     -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
     -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
     server repo (boolean)  `/datasets?exists=True`
+    -   **probe_insertions**: probe insertion id '/datasets?probe_insertion=uuid
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """

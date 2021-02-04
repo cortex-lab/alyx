@@ -367,7 +367,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(len(r.data['download']), 3)
         self.assertEqual(Download.objects.filter(projects__name='tp3').count(), 3)
 
-    def test_query(self):
+    def test_modified_datetime_field(self):
         # make a couple of datasets
         mod_dates = []
         dset_urls = []
