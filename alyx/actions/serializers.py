@@ -17,7 +17,7 @@ SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project'
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
                   'parent_session', 'n_correct_trials', 'n_trials', 'url', 'extended_qc', 'qc',
                   'wateradmin_session_related', 'data_dataset_session_related',
-                  'modified_datetime')
+                  'auto_datetime')
 
 
 def _log_entry(instance, user):

@@ -89,8 +89,8 @@ class ProbeInsertion(BaseModel):
                               related_name='probe_insertion')
     serial = models.CharField(max_length=255, blank=True, help_text="Probe serial number")
 
-    modified_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
-                                             verbose_name='last updated')
+    auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                         verbose_name='last updated')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))

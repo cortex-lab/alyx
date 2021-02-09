@@ -354,10 +354,10 @@ class BaseInlineAdmin(admin.TabularInline):
 
 class BaseQuerySet(models.QuerySet):
     def update(self, **kwargs):
-        if "modified_datetime" in kwargs:
+        if "auto_datetime" in kwargs:
             super(BaseQuerySet, self).update(**kwargs)
         else:
-            super(BaseQuerySet, self).update(**kwargs, modified_datetime=timezone.now())
+            super(BaseQuerySet, self).update(**kwargs, auto_datetime=timezone.now())
 
 
 BaseManager = models.Manager.from_queryset(BaseQuerySet)

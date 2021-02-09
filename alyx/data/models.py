@@ -256,8 +256,8 @@ class Dataset(BaseExperimentalData):
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
 
-    modified_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
-                                             verbose_name='last updated')
+    auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                         verbose_name='last updated')
 
     @property
     def find_insertion(self):
@@ -333,6 +333,8 @@ class FileRecord(BaseModel):
 
     def save(self, *args, **kwargs):
         super(FileRecord, self).save(*args, **kwargs)
+        # Save the dataset as well to make sure the auto datetime in the dateset is updated when
+        # associated filerecord is saved
         self.dataset.save()
 
     def __str__(self):

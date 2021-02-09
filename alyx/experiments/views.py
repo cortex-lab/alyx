@@ -47,7 +47,7 @@ class ProbeInsertionFilter(BaseFilterSet):
 
     def dtype_not_exists(self, probes, _, dtype_name):
         """
-        Filter for probe insertions that  don't contain specified dataset type
+        Filter for probe insertions that don't contain specified dataset type
         """
 
         dsets = Dataset.objects.filter(dataset_type__name=dtype_name)
@@ -81,6 +81,9 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **model**: probe model name `/insertions?model=3A`
+    -   **dataset_type**: contains dataset type `/insertions?dataset_type=clusters.metrics`
+    -   **no_dataset_type**: doesn't contain dataset type
+    `/insertions?no_dataset_type=clusters.metrics`
 
     [===> probe insertion model reference](/admin/doc/models/experiments.probeinsertion)
     """

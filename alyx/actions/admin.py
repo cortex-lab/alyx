@@ -471,7 +471,7 @@ class SessionAdmin(BaseActionAdmin):
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
         'repo_url', 'qc', 'extended_qc', 'project', ('type', 'task_protocol', ), 'number',
-        'n_correct_trials', 'n_trials', 'weighing', 'modified_datetime']
+        'n_correct_trials', 'n_trials', 'weighing', 'auto_datetime']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('project', RelatedDropdownFilter),
@@ -483,7 +483,7 @@ class SessionAdmin(BaseActionAdmin):
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc',
-                       'modified_datetime']
+                       'auto_datetime']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project

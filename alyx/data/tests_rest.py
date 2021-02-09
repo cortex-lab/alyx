@@ -83,7 +83,7 @@ class APIDataTests(BaseTests):
         data = {'name': 'mydataset',
                 'dataset_type': 'dst',
                 'data_format': 'df',
-                'file_size': 1234
+                'file_size': 1234,
                 }
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
@@ -97,7 +97,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(rdata['file_size'], 1234)
         self.assertEqual(rdata['dataset_type'], 'dst')
         self.assertEqual(rdata['created_by'], 'test')
-        mod_date = rdata['modified_datetime']
+        mod_date = rdata['auto_datetime']
 
         # Create a file record.
         dataset = rdata['url']
@@ -117,7 +117,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(rdata['relative_path'], 'path/to/file')
 
         # Test that the modified datetime field of dataset is updated when filerecord saved/created
-        new_mod_date = self.client.get(dataset).data['modified_datetime']
+        new_mod_date = self.client.get(dataset).data['auto_datetime']
         self.assertTrue(new_mod_date > mod_date)
 
     def test_dataset(self):
@@ -367,7 +367,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(len(r.data['download']), 3)
         self.assertEqual(Download.objects.filter(projects__name='tp3').count(), 3)
 
-    def test_modified_datetime_field(self):
+    def test_auto_datetime_field(self):
         # make a couple of datasets
         mod_dates = []
         dset_urls = []
@@ -380,7 +380,7 @@ class APIDataTests(BaseTests):
             r = self.post(reverse('dataset-list'), data)
             self.ar(r, 201)
             dset_urls.append(r.data['url'])
-            mod_dates.append(r.data['modified_datetime'])
+            mod_dates.append(r.data['auto_datetime'])
 
         # update filesize field of the datasets
         dsets = Dataset.objects.filter(name__icontains='dset')
@@ -388,12 +388,12 @@ class APIDataTests(BaseTests):
 
         # Check that in updating the filesize we also updated the modified_datetime field
         for iurl, url in enumerate(dset_urls):
-            self.assertTrue(self.client.get(url).data['modified_datetime'] > mod_dates[iurl])
+            self.assertTrue(self.client.get(url).data['auto_datetime'] > mod_dates[iurl])
 
         # set modified datetime to a specific value
         dsets = Dataset.objects.filter(name__icontains='dset')
-        dsets.update(file_size=1234, modified_datetime=mod_dates[0])
+        dsets.update(file_size=1234, auto_datetime=mod_dates[0])
 
         # check that all modified_datetime fields are set to the value we chose
         for iurl, url in enumerate(dset_urls):
-            self.assertEqual(self.client.get(url).data['modified_datetime'], mod_dates[0])
+            self.assertEqual(self.client.get(url).data['auto_datetime'], mod_dates[0])

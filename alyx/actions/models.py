@@ -259,8 +259,8 @@ class Session(BaseAction):
                             help_text="Structured data about session QC,"
                                       "formatted in a user-defined way")
 
-    modified_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
-                                             verbose_name='last updated')
+    auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                         verbose_name='last updated')
 
     def save(self, *args, **kwargs):
         # Default project is the subject's project.
