@@ -7,7 +7,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from mptt.models import MPTTModel, TreeForeignKey
 
 from actions.models import EphysSession
-from alyx.base import BaseModel
+from alyx.base import BaseModel, BaseManager
 
 X_HELP_TEXT = ("brain surface medio-lateral coordinate (um) of"
                "the insertion, right +, relative to Bregma")
@@ -80,11 +80,17 @@ class ProbeInsertion(BaseModel):
     """
     Describe an electrophysiology probe insertion used for recording
     """
+
+    objects = BaseManager()
+
     session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE,
                                 related_name='probe_insertion')
     model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
                               related_name='probe_insertion')
     serial = models.CharField(max_length=255, blank=True, help_text="Probe serial number")
+
+    auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
+                                         verbose_name='last updated')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
