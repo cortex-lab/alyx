@@ -332,6 +332,7 @@ class FileRecord(BaseModel):
         return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
 
     def save(self, *args, **kwargs):
+        # this is to trigger the update of the auto-date field
         super(FileRecord, self).save(*args, **kwargs)
         # Save the dataset as well to make sure the auto datetime in the dateset is updated when
         # associated filerecord is saved
