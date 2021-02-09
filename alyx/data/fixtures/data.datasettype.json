@@ -1310,6 +1310,17 @@
   },
     {
     "model": "data.datasettype",
+    "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.laser_probability",
+      "created_by": null,
+      "description": "Probability of stimulation to be turned on within the trial",
+      "filename_pattern": "_ibl_trials.laser_probability.npy"
+    }
+  },
+    {
+    "model": "data.datasettype",
     "pk": "272873c9-7c77-4bdf-8401-f31eb3fc5369",
     "fields": {
       "json": null,
