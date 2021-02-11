@@ -130,7 +130,7 @@ class BaseActionForm(forms.ModelForm):
             if ids:
                 preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
                 self.fields['subject'].queryset = Subject.objects.filter(
-                    cull__isnull=True).order_by(preserved, 'nickname')
+                    pk__in=ids).order_by(preserved, 'nickname')
             else:
                 self.fields['subject'].queryset = Subject.objects.filter(
                     cull__isnull=True).order_by('nickname')
@@ -242,7 +242,7 @@ class WaterRestrictionForm(forms.ModelForm):
     implant_weight = forms.FloatField()
 
     def save(self, commit=True):
-        implant_weight = self.cleaned_data.get('implant_weight', None)
+        implant_weight = self.cleaned_data.get('implant_weight')
         subject = self.cleaned_data.get('subject', None)
         if implant_weight:
             subject.implant_weight = implant_weight
@@ -269,7 +269,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         subject = getattr(obj, 'subject', None)
         iw = getattr(subject, 'implant_weight', None)
         rw = subject.water_control.weight() if subject else None
-        form.base_fields['implant_weight'].initial = iw or 0
+        form.base_fields['implant_weight'].initial = iw
         if self.has_change_permission(request, obj):
             form.base_fields['reference_weight'].initial = rw or 0
         return form
@@ -471,7 +471,7 @@ class SessionAdmin(BaseActionAdmin):
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
         'repo_url', 'qc', 'extended_qc', 'project', ('type', 'task_protocol', ), 'number',
-        'n_correct_trials', 'n_trials', 'weighing']
+        'n_correct_trials', 'n_trials', 'weighing', 'auto_datetime']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('project', RelatedDropdownFilter),
@@ -479,10 +479,11 @@ class SessionAdmin(BaseActionAdmin):
                    ('subject__projects', RelatedDropdownFilter)
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
-                     'task_protocol')
+                     'task_protocol', 'pk')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
-    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc']
+    readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc',
+                       'auto_datetime']
 
     def get_form(self, request, obj=None, **kwargs):
         from subjects.admin import Project

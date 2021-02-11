@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     'django_admin_listfilter_dropdown',
     'django_filters',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sessions',
@@ -145,6 +146,7 @@ INSTALLED_APPS = (
     'experiments',
     'jobs',
     'subjects',
+    'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
 MIDDLEWARE = (

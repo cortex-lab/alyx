@@ -220,13 +220,23 @@ class APIActionsTests(BaseTests):
         d = self.ar(self.client.get(reverse('session-detail', args=[s1['url'][-36:]])))
         self.assertTrue(d['notes'][0]['text'] == 'gnagnagna')
 
+    def test_surgeries(self):
+        from actions.models import Surgery
+        ns = Surgery.objects.all().count()
+        sr = self.ar(self.client.get(reverse('surgeries-list',)))
+        self.assertTrue(ns > 0)
+        self.assertTrue(len(sr) == ns)
+        self.assertTrue(set(sr[0].keys()) == set(
+            ['id', 'subject', 'name', 'json', 'narrative', 'start_time', 'end_time',
+             'outcome_type', 'lab', 'location', 'users', 'procedures']))
+
     def test_list_retrieve_water_restrictions(self):
         url = reverse('water-restriction-list')
         response = self.client.get(url)
         d = self.ar(response)[0]
         self.assertTrue(set(d.keys()) >= set(['reference_weight', 'water_type', 'subject',
                                               'start_time', 'end_time']))
-        url = url = reverse('water-restriction-list') + '?subject=' + d['subject']
+        url = reverse('water-restriction-list') + '?subject=' + d['subject']
         response = self.client.get(url)
         d2 = self.ar(response)[0]
         self.assertEqual(d, d2)

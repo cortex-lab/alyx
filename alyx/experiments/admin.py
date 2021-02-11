@@ -8,6 +8,7 @@ from mptt.admin import MPTTModelAdmin
 
 from experiments.models import (TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem,
                                 BrainRegion, Channel)
+from misc.admin import NoteInline
 from alyx.base import BaseAdmin
 
 
@@ -21,11 +22,11 @@ class TrajectoryEstimateInline(TabularInline):
 class ProbeInsertionInline(BaseAdmin):
     ordering = ('-session__start_time',)
     exclude = ['session']
-    readonly_fields = ['_session']
+    readonly_fields = ['_session', 'auto_datetime']
     list_display = ['name', 'datetime', 'subject', 'session']
     list_display_links = ('name', 'subject', 'session',)
-    search_fields = ('session__subject__nickname',)
-    inlines = (TrajectoryEstimateInline,)
+    search_fields = ('session__subject__nickname', 'session__pk', 'id')
+    inlines = (TrajectoryEstimateInline, NoteInline)
 
     def _session(self, obj):
         # this is to provide a link back to the session page

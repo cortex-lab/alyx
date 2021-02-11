@@ -3,6 +3,7 @@ from alyx.base import BaseSerializerEnumField
 from actions.models import EphysSession, Session
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
                                 Channel, BrainRegion)
+from data.models import DatasetType, Dataset, DataRepository, FileRecord
 
 
 class SessionListSerializer(serializers.ModelSerializer):
@@ -61,7 +62,32 @@ class ChannelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ProbeInsertionSerializer(serializers.ModelSerializer):
+class FilterDatasetSerializer(serializers.ListSerializer):
+
+    def to_representation(self, dsets):
+        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
+            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
+            pkd = frs.filter(exists=True, data_repository__globus_is_personal=False
+                             ).values_list("dataset", flat=True)
+            dsets = dsets.filter(pk__in=pkd)
+        return super(FilterDatasetSerializer, self).to_representation(dsets)
+
+
+class ProbeInsertionDatasetsSerializer(serializers.ModelSerializer):
+
+    dataset_type = serializers.SlugRelatedField(
+        read_only=False, slug_field='name',
+        queryset=DatasetType.objects.all(),
+    )
+
+    class Meta:
+        list_serializer_class = FilterDatasetSerializer
+        model = Dataset
+        fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
+                  'hash', 'version', 'collection')
+
+
+class ProbeInsertionListSerializer(serializers.ModelSerializer):
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
         queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
@@ -70,6 +96,32 @@ class ProbeInsertionSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='probe_model',
         queryset=ProbeModel.objects.all(),
     )
+    session_info = SessionListSerializer(read_only=True, source='session')
+
+    class Meta:
+        model = ProbeInsertion
+        fields = '__all__'
+
+
+class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
+    session = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='id',
+        queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
+    )
+    model = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='probe_model',
+        queryset=ProbeModel.objects.all(),
+    )
+    session_info = SessionListSerializer(read_only=True, source='session')
+
+    datasets = serializers.SerializerMethodField()
+
+    def get_datasets(self, obj):
+        qs = obj.session.data_dataset_session_related.all().filter(collection__icontains=obj.name)
+
+        request = self.context.get('request', None)
+        dsets = ProbeInsertionDatasetsSerializer(qs, many=True, context={'request': request})
+        return dsets.data
 
     class Meta:
         model = ProbeInsertion
@@ -86,40 +138,3 @@ class BrainRegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrainRegion
         fields = ('id', 'acronym', 'name', 'description', 'parent', 'related_descriptions')
-
-
-class ChannelSessionSerializer(serializers.ModelSerializer):
-    # brain_region = serializers.SlugRelatedField(read_only=True, slug_field='id', many=False)
-    brain_region = BrainRegionSerializer(read_only=True, many=False)
-
-    class Meta:
-        model = Channel
-        exclude = ('json', 'trajectory_estimate', 'name')
-
-
-class _TrajectoryFilterSerializer(serializers.ListSerializer):
-    def to_representation(self, qs):
-        qs = qs.all().order_by('-provenance')
-        return super(_TrajectoryFilterSerializer, self).to_representation(qs)
-
-
-class TrajectoryEstimateSessionSerializer(serializers.ModelSerializer):
-    coordinate_system = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    channels = ChannelSessionSerializer(read_only=True, many=True)
-    provenance = BaseSerializerEnumField()
-
-    class Meta:
-        model = TrajectoryEstimate
-        list_serializer_class = _TrajectoryFilterSerializer
-        exclude = ('probe_insertion',)
-
-
-class ProbeInsertionSessionSerializer(serializers.ModelSerializer):
-    model = serializers.SlugRelatedField(
-        read_only=True, required=False, slug_field='probe_model',
-    )
-    trajectory_estimate = TrajectoryEstimateSessionSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = ProbeInsertion
-        fields = ('id', 'model', 'name', 'trajectory_estimate')

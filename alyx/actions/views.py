@@ -21,10 +21,11 @@ from subjects.models import Subject
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation)
+    Weighing, WaterType, LabLocation, Surgery)
 from .serializers import (LabLocationSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
+                          SurgerySerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
@@ -328,6 +329,8 @@ class SessionAPIList(generics.ListCreateAPIView):
         filters sessions that have matlab in the project name
         `/sessions?django=~project__name__icontains,matlab
         does the exclusive set: filters sessions that do not have matlab in the project name
+
+    [===> session model reference](/admin/doc/models/actions.session)
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
@@ -459,3 +462,12 @@ class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'
+
+
+class SurgeriesList(generics.ListAPIView):
+    """
+    Lists Surgeries
+    """
+    queryset = Surgery.objects.all()
+    serializer_class = SurgerySerializer
+    permission_classes = (permissions.IsAuthenticated,)

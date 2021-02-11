@@ -34,7 +34,8 @@ class Task(models.Model):
     graph = models.CharField(
         max_length=64, blank=True, null=True,
         help_text="The name of the graph containing a set of related and possibly dependent tasks")
-    status = models.IntegerField(default=10, choices=STATUS_DATA_SOURCES)
+    _shelp = ' / '.join([str(s[0]) + ': ' + s[1] for s in STATUS_DATA_SOURCES])
+    status = models.IntegerField(default=10, choices=STATUS_DATA_SOURCES, help_text=_shelp)
     log = models.TextField(blank=True, null=True)
     session = models.ForeignKey(Session, blank=True, null=True,
                                 on_delete=models.CASCADE,

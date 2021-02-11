@@ -226,5 +226,17 @@
    "matlab_loader_function": "",
    "python_loader_function": ""
   }
+ },
+   {
+  "model": "data.dataformat",
+  "pk": "11aac07c-b434-425c-a394-d0ecdbcbee10",
+  "fields": {
+   "json": "",
+   "name": "tar",
+   "description": "Uncompresses TAR archive file",
+   "file_extension": ".tar",
+   "matlab_loader_function": "",
+   "python_loader_function": ""
+  }
  }
 ]

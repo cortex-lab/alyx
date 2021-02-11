@@ -109,6 +109,7 @@ class NoteAdmin(ImageWidgetAdmin):
     image_fields = ['image']
     fields = ['user', 'date_time', 'text', 'image', 'content_type', 'object_id']
     ordering = ('-date_time',)
+    search_fields = ['text']
 
 
 class NoteInline(GenericTabularInline):
@@ -116,7 +117,6 @@ class NoteInline(GenericTabularInline):
     extra = 1
     fields = ('user', 'date_time', 'text', 'image')
     image_fields = ('image',)
-    classes = ['collapse']
     ordering = ('-date_time',)
 
     formfield_overrides = {

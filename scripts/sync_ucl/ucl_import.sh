@@ -21,3 +21,6 @@ echo "Cascade deleting all non-IBL subjects"
 ./manage.py shell < ../scripts/sync_ucl/prune_cortexlab.py
 echo "Load pruned cortexlab data into ibl"
 ./manage.py loaddata ../scripts/sync_ucl/cortexlab_pruned.json 
+
+# set the cortex lab json field health report
+./manage.py shell -c "from misc.models import Lab; Lab.objects.filter(name='cortexlab').update(json=Lab.objects.using('cortexlab').get(name='cortexlab').json)"

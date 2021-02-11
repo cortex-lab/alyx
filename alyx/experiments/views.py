@@ -1,9 +1,13 @@
 from rest_framework import generics, permissions
 from django_filters.rest_framework import CharFilter, UUIDFilter
+from django.db.models import F, Func, Value, CharField, functions, Q
+
 
 from alyx.base import BaseFilterSet
+from data.models import Dataset
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
-from experiments.serializers import (ProbeInsertionSerializer, TrajectoryEstimateSerializer,
+from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
+                                     TrajectoryEstimateSerializer,
                                      ChannelSerializer, BrainRegionSerializer)
 
 """
@@ -18,6 +22,49 @@ class ProbeInsertionFilter(BaseFilterSet):
     name = CharFilter('name')
     session = UUIDFilter('session')
     model = CharFilter('model__name')
+    dataset_type = CharFilter(method='dtype_exists')
+    no_dataset_type = CharFilter(method='dtype_not_exists')
+
+    def dtype_exists(self, probes, _, dtype_name):
+        """
+        Filter for probe insertions that contain specified dataset type
+        """
+        dsets = Dataset.objects.filter(dataset_type__name=dtype_name)
+
+        # Annotate with new column that contains unique session, probe name
+        dsets = dsets.annotate(session_probe_name=functions.Concat(
+            functions.Cast(F('session'), output_field=CharField()),
+            Func(F('collection'), Value('/'), Value(2), function='split_part'),
+            output_field=CharField()))
+
+        probes = probes.annotate(session_probe_name=functions.Concat(
+            functions.Cast(F('session'), output_field=CharField()), F('name'),
+            output_field=CharField()))
+
+        queryset = probes.filter(session_probe_name__in=dsets.values_list('session_probe_name',
+                                                                          flat=True))
+        return queryset
+
+    def dtype_not_exists(self, probes, _, dtype_name):
+        """
+        Filter for probe insertions that don't contain specified dataset type
+        """
+
+        dsets = Dataset.objects.filter(dataset_type__name=dtype_name)
+
+        # Annotate with new column that contains unique session, probe name
+        dsets = dsets.annotate(session_probe_name=functions.Concat(
+            functions.Cast(F('session'), output_field=CharField()),
+            Func(F('collection'), Value('/'), Value(2), function='split_part'),
+            output_field=CharField()))
+
+        probes = probes.annotate(session_probe_name=functions.Concat(
+            functions.Cast(F('session'), output_field=CharField()), F('name'),
+            output_field=CharField()))
+
+        queryset = probes.filter(~Q(session_probe_name__in=dsets.values_list('session_probe_name',
+                                                                             flat=True)))
+        return queryset
 
     class Meta:
         model = ProbeInsertion
@@ -34,17 +81,21 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **model**: probe model name `/insertions?model=3A`
+    -   **dataset_type**: contains dataset type `/insertions?dataset_type=clusters.metrics`
+    -   **no_dataset_type**: doesn't contain dataset type
+    `/insertions?no_dataset_type=clusters.metrics`
 
+    [===> probe insertion model reference](/admin/doc/models/experiments.probeinsertion)
     """
     queryset = ProbeInsertion.objects.all()
-    serializer_class = ProbeInsertionSerializer
+    serializer_class = ProbeInsertionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = ProbeInsertionFilter
 
 
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProbeInsertion.objects.all()
-    serializer_class = ProbeInsertionSerializer
+    serializer_class = ProbeInsertionDetailSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
@@ -80,6 +131,8 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/trajectories?experiment_number=1`
     -   **session**: `/trajectories?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **probe**: probe_insertion name `/trajectories?probe=probe01`
+
+    [===> trajectory model reference](/admin/doc/models/experiments.trajectoryestimate)
     """
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
@@ -112,6 +165,8 @@ class ChannelList(generics.ListCreateAPIView):
     -   **session**: UUID `/channels?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **lab**: lab name `/channels?lab=wittenlab`
     -   **probe_insertion**: UUID  `/channels?probe_insertion=aad23144-0e52-4eac-80c5-c4ee2decb198`
+
+    [===> channel model reference](/admin/doc/models/experiments.channel)
     """
 
     def get_serializer(self, *args, **kwargs):
@@ -163,6 +218,8 @@ class BrainRegionList(generics.ListAPIView):
     -   **parent**: get child nodes `/brain-regions?parent=315`
     -   **ancestors**: get all ancestors for a given ID
     -   **descendants**: get all descendants for a given ID
+
+    [===> brain region model reference](/admin/doc/models/experiments.brainregion)
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer

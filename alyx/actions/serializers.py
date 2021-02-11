@@ -4,19 +4,20 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from alyx.base import BaseSerializerEnumField
-from .models import (ProcedureType, Session, WaterAdministration, Weighing, WaterType,
+from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
-from data.models import Dataset, DatasetType, FileRecord
+from data.models import Dataset, DatasetType, FileRecord, DataRepository
 from misc.models import LabLocation, Lab
-from experiments.serializers import ProbeInsertionSessionSerializer
+from experiments.serializers import ProbeInsertionListSerializer
 from misc.serializers import NoteSerializer
 
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
                   'parent_session', 'n_correct_trials', 'n_trials', 'url', 'extended_qc', 'qc',
-                  'wateradmin_session_related', 'data_dataset_session_related')
+                  'wateradmin_session_related', 'data_dataset_session_related',
+                  'auto_datetime')
 
 
 def _log_entry(instance, user):
@@ -91,10 +92,11 @@ class LabLocationSerializer(serializers.ModelSerializer):
 class FilterDatasetSerializer(serializers.ListSerializer):
 
     def to_representation(self, dsets):
-        frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
-        pkd = frs.filter(exists=True, data_repository__globus_is_personal=True
-                         ).values_list("dataset", flat=True)
-        dsets = dsets.filter(pk__in=pkd)
+        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
+            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
+            pkd = frs.filter(exists=True, data_repository__globus_is_personal=False
+                             ).values_list("dataset", flat=True)
+            dsets = dsets.filter(pk__in=pkd)
         return super(FilterDatasetSerializer, self).to_representation(dsets)
 
 
@@ -144,7 +146,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
-    probe_insertion = ProbeInsertionSessionSerializer(read_only=True, many=True)
+    probe_insertion = ProbeInsertionListSerializer(read_only=True, many=True)
     project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
                                            queryset=Project.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
@@ -262,3 +264,16 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
         fields = ('subject', 'date_time', 'water_administered', 'water_type', 'user', 'url',
                   'session', 'adlib')
         extra_kwargs = {'url': {'view_name': 'water-administration-detail'}}
+
+
+class SurgerySerializer(serializers.ModelSerializer):
+
+    subject = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='nickname',
+        queryset=Subject.objects.all()
+    )
+
+    class Meta:
+        model = Surgery
+        fields = '__all__'

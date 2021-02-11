@@ -3,6 +3,8 @@ from rest_framework import generics, permissions
 from django_filters.rest_framework import CharFilter
 from django.views.generic.list import ListView
 
+import numpy as np
+
 from alyx.base import BaseFilterSet
 
 from misc.models import Lab
@@ -25,11 +27,17 @@ class TasksStatusView(ListView):
         lj = Max('session__tasks__datetime')
         context['labs'] = Lab.objects.annotate(
             count_waiting=cw, last_session=ls, last_job=lj).order_by('name')
-
+        context['health'] = []
+        space = np.array(context['labs'].values_list(
+            'json__raid_available', flat=True), dtype=np.float)
+        context['space_left'] = np.round(space / 1000, decimals=1)
         if graph:
-            context['task_names'] = list(Task.objects.filter(graph=graph).values_list(
-                'name', flat=True).distinct())
-            context['task_names'].sort()
+            # here the empty order_by is to fix a low level SQL bug with distinct when called
+            # on value lists and unique together constraints. bof.
+            # https://code.djangoproject.com/ticket/16058
+            context['task_names'] = list(
+                Task.objects.filter(graph=graph).order_by("-priority").order_by(
+                    "level").order_by().values_list('name', flat=True).distinct())
         else:
             context['task_names'] = []
         context['title'] = 'Tasks Recap'
@@ -63,6 +71,8 @@ class TaskList(generics.ListCreateAPIView):
     -   **session**: uuid `/jobs?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **lab**: lab name from session table `/jobs?lab=churchlandlab`
     -   **pipeline**: pipeline field from task `/jobs?pipeline=ephys`
+
+    [===> task model reference](/admin/doc/models/jobs.task)
     """
     queryset = Task.objects.all().order_by('level', '-priority', '-session__start_time')
     serializer_class = TaskSerializer

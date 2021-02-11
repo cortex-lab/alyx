@@ -367,7 +367,9 @@ def bulk_sync(dry_run=False, lab=None):
     :param local_only: (False) if set to True, only local files will be checked. This is useful
     for patching files
     """
-    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
+    dfs = FileRecord.objects.filter(
+        Q(exists=False, data_repository__globus_is_personal=False) |
+        Q(json__has_key="mismatch_hash"))
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets
@@ -376,11 +378,12 @@ def bulk_sync(dry_run=False, lab=None):
         dataset__in=dsets).order_by('-dataset__created_datetime')
     # checks all local files by default, and only transfer pending files for the server
     all_files = all_files.filter(
-        Q(data_repository__globus_is_personal=True) | Q(json__transfer_pending=True))
+        Q(data_repository__globus_is_personal=True) |
+        Q(json__has_key="transfer_pending"))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
-        for l in list(fvals):
-            print(l)
+        for fval in list(fvals):
+            print(fval)
         return fvals
 
     gc = globus_transfer_client()
@@ -463,8 +466,11 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :param minsize: (int) minimum file size for transfer (see above)
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
-    dfs = FileRecord.objects.filter(exists=False, data_repository__globus_is_personal=False)
-    dfs = dfs.exclude(json__transfer_pending=True)
+    dfs = FileRecord.objects.filter(
+        (Q(exists=False, data_repository__globus_is_personal=False) |
+         Q(json__has_key="mismatch_hash")) &
+        ~Q(json__has_key="transfer_pending")
+    )
     if minsize:
         dfs = dfs.filter(dataset__file_size__gt=minsize)
     if maxsize:
@@ -507,6 +513,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         isec = next((ind for ind, cr in enumerate(sec_repos) if cr == src_file.data_repository),
                     None)
         if isec is None:
+            print("no _isec")
             continue
         # if the transfer doesn't exist, create it:
         if tm[ipri][isec] == 0:
@@ -532,7 +539,7 @@ def _globus_transfer_filerecords(dfs, dry=True):
         if t == 0:
             continue
         gc.submit_transfer(t)
-    dfs.exclude(json__local_missing=True).update(json={'transfer_pending': True})
+    dfs.exclude(json__has_key="local_missing").update(json={'transfer_pending': True})
     return gc, tm
 
 
@@ -671,8 +678,27 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
     if local_only:
         file_records = file_records.filter(data_repository__globus_is_personal=True)
         file_records = file_records.exclude(data_repository__name__icontains='flatiron')
-    globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
-                                                flat=True).distinct()
+    globus_delete_file_records(file_records, dry=dry)
+
+    if dry or local_only:
+        return
+
+    for ds in datasets:
+        ds.delete()
+
+
+def globus_delete_file_records(file_records, dry=True):
+    """
+    For each filecord in the queryset, attempt a Globus delete for all physical file-records
+    associated. Admin territory.
+    :param file_records:
+    :param dry: default True
+    :return:
+    """
+    # first get the list of Globus endpoints concerned
+    globus_endpoints = file_records.values_list(
+        'data_repository__globus_endpoint_id', flat=True).distinct()
+    related_datasets = file_records.values_list('dataset', flat=True).distinct()
 
     # create a globus delete_client for each globus endpoint
     gtc = globus_transfer_client()
@@ -680,10 +706,9 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
         delete_clients = []
         for ge in globus_endpoints:
             delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
-
     # appends each file for deletion
-    current_path = None
     for i, ge in enumerate(globus_endpoints):
+        current_path = None
         # get endpoint status before continuing
         endpoint_info = gtc.get_endpoint(ge)
         # if the endpoint is not globus_connect (ie. not personal) this returns None
@@ -693,12 +718,14 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
             logger.warning(endpoint_info.data['display_name'] + 'is offline. SKIPPING.')
             continue
         frs = FileRecord.objects.filter(
-            dataset__in=datasets, data_repository__globus_endpoint_id=ge).order_by('relative_path')
+            dataset__in=related_datasets,
+            data_repository__globus_endpoint_id=ge).order_by('relative_path')
+        logger.info(str(frs.count()) + ' files to delete on ' + endpoint_info.data['display_name'])
         for fr in frs:
             add_uuid = not fr.data_repository.globus_is_personal
             file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
             if dry:
-                logger.info(file2del)
+                logger.warning(file2del)
             else:
                 if current_path != Path(file2del).parent:
                     current_path = Path(file2del).parent
@@ -707,22 +734,28 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
                                            gtc.operation_ls(ge, path=current_path)]
                     except globus_sdk.exc.TransferAPIError as err:
                         if 'ClientError.NotFound' in str(err):
+                            logger.warning('DIR NOT FOUND: ' + file2del + ' on ' +
+                                           str(fr.data_repository.name))
                             ls_current_path = []
                         else:
                             raise err
-                    if Path(file2del).name in ls_current_path:
-                        logger.info('DELETE: ' + file2del)
-                        delete_clients[i].add_item(file2del)
+                if Path(file2del).name in ls_current_path:
+                    logger.warning(
+                        'DELETE: ' + file2del + ' on ' + str(fr.data_repository.name))
+                    delete_clients[i].add_item(file2del)
+                else:
+                    logger.warning(
+                        'FILE NOT FOUND: ' + file2del + ' on ' + str(fr.data_repository.name))
     # launch the deletion jobs and remove records from the database
     if dry:
         return
+    # launch the deletion jobs and remove records from the database
     for dc in delete_clients:
         # submitting a deletion without data will create an error
         if dc['DATA'] == []:
+            logger.warning('SUBMIT DELETE SKIPPED AS NO DATA: ' + str(dc))
             continue
+        logger.warning('SUBMIT DELETE: ' + str(dc))
         gtc.submit_delete(dc)
-
+    # ideally here we would make some synchronous process and some error handling
     file_records.delete()
-    if not local_only:
-        for ds in datasets:
-            ds.delete()

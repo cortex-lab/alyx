@@ -9,6 +9,7 @@ import django_filters
 
 from alyx.base import BaseFilterSet
 from subjects.models import Subject, Project
+from experiments.models import ProbeInsertion
 from misc.models import Lab
 from .models import (DataRepositoryType,
                      DataRepository,
@@ -117,16 +118,37 @@ class DatasetFilter(BaseFilterSet):
                                                      lookup_expr='gte')
     created_date_lte = django_filters.DateTimeFilter('created_datetime__date',
                                                      lookup_expr='lte')
+    exists = django_filters.BooleanFilter(method='filter_exists')
+    probe_insertion = django_filters.UUIDFilter(method='probe_insertion_filter')
 
     class Meta:
         model = Dataset
         exclude = ['json']
 
+    def filter_exists(self, dsets, name, value):
+        """
+        Filters datasets for which at least one file record Globus not personal exists.
+        Only if the database has any globus non-personal repositories (ie. servers)
+        """
+        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
+            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
+            pkd = frs.filter(exists=value, data_repository__globus_is_personal=False
+                             ).values_list("dataset", flat=True)
+            dsets = dsets.filter(pk__in=pkd)
+        return dsets
+
+    def probe_insertion_filter(self, dsets, _, pk):
+        """
+        Filter datasets that have collection name the same as probe id
+        """
+        probe = ProbeInsertion.objects.get(pk=pk)
+        dsets = dsets.filter(session=probe.session, collection__icontains=probe.name)
+        return dsets
+
 
 class DatasetList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
-
     -   **subject**: subject nickname: `/datasets?subject=Algernon`
     -   **lab**: lab name `/datsets?lab=wittenlab`
     -   **created_date**: dataset registration date `/datasets?created_date=2020-02-16`
@@ -135,6 +157,11 @@ class DatasetList(generics.ListCreateAPIView):
     -   **experiment_number**: session number  `/datasets?experiment_number=1`
     -   **created_date_gte**: greater/equal creation date  `/datasets?created_date_gte=2020-02-16`
     -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
+    -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
+    server repo (boolean)  `/datasets?exists=True`
+    -   **probe_insertions**: probe insertion id '/datasets?probe_insertion=uuid
+
+    [===> dataset model reference](/admin/doc/models/data.dataset)
     """
     queryset = Dataset.objects.all()
     queryset = DatasetSerializer.setup_eager_loading(queryset)
@@ -170,6 +197,8 @@ class FileRecordList(generics.ListCreateAPIView):
     -   **lab**: lab name `/files?lab=wittenlab`
     -   **data_repository**: data repository name `/files?data_repository=mainen_lab_SR`
     -   **globus_is_personal**: bool type of Globus endpoint `/files?globus_is_personal=True`
+
+    [===> file record model reference](/admin/doc/models/data.filerecord)
     """
     queryset = FileRecord.objects.all()
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
@@ -448,6 +477,7 @@ class DownloadList(generics.ListAPIView):
     -   **json**: icontains on json: `/downloads?json=processing`
     -   **count**: count number: `/downloads?count=5`
     -   **dataset_type**: icontains on dataset type`/downloads?dataset_type=camera`
+
     """
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
