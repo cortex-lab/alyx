@@ -51,7 +51,7 @@
         <td>{{ obj.project.name }}</td>
         <td>{{ obj.task_protocol }}</td>
         {% if obj.qc == 50%}  {# CRITICAL red #}
-            <td><a style="color:Tomato">{{ obj.get_qc_display }}</a></td>
+            <td><a style="color:#ff6347">{{ obj.get_qc_display }}</a></td>
         {% elif obj.qc == 20%}  {# NOT_SET - #}
             <td>-</td>
         {% else %}
