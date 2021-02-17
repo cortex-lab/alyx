@@ -5,7 +5,7 @@ from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery, NotificationRule, Notification
 from misc.models import Lab, LabMember, LabLocation
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
-from experiments.models import ProbeInsertion
+from experiments.models import ProbeInsertion, TrajectoryEstimate
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
@@ -85,14 +85,27 @@ users_to_leave.delete()
 NotificationRule.objects.using('cortexlab').all().delete()
 Notification.objects.using('cortexlab').filter(sent_at__isnull=True).delete()
 
-# probe insertion objects may have been updated upstreams. In this case the insertion update MO
-# was to delete the probe insertion before repopulating downstream tables. This creates
-# an integrity error on import. To avoid this the duplicate insertions have to be removed
-# from cortex lab before import. IBL always priority
+"""
+probe insertion objects may have been updated upstreams. In this case the insertion update MO
+was to delete the probe insertion before repopulating downstream tables. This creates
+an integrity error on import. To avoid this the duplicate insertions have to be removed
+from cortex lab before import. IBL always priority.
+Sometimes there are some trajectories estimates in the cortexlab that is not in IBL, in this case
+create them
+"""
 session_pname = set(ProbeInsertion.objects.using('cortexlab').values_list('session', 'name')
                     ).intersection(set(ProbeInsertion.objects.values_list('session', 'name')))
 for sp in session_pname:
-    ProbeInsertion.objects.using('cortexlab').get(session=sp[0], name=sp[1]).delete()
+    pi_cortexlab = ProbeInsertion.objects.using('cortexlab').get(session=sp[0], name=sp[1])
+    pi_ibl = ProbeInsertion.objects.get(session=sp[0], name=sp[1])
+    for traj_c in pi_cortexlab.trajectory_estimate.all():
+        traj_i = pi_ibl.trajectory_estimate.filter(provenance=traj_c.provenance)
+        if traj_i.count() == 0:
+            t = traj_c.__dict__.copy()
+            t.pop('_state')
+            t['probe_insertion_id'] = pi_ibl.id
+            TrajectoryEstimate.objects.create(**t)
+    pi_cortexlab.delete()
 
 
 """
