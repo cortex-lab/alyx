@@ -3,9 +3,14 @@ from django.http import HttpResponse
 from django.template import loader
 
 from experiments.models import TrajectoryEstimate, ProbeInsertion
-from misc.models import Note
 from django.db.models import Count, Q
 from misc.models import Lab
+
+
+def alerts(request):
+    template = loader.get_template('reports/alerts.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
 
 
 def current_datetime(request):
@@ -35,8 +40,11 @@ def current_datetime(request):
 
     labs = Lab.objects.all()
     labs = labs.annotate(
-        nrep=Count('subject__actions_sessions__probe_insertion__trajectory_estimate',
-        filter=Q(subject__actions_sessions__probe_insertion__trajectory_estimate__in=traj)))
+        nrep=Count(
+            'subject__actions_sessions__probe_insertion__trajectory_estimate',
+            filter=Q(subject__actions_sessions__probe_insertion__trajectory_estimate__in=traj)
+        )
+    )
     # print(l.name, l.nrep)
 
     context = {

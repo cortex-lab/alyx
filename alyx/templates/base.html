@@ -1,4 +1,4 @@
-{% load staticfiles %}
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,7 +28,7 @@
     <div class="iconav-slider">
       <ul class="nav nav-pills iconav-nav">
         <li class="active">
-          <a href="/list" title="List" data-toggle="tooltip" data-placement="right" data-container="body">
+          <a href="/reports" title="List" data-toggle="tooltip" data-placement="right" data-container="body">
             <span class="icon icon-text-document"></span>
             <small class="iconav-nav-label visible-xs-block">List</small>
           </a>
@@ -46,8 +46,8 @@
           </a>
         </li>
         <li>
-          <a href="/" title="Stats" data-toggle="tooltip" data-placement="right" data-container="body">
-            <span class="icon icon-area-graph"></span>
+          <a href="/admin/doc/models" title="Model Docs" data-toggle="tooltip" data-placement="right" data-container="body">
+            <span class="icon icon-documents"></span>
             <small class="iconav-nav-label visible-xs-block">Stats</small>
           </a>
         </li>
