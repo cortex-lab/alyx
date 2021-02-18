@@ -9,7 +9,17 @@ from misc.models import Lab
 
 def alerts(request):
     template = loader.get_template('reports/alerts.html')
-    context = {}
+    labs = Lab.objects.all()
+    labs = labs.annotate(
+        ntraining=Count(
+            "session",
+            filter=Q(session__procedures__name='Behavior training/tasks')
+        )
+    )
+
+
+
+    context = {'labs': labs}
     return HttpResponse(template.render(context, request))
 
 

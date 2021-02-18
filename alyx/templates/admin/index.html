@@ -2,13 +2,10 @@
 {% load i18n static %}
 
 {% block branding %}
-<h1 id="site-name">
-    <a href="{% url 'admin:index' %}">Alyx</a>
-
-    <a href="/">
-        <i class="icon icon-home"></i>
-    </a>
-</h1>
+    <h1 id="site-name">
+        <a href="/"><</a>
+        <a href="{% url 'admin:index' %}">Alyx</a>
+    </h1>
 {% endblock %}
 
 {% block extrastyle %}{{ block.super }}
@@ -27,7 +24,7 @@
 {% endblock %}
 
 {% block content %}
-<div id="content-main">
+    <div id="content-main">
 
 {% if app_list %}
     {% for app in app_list %}

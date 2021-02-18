@@ -23,24 +23,18 @@
 <div class="with-iconav">
   <nav class="iconav">
     <a class="iconav-brand" href="/">
-      <span class="icon icon-leaf iconav-brand-icon"></span>
+      <span class="icon icon-home iconav-brand-icon"></span>
     </a>
     <div class="iconav-slider">
       <ul class="nav nav-pills iconav-nav">
         <li class="active">
-          <a href="/reports" title="List" data-toggle="tooltip" data-placement="right" data-container="body">
+          <a href="{% url "reports alerts" %}" title="alerts" data-toggle="tooltip" data-placement="right" data-container="body">
             <span class="icon icon-text-document"></span>
             <small class="iconav-nav-label visible-xs-block">List</small>
           </a>
         </li>
         <li >
-          <a href="/list?view=gantt" title="Gantt" data-toggle="tooltip" data-placement="right" data-container="body">
-            <span class="icon icon-list"></span>
-            <small class="iconav-nav-label visible-xs-block">Gantt</small>
-          </a>
-        </li>
-        <li >
-          <a href="/" title="All" data-toggle="tooltip" data-placement="right" data-container="body">
+          <a href="{% url "reports physiology" %}" title="gaelle" data-toggle="tooltip" data-placement="right" data-container="body">
             <span class="icon icon-globe"></span>
             <small class="iconav-nav-label visible-xs-block">All</small>
           </a>
@@ -56,13 +50,7 @@
             <span class="icon icon-flash"></span>
             <small class="iconav-nav-label visible-xs-block">Admin</small>
           </a>
-        </li>
-<!--         <li>
-          <a href="#" title="Signed in as mdo" data-toggle="tooltip" data-placement="right" data-container="body">
-            <img src="../assets/img/avatar-mdo.png" alt="" class="img-circle img-responsive">
-            <small class="iconav-nav-label visible-xs-block">@mdo</small>
-          </a>
-        </li> -->
+        </li>}
       </ul>
     </div>
   </nav>
