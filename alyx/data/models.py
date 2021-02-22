@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from experiments.models import ProbeInsertion
 from alyx.base import BaseModel, modify_fields, BaseManager
 
 
@@ -259,13 +258,6 @@ class Dataset(BaseExperimentalData):
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
 
-    @property
-    def find_insertion(self):
-        name = self.collection.rsplit('/')[-1]
-        pr = ProbeInsertion.objects.get(session=self.session, name=name)
-        if pr:
-            return pr
-
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
                                            exists=True)
@@ -286,6 +278,9 @@ class Dataset(BaseExperimentalData):
         return "<Dataset %s %s '%s' by %s on %s>" % (
             str(self.pk)[:8], getattr(self.dataset_type, 'name', ''),
             self.name, self.created_by, date)
+
+    def save(self, *args, **kwargs):
+        super(Dataset, self).save(*args, **kwargs)
 
 
 # Files
