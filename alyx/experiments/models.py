@@ -91,6 +91,7 @@ class ProbeInsertion(BaseModel):
 
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
+    datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
@@ -108,6 +109,15 @@ class ProbeInsertion(BaseModel):
     @property
     def datetime(self):
         return self.session.start_time
+
+    def save(self, *args, **kwargs):
+        """
+        Attaches the datasets to the probe insertion upon saving
+        """
+        from data.models import Dataset
+        dsets = Dataset.objects.filter(session=self.session, collection__endswith=self.name)
+        self.datasets.set(dsets, clear=True)
+        super(ProbeInsertion, self).save(*args, **kwargs)
 
 
 class TrajectoryEstimate(models.Model):
