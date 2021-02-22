@@ -91,8 +91,8 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ]
-    search_fields = ('created_by__username', 'name', 'session__subject__nickname', 'collection',
-                     'dataset_type__name', 'dataset_type__filename_pattern', 'version')
+    search_fields = ('session__id', 'name', 'collection', 'dataset_type__name',
+                     'dataset_type__filename_pattern', 'version')
     ordering = ('-created_datetime',)
 
     def get_queryset(self, request):
