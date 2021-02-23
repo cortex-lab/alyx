@@ -117,7 +117,7 @@ class APISubjectsTests(BaseTests):
             url = reverse('dataset-list')
             self.ar(self.post(url, data), 201)
 
-        # check that the m2m has been updated upon dataset creation
+        # check that when datasets are created, they're assigned in the m2m
         for i in range(2):
             p = ProbeInsertion.objects.get(name=probe_names[0])
             d = Dataset.objects.filter(collection__endswith=probe_names[0])
@@ -129,6 +129,7 @@ class APISubjectsTests(BaseTests):
         assert(set(p2.datasets.all().values_list('pk', flat=True)) ==
                set(Dataset.objects.filter(
                    collection__endswith=p2.name).values_list('pk', flat=True)))
+        p2.delete()
 
         # Test that probeinsertion details serializer returns datasets associated with probe
         urlf = (reverse('probeinsertion-detail', args=[insertions[0]['id']]))
