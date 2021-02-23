@@ -280,12 +280,19 @@ class Dataset(BaseExperimentalData):
             self.name, self.created_by, date)
 
     def save(self, *args, **kwargs):
+        # when a dataset is saved / created make sure the probe insertion is set in the reverse m2m
         super(Dataset, self).save(*args, **kwargs)
+        if self.collection is None:
+            return
+        from experiments.models import ProbeInsertion
+        name = self.collection.rsplit('/')[-1]
+        pis = ProbeInsertion.objects.filter(session=self.session, name=name)
+        if len(pis):
+            self.probe_insertion.set(pis.values_list('pk', flat=True))
 
 
 # Files
 # ------------------------------------------------------------------------------------------------
-
 class FileRecordManager(models.Manager):
     def get_queryset(self):
         qs = super(FileRecordManager, self).get_queryset()
