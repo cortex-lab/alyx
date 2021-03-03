@@ -3,12 +3,14 @@ from django.http import HttpResponse
 from django.template import loader
 
 from experiments.models import TrajectoryEstimate, ProbeInsertion
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F, Func
 from misc.models import Lab
+import numpy as np
 
 
 def alerts(request):
     template = loader.get_template('reports/alerts.html')
+    context = dict()
     labs = Lab.objects.all()
     labs = labs.annotate(
         ntraining=Count(
@@ -16,10 +18,20 @@ def alerts(request):
             filter=Q(session__procedures__name='Behavior training/tasks')
         )
     )
+    labs = labs.annotate(nephys=Count("session",
+            filter=Q(session__procedures__name__icontains='ephys')))
 
+    # Annotate with latest ephys session
+    # Annotate with latest training session
+    # Annotate
 
+    space = np.array(labs.values_list(
+            'json__raid_available', flat=True), dtype=np.float)
+    context['space_left'] = np.round(space / 1000, decimals=1)
 
-    context = {'labs': labs}
+    context['labs'] = labs
+
+    #context = {'labs': labs}
     return HttpResponse(template.render(context, request))
 
 
