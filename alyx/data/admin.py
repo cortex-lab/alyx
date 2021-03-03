@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Download)
+                     Dataset, FileRecord, Download, Revision)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -82,8 +82,8 @@ class FileRecordInline(BaseInlineAdmin):
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
-              'session_ro', 'collection', 'auto_datetime']
-    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime']
+              'session_ro', 'collection', 'auto_datetime', 'revision_']
+    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
     inlines = [FileRecordInline]
@@ -105,6 +105,9 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
 
     def name_(self, obj):
         return obj.name or '<unnamed>'
+
+    def revision_(self, obj):
+        return obj.revision.name
 
     def session_ro(self, obj):
         url = get_admin_url(obj.session)
@@ -170,10 +173,23 @@ class DownloadAdmin(BaseAdmin):
         return obj.dataset.created_by.username
 
 
+class RevisionAdmin(BaseAdmin):
+    fields = ['name_', 'description', 'collection', 'created_datetime']
+    readonly_fields = ['name_', 'created_datetime']
+    list_display = ['name_', 'description', 'collection']
+    search_fields = ('name',)
+    ordering = ('-created_datetime',)
+
+    def name_(self, obj):
+        return obj.name or '<unnamed>'
+
+
+
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
+admin.site.register(Revision, RevisionAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Download, DownloadAdmin)

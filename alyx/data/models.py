@@ -210,6 +210,23 @@ def default_data_format():
     return DataFormat.objects.get_or_create(name='unknown')[0].pk
 
 
+class Revision(BaseModel):
+    """
+    Dataset version information
+    """
+    objects = NameManager()
+
+    description = models.CharField(max_length=1023, blank=True)
+    collection = models.CharField(blank=True, null=True, max_length=255,
+                                  help_text='file subcollection or subfolder')
+    created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
+                                            help_text="created date")
+
+
+def default_revision():
+    return Revision.objects.get_or_create(name='unknown')[0].pk
+
+
 class DatasetManager(BaseManager):
     def get_queryset(self):
         qs = super(DatasetManager, self).get_queryset()
@@ -257,6 +274,12 @@ class Dataset(BaseExperimentalData):
 
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
+
+    revision = models.ForeignKey(Revision, blank=False, null=False, on_delete=models.SET_DEFAULT,
+                                 default=default_revision, verbose_name='Revision')
+
+    class Meta:
+        unique_together = (('session', 'collection', 'revision', 'name'),)
 
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
