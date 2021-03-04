@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download
+from data.models import Dataset, FileRecord, Download, Revision
 
 
 class APIDataTests(BaseTests):
@@ -22,6 +22,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
         self.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
         self.subject = self.ar(self.client.get(reverse('subject-list')))[0]['nickname']
+        #self.post(reverse('revision-list'), {'name': 'default'})
 
         # create some more dataset types a.a, a.b, a.c, a.d etc...
         for let in 'abcd':
@@ -183,6 +184,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1', 'dra2']})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
 
+
         # start with registering 2 datasets on lab a, since the repo is not whithin the lab repos
         # we expect 3 file records to be created, do it twice: list and char to test format
         # and also test no duplication on several registrations
@@ -243,6 +245,7 @@ class APIDataTests(BaseTests):
         data['filenames'] = 'alf/titi/a.b.e1'
         # re-register a dataset with the same name but a different subcollection adds a new dataset
         r = self.client.post(reverse('register-file'), data)
+        print(r)
         self.ar(r, 201)
         self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 2)
         # but registering a dataset using a subollection that matches another raises an error
@@ -250,6 +253,40 @@ class APIDataTests(BaseTests):
         data['filenames'] = 'dir/a.b.e1'
         # the dataset already exists and results in a 500 integrity error
         self.ar(self.post(reverse('register-file'), data), 500)
+
+        self.post(reverse('revision-list'), {'name': 'v1', 'collection': 'v1'})
+        # Test registering files with revisions and tags
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        print(r)
+        r = self.ar(r, 201)[0]
+        print(r)
+        self.assertTrue(r['revision'] == 'unknown')
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['revision'], data['name']))
+        self.assertTrue(Dataset.objects.filter(name='f.g.e1').count() == 1)
+        self.assertTrue(Dataset.objects.filter(revision='v1').count() == 1)
+        #fr = FileRecord.objects.filter()
+
+    #def test_register_files_revision(self):
+    #    # Test registering files with revisions and tags
+    #    data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+    #            'filenames': 'a.b.e1',
+    #            'name': 'drb2',  # this is the repository name
+    #            'revision': 'v1'
+    #            }
+    #    r = self.client.post(reverse('register-file'), data)
+    #    self.ar(r, 201)
+    #    self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 2)
+    #    self.assertTrue(Dataset.objects.filter(revision='v1').count() == 1)
+    #    fr = FileRecord.objects.filter()
+
+
+
 
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need

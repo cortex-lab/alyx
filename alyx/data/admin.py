@@ -174,9 +174,9 @@ class DownloadAdmin(BaseAdmin):
 
 
 class RevisionAdmin(BaseAdmin):
-    fields = ['name_', 'description', 'collection', 'created_datetime']
-    readonly_fields = ['name_', 'created_datetime']
-    list_display = ['name_', 'description', 'collection']
+    fields = ['name', 'description', 'collection', 'created_datetime']
+    readonly_fields = ['created_datetime']
+    list_display = ['name', 'description', 'collection']
     search_fields = ('name',)
     ordering = ('-created_datetime',)
 

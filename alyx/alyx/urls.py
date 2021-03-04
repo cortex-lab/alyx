@@ -57,6 +57,9 @@ urlpatterns = [
     path('data-repository/<str:name>', dv.DataRepositoryDetail.as_view(),
          name="datarepository-detail"),
 
+    path('revision', dv.RevisionTypeList.as_view(),
+         name="revision-list"),
+
     path('datasets', dv.DatasetList.as_view(),
          name="dataset-list"),
 

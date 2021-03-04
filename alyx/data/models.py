@@ -215,12 +215,18 @@ class Revision(BaseModel):
     Dataset version information
     """
     objects = NameManager()
-
+    name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
     description = models.CharField(max_length=1023, blank=True)
     collection = models.CharField(blank=True, null=True, max_length=255,
-                                  help_text='file subcollection or subfolder')
+                                  help_text='file subcollection or subfolder', unique=True)
     created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
                                             help_text="created date")
+
+    #class Meta:
+    #    ordering = ('name',)
+#
+    #def __str__(self):
+    #    return "<Revision %s>" % self.name
 
 
 def default_revision():

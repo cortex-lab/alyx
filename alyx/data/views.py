@@ -19,6 +19,7 @@ from .models import (DataRepositoryType,
                      Download,
                      FileRecord,
                      new_download,
+                     Revision
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -27,6 +28,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           DownloadSerializer,
                           FileRecordSerializer,
+                          RevisionSerializer,
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
                         _create_dataset_file_records, bulk_sync)
@@ -99,6 +101,16 @@ class DatasetTypeList(generics.ListCreateAPIView):
 class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DatasetType.objects.all()
     serializer_class = DatasetTypeSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
+
+
+# Revison
+# -------------------------------------------------------------------------------------------------
+
+class RevisionTypeList(generics.ListCreateAPIView):
+    queryset = Revision.objects.all()
+    serializer_class = RevisionSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
@@ -243,6 +255,7 @@ def _make_dataset_response(dataset):
         'session_number': dataset.session.number,
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
+        #'revision': dataset.revision
     }
     out['file_records'] = file_records
     return out
@@ -270,6 +283,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
     serializer_class = serializers.Serializer
+
 
     def create(self, request):
         """
@@ -361,6 +375,19 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
 
+        # revision of dataset
+        revision = request.data.get('revisions', [None for f in filenames])
+        if isinstance(revision, str):
+            revision = revision.split(',')
+        # For now if no revision specified return the default which is None  - this behavior may
+        # need to change
+        revisions = []
+        for rev in revision:
+            if not rev:
+                revisions.append(Revision.objects.get(name='unknown')) # Better naming for default
+            else:
+                revisions.append(Revision.objects.get(name=rev))
+
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
@@ -376,7 +403,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
+        for filename, hash, fsize, version, revision in zip(filenames, hashes, filesizes, versions,
+                                                            revisions):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
@@ -387,7 +415,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize, version=version)
+                hash=hash, file_size=fsize, version=version, revision=revision)
             out = _make_dataset_response(dataset)
             response.append(out)
 

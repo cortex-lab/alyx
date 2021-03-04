@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, Download, FileRecord,)
+                     Dataset, Download, FileRecord, Revision, )
 from .transfers import _get_session
 from actions.models import Session
 from subjects.models import Subject
@@ -109,10 +109,15 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=DataFormat.objects.all(),
     )
 
+    revision = serializers.SlugRelatedField(read_only=False, required=False,
+                                            slug_field='name',
+                                            queryset=Revision.objects.all())
+
     session = serializers.HyperlinkedRelatedField(
         read_only=False, required=False, view_name="session-detail",
         queryset=Session.objects.all(),
     )
+
 
     hash = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField(required=False, allow_null=True)
@@ -145,6 +150,11 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         return obj.session.number if obj and obj.session else None
 
     def create(self, validated_data):
+        # Check to see if we have revision, if not set to default
+        #revision = validated_data.get('revision', None)
+        #if not revision:
+        #    validated_data['revision'] = Revision.objects.all().filter(name='default')[0]
+
         if validated_data.get('session', None):
             return super(DatasetSerializer, self).create(validated_data)
 
@@ -171,7 +181,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
-                  'subject', 'date', 'number', 'auto_datetime')
+                  'subject', 'date', 'number', 'auto_datetime', 'revision', )
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},
@@ -191,3 +201,9 @@ class DownloadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Download
         fields = ('id', 'user', 'dataset', 'count', 'json')
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = fields = ('__all__')

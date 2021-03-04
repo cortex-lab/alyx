@@ -214,11 +214,12 @@ def _get_repositories_for_labs(labs, server_only=False):
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,
-        file_size=None, version=None):
+        file_size=None, version=None, revision=None):
 
     assert session is not None
 
-    relative_path = op.join(rel_dir_path, collection or '', filename)
+    revision_collection = revision.collection
+    relative_path = op.join(rel_dir_path, collection or '', revision_collection or '', filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
@@ -227,7 +228,12 @@ def _create_dataset_file_records(
     # Create the dataset.
     dataset, _ = Dataset.objects.get_or_create(
         collection=collection, name=filename, session=session,
-        dataset_type=dataset_type, data_format=data_format)
+        dataset_type=dataset_type, data_format=data_format, revision=revision)
+
+    # Once tags are implemented have protected field. Such that if dataset has a tag with
+    # protected field =True we cannot patch
+    # TODO
+
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user
