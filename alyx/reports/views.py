@@ -1,12 +1,54 @@
 from django.http import HttpResponse
 
 from django.template import loader
-
+from django.views.generic.list import ListView
 from experiments.models import TrajectoryEstimate, ProbeInsertion
 from django.db.models import Count, Q, F, Max
 from misc.models import Lab
 import numpy as np
 
+
+class AlertsLabView(ListView):
+    template_name = 'reports/alerts2.html'
+
+    def get_context_data(self, **kwargs):
+        lab_name = self.kwargs.get('lab', None)
+        labs_all = Lab.objects.all().order_by('name')
+        context = super(AlertsLabView, self).get_context_data(**kwargs)
+        labs = Lab.objects.all().filter(name=lab_name)
+        ntraining = Count("session", filter=Q(session__procedures__name='Behavior training/tasks'))
+        nephys = Count("session", filter=Q(session__procedures__name__icontains='ephys'))
+        lt_training = Max("session__start_time",
+                          filter=Q(session__procedures__name='Behavior training/tasks'))
+        lt_ephys = Max("session__start_time",
+                       filter=Q(session__procedures__name__icontains='ephys'))
+        labs = labs.annotate(ntraining=ntraining, nephys=nephys, latest_training=lt_training,
+                             latest_ephys=lt_ephys)
+
+        # Annotate with latest ephys session
+
+        space = np.array(labs.values_list(
+            'json__raid_available', flat=True), dtype=np.float)
+        context['space_left'] = np.round(space / 1000, decimals=1)
+        context['labs'] = labs
+        context['labs_all'] = labs_all
+
+        return context
+
+    def get_queryset(self):
+        lab = self.kwargs.get('lab', None)
+        qs = Lab.objects.all().filter(name=lab)
+
+        return qs
+
+
+def basepage(request):
+    template = loader.get_template('reports/base.html')
+    context = dict()
+    labs = Lab.objects.all().order_by('name')
+    context['labs_all'] = labs
+
+    return HttpResponse(template.render(context, request))
 
 def alerts(request):
     template = loader.get_template('reports/alerts.html')
