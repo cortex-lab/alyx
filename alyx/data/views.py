@@ -149,6 +149,7 @@ class DatasetFilter(BaseFilterSet):
 class DatasetList(generics.ListCreateAPIView):
     """
     get: **FILTERS**
+
     -   **subject**: subject nickname: `/datasets?subject=Algernon`
     -   **lab**: lab name `/datsets?lab=wittenlab`
     -   **created_date**: dataset registration date `/datasets?created_date=2020-02-16`
@@ -159,7 +160,7 @@ class DatasetList(generics.ListCreateAPIView):
     -   **created_date_lte**: lower/equal creation date  `/datasets?created_date_lte=2020-02-16`
     -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
     server repo (boolean)  `/datasets?exists=True`
-    -   **probe_insertions**: probe insertion id '/datasets?probe_insertion=uuid
+    -   **probe_insertion**: probe insertion id '/datasets?probe_insertion=uuid
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """
