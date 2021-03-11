@@ -210,9 +210,22 @@ def default_data_format():
     return DataFormat.objects.get_or_create(name='unknown')[0].pk
 
 
+class Tag(BaseModel):
+    objects = NameManager()
+    name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
+    description = models.CharField(max_length=1023, blank=True)
+    protected = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return "<Tag %s>" % self.name
+
+
 class Revision(BaseModel):
     """
-    Dataset version information
+    Dataset revision information
     """
     objects = NameManager()
     name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
@@ -222,15 +235,23 @@ class Revision(BaseModel):
     created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
                                             help_text="created date")
 
-    #class Meta:
-    #    ordering = ('name',)
-#
-    #def __str__(self):
-    #    return "<Revision %s>" % self.name
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return "<Revision %s>" % self.name
+
+    def save(self, *args, **kwargs):
+        # When a collection hasn't been specified, by default make it the same as the name
+        # But if it is the unknown revision, we want to keep the collection as None so except for
+        # this case
+        if self.name != 'unknown' and not self.collection:
+            self.collection = self.name
+        super(Revision, self).save(*args, **kwargs)
 
 
 def default_revision():
-    return Revision.objects.get_or_create(name='unknown')[0].pk
+    return Revision.objects.get_or_create(name='unknown', collection=None)[0].pk
 
 
 class DatasetManager(BaseManager):
@@ -278,14 +299,17 @@ class Dataset(BaseExperimentalData):
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
 
+    revision = models.ForeignKey(
+        Revision, blank=False, null=False, on_delete=models.SET_DEFAULT,
+        default=default_revision)
+
+    tags = models.ManyToManyField('data.Tag', blank=True, related_name='datasets')
+
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
 
-    revision = models.ForeignKey(Revision, blank=False, null=False, on_delete=models.SET_DEFAULT,
-                                 default=default_revision, verbose_name='Revision')
-
-    class Meta:
-        unique_together = (('session', 'collection', 'revision', 'name'),)
+    # class Meta:
+    #     unique_together = (('session', 'collection', 'revision', 'name'),)
 
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,

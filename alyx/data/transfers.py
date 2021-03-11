@@ -218,21 +218,22 @@ def _create_dataset_file_records(
 
     assert session is not None
 
-    revision_collection = revision.collection
-    relative_path = op.join(rel_dir_path, collection or '', revision_collection or '', filename)
+    relative_path = op.join(rel_dir_path, collection or '', revision.collection or '', filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
     assert data_format
 
-    # Create the dataset.
-    dataset, _ = Dataset.objects.get_or_create(
+    # Get or create the dataset.
+    dataset, create = Dataset.objects.get_or_create(
         collection=collection, name=filename, session=session,
         dataset_type=dataset_type, data_format=data_format, revision=revision)
 
-    # Once tags are implemented have protected field. Such that if dataset has a tag with
-    # protected field =True we cannot patch
-    # TODO
+    # If the dataset already existed see if it is protected (i.e can't be overwritten)
+    if not create:
+        protected_tag = dataset.tags.filter(protected=True).count()
+        if protected_tag > 0:
+            return dataset
 
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
@@ -358,7 +359,7 @@ def transfers_required(dataset):
             }
 
 
-def bulk_sync(dry_run=False, lab=None):
+def bulk_sync(dry_run=False, lab=None, gc=None):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
     This is meant to be launched before the transfer() function
@@ -370,6 +371,7 @@ def bulk_sync(dry_run=False, lab=None):
     their exist flags updated
     :param dry_run (False) just prints the files if True
     :param lab (optional) specific lab name only
+    :param gc (optional) globus transfer client. If not given will instantiated within fucntion
     :param local_only: (False) if set to True, only local files will be checked. This is useful
     for patching files
     """
@@ -392,7 +394,7 @@ def bulk_sync(dry_run=False, lab=None):
             print(fval)
         return fvals
 
-    gc = globus_transfer_client()
+    gc = gc or globus_transfer_client()
     # loop over all files concerned by a transfer and update the exists and filesize fields
     files_to_ls = all_files.order_by('data_repository__globus_endpoint_id', 'relative_path')
     _last_ep = None
@@ -449,19 +451,19 @@ def _filename_from_file_record(fr, add_uuid=False):
     return fn
 
 
-def bulk_transfer(dry_run=False, lab=None):
+def bulk_transfer(dry_run=False, lab=None, gc=None):
     """
     uploads files from a local Globus repository to a main repository if the file on the main
     repository does not exist.
-    should be launched after bulk_sync() function
+    should be launched after bulk_sync() functions
     """
     # splits the jobs in one for small files and another for big files so that big raw
     # ephys files don't hold the transfer of small behaviour/training files
-    _bulk_transfer(dry_run=dry_run, lab=lab, maxsize=1024 ** 3)
-    _bulk_transfer(dry_run=dry_run, lab=lab, minsize=1024 ** 3)
+    _bulk_transfer(dry_run=dry_run, lab=lab, maxsize=1024 ** 3, gc=gc)
+    _bulk_transfer(dry_run=dry_run, lab=lab, minsize=1024 ** 3, gc=gc)
 
 
-def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
+def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None, gc=None):
     """
     Transfer in bulk data to Flat Iron. 2 transfers are created according to file-size so that
     smaller files get in earlier. The query of data/.FileRecord records to transfer is based
@@ -470,6 +472,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
     :param lab: (str) lab name: only transfer files from this lab
     :param maxsize: (int) maximum file size for transfer (allows to split small and big transfers)
     :param minsize: (int) minimum file size for transfer (see above)
+    :param gc (optional) globus transfer client.
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     dfs = FileRecord.objects.filter(
@@ -485,20 +488,21 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None):
         return
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
-    gc, tm = _globus_transfer_filerecords(dfs, dry=dry_run)
+    gc, tm = _globus_transfer_filerecords(dfs, dry=dry_run, gc=gc)
     return gc, tm
 
 
-def _globus_transfer_filerecords(dfs, dry=True):
+def _globus_transfer_filerecords(dfs, dry=True, gc=None):
     """
     Transfers the file records. The query set has to contain only is_globus_personal=False flag
     (ie. they are server side file records). The algorithm creates a transfer object for each
     unique pair of globus source / globus destination ids and launches the transfers at the end.
     :param dfs: file records queryset
     :param dry:
+    :param gc (optional) globus transfer client. If not given will instantiated within function
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
-    gc = None if dry else globus_transfer_client()
+    gc = None if dry else gc or globus_transfer_client()
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
     pri_repos = DataRepository.objects.filter(globus_is_personal=False)
     sec_repos = DataRepository.objects.filter(globus_is_personal=True)
@@ -532,15 +536,26 @@ def _globus_transfer_filerecords(dfs, dry=True):
                     verify_checksum=True,
                     sync_level='checksum',
                     label=label)
+            # If dry make a fake transfer client dict
+            else:
+                tm[ipri][isec] = {'source_endpoint': sec_repos[isec].globus_endpoint_id,
+                                  'destination_endpoint': pri_repos[ipri].globus_endpoint_id,
+                                  'label': label,
+                                  'DATA': []}
+
         # add the transfer to the current task
         destination_file = _filename_from_file_record(ds, add_uuid=True)
         source_file = _filename_from_file_record(src_file)
         if not dry:
             tm[ipri][isec].add_item(source_path=source_file, destination_path=destination_file)
+        else:
+            tm[ipri][isec]['DATA'].append({'source_path': source_file,
+                                           'destination_path': destination_file})
+
         print(str(c) + '/' + str(nfiles) + ' ' + source_file + ' to ' + destination_file)
     # launch the transfer tasks
     if dry:
-        return None, None
+        return None, tm
     for t in tm.flatten():
         if t == 0:
             continue
@@ -589,7 +604,7 @@ def globus_transfer_datasets(dsets, dry=True):
     return gc, tm
 
 
-def globus_delete_local_datasets(datasets, dry=True):
+def globus_delete_local_datasets(datasets, dry=True, gc=None):
     """
     For each dataset in the queryset delete the file records belonging to a Globus personal repo
     only if a server file exists and matches the size.
@@ -597,18 +612,17 @@ def globus_delete_local_datasets(datasets, dry=True):
     :param dry: default True
     :return:
     """
-    gtc = []
     # first get the list of Globus endpoints concerned
     file_records = FileRecord.objects.filter(dataset__in=datasets)
     globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
                                                 flat=True).distinct()
     # create a globus delete_client for each globus endpoint
-    gtc = globus_transfer_client()
+    gtc = gc or globus_transfer_client()
     delete_clients = []
     for ge in globus_endpoints:
         delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
 
-    def _ls_globus(file_record, dry=dry, add_uuid=False):
+    def _ls_globus(file_record, add_uuid=False):
         try:
             path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
             ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
@@ -622,6 +636,7 @@ def globus_delete_local_datasets(datasets, dry=True):
 
     # appends each file for deletion
     fr2delete = []
+    del_client = []
     for ds in datasets:
         # check the existence of the server file
         fr_server = ds.file_records.filter(exists=True,
@@ -656,7 +671,7 @@ def globus_delete_local_datasets(datasets, dry=True):
             logger.info('DELETE: ' + _filename_from_file_record(frloc))
     # launch the deletion jobs and remove records from the database
     if dry:
-        return
+        return del_client
     for dc in delete_clients:
         # submitting a deletion without data will create an error
         if dc['DATA'] == []:
@@ -668,7 +683,7 @@ def globus_delete_local_datasets(datasets, dry=True):
     frecs.delete()
 
 
-def globus_delete_datasets(datasets, dry=True, local_only=False):
+def globus_delete_datasets(datasets, dry=True, local_only=False, gc=None):
     """
     For each dataset in the queryset, delete the dataset record in the database and attempt
     a Globus delete for all physical file-records associated.
@@ -677,6 +692,7 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
     :param dry: default True
     :param local_only: only delete from non-FlatIron locations: in this case only file records will
     be removed from the database, not the datasets records.
+    :param gc: globus_transfer_client
     :return:
     """
     # first get the list of Globus endpoints concerned
@@ -684,21 +700,22 @@ def globus_delete_datasets(datasets, dry=True, local_only=False):
     if local_only:
         file_records = file_records.filter(data_repository__globus_is_personal=True)
         file_records = file_records.exclude(data_repository__name__icontains='flatiron')
-    globus_delete_file_records(file_records, dry=dry)
+    file2del = globus_delete_file_records(file_records, dry=dry, gc=gc)
 
     if dry or local_only:
-        return
+        return file2del
 
     for ds in datasets:
         ds.delete()
 
 
-def globus_delete_file_records(file_records, dry=True):
+def globus_delete_file_records(file_records, dry=True, gc=None):
     """
     For each filecord in the queryset, attempt a Globus delete for all physical file-records
     associated. Admin territory.
     :param file_records:
     :param dry: default True
+    :param gc (optional) globus transfer client. If not given will be instantiated within function
     :return:
     """
     # first get the list of Globus endpoints concerned
@@ -707,9 +724,10 @@ def globus_delete_file_records(file_records, dry=True):
     related_datasets = file_records.values_list('dataset', flat=True).distinct()
 
     # create a globus delete_client for each globus endpoint
-    gtc = globus_transfer_client()
+    gtc = gc or globus_transfer_client()
+    delete_clients = []
     if not dry:
-        delete_clients = []
+        # delete_clients = []
         for ge in globus_endpoints:
             delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
     # appends each file for deletion
@@ -731,6 +749,7 @@ def globus_delete_file_records(file_records, dry=True):
             add_uuid = not fr.data_repository.globus_is_personal
             file2del = _filename_from_file_record(fr, add_uuid=add_uuid)
             if dry:
+                delete_clients.append(file2del)
                 logger.warning(file2del)
             else:
                 if current_path != Path(file2del).parent:
@@ -754,7 +773,7 @@ def globus_delete_file_records(file_records, dry=True):
                         'FILE NOT FOUND: ' + file2del + ' on ' + str(fr.data_repository.name))
     # launch the deletion jobs and remove records from the database
     if dry:
-        return
+        return delete_clients
     # launch the deletion jobs and remove records from the database
     for dc in delete_clients:
         # submitting a deletion without data will create an error
@@ -765,3 +784,5 @@ def globus_delete_file_records(file_records, dry=True):
         gtc.submit_delete(dc)
     # ideally here we would make some synchronous process and some error handling
     file_records.delete()
+
+    return

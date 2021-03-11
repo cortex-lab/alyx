@@ -19,7 +19,8 @@ from .models import (DataRepositoryType,
                      Download,
                      FileRecord,
                      new_download,
-                     Revision
+                     Revision,
+                     Tag
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -29,6 +30,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DownloadSerializer,
                           FileRecordSerializer,
                           RevisionSerializer,
+                          TagSerializer
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
                         _create_dataset_file_records, bulk_sync)
@@ -114,6 +116,11 @@ class RevisionTypeList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
+class TagTypeList(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
 
 # Dataset
 # ------------------------------------------------------------------------------------------------
@@ -255,7 +262,8 @@ def _make_dataset_response(dataset):
         'session_number': dataset.session.number,
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
-        #'revision': dataset.revision
+        'collection': dataset.collection,
+        'revision': dataset.revision.name
     }
     out['file_records'] = file_records
     return out
@@ -283,7 +291,6 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
     serializer_class = serializers.Serializer
-
 
     def create(self, request):
         """
@@ -327,6 +334,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         If the dataset already exists, it will use the file hash to deduce if the file has been
         patched or not (ie. the filerecords will be created as not existing)
         """
+        filenames = request.data.get('filenames', ())
         user = request.data.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
@@ -375,16 +383,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
 
-        # revision of dataset
-        revision = request.data.get('revisions', [None for f in filenames])
-        if isinstance(revision, str):
-            revision = revision.split(',')
-        # For now if no revision specified return the default which is None  - this behavior may
-        # need to change
+        # revisions if provided
+        _revisions = request.data.get('revisions', [None for f in filenames])
+        if isinstance(_revisions, str):
+            _revisions = _revisions.split(',')
+        # Get the revision object from the revison name
         revisions = []
-        for rev in revision:
+        for rev in _revisions:
             if not rev:
-                revisions.append(Revision.objects.get(name='unknown')) # Better naming for default
+                # If no revision specified then get the default one
+                revisions.append(Revision.objects.get(name='unknown'))
             else:
                 revisions.append(Revision.objects.get(name=rev))
 
@@ -411,6 +419,23 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             # collection field is None
             collection = str(Path(filename.replace('\\', '/')).parent)
             collection = None if collection == '.' else collection
+
+            # If the revision is specified need to check that the collection path doesn't contain
+            # the revision path too
+            if revision.name != 'unknown' and collection:
+                # If the last part of the collection contains the revision collection we want to
+                # remove this from the collection
+                if Path(collection).parts[-1] == revision.collection:
+                    collection = str(Path(*Path(collection).parts[:-1]))
+                    # case where all of collection is the revision
+                    collection = None if collection == '.' else collection
+                else:
+                    data = {'status_code': 400,
+                            'detail': f'Revision folder {Path(collection).parts[-1]} does '
+                                      f'not equal revision collection "{revision.collection}"'
+                                      f'for revision {revision.name}'}
+                    return Response(data=data, status=400)
+
             filename = Path(filename).name
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,

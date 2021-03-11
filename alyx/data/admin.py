@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Download, Revision)
+                     Dataset, FileRecord, Download, Revision, Tag)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -80,13 +80,29 @@ class FileRecordInline(BaseInlineAdmin):
     fields = ('data_repository', 'relative_path', 'exists')
 
 
+class TagRecordInline(BaseInlineAdmin):
+    model = Dataset.tags.through
+    extra = 1
+    #fields = ['row_name', 'row_protected']
+    # readonly_fields = ['row_name', 'row_protected']
+
+    def row_name(self, instance):
+        return instance.row.name
+    row_name.short_description = 'name'
+
+    def row_protected(self, instance):
+        return instance.row.protected
+    row_protected.short_description = 'protected'
+    # fields = ('dataset.tags.name', 'dataset.tags.protected')
+
+
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
               'session_ro', 'collection', 'auto_datetime', 'revision_']
-    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_']
+    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_', 'tags']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
-    inlines = [FileRecordInline]
+    inlines = [FileRecordInline, TagRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
@@ -180,9 +196,15 @@ class RevisionAdmin(BaseAdmin):
     search_fields = ('name',)
     ordering = ('-created_datetime',)
 
-    def name_(self, obj):
-        return obj.name or '<unnamed>'
+    # def name_(self, obj):
+    #     return obj.name or '<unnamed>'
 
+
+class TagAdmin(BaseAdmin):
+    fields = ['name', 'description', 'protected']
+    list_display = ['name', 'description', 'protected']
+    search_fields = ('name',)
+    ordering = ('name',)
 
 
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
@@ -190,6 +212,7 @@ admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
 admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
-admin.site.register(Revision, RevisionAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Download, DownloadAdmin)
+admin.site.register(Revision, RevisionAdmin)
+admin.site.register(Tag, TagAdmin)

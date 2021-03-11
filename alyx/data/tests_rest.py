@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download, Revision
+from data.models import Dataset, FileRecord, Download
 
 
 class APIDataTests(BaseTests):
@@ -22,7 +22,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
         self.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
         self.subject = self.ar(self.client.get(reverse('subject-list')))[0]['nickname']
-        #self.post(reverse('revision-list'), {'name': 'default'})
+        self.post(reverse('revision-list'), {'name': 'v1', 'collection': 'v1'})
 
         # create some more dataset types a.a, a.b, a.c, a.d etc...
         for let in 'abcd':
@@ -134,12 +134,42 @@ class APIDataTests(BaseTests):
         # Post the dataset.
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
+        # Check collection and revision have been set to default values
+        self.assertEqual(r.data['revision'], 'unknown')
+        self.assertEqual(r.data['collection'], None)
         # Make sure a session has been created.
         session = r.data['session']
         r = self.client.get(session)
         self.ar(r, 200)
         self.assertEqual(r.data['subject'], self.subject)
         self.assertEqual(r.data['start_time'][:10], data['date'])
+
+        # Create dataset with collection and revision specified
+        data = {
+            'name': 'some-dataset',
+            'dataset_type': 'dst',
+            'created_by': 'test',
+            'subject': self.subject,
+            'data_format': 'df',
+            'date': '2018-01-01',
+            'number': 2,
+            'collection': 'test_path',
+            'revision': 'v1'
+        }
+
+        r = self.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+        self.assertEqual(r.data['revision'], data['revision'])
+        self.assertEqual(r.data['collection'], data['collection'])
+
+        # Post this dataset again, and ensure we get an error due to uniqueness
+        # r = self.post(reverse('dataset-list'), data)
+        # self.ar(r, 500)
+
+        # But if we change the collection, we are okay
+        data['collection'] = 'test_path2'
+        r = self.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
 
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
@@ -183,7 +213,6 @@ class APIDataTests(BaseTests):
 
         self.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1', 'dra2']})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
-
 
         # start with registering 2 datasets on lab a, since the repo is not whithin the lab repos
         # we expect 3 file records to be created, do it twice: list and char to test format
@@ -245,7 +274,6 @@ class APIDataTests(BaseTests):
         data['filenames'] = 'alf/titi/a.b.e1'
         # re-register a dataset with the same name but a different subcollection adds a new dataset
         r = self.client.post(reverse('register-file'), data)
-        print(r)
         self.ar(r, 201)
         self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 2)
         # but registering a dataset using a subollection that matches another raises an error
@@ -253,40 +281,6 @@ class APIDataTests(BaseTests):
         data['filenames'] = 'dir/a.b.e1'
         # the dataset already exists and results in a 500 integrity error
         self.ar(self.post(reverse('register-file'), data), 500)
-
-        self.post(reverse('revision-list'), {'name': 'v1', 'collection': 'v1'})
-        # Test registering files with revisions and tags
-        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-                'filenames': 'a.d.e1',
-                'name': 'drb2',  # this is the repository name
-                'revisions': 'v1'
-                }
-        r = self.client.post(reverse('register-file'), data)
-        print(r)
-        r = self.ar(r, 201)[0]
-        print(r)
-        self.assertTrue(r['revision'] == 'unknown')
-        self.assertTrue(r['file_records'][0]['relative_path'] ==
-                        op.join(data['path'], data['revision'], data['name']))
-        self.assertTrue(Dataset.objects.filter(name='f.g.e1').count() == 1)
-        self.assertTrue(Dataset.objects.filter(revision='v1').count() == 1)
-        #fr = FileRecord.objects.filter()
-
-    #def test_register_files_revision(self):
-    #    # Test registering files with revisions and tags
-    #    data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-    #            'filenames': 'a.b.e1',
-    #            'name': 'drb2',  # this is the repository name
-    #            'revision': 'v1'
-    #            }
-    #    r = self.client.post(reverse('register-file'), data)
-    #    self.ar(r, 201)
-    #    self.assertTrue(Dataset.objects.filter(name='a.b.e1').count() == 2)
-    #    self.assertTrue(Dataset.objects.filter(revision='v1').count() == 1)
-    #    fr = FileRecord.objects.filter()
-
-
-
 
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need
@@ -352,6 +346,95 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
                          op.join(data['path'], 'a.c.e2'))
+
+    def test_register_with_revision(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1', 'drb2']})
+
+        # First test that adding no revision gives default revision of unknown
+        # No collection, no revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+
+        self.assertTrue(r['revision'] == 'unknown')
+        self.assertTrue(not r['collection'])
+        # Check the revision relative path doesn't exist
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames']))
+
+        # Now test specifying a revision with no collection
+        # No collection, revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'v1/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+
+        self.assertTrue(r['revision'] == 'v1')
+        self.assertTrue(not r['collection'])
+        # Check filerecord relative path includes revision
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['revisions'], data['filenames'].split('/')[1]))
+
+        # Now test specifying a collection and a revision
+        # Collection and revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir1/v1/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        self.assertTrue(r['revision'] == 'v1')
+        self.assertTrue(r['collection'] == 'dir1')
+        # Check filerecord relative path includes revision
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split('/')[0], data['revisions'],
+                                data['filenames'].split('/')[2]))
+
+        # Test that giving wrong revision folder format gives out an error
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir1/v2/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
+        # Test specifying multiple revisions at once
+        # Add an extra revision
+        self.post(reverse('revision-list'), {'name': 'v2', 'collection': 'v2'})
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir2/v1/a.d.e1,v2/a.c.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1,v2'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)
+        self.assertTrue(r[0]['revision'] == 'v1')
+        self.assertTrue(r[1]['revision'] == 'v2')
+        self.assertTrue(r[0]['collection'] == 'dir2')
+        self.assertTrue(not r[1]['collection'])
+        # Check filerecord relative path includes revision
+        self.assertTrue(r[0]['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split(',')[0]))
+        self.assertTrue(r[1]['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split(',')[1]))
+
+    def test_revision_creation_save(self):
+        # TODO
+        pass
+
+    def test_register_with_tags(self):
+        # TODO
+        pass
 
     def test_download(self):
         # Create a dataset.
