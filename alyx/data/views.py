@@ -116,6 +116,7 @@ class RevisionTypeList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'name'
 
+
 class TagTypeList(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -124,6 +125,7 @@ class TagTypeList(generics.ListCreateAPIView):
 
 # Dataset
 # ------------------------------------------------------------------------------------------------
+
 
 class DatasetFilter(BaseFilterSet):
     subject = django_filters.CharFilter('session__subject__nickname')
@@ -139,6 +141,9 @@ class DatasetFilter(BaseFilterSet):
                                                      lookup_expr='lte')
     exists = django_filters.BooleanFilter(method='filter_exists')
     probe_insertion = django_filters.UUIDFilter(method='probe_insertion_filter')
+    public = django_filters.BooleanFilter(method='filter_public')
+    protected = django_filters.BooleanFilter(method='filter_protected')
+    tag = django_filters.CharFilter('tags__name')
 
     class Meta:
         model = Dataset
@@ -164,6 +169,18 @@ class DatasetFilter(BaseFilterSet):
         dsets = dsets.filter(session=probe.session, collection__icontains=probe.name)
         return dsets
 
+    def filter_public(self, dsets, name, value):
+        if value:
+            return dsets.filter(tags__public=True).distinct()
+        else:
+            return dsets.exclude(tags__public=True)
+
+    def filter_protected(self, dsets, name, value):
+        if value:
+            return dsets.filter(tags__protected=True).distinct()
+        else:
+            return dsets.exclude(tags__protected=True)
+
 
 class DatasetList(generics.ListCreateAPIView):
     """
@@ -179,6 +196,9 @@ class DatasetList(generics.ListCreateAPIView):
     -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
     server repo (boolean)  `/datasets?exists=True`
     -   **probe_insertions**: probe insertion id '/datasets?probe_insertion=uuid
+    -   **tag**: tag name '/datasets?tag=repeated_site
+    -   **public**: only returns datasets that are public or not public
+    -   **protected**: only returns datasets that are protected or not protected
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """
@@ -263,7 +283,8 @@ def _make_dataset_response(dataset):
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
         'collection': dataset.collection,
-        'revision': dataset.revision.name
+        'revision': dataset.revision.name,
+        'default': dataset.default_dataset,
     }
     out['file_records'] = file_records
     return out
@@ -320,6 +341,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               # records in the server repositories and skips local repositories
               'versions': ['1.4.4', '1.4.4'],  # optional,usually refers to the software version
               # used to generate the file
+              'revisions': ['v1', 'v2'] # optional, refers to the revision of dataset. Revision
+              must be represented in folder path of filename
+              'default': False #optional , defaults to True, if more than one revision of dataset,
+              whether to set current one as the default
               }
         ```
 
@@ -396,6 +421,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             else:
                 revisions.append(Revision.objects.get(name=rev))
 
+        default = request.data.get('default', True)
+        # Need to explicitly cast string to a bool
+        if default == 'False':
+            default = False
+
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
@@ -440,7 +470,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize, version=version, revision=revision)
+                hash=hash, file_size=fsize, version=version, revision=revision, default=default)
             out = _make_dataset_response(dataset)
             response.append(out)
 

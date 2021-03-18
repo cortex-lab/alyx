@@ -211,10 +211,17 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
+def _change_default_dataset(session, collection, filename):
+    dataset = Dataset.objects.filter(session=session, collection=collection, name=filename,
+                                     default_dataset=True)
+    if dataset.count() > 0:
+        dataset.update(default_dataset=False)
+
+
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,
-        file_size=None, version=None, revision=None):
+        file_size=None, version=None, revision=None, default=None):
 
     assert session is not None
 
@@ -224,13 +231,24 @@ def _create_dataset_file_records(
     assert dataset_type
     assert data_format
 
+    # If we are going to set this one as the default we need to change any previous ones with
+    # same session, collection and name to have default flag to false
+    if default:
+        _change_default_dataset(session, collection, filename)
+
     # Get or create the dataset.
-    dataset, create = Dataset.objects.get_or_create(
+    dataset, is_new = Dataset.objects.get_or_create(
         collection=collection, name=filename, session=session,
         dataset_type=dataset_type, data_format=data_format, revision=revision)
 
+    if default:
+        dataset.default_dataset = True
+    else:
+        dataset.default_dataset = False
+    dataset.save()
+
     # If the dataset already existed see if it is protected (i.e can't be overwritten)
-    if not create:
+    if not is_new:
         protected_tag = dataset.tags.filter(protected=True).count()
         if protected_tag > 0:
             return dataset

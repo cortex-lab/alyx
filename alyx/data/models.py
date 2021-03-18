@@ -215,6 +215,10 @@ class Tag(BaseModel):
     name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
     description = models.CharField(max_length=1023, blank=True)
     protected = models.BooleanField(default=False)
+    public = models.BooleanField(default=False)
+    hash = models.CharField(blank=True, null=True, max_length=64,
+                            help_text=("Hash of the data buffer, SHA-1 is 40 hex chars, while md5"
+                                       "is 32 hex chars"))
 
     class Meta:
         ordering = ('name',)
@@ -308,8 +312,9 @@ class Dataset(BaseExperimentalData):
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
 
-    # class Meta:
-    #     unique_together = (('session', 'collection', 'revision', 'name'),)
+    default_dataset = models.BooleanField(default=True,
+                                          help_text="Whether this dataset is the default "
+                                                    "latest revision")
 
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
@@ -323,6 +328,22 @@ class Dataset(BaseExperimentalData):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
         if fr:
             return all(fr.values_list('exists', flat=True))
+        else:
+            return False
+
+    @property
+    def protected(self):
+        tags = self.tags.filter(protected=True)
+        if tags.count() > 0:
+            return True
+        else:
+            return False
+
+    @property
+    def public(self):
+        tags = self.tags.filter(public=True)
+        if tags.count() > 0:
+            return True
         else:
             return False
 

@@ -83,6 +83,7 @@ class FileRecordInline(BaseInlineAdmin):
 class TagRecordInline(BaseInlineAdmin):
     model = Dataset.tags.through
     extra = 1
+    #fields = ('protected', 'public')
     #fields = ['row_name', 'row_protected']
     # readonly_fields = ['row_name', 'row_protected']
 
@@ -93,13 +94,15 @@ class TagRecordInline(BaseInlineAdmin):
     def row_protected(self, instance):
         return instance.row.protected
     row_protected.short_description = 'protected'
-    # fields = ('dataset.tags.name', 'dataset.tags.protected')
+    #fields = ('dataset.tags.name', 'dataset.tags.protected')
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
-              'session_ro', 'collection', 'auto_datetime', 'revision_']
-    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_', 'tags']
+              'session_ro', 'collection', 'auto_datetime', 'revision_', 'default_dataset',
+              '_protected', '_public']
+    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_',
+                       '_protected', '_public']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
     inlines = [FileRecordInline, TagRecordInline]
@@ -137,6 +140,16 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return obj.online
     _online.short_description = 'On server'
     _online.boolean = True
+
+    def _protected(self, obj):
+        return obj.protected
+    _protected.short_description = 'Protected'
+    _protected.boolean = True
+
+    def _public(self, obj):
+        return obj.public
+    _public.short_description = 'Public'
+    _public.boolean = True
 
 
 class FileRecordAdmin(BaseAdmin):
@@ -201,8 +214,8 @@ class RevisionAdmin(BaseAdmin):
 
 
 class TagAdmin(BaseAdmin):
-    fields = ['name', 'description', 'protected']
-    list_display = ['name', 'description', 'protected']
+    fields = ['name', 'description', 'protected', 'public']
+    list_display = ['name', 'description', 'protected', 'public']
     search_fields = ('name',)
     ordering = ('name',)
 

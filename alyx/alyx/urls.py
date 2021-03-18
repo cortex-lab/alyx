@@ -60,6 +60,9 @@ urlpatterns = [
     path('revision', dv.RevisionTypeList.as_view(),
          name="revision-list"),
 
+    path('tag', dv.TagTypeList.as_view(),
+         name="tag-list"),
+
     path('datasets', dv.DatasetList.as_view(),
          name="dataset-list"),
 

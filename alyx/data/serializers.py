@@ -3,11 +3,10 @@ from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, Download, FileRecord, Revision, Tag)
-from .transfers import _get_session
+from .transfers import _get_session, _change_default_dataset
 from actions.models import Session
 from subjects.models import Subject
 from misc.models import LabMember
-from django.urls import reverse
 
 
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -93,6 +92,12 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
                   'exists')
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('__all__')
+
+
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
@@ -119,10 +124,15 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Session.objects.all(),
     )
 
+    tags = TagSerializer(read_only=False, required=False, many=True)
+
     hash = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField(required=False, allow_null=True)
     file_size = serializers.IntegerField(required=False, allow_null=True)
     collection = serializers.CharField(required=False, allow_null=True)
+    default_dataset = serializers.BooleanField(required=False, allow_null=True)
+    public = serializers.ReadOnlyField()
+    protected = serializers.ReadOnlyField()
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
     experiment_number = serializers.SerializerMethodField()
@@ -149,42 +159,22 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     def get_experiment_number(self, obj):
         return obj.session.number if obj and obj.session else None
 
-    # def to_internal_value(self, data):
-    #     session = data.get('session', None)
-    #     revision = data.get('revision', None)
-    #     collection = data.get('collection', None)
-    #     if session and revision and collection:
-    #         return super(DatasetSerializer, self).to_internal_value(data)
-#
-    #     # Find or create an appropriate session for the dataset.
-    #     if not collection:
-    #         data['collection'] = None
-    #     if not revision:
-    #         data['revision'] = 'unknown'
-    #     if not session:
-    #         subject = data.pop('subject', None)
-    #         date = data.pop('date', None)
-    #         if not subject or not date:
-    #             data['session'] = None
-    #         else:
-    #             number = data.pop('number', None)
-    #             user = data.pop('created_by', None)
-    #             subject = Subject.objects.filter(nickname=subject)[0]
-    #             user = LabMember.objects.filter(username=user)[0]
-    #             session = _get_session(subject=subject, date=date, number=number, user=user)
-    #             request = self.context.get('request')
-    #             data['session'] = request.build_absolute_uri(reverse('session-detail',
-    #                                                                  args=[session.id]))
-#
-    #     return super(DatasetSerializer, self).to_internal_value(data)
-
     def create(self, validated_data):
-        # Check to see if we have revision, if not set to default
+        # Get out some useful info
         revision = validated_data.get('revision', None)
+        collection = validated_data.get('collection', None)
+        name = validated_data.get('name', None)
+        default = validated_data.get('default_dataset', None)
+        session = validated_data.get('session', None)
+
+        # Check to see if we have revision, if not set to default
         if not revision:
             validated_data['revision'] = Revision.objects.all().filter(name='unknown')[0]
 
-        if validated_data.get('session', None):
+        if session:
+            if default is not False:
+                _change_default_dataset(session, collection, name)
+                validated_data['default_dataset'] = True
             return super(DatasetSerializer, self).create(validated_data)
 
         # Find or create an appropriate session for the dataset.
@@ -202,6 +192,10 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
         # Create the dataset, attached to the subsession.
         validated_data['session'] = session
+        if default is not False:
+            _change_default_dataset(session, collection, name)
+            validated_data['default_dataset'] = True
+
         return super(DatasetSerializer, self).create(validated_data)
 
     class Meta:
@@ -210,7 +204,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
-                  'subject', 'date', 'number', 'auto_datetime', 'revision', )
+                  'subject', 'date', 'number', 'auto_datetime', 'revision', 'default_dataset',
+                  'protected', 'public', 'tags')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},
@@ -235,10 +230,4 @@ class DownloadSerializer(serializers.HyperlinkedModelSerializer):
 class RevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Revision
-        fields = ('__all__')
-
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
         fields = ('__all__')
