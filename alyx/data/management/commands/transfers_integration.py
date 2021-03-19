@@ -178,15 +178,9 @@ class TestTransfers(object):
         self.session, _ = Session.objects.get_or_create(subject=subject, location=lab_location,
                                                         lab=self.lab, start_time='2021-03-03',
                                                         number=1)
-        try:
-            start_time = self.session.start_time.date()
-        except Exception as err:
-            print(type(err))
-            start_time = self.session.start_time
-            print(start_time)
 
         self.session_path = str(Path(self.session.subject.nickname,
-                                     str(start_time),
+                                     str(self.session.start_time),
                                      '00' + str(self.session.number)))
 
         # Make a revision object for revision testing
