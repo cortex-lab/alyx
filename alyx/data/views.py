@@ -417,7 +417,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         for rev in _revisions:
             if not rev:
                 # If no revision specified then get the default one
-                revisions.append(Revision.objects.get(name='unknown'))
+                revisions.append(Revision.objects.get(name='no_revision'))
             else:
                 revisions.append(Revision.objects.get(name=rev))
 
@@ -452,7 +452,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
             # If the revision is specified need to check that the collection path doesn't contain
             # the revision path too
-            if revision.name != 'unknown' and collection:
+            if revision.name != 'no_revision' and collection:
                 # If the last part of the collection contains the revision collection we want to
                 # remove this from the collection
                 if Path(collection).parts[-1] == revision.collection:

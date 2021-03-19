@@ -169,7 +169,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
         # Check to see if we have revision, if not set to default
         if not revision:
-            validated_data['revision'] = Revision.objects.all().filter(name='unknown')[0]
+            validated_data['revision'] = Revision.objects.all().filter(name='no_revision')[0]
 
         if session:
             if default is not False:

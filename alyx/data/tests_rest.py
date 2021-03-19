@@ -136,7 +136,7 @@ class APIDataTests(BaseTests):
         self.ar(r, 201)
 
         # Check collection and revision have been set to default values
-        self.assertEqual(r.data['revision'], 'unknown')
+        self.assertEqual(r.data['revision'], 'no_revision')
         self.assertEqual(r.data['collection'], None)
         # Check that it has been set as the default dataset
         self.assertEqual(r.data['default_dataset'], True)
@@ -161,7 +161,7 @@ class APIDataTests(BaseTests):
 
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
-        self.assertEqual(r.data['revision'], 'unknown')
+        self.assertEqual(r.data['revision'], 'no_revision')
         self.assertEqual(r.data['collection'], data['collection'])
         self.assertEqual(r.data['default_dataset'], True)
         data_url = r.data['url']
@@ -365,7 +365,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb2']})
 
-        # First test that adding no revision gives default revision of unknown
+        # First test that adding no revision gives default revision of no_revision
         # No collection, no revision
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
                 'filenames': 'a.d.e1',
@@ -374,7 +374,7 @@ class APIDataTests(BaseTests):
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)[0]
 
-        self.assertTrue(r['revision'] == 'unknown')
+        self.assertTrue(r['revision'] == 'no_revision')
         self.assertTrue(not r['collection'])
         # Check the revision relative path doesn't exist
         self.assertTrue(r['file_records'][0]['relative_path'] ==
@@ -443,7 +443,7 @@ class APIDataTests(BaseTests):
 
     def test_revision_creation_save(self):
         # Check that when saving the default revision, the collection remains as None
-        rev = Revision.objects.get(name='unknown')
+        rev = Revision.objects.get(name='no_revision')
         self.assertTrue(not rev.collection)
         rev.save()
         self.assertTrue(not rev.collection)
@@ -468,7 +468,8 @@ class APIDataTests(BaseTests):
         self.assertEqual(rev.collection, 'revision')
 
         # Make sure we cannot create a new revision that has same name as another one
-        r = self.client.post(reverse('revision-list'), data={'name': 'unknown', 'collection': 'a'})
+        r = self.client.post(reverse('revision-list'), data={'name': 'no_revision',
+                                                             'collection': 'a'})
         self.ar(r, 400)
 
         # Make sure we cannot create a new revision that has same collection as another one
@@ -528,11 +529,12 @@ class APIDataTests(BaseTests):
         self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
 
-        # Create a dataset
+        # Create a dataset and explicitly set default to True
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test_default/v1/a.d.e2',
                 'name': 'drb1',  # this is the repository name
                 'revisions': 'v1',
+                'default': True
                 }
 
         r = self.client.post(reverse('register-file'), data)
@@ -540,7 +542,7 @@ class APIDataTests(BaseTests):
         dataset_id1 = r['id']
         self.assertEqual(r['default'], True)
 
-        # Create same dataset with no revision
+        # Create same dataset with no revision and don't explicitly set default to True
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test_default/a.d.e2',
                 'name': 'drb1',  # this is the repository name

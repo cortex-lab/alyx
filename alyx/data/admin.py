@@ -83,18 +83,6 @@ class FileRecordInline(BaseInlineAdmin):
 class TagRecordInline(BaseInlineAdmin):
     model = Dataset.tags.through
     extra = 1
-    #fields = ('protected', 'public')
-    #fields = ['row_name', 'row_protected']
-    # readonly_fields = ['row_name', 'row_protected']
-
-    def row_name(self, instance):
-        return instance.row.name
-    row_name.short_description = 'name'
-
-    def row_protected(self, instance):
-        return instance.row.protected
-    row_protected.short_description = 'protected'
-    #fields = ('dataset.tags.name', 'dataset.tags.protected')
 
 
 class DatasetAdmin(BaseExperimentalDataAdmin):

@@ -178,8 +178,15 @@ class TestTransfers(object):
         self.session, _ = Session.objects.get_or_create(subject=subject, location=lab_location,
                                                         lab=self.lab, start_time='2021-03-03',
                                                         number=1)
+        try:
+            start_time = self.session.start_time.date()
+        except Exception as err:
+            print(type(err))
+            start_time = self.session.start_time
+            print(start_time)
+
         self.session_path = str(Path(self.session.subject.nickname,
-                                     str(self.session.start_time),
+                                     str(start_time),
                                      '00' + str(self.session.number)))
 
         # Make a revision object for revision testing
@@ -206,6 +213,8 @@ class TestTransfers(object):
                 'server_only': False,
                 'filesizes': [d.stat().st_size for d in dsets_list]}
 
+        print(data)
+
         r = self.client.post(reverse('register-file'), data, SERVER_NAME=SERVER_NAME,
                              content_type='application/json')
 
@@ -224,7 +233,7 @@ class TestTransfers(object):
 
         # Test bulk sync
         bulk_sync(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='unknown',
+        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='no_revision',
                               iteration=1)
 
         # Test bulk transfer, first in dry mode
@@ -233,13 +242,13 @@ class TestTransfers(object):
 #
         # Then in non dry mode
         _, tm = _bulk_transfer(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_transfer(exp_files, lab_name=self.lab_name, revision_name='unknown')
+        self.assert_bulk_transfer(exp_files, lab_name=self.lab_name, revision_name='no_revision')
 
         time.sleep(30)
 
         # Test second iteration of bulksync
         bulk_sync(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='unknown',
+        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='no_revision',
                               iteration=2)
 
         """
@@ -294,7 +303,8 @@ class TestTransfers(object):
         """
         # Test deletion of local files globus_delete_local_datasets
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
-                                              name='clusters.amps.npy', revision__name='unknown')
+                                              name='clusters.amps.npy',
+                                              revision__name='no_revision')
         frs = FileRecord.objects.filter(dataset__in=dsets_to_del)
         frs_local = frs.filter(data_repository__globus_is_personal=True)
         exp_files = [fr.data_repository.globus_path + fr.relative_path for fr in frs_local]
@@ -320,7 +330,8 @@ class TestTransfers(object):
         assert(not Path(exp_files[0]).name in ls_files)
 
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
-                                              name='spikes.clusters.npy', revision__name='unknown')
+                                              name='spikes.clusters.npy',
+                                              revision__name='no_revision')
         revision = None
 
         # Change the size of spikes.clusters on local endpoint
@@ -404,7 +415,8 @@ class TestTransfers(object):
             assert (frs.count() == 0)
 
     @staticmethod
-    def assert_bulk_sync(expected_files, lab_name='testlab', revision_name='unknown', iteration=1):
+    def assert_bulk_sync(expected_files, lab_name='testlab', revision_name='no_revision',
+                         iteration=1):
         """
         Test transfers.bulk_sync function in dry=False mode
 
@@ -470,7 +482,7 @@ class TestTransfers(object):
                 it])
 
     @staticmethod
-    def assert_bulk_transfer(expected_files, lab_name='testlab', revision_name='unknown'):
+    def assert_bulk_transfer(expected_files, lab_name='testlab', revision_name='no_revision'):
         """
         Tests transfers._bulk_transfer in dry=False mode
 

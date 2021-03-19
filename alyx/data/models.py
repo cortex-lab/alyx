@@ -247,15 +247,15 @@ class Revision(BaseModel):
 
     def save(self, *args, **kwargs):
         # When a collection hasn't been specified, by default make it the same as the name
-        # But if it is the unknown revision, we want to keep the collection as None so except for
+        # But if it is there is no revision, we want to keep the collection as None so except for
         # this case
-        if self.name != 'unknown' and not self.collection:
+        if self.name != 'no_revision' and not self.collection:
             self.collection = self.name
         super(Revision, self).save(*args, **kwargs)
 
 
 def default_revision():
-    return Revision.objects.get_or_create(name='unknown', collection=None)[0].pk
+    return Revision.objects.get_or_create(name='no_revision', collection=None)[0].pk
 
 
 class DatasetManager(BaseManager):
