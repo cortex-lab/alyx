@@ -1,4 +1,6 @@
 from django import template
+from django.urls import reverse
+from django.utils.html import format_html
 register = template.Library()
 
 
@@ -14,3 +16,12 @@ def filter_tasks(tasks, task_list):
     """
     qs = [tasks.filter(name=n) for n in task_list]
     return list(map(lambda o: o[0] if o else None, qs))
+
+
+@register.filter
+def get_admin_url(obj):
+    if not obj:
+        return '#'
+    info = (obj._meta.app_label, obj._meta.model_name)
+    url = reverse('admin:%s_%s_change' % info, args=(obj.pk,))
+    return url

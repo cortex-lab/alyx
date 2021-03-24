@@ -33,6 +33,86 @@ class AlertsLabView(ListView):
         context['labs'] = labs
         context['labs_all'] = labs_all
 
+        ins = ProbeInsertion.objects.filter(session__lab__name=lab_name).\
+            order_by('-session__start_time')
+
+        traj_plan = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=10)
+        traj_micro = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=30)
+        traj_hist = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=50)
+        traj_ephys = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=70)
+
+        context['no_ins_plan'] = ins.exclude(pk__in=traj_plan.values_list('probe_insertion',
+                                                                          flat=True))
+        context['no_ins_micro'] = ins.exclude(pk__in=traj_micro.values_list('probe_insertion',
+                                                                            flat=True))
+        context['no_ins_hist'] = ins.exclude(pk__in=traj_hist.values_list('probe_insertion',
+                                                                          flat=True))
+        context['no_ins_ephys'] = ins.filter(pk__in=traj_hist.values_list('probe_insertion',
+                                                                          flat=True)).\
+            exclude(pk__in=traj_ephys.values_list('probe_insertion', flat=True))
+
+        return context
+
+    def get_queryset(self):
+        lab = self.kwargs.get('lab', None)
+        qs = Lab.objects.all().filter(name=lab)
+
+        return qs
+
+class AlertsInsertionView(ListView):
+    template_name = 'reports/insertions.html'
+
+    def get_context_data(self, **kwargs):
+        lab_name = self.kwargs.get('lab', None)
+        labs_all = Lab.objects.all().order_by('name')
+        context = super(AlertsInsertionView, self).get_context_data(**kwargs)
+        labs = Lab.objects.all().filter(name=lab_name)
+
+        ins = ProbeInsertion.objects.filter(session__lab__name=lab_name)
+        # annotate by if they are first pass map
+
+
+        traj_plan = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=10)
+        traj_micro = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=30)
+        traj_hist = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=50)
+        traj_ephys = TrajectoryEstimate.objects.filter(
+            probe_insertion__session__lab__name=lab_name, provenance=70)
+
+        context['no_ins_plan'] = ins.exclude(pk__in=traj_plan.values_list('probe_insertion',
+                                                                          flat=True))
+        context['no_ins_micro'] = ins.exclude(pk__in=traj_micro.values_list('probe_insertion',
+                                                                            flat=True))
+        context['no_ins_hist'] = ins.exclude(pk__in=traj_hist.values_list('probe_insertion',
+                                                                          flat=True))
+        context['no_ins_ephys'] = ins.filter(pk__in=traj_hist.values_list('probe_insertion',
+                                                                          flat=True)).\
+            exclude(pk__in=traj_ephys.values_list('probe_insertion', flat=True))
+
+
+        ntraining = Count("session", filter=Q(session__procedures__name='Behavior training/tasks'))
+        nephys = Count("session", filter=Q(session__procedures__name__icontains='ephys'))
+        lt_training = Max("session__start_time",
+                          filter=Q(session__procedures__name='Behavior training/tasks'))
+        lt_ephys = Max("session__start_time",
+                       filter=Q(session__procedures__name__icontains='ephys'))
+        labs = labs.annotate(ntraining=ntraining, nephys=nephys, latest_training=lt_training,
+                             latest_ephys=lt_ephys)
+
+        # Annotate with latest ephys session
+
+        space = np.array(labs.values_list(
+            'json__raid_available', flat=True), dtype=np.float)
+        context['space_left'] = np.round(space / 1000, decimals=1)
+        context['labs'] = labs
+        context['labs_all'] = labs_all
+
         return context
 
     def get_queryset(self):

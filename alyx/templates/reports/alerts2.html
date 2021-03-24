@@ -1,6 +1,7 @@
 {% extends "reports/base.html" %}
 {% load jobs_template_tags %}
 
+
 {% block main_container %}
     {% for space in space_left %}
         {% if space < 0.5 %}
@@ -113,4 +114,188 @@
             </div>
         </div>
     {% endfor %}
+
+
+    <div class="dropdown dropright">
+        {% if no_ins_plan|length == 0 %}
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+        {% else %}
+            <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+        {% endif %}
+            {{ no_ins_plan|length }} insertions with missing planned coordinates
+        </button>
+        <div class="dropdown-menu pre-scrollable">
+            <p class="dropdown-header"><p class="bg-secondary text-white">First Pass Map</p></p>
+            {% for plan in no_ins_plan %}
+                {% if plan.session.project.name == 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+            <p class="dropdown-header"><p class="bg-secondary text-white">Other Projects</p></p>
+            {% for plan in no_ins_plan %}
+                {% if plan.session.project.name != 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="dropdown dropright">
+        {% if no_ins_micro|length == 0 %}
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+        {% else %}
+            <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+        {% endif %}
+            {{ no_ins_micro|length }} insertions with missing micro manipulator coordinates
+        </button>
+        <div class="dropdown-menu pre-scrollable">
+            <p class="dropdown-header"><p class="bg-secondary text-white">First Pass Map</p></p>
+            {% for plan in no_ins_micro %}
+                {% if plan.session.project.name == 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+            <p class="dropdown-header"><p class="bg-secondary text-white">Other Projects</p></p>
+            {% for plan in no_ins_micro %}
+                {% if plan.session.project.name != 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="dropdown dropright">
+        {% if no_ins_hist|length == 0 %}
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+        {% else %}
+            <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+        {% endif %}
+            {{ no_ins_hist|length }} insertions with missing histology tracing
+        </button>
+        <div class="dropdown-menu pre-scrollable">
+            <p class="dropdown-header"><p class="bg-secondary text-white">First Pass Map</p></p>
+            {% for plan in no_ins_hist %}
+                {% if plan.session.project.name == 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+            <p class="dropdown-header"><p class="bg-secondary text-white">Other Projects</p></p>
+            {% for plan in no_ins_hist %}
+                {% if plan.session.project.name != 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="dropdown dropright">
+        {% if no_ins_ephys|length == 0 %}
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+        {% else %}
+            <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown">
+        {% endif %}
+            {{ no_ins_ephys|length }} traced insertions with missing alignment
+        </button>
+        <div class="dropdown-menu pre-scrollable">
+            <p class="dropdown-header"><p class="bg-secondary text-white">First Pass Map</p></p>
+            {% for plan in no_ins_ephys %}
+                {% if plan.session.project.name == 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+            <p class="dropdown-header"><p class="bg-secondary text-white">Other Projects</p></p>
+            {% for plan in no_ins_ephys %}
+                {% if plan.session.project.name != 'ibl_neuropixel_brainwide_01' %}
+                    <a class="dropdown-item" href={{ plan|get_admin_url }}>{{ plan }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="container text-center my-3">
+        <h2 class="font-weight-light">Latest Ephys Sessions</h2>
+        <div class="row">
+            <div id="demo" class="carousel slide" data-ride="carousel">
+
+                <!-- Indicators -->
+                <ul class="carousel-indicators">
+                  <li data-target="#demo" data-slide-to="0" class="active"></li>
+                  <li data-target="#demo" data-slide-to="1"></li>
+                  <li data-target="#demo" data-slide-to="2"></li>
+                </ul>
+
+                <!-- The slideshow -->
+                <div class="carousel-inner">
+                  <div class="carousel-item active">
+                      <div class="card w-100">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col">
+                              <h5 class="card-title text-uppercase text-muted mb-0">N Training Sessions</h5>
+                              <span class="h2 font-weight-bold mb-0">{{ lab.ntraining }}</span>
+                            </div>
+                            <div class="col-auto">
+                              <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                <i class="fas fa-percent"></i>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="mt-3 mb-0 text-muted text-sm">
+                            <span class="text-success mr-2"><i class="fas fa-arrow-up"></i> 12%</span>
+                            <span class="text-nowrap">Since last month</span>
+                          </p>
+                        </div>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col">
+                              <h5 class="card-title text-uppercase text-muted mb-0">N Training Sessions</h5>
+                              <span class="h2 font-weight-bold mb-0">{{ lab.ntraining }}</span>
+                            </div>
+                            <div class="col-auto">
+                              <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                <i class="fas fa-percent"></i>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="mt-3 mb-0 text-muted text-sm">
+                            <span class="text-success mr-2"><i class="fas fa-arrow-up"></i> 12%</span>
+                            <span class="text-nowrap">Since last month</span>
+                          </p>
+                        </div>
+                      </div>
+                  </div>
+                  <div class="carousel-item">
+                      <div class="card card-stats mb-4 mb-xl-0">
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col">
+                              <h5 class="card-title text-uppercase text-muted mb-0">N Training Sessions</h5>
+                              <span class="h2 font-weight-bold mb-0">{{ lab.ntraining }}</span>
+                            </div>
+                            <div class="col-auto">
+                              <div class="icon icon-shape bg-info text-white rounded-circle shadow">
+                                <i class="fas fa-percent"></i>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="mt-3 mb-0 text-muted text-sm">
+                            <span class="text-success mr-2"><i class="fas fa-arrow-up"></i> 12%</span>
+                            <span class="text-nowrap">Since last month</span>
+                          </p>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+
+                <!-- Left and right controls -->
+                <a class="carousel-control-prev" href="#demo" data-slide="prev">
+                  <span class="carousel-control-prev-icon"></span>
+                </a>
+                <a class="carousel-control-next" href="#demo" data-slide="next">
+                  <span class="carousel-control-next-icon"></span>
+                </a>
+
+            </div>
+        </div>
+    </div>
 {% endblock %}
