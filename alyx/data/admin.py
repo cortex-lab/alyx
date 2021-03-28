@@ -191,14 +191,11 @@ class DownloadAdmin(BaseAdmin):
 
 
 class RevisionAdmin(BaseAdmin):
-    fields = ['name', 'description', 'collection', 'created_datetime']
+    fields = ['name', 'description', 'created_datetime']
     readonly_fields = ['created_datetime']
-    list_display = ['name', 'description', 'collection']
+    list_display = ['name', 'description']
     search_fields = ('name',)
     ordering = ('-created_datetime',)
-
-    # def name_(self, obj):
-    #     return obj.name or '<unnamed>'
 
 
 class TagAdmin(BaseAdmin):

@@ -184,8 +184,7 @@ class TestTransfers(object):
                                      '00' + str(self.session.number)))
 
         # Make a revision object for revision testing
-        self.revision, _ = Revision.objects.get_or_create(name='version_testing',
-                                                          collection='version_testing')
+        self.revision, _ = Revision.objects.get_or_create(name='version_testing')
 
     def test_transfers(self):
 
@@ -227,7 +226,7 @@ class TestTransfers(object):
 
         # Test bulk sync
         bulk_sync(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='no_revision',
+        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name=None,
                               iteration=1)
 
         # Test bulk transfer, first in dry mode
@@ -236,13 +235,13 @@ class TestTransfers(object):
 #
         # Then in non dry mode
         _, tm = _bulk_transfer(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_transfer(exp_files, lab_name=self.lab_name, revision_name='no_revision')
+        self.assert_bulk_transfer(exp_files, lab_name=self.lab_name, revision_name=None)
 
-        time.sleep(30)
+        time.sleep(40)
 
         # Test second iteration of bulksync
         bulk_sync(dry_run=False, lab=self.lab_name, gc=self.gtc)
-        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name='no_revision',
+        self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name=None,
                               iteration=2)
 
         """
@@ -286,7 +285,7 @@ class TestTransfers(object):
         _, tm = _bulk_transfer(dry_run=False, lab=self.lab_name, gc=self.gtc)
         self.assert_bulk_transfer(exp_files, lab_name=self.lab_name, revision_name=revision)
 
-        time.sleep(30)
+        time.sleep(40)
 
         bulk_sync(dry_run=False, lab=self.lab_name, gc=self.gtc)
         self.assert_bulk_sync(exp_files, lab_name=self.lab_name, revision_name=revision,
@@ -297,8 +296,7 @@ class TestTransfers(object):
         """
         # Test deletion of local files globus_delete_local_datasets
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
-                                              name='clusters.amps.npy',
-                                              revision__name='no_revision')
+                                              name='clusters.amps.npy', revision__isnull=True)
         frs = FileRecord.objects.filter(dataset__in=dsets_to_del)
         frs_local = frs.filter(data_repository__globus_is_personal=True)
         exp_files = [fr.data_repository.globus_path + fr.relative_path for fr in frs_local]
@@ -325,9 +323,9 @@ class TestTransfers(object):
 
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
                                               name='spikes.clusters.npy',
-                                              revision__name='no_revision')
-        revision = None
+                                              revision__isnull=True)
 
+        revision = None
         # Change the size of spikes.clusters on local endpoint
         data_path = Path(local_path).joinpath(self.session_path, collection, revision or '')
         dsets = ['spikes.clusters']
@@ -409,8 +407,7 @@ class TestTransfers(object):
             assert (frs.count() == 0)
 
     @staticmethod
-    def assert_bulk_sync(expected_files, lab_name='testlab', revision_name='no_revision',
-                         iteration=1):
+    def assert_bulk_sync(expected_files, lab_name='testlab', revision_name=None, iteration=1):
         """
         Test transfers.bulk_sync function in dry=False mode
 
@@ -421,14 +418,25 @@ class TestTransfers(object):
         in the transfer pipeline
         :return:
         """
-        frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
-                                               data_repository__globus_is_personal=True,
-                                               dataset__revision__name=revision_name).
-                     order_by('dataset__name'))
-        frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
-                                                  data_repository__globus_is_personal=False,
-                                                  dataset__revision__name=revision_name).
-                        order_by('dataset__name'))
+        if not revision_name:
+            frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                   data_repository__globus_is_personal=True,
+                                                   dataset__revision__isnull=True).
+                         order_by('dataset__name'))
+            frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                      data_repository__globus_is_personal=False,
+                                                      dataset__revision__isnull=True).
+                            order_by('dataset__name'))
+
+        else:
+            frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                   data_repository__globus_is_personal=True,
+                                                   dataset__revision__name=revision_name).
+                         order_by('dataset__name'))
+            frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                      data_repository__globus_is_personal=False,
+                                                      dataset__revision__name=revision_name).
+                            order_by('dataset__name'))
 
         # Check all is as expected in the local server filerecords
         assert (frs_local.count() == len(expected_files))
@@ -476,7 +484,7 @@ class TestTransfers(object):
                 it])
 
     @staticmethod
-    def assert_bulk_transfer(expected_files, lab_name='testlab', revision_name='no_revision'):
+    def assert_bulk_transfer(expected_files, lab_name='testlab', revision_name=None):
         """
         Tests transfers._bulk_transfer in dry=False mode
 
@@ -485,14 +493,25 @@ class TestTransfers(object):
         :param revision_name: name of revision
         :return:
         """
-        frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
-                                               data_repository__globus_is_personal=True,
-                                               dataset__revision__name=revision_name).
-                     order_by('dataset__name'))
-        frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
-                                                  data_repository__globus_is_personal=False,
-                                                  dataset__revision__name=revision_name).
-                        order_by('dataset__name'))
+        if not revision_name:
+            frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                   data_repository__globus_is_personal=True,
+                                                   dataset__revision__isnull=True).
+                         order_by('dataset__name'))
+            frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                      data_repository__globus_is_personal=False,
+                                                      dataset__revision__isnull=True).
+                            order_by('dataset__name'))
+
+        else:
+            frs_local = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                   data_repository__globus_is_personal=True,
+                                                   dataset__revision__name=revision_name).
+                         order_by('dataset__name'))
+            frs_flatiron = (FileRecord.objects.filter(data_repository__lab__name=lab_name,
+                                                      data_repository__globus_is_personal=False,
+                                                      dataset__revision__name=revision_name).
+                            order_by('dataset__name'))
 
         # Check local server file records haven't changes
         assert (frs_local.count() == len(expected_files))
@@ -537,7 +556,7 @@ class TestTransfers(object):
 class Command(BaseCommand):
     """
     Run in the following way
-    python ./manage.py transfers_integration_test run_tests
+    python ./manage.py transfers_integration run_tests
     """
     def add_arguments(self, parser):
         parser.add_argument('action', help='Action')
@@ -554,17 +573,3 @@ class Command(BaseCommand):
                 trace_back = traceback.format_exc()
                 print(trace_back)
             int_test.tearDown()
-
-
-# Ideally this way would work
-# if __name__ == "__main__":
-#
-#     import sys
-#     #sys.path.append('../../../')
-#     import os
-#     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "alyx.settings")
-#
-#     import django
-#     django.setup()
-#
-#     unittest.main()

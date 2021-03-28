@@ -234,8 +234,6 @@ class Revision(BaseModel):
     objects = NameManager()
     name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
     description = models.CharField(max_length=1023, blank=True)
-    collection = models.CharField(blank=True, null=True, max_length=255,
-                                  help_text='file subcollection or subfolder', unique=True)
     created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
                                             help_text="created date")
 
@@ -244,18 +242,6 @@ class Revision(BaseModel):
 
     def __str__(self):
         return "<Revision %s>" % self.name
-
-    def save(self, *args, **kwargs):
-        # When a collection hasn't been specified, by default make it the same as the name
-        # But if it is there is no revision, we want to keep the collection as None so except for
-        # this case
-        if self.name != 'no_revision' and not self.collection:
-            self.collection = self.name
-        super(Revision, self).save(*args, **kwargs)
-
-
-def default_revision():
-    return Revision.objects.get_or_create(name='no_revision', collection=None)[0].pk
 
 
 class DatasetManager(BaseManager):
@@ -304,8 +290,7 @@ class Dataset(BaseExperimentalData):
         default=default_data_format)
 
     revision = models.ForeignKey(
-        Revision, blank=False, null=False, on_delete=models.SET_DEFAULT,
-        default=default_revision)
+        Revision, blank=True, null=True, on_delete=models.SET_NULL)
 
     tags = models.ManyToManyField('data.Tag', blank=True, related_name='datasets')
 

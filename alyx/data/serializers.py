@@ -93,6 +93,7 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Tag
         fields = ('__all__')
@@ -124,7 +125,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Session.objects.all(),
     )
 
-    tags = TagSerializer(read_only=False, required=False, many=True)
+    tags = serializers.SlugRelatedField(read_only=False, required=False, many=True,
+                                        slug_field='name', queryset=Tag.objects.all())
 
     hash = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField(required=False, allow_null=True)
@@ -161,15 +163,11 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         # Get out some useful info
-        revision = validated_data.get('revision', None)
+        # revision = validated_data.get('revision', None)
         collection = validated_data.get('collection', None)
         name = validated_data.get('name', None)
         default = validated_data.get('default_dataset', None)
         session = validated_data.get('session', None)
-
-        # Check to see if we have revision, if not set to default
-        if not revision:
-            validated_data['revision'] = Revision.objects.all().filter(name='no_revision')[0]
 
         if session:
             if default is not False:
@@ -204,8 +202,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
-                  'subject', 'date', 'number', 'auto_datetime', 'revision', 'default_dataset',
-                  'protected', 'public', 'tags')
+                  'subject', 'date', 'number', 'auto_datetime', 'revision',
+                  'default_dataset', 'protected', 'public', 'tags')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},

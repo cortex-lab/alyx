@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download, Tag, Revision
+from data.models import Dataset, FileRecord, Download, Tag
 
 
 class APIDataTests(BaseTests):
@@ -134,9 +134,8 @@ class APIDataTests(BaseTests):
         # Post the dataset.
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
-
         # Check collection and revision have been set to default values
-        self.assertEqual(r.data['revision'], 'no_revision')
+        self.assertEqual(r.data['revision'], None)
         self.assertEqual(r.data['collection'], None)
         # Check that it has been set as the default dataset
         self.assertEqual(r.data['default_dataset'], True)
@@ -161,7 +160,7 @@ class APIDataTests(BaseTests):
 
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
-        self.assertEqual(r.data['revision'], 'no_revision')
+        self.assertEqual(r.data['revision'], None)
         self.assertEqual(r.data['collection'], data['collection'])
         self.assertEqual(r.data['default_dataset'], True)
         data_url = r.data['url']
@@ -365,7 +364,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb2']})
 
-        # First test that adding no revision gives default revision of no_revision
+        # First test that adding no revision gives None
         # No collection, no revision
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
                 'filenames': 'a.d.e1',
@@ -374,7 +373,7 @@ class APIDataTests(BaseTests):
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)[0]
 
-        self.assertTrue(r['revision'] == 'no_revision')
+        self.assertTrue(not r['revision'])
         self.assertTrue(not r['collection'])
         # Check the revision relative path doesn't exist
         self.assertTrue(r['file_records'][0]['relative_path'] ==
@@ -441,42 +440,6 @@ class APIDataTests(BaseTests):
         self.assertTrue(r[1]['file_records'][0]['relative_path'] ==
                         op.join(data['path'], data['filenames'].split(',')[1]))
 
-    def test_revision_creation_save(self):
-        # Check that when saving the default revision, the collection remains as None
-        rev = Revision.objects.get(name='no_revision')
-        self.assertTrue(not rev.collection)
-        rev.save()
-        self.assertTrue(not rev.collection)
-
-        # Check that when creating a new revision without specifying collection, collection is
-        # set to same value as name
-        r = self.client.post(reverse('revision-list'), data={'name': 'new_revision'})
-        self.ar(r, 201)
-        rev = Revision.objects.get(name='new_revision')
-        self.assertTrue(rev.collection == rev.name == 'new_revision')
-        rev.save()
-        self.assertTrue(rev.collection == rev.name == 'new_revision')
-
-        # Check that when creating a new revision with collection, the collection is the specified
-        # value even after saving
-        r = self.client.post(reverse('revision-list'), data={'name': 'old_revision',
-                                                             'collection': 'revision'})
-        self.ar(r, 201)
-        rev = Revision.objects.get(name='old_revision')
-        self.assertEqual(rev.collection, 'revision')
-        rev.save()
-        self.assertEqual(rev.collection, 'revision')
-
-        # Make sure we cannot create a new revision that has same name as another one
-        r = self.client.post(reverse('revision-list'), data={'name': 'no_revision',
-                                                             'collection': 'a'})
-        self.ar(r, 400)
-
-        # Make sure we cannot create a new revision that has same collection as another one
-        r = self.client.post(reverse('revision-list'), data={'name': 'rara',
-                                                             'collection': 'new_revision'})
-        self.ar(r, 400)
-
     def test_register_with_tags(self):
         self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
@@ -517,13 +480,10 @@ class APIDataTests(BaseTests):
         # Add protected tag to just the second dataset
         dataset2.tags.add(tag2)
 
+        # Check that we get an error if we register a file that is protected
         data['filesizes'] = '22456,40506'
         r = self.client.post(reverse('register-file'), data)
-        r = self.ar(r, 201)
-        # Check that the filesize of first dataset has changed but the second hasn't
-        self.assertEqual(r[0]['file_size'], int(data['filesizes'].split(',')[0]))
-        self.assertNotEqual(r[1]['file_size'], int(data['filesizes'].split(',')[1]))
-        self.assertEqual(r[1]['file_size'], 30000)
+        r = self.ar(r, 403)
 
     def test_register_default_dataset(self):
         self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})

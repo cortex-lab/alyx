@@ -110,18 +110,28 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 # Revison
 # -------------------------------------------------------------------------------------------------
 
-class RevisionTypeList(generics.ListCreateAPIView):
+class RevisionList(generics.ListCreateAPIView):
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'name'
 
 
-class TagTypeList(generics.ListCreateAPIView):
+class RevisionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Revision.objects.all()
+    serializer_class = RevisionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class TagList(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'name'
+
+
+class TagDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
 # Dataset
 # ------------------------------------------------------------------------------------------------
@@ -144,6 +154,7 @@ class DatasetFilter(BaseFilterSet):
     public = django_filters.BooleanFilter(method='filter_public')
     protected = django_filters.BooleanFilter(method='filter_protected')
     tag = django_filters.CharFilter('tags__name')
+    revision = django_filters.CharFilter('revision__name')
 
     class Meta:
         model = Dataset
@@ -283,7 +294,7 @@ def _make_dataset_response(dataset):
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
         'collection': dataset.collection,
-        'revision': dataset.revision.name,
+        'revision': getattr(dataset.revision, 'name', None),
         'default': dataset.default_dataset,
     }
     out['file_records'] = file_records
@@ -412,14 +423,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         _revisions = request.data.get('revisions', [None for f in filenames])
         if isinstance(_revisions, str):
             _revisions = _revisions.split(',')
-        # Get the revision object from the revison name
+        # Get the revision object from the revision name
         revisions = []
         for rev in _revisions:
-            if not rev:
-                # If no revision specified then get the default one
-                revisions.append(Revision.objects.get(name='no_revision'))
-            else:
+            if rev:
                 revisions.append(Revision.objects.get(name=rev))
+            else:
+                revisions.append(None)
 
         default = request.data.get('default', True)
         # Need to explicitly cast string to a bool
@@ -452,25 +462,26 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
             # If the revision is specified need to check that the collection path doesn't contain
             # the revision path too
-            if revision.name != 'no_revision' and collection:
+            if revision and collection:
                 # If the last part of the collection contains the revision collection we want to
                 # remove this from the collection
-                if Path(collection).parts[-1] == revision.collection:
+                if Path(collection).parts[-1] == revision.name:
                     collection = str(Path(*Path(collection).parts[:-1]))
                     # case where all of collection is the revision
                     collection = None if collection == '.' else collection
                 else:
                     data = {'status_code': 400,
                             'detail': f'Revision folder {Path(collection).parts[-1]} does '
-                                      f'not equal revision collection "{revision.collection}"'
-                                      f'for revision {revision.name}'}
+                                      f'not equal revision name "{revision.name}"'}
                     return Response(data=data, status=400)
 
             filename = Path(filename).name
-            dataset = _create_dataset_file_records(
+            dataset, resp = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
                 hash=hash, file_size=fsize, version=version, revision=revision, default=default)
+            if resp:
+                return resp
             out = _make_dataset_response(dataset)
             response.append(out)
 

@@ -11,6 +11,7 @@ import numpy as np
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
+from rest_framework.response import Response
 from actions.models import Session
 
 logger = logging.getLogger(__name__)
@@ -224,8 +225,8 @@ def _create_dataset_file_records(
         file_size=None, version=None, revision=None, default=None):
 
     assert session is not None
-
-    relative_path = op.join(rel_dir_path, collection or '', revision.collection or '', filename)
+    relative_path = op.join(rel_dir_path, collection or '', revision.name if revision else ''
+                            , filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
@@ -251,7 +252,10 @@ def _create_dataset_file_records(
     if not is_new:
         protected_tag = dataset.tags.filter(protected=True).count()
         if protected_tag > 0:
-            return dataset
+            # Raise an error indicating dataset cannot be overwritten
+            data = {'status_code': 403,
+                    'detail': f'Dataset {dataset.pk} is protected, cannot patch'}
+            return None, Response(data=data, status=403)
 
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
@@ -289,7 +293,7 @@ def _create_dataset_file_records(
         fr.full_clean()
         fr.save()
 
-    return dataset
+    return dataset, None
 
 
 def iter_registered_directories(data_repository=None, tc=None, path=None):
