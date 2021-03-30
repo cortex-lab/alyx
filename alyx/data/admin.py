@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Download)
+                     Dataset, FileRecord, Download, Revision, Tag)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -80,19 +80,26 @@ class FileRecordInline(BaseInlineAdmin):
     fields = ('data_repository', 'relative_path', 'exists')
 
 
+class TagRecordInline(BaseInlineAdmin):
+    model = Dataset.tags.through
+    extra = 1
+
+
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
-              'session_ro', 'collection', 'auto_datetime']
-    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime']
+              'session_ro', 'collection', 'auto_datetime', 'revision_', 'default_dataset',
+              '_protected', '_public']
+    readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_',
+                       '_protected', '_public']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
-    inlines = [FileRecordInline]
+    inlines = [FileRecordInline, TagRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ]
-    search_fields = ('created_by__username', 'name', 'session__subject__nickname', 'collection',
-                     'dataset_type__name', 'dataset_type__filename_pattern', 'version')
+    search_fields = ('session__id', 'name', 'collection', 'dataset_type__name',
+                     'dataset_type__filename_pattern', 'version')
     ordering = ('-created_datetime',)
 
     def get_queryset(self, request):
@@ -106,6 +113,9 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     def name_(self, obj):
         return obj.name or '<unnamed>'
 
+    def revision_(self, obj):
+        return obj.revision.name
+
     def session_ro(self, obj):
         url = get_admin_url(obj.session)
         return format_html('<a href="{url}">{name}</a>', url=url, name=obj.session)
@@ -118,6 +128,16 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return obj.online
     _online.short_description = 'On server'
     _online.boolean = True
+
+    def _protected(self, obj):
+        return obj.protected
+    _protected.short_description = 'Protected'
+    _protected.boolean = True
+
+    def _public(self, obj):
+        return obj.public
+    _public.short_description = 'Public'
+    _public.boolean = True
 
 
 class FileRecordAdmin(BaseAdmin):
@@ -170,6 +190,21 @@ class DownloadAdmin(BaseAdmin):
         return obj.dataset.created_by.username
 
 
+class RevisionAdmin(BaseAdmin):
+    fields = ['name', 'description', 'created_datetime']
+    readonly_fields = ['created_datetime']
+    list_display = ['name', 'description']
+    search_fields = ('name',)
+    ordering = ('-created_datetime',)
+
+
+class TagAdmin(BaseAdmin):
+    fields = ['name', 'description', 'protected', 'public']
+    list_display = ['name', 'description', 'protected', 'public']
+    search_fields = ('name',)
+    ordering = ('name',)
+
+
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
@@ -177,3 +212,5 @@ admin.site.register(DatasetType, DatasetTypeAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Download, DownloadAdmin)
+admin.site.register(Revision, RevisionAdmin)
+admin.site.register(Tag, TagAdmin)

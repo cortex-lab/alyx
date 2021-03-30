@@ -2,8 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, Download, FileRecord,)
-from .transfers import _get_session
+                     Dataset, Download, FileRecord, Revision, Tag)
+from .transfers import _get_session, _change_default_dataset
 from actions.models import Session
 from subjects.models import Subject
 from misc.models import LabMember
@@ -92,6 +92,13 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
                   'exists')
 
 
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
+        fields = ('__all__')
+
+
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     created_by = serializers.SlugRelatedField(
         read_only=False, slug_field='username',
@@ -109,15 +116,25 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         queryset=DataFormat.objects.all(),
     )
 
+    revision = serializers.SlugRelatedField(read_only=False, required=False,
+                                            slug_field='name',
+                                            queryset=Revision.objects.all())
+
     session = serializers.HyperlinkedRelatedField(
         read_only=False, required=False, view_name="session-detail",
         queryset=Session.objects.all(),
     )
 
+    tags = serializers.SlugRelatedField(read_only=False, required=False, many=True,
+                                        slug_field='name', queryset=Tag.objects.all())
+
     hash = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField(required=False, allow_null=True)
     file_size = serializers.IntegerField(required=False, allow_null=True)
     collection = serializers.CharField(required=False, allow_null=True)
+    default_dataset = serializers.BooleanField(required=False, allow_null=True)
+    public = serializers.ReadOnlyField()
+    protected = serializers.ReadOnlyField()
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
     experiment_number = serializers.SerializerMethodField()
@@ -145,7 +162,17 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         return obj.session.number if obj and obj.session else None
 
     def create(self, validated_data):
-        if validated_data.get('session', None):
+        # Get out some useful info
+        # revision = validated_data.get('revision', None)
+        collection = validated_data.get('collection', None)
+        name = validated_data.get('name', None)
+        default = validated_data.get('default_dataset', None)
+        session = validated_data.get('session', None)
+
+        if session:
+            if default is not False:
+                _change_default_dataset(session, collection, name)
+                validated_data['default_dataset'] = True
             return super(DatasetSerializer, self).create(validated_data)
 
         # Find or create an appropriate session for the dataset.
@@ -163,6 +190,10 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
         # Create the dataset, attached to the subsession.
         validated_data['session'] = session
+        if default is not False:
+            _change_default_dataset(session, collection, name)
+            validated_data['default_dataset'] = True
+
         return super(DatasetSerializer, self).create(validated_data)
 
     class Meta:
@@ -171,7 +202,8 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'dataset_type', 'data_format', 'collection',
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
-                  'subject', 'date', 'number', 'auto_datetime')
+                  'subject', 'date', 'number', 'auto_datetime', 'revision',
+                  'default_dataset', 'protected', 'public', 'tags')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},
@@ -191,3 +223,9 @@ class DownloadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Download
         fields = ('id', 'user', 'dataset', 'count', 'json')
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
+        fields = ('__all__')

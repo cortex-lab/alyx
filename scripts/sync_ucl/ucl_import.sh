@@ -5,7 +5,7 @@ ALYX_PATH="/var/www/alyx-main/"
 set -e
 echo "Downloading the cortexlab database backup"
 cd $ALYX_PATH
-scp ubuntu@alyx.cortexlab.net:/var/www/alyx/alyx-backups/$(date +%Y-%m-%d)/alyx_full.sql.gz ./scripts/sync_ucl/cortexlab.sql.gz
+scp -i /home/ubuntu/.ssh/sdsc_alyx.pem ubuntu@alyx.cortexlab.net:/var/www/alyx/alyx-backups/$(date +%Y-%m-%d)/alyx_full.sql.gz ./scripts/sync_ucl/cortexlab.sql.gz
 gunzip -f ./scripts/sync_ucl/cortexlab.sql.gz
 
 echo "Reinitialize the cortexlab database"
