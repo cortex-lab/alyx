@@ -159,6 +159,8 @@ ADMIN_PAGES = [('Common', ['Subjects',
                  'Time series',
                  'Event series',
                  'Interval series',
+                 'Tags',
+                 'Revisions'
                  ]),
                ('Data that changes rarely',
                 ['Lines',

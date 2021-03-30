@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from alyx.base import BaseTests
 from django.core.management import call_command
+
+from alyx.base import BaseTests
 from actions.models import Session
+from experiments.models import ProbeInsertion
+from data.models import Dataset
 
 
 class APISubjectsTests(BaseTests):
@@ -100,8 +103,8 @@ class APISubjectsTests(BaseTests):
         self.post(reverse('datasettype-list'), {'name': 'dset1', 'filename_pattern': '-.'})
 
         # Now attach datasets to the session with collection that contains probe_names
-        dsets = ['dset0', 'dset1', 'dset0']
-        collection = ['probe00', 'probe00', 'probe01']
+        dsets = ['dset0', 'dset1', 'dset0', 'dset0']
+        collection = ['probe00', 'probe00', 'probe01', 'probe02']
         for dset, col in zip(dsets, collection):
             data = {'name': dset,
                     'dataset_type': dset,
@@ -113,6 +116,20 @@ class APISubjectsTests(BaseTests):
                     }
             url = reverse('dataset-list')
             self.ar(self.post(url, data), 201)
+
+        # check that when datasets are created, they're assigned in the m2m
+        for i in range(2):
+            p = ProbeInsertion.objects.get(name=probe_names[0])
+            d = Dataset.objects.filter(collection__endswith=probe_names[0])
+            assert (set(p.datasets.all().values_list('pk', flat=True)) ==
+                    set(d.values_list('pk', flat=True)))
+
+        # check that when a probe is created post-hoc, datasets get assigned in the m2m
+        p2 = ProbeInsertion.objects.create(session=self.session, name='probe02')
+        assert(set(p2.datasets.all().values_list('pk', flat=True)) ==
+               set(Dataset.objects.filter(
+                   collection__endswith=p2.name).values_list('pk', flat=True)))
+        p2.delete()
 
         # Test that probeinsertion details serializer returns datasets associated with probe
         urlf = (reverse('probeinsertion-detail', args=[insertions[0]['id']]))
