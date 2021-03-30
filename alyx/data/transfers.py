@@ -254,7 +254,7 @@ def _create_dataset_file_records(
         if protected_tag > 0:
             # Raise an error indicating dataset cannot be overwritten
             data = {'status_code': 403,
-                    'detail': f'Dataset {dataset.pk} is protected, cannot patch'}
+                    'detail': 'Dataset ' + str(dataset.pk) + ' is protected, cannot patch'}
             return None, Response(data=data, status=403)
 
     # The user doesn't have to be the same when getting an existing dataset, but we still

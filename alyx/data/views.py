@@ -471,8 +471,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                     collection = None if collection == '.' else collection
                 else:
                     data = {'status_code': 400,
-                            'detail': f'Revision folder {Path(collection).parts[-1]} does '
-                                      f'not equal revision name "{revision.name}"'}
+                            'detail': ('Revision folder ' + str(Path(collection).parts[-1]) +
+                                       ' does not equal revision name "' + revision.name + '"')}
                     return Response(data=data, status=400)
 
             filename = Path(filename).name

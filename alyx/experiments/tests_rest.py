@@ -110,7 +110,7 @@ class APISubjectsTests(BaseTests):
                     'dataset_type': dset,
                     'data_format': 'df',
                     'file_size': 1234,
-                    'collection': f'alf/{col}',
+                    'collection': 'alf/' + str(col),
                     'subject': self.session.subject.nickname,
                     'date': str(self.session.start_time.date())
                     }
