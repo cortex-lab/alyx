@@ -3,6 +3,8 @@ import uuid
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -110,14 +112,13 @@ class ProbeInsertion(BaseModel):
     def datetime(self):
         return self.session.start_time
 
-    def save(self, *args, **kwargs):
-        """
-        Attaches the datasets to the probe insertion upon saving
-        """
-        from data.models import Dataset
-        dsets = Dataset.objects.filter(session=self.session, collection__endswith=self.name)
-        self.datasets.set(dsets, clear=True)
-        super(ProbeInsertion, self).save(*args, **kwargs)
+
+@receiver(post_save, sender=ProbeInsertion)
+def update_m2m_relationships_on_save(sender, instance, **kwargs):
+    from data.models import Dataset
+    dsets = Dataset.objects.filter(session=instance.session,
+                                   collection__endswith=instance.name)
+    instance.datasets.set(dsets, clear=True)
 
 
 class TrajectoryEstimate(models.Model):
