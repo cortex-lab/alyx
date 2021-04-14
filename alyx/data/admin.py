@@ -80,20 +80,15 @@ class FileRecordInline(BaseInlineAdmin):
     fields = ('data_repository', 'relative_path', 'exists')
 
 
-class TagRecordInline(BaseInlineAdmin):
-    model = Dataset.tags.through
-    extra = 1
-
-
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
               'session_ro', 'collection', 'auto_datetime', 'revision_', 'default_dataset',
-              '_protected', '_public']
+              '_protected', '_public', 'tags']
     readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_',
-                       '_protected', '_public']
+                       '_protected', '_public', 'tags']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime']
-    inlines = [FileRecordInline, TagRecordInline]
+    inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
