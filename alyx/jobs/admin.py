@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
+from django_admin_listfilter_dropdown.filters import DropdownFilter, ChoiceDropdownFilter
+
 from jobs.models import Task
 from alyx.base import BaseAdmin, get_admin_url
 
@@ -10,10 +12,14 @@ class TaskAdmin(BaseAdmin):
     readonly_fields = ['session', 'log', 'parents']
     list_display = ['name', 'graph', 'status', 'version_str', 'level', 'datetime',
                     'session_str', 'session_task_protocol', 'session_project']
-    search_fields = ('graph', 'session__id', 'session__lab__name', 'session__subject__nickname',
+    search_fields = ('session__id', 'session__lab__name', 'session__subject__nickname',
                      'log', 'version', 'session__task_protocol', 'session__project__name')
     ordering = ('-session__start_time', 'level')
     list_editable = ('status', )
+    list_filter = [('name', DropdownFilter),
+                   ('status', ChoiceDropdownFilter),
+                   ('graph', DropdownFilter),
+                   ]
 
     def has_change_permission(self, request, obj=None):
         if request.user.is_superuser:
