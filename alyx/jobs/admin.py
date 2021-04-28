@@ -28,7 +28,8 @@ class TaskAdmin(BaseAdmin):
             return obj.session.lab.name in request.user.lab
 
     def session_project(self, obj):
-        return obj.session.project.name
+        if obj.session.project is not None:
+            return obj.session.project.name
     session_project.short_description = 'project'
 
     def session_task_protocol(self, obj):
