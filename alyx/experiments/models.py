@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from django.db import models
@@ -10,6 +11,8 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 from actions.models import EphysSession
 from alyx.base import BaseModel, BaseManager
+
+logger = logging.getLogger(__name__)
 
 X_HELP_TEXT = ("brain surface medio-lateral coordinate (um) of"
                "the insertion, right +, relative to Bregma")
@@ -116,9 +119,12 @@ class ProbeInsertion(BaseModel):
 @receiver(post_save, sender=ProbeInsertion)
 def update_m2m_relationships_on_save(sender, instance, **kwargs):
     from data.models import Dataset
-    dsets = Dataset.objects.filter(session=instance.session,
-                                   collection__endswith=instance.name)
-    instance.datasets.set(dsets, clear=True)
+    try:
+        dsets = Dataset.objects.filter(session=instance.session,
+                                    collection__endswith=instance.name)
+        instance.datasets.set(dsets, clear=True)
+    except:
+        logger.warning("Skip update m2m relationship on saving ProbeInsertion")
 
 
 class TrajectoryEstimate(models.Model):
