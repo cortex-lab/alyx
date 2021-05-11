@@ -95,12 +95,16 @@ class Command(BaseCommand):
         self.save(**caches)
 
     def save(self, **kwargs) -> None:
+        from zipfile import ZipFile
+        zip = ZipFile(self.dst_dir / 'cache.zip', 'w')
         metadata = create_metadata()
         logger.info(f'Saving tables to {self.dst_dir}...')
         for name, df in kwargs.items():
             filename = self.dst_dir / f'{name}.pqt'
             # Save to parquet
             _save(filename, df, metadata)
+            zip.write(filename, filename.name)
+        zip.close()
 
 
 @measure_time
