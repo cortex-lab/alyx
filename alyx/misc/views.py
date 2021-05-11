@@ -118,3 +118,18 @@ class UploadedView(views.APIView):
         with open(path, 'rb') as f:
             data = f.read()
         return HttpResponse(data, content_type=mime)
+
+
+class CacheFileView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, **kwargs):
+        from django.utils.encoding import smart_str
+        response = HttpResponse(content_type='application/force-download')
+        response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
+        response['X-Sendfile'] = smart_str(path_to_file)
+        # It's usually a good idea to set the 'Content-Length' header too.
+        # You can also set any other required headers: Cache-Control, etc.
+        return response
+
+
