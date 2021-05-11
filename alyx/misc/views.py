@@ -124,14 +124,8 @@ class CacheFileView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request=None, **kwargs):
-        from django.utils.encoding import smart_str
         from pathlib import Path
-        response = HttpResponse(content_type='application/force-download')
+        from django.http import FileResponse
         cache_file = Path(MEDIA_ROOT).joinpath('cache.zip')
-        if not cache_file.exists():
-            return
-        response['X-Sendfile'] = smart_str(cache_file)
-        response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(cache_file.name)
-        # It's usually a good idea to set the 'Content-Length' header too.
-        # You can also set any other required headers: Cache-Control, etc.
+        response = FileResponse(open(cache_file, 'br'))
         return response
