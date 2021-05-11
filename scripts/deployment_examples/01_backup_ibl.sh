@@ -1,5 +1,5 @@
 backup_dir="/backups/alyx-backups/$(date +%Y-%m-%d)"
-cache_files_dir="/backups/alyx-backups/uploaded"
+cache_files_dir="/backups/uploaded"
 mkdir -p "$backup_dir"
 
 # Full SQL dump.
