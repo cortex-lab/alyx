@@ -645,17 +645,20 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
         delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
 
     def _ls_globus(file_record, add_uuid=False):
-        try:
-            path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
-            ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
-                                      path=path.parent)
-        except globus_sdk.exc.TransferAPIError as err:
-            if 'ClientError.NotFound' in str(err):
-                return
-            else:
-                raise err
+        N_RETRIES = 3
+        for ntry in range(3):
+            try:
+                path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
+                ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
+                                          path=path.parent)
+            except globus_sdk.exc.TransferAPIError as err:
+                logger.warning('Globus error trial %i/%i', ntry, N_RETRIES, exc_info=err)
+                if 'ClientError.NotFound' in str(err):
+                    return
+                elif ntry == N_RETRIES - 1:
+                    raise err
+            break
         return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
-
     # appends each file for deletion
     fr2delete = []
     del_client = []
