@@ -652,11 +652,12 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
                 ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
                                           path=path.parent)
             except globus_sdk.exc.TransferAPIError as err:
-                logger.warning('Globus error trial %i/%i', ntry, N_RETRIES, exc_info=err)
+                logger.warning('Globus error trial %i/%i', ntry + 1, N_RETRIES, exc_info=err)
                 if 'ClientError.NotFound' in str(err):
                     return
                 elif ntry == N_RETRIES - 1:
                     raise err
+                continue
             break
         return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
     # appends each file for deletion
