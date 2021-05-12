@@ -3,6 +3,7 @@ import logging
 import os
 import os.path as op
 import re
+import time
 from pathlib import Path
 
 from django.db.models import Case, When, Count, Q
@@ -656,7 +657,8 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
                 if 'ClientError.NotFound' in str(err):
                     return
                 elif ntry == N_RETRIES - 1:
-                    raise err
+                    raise
+                time.sleep(2)
                 continue
             break
         return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
