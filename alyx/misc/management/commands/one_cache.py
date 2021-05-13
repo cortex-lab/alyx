@@ -179,8 +179,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         (Dataset
             .objects
             .select_related('file_records')
-            .filter(file_records__in=Subquery(records.values('id')))
-            .order_by('-session__start_time'))
+            .filter(file_records__in=Subquery(records.values('id'))))
     )
     df = pd.DataFrame.from_records(query.values(*fields))
     # NB: Splitting and re-joining all these strings is slow :(
@@ -194,18 +193,19 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
             .rename({'session': 'eid'}, axis=1)))
 
     if int_id:
-        # Convert UUID objects to 2xint16
+        # Convert UUID objects to 2xint64
         df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
         df[['eid_0', 'eid_1']] = _uuid2np(df['eid'].values)
         df = (
             (df
                 .drop(['id', 'eid'], axis=1)
-                .set_index(['id_0', 'id_1']))
+                .set_index(['id_0', 'id_1'])
+                .sort_index())
         )
     else:
         # Convert UUIDs to str: not supported by parquet
-        df[['id', 'session']] = df[['id', 'session']].astype(str)
-        df.set_index('id', inplace=True)
+        df[['id', 'eid']] = df[['id', 'eid']].astype(str)
+        df = df.set_index('id').sort_index()
 
     return df
 
