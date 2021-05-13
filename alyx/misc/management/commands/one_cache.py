@@ -15,6 +15,7 @@ from django.db import connection
 from django.db.models import Subquery
 from django.core.management.base import BaseCommand
 
+from alyx.settings import TABLES_ROOT
 from actions.models import Session
 from data.models import Dataset, FileRecord
 
@@ -60,12 +61,15 @@ def _uuid2np(eids_uuid):
 
 
 class Command(BaseCommand):
+    """
+
+    """
     help = "Generate ONE cache tables"
     dst_dir = None
     tables = None
 
     def add_arguments(self, parser):
-        parser.add_argument('-D', '--destination', default=Path.home(),
+        parser.add_argument('-D', '--destination', default=TABLES_ROOT,
                             help='File(s) destination')
         parser.add_argument('-t', '--tables', nargs='*', default=('sessions', 'datasets'),
                             help="List of tables to generate")
@@ -100,10 +104,14 @@ class Command(BaseCommand):
         metadata = create_metadata()
         logger.info(f'Saving tables to {self.dst_dir}...')
         for name, df in kwargs.items():
-            filename = self.dst_dir / f'{name}.pqt'
-            # Save to parquet
+            filename = self.dst_dir / f'{name}.pqt' # Save to parquet
             _save(filename, df, metadata)
             zip.write(filename, filename.name)
+        # creates a tag small file and add it to the zip file
+        tag_file = self.dst_dir / 'datetime.tag'
+        with open(tag_file, 'w') as fid:
+            fid.write(datetime.now().isoformat())
+        zip.write(tag_file, tag_file.name)
         zip.close()
 
 

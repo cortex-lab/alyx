@@ -1,8 +1,9 @@
+from pathlib import Path
 import os.path as op
 
 import magic
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 
 from rest_framework import viewsets, views
 from rest_framework.response import Response
@@ -13,7 +14,7 @@ from rest_framework import generics, permissions
 from alyx.base import BaseFilterSet
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
-from alyx.settings import MEDIA_ROOT
+from alyx.settings import TABLES_ROOT, MEDIA_ROOT
 
 
 @api_view(['GET'])
@@ -120,12 +121,21 @@ class UploadedView(views.APIView):
         return HttpResponse(data, content_type=mime)
 
 
-class CacheFileView(views.APIView):
+class CacheDownloadView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request=None, **kwargs):
-        from pathlib import Path
-        from django.http import FileResponse
-        cache_file = Path(MEDIA_ROOT).joinpath('cache.zip')
+        cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
         response = FileResponse(open(cache_file, 'br'))
         return response
+
+
+class CacheVersionView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, **kwargs):
+        cache_version_file = Path(TABLES_ROOT).joinpath('datetime.tag')
+        with open(cache_version_file) as fid:
+            tag = fid.read()
+        print(tag)
+        return JsonResponse({'tag': tag})

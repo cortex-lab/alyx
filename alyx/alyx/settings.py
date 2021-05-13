@@ -219,4 +219,7 @@ STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
 MEDIA_URL = '/uploaded/'
+
+TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
+
 UPLOADED_IMAGE_WIDTH = 800

@@ -1,5 +1,4 @@
 backup_dir="/backups/alyx-backups/$(date +%Y-%m-%d)"
-cache_files_dir="/backups/uploaded"
 mkdir -p "$backup_dir"
 
 # Full SQL dump.
@@ -10,7 +9,7 @@ rsync -av --progress -e "ssh -i /home/ubuntu/.ssh/sdsc_alyx.pem -p 62022" "$back
 
 # Alyx cache tables
 source /var/www/alyx-main/venv/bin/activate
-python /var/www/alyx-main/alyx/manage.py one_cache -D "$cache_files_dir" --int-id
+python /var/www/alyx-main/alyx/manage.py one_cache --int-id
 
 # Full django JSON dump, used by datajoint
 python /var/www/alyx-main/alyx/manage.py dumpdata \
