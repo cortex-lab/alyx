@@ -147,7 +147,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     )
     df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
     # These columns may be empty; ensure None -> ''
-    for col in ('task_protocol', 'project__name'):
+    for col in ('task_protocol', 'project'):
         df[col] = df[col].astype(str)
 
     if int_id:
