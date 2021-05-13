@@ -102,15 +102,18 @@ class Command(BaseCommand):
         from zipfile import ZipFile
         zip = ZipFile(self.dst_dir / 'cache.zip', 'w')
         metadata = create_metadata()
+        jsonmeta = {}
         logger.info(f'Saving tables to {self.dst_dir}...')
         for name, df in kwargs.items():
-            filename = self.dst_dir / f'{name}.pqt' # Save to parquet
+            filename = self.dst_dir / f'{name}.pqt'  # Save to parquet
             _save(filename, df, metadata)
             zip.write(filename, filename.name)
-        # creates a tag small file and add it to the zip file
-        tag_file = self.dst_dir / 'datetime.tag'
+            pqtinfo = pq.read_metadata(filename)
+            jsonmeta[name] = {'nrecs': pqtinfo.num_rows, 'size': pqtinfo.serialized_size}
+        # creates a json file containing metadata and add it to the zip file
+        tag_file = self.dst_dir / 'cache_info.json'
         with open(tag_file, 'w') as fid:
-            fid.write(datetime.now().isoformat())
+            json.dump({**metadata, 'tables': jsonmeta}, fid, indent=1)
         zip.write(tag_file, tag_file.name)
         zip.close()
 
@@ -145,7 +148,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
 
     if int_id:
-        # Convert UUID objects to 2xint16
+        # Convert UUID objects to 2xint64
         df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
         df = (
             (df

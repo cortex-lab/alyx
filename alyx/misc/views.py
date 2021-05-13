@@ -1,5 +1,6 @@
 from pathlib import Path
 import os.path as op
+import json
 
 import magic
 from django.contrib.auth import get_user_model
@@ -121,6 +122,20 @@ class UploadedView(views.APIView):
         return HttpResponse(data, content_type=mime)
 
 
+def _get_cache_info():
+    file_json_cache = Path(TABLES_ROOT).joinpath('cache_info.json')
+    with open(file_json_cache) as fid:
+        cache_info = json.load(fid)
+    return cache_info
+
+
+class CacheVersionView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, **kwargs):
+        return JsonResponse(_get_cache_info())
+
+
 class CacheDownloadView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -128,14 +143,3 @@ class CacheDownloadView(views.APIView):
         cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
         response = FileResponse(open(cache_file, 'br'))
         return response
-
-
-class CacheVersionView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get(self, request=None, **kwargs):
-        cache_version_file = Path(TABLES_ROOT).joinpath('datetime.tag')
-        with open(cache_version_file) as fid:
-            tag = fid.read()
-        print(tag)
-        return JsonResponse({'tag': tag})
