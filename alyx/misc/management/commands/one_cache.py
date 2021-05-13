@@ -139,10 +139,13 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
             .rename({'start_time': 'date'}, axis=1)
-            .dropna(subset=['number', 'date', 'subject'])  # Lots of dud sessions with no number
+            .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
             .sort_values(['date', 'subject', 'number'], ascending=False))
     )
     df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
+    # These columns may be empty; ensure None -> ''
+    for col in ('task_protocol', 'project__name'):
+        df[col] = df[col].astype(str)
 
     if int_id:
         # Convert UUID objects to 2xint16
