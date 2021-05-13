@@ -178,7 +178,8 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'exists'            # bool
     )
     """
-    fields = ('id', 'session', 'file_records__relative_path', 'file_size', 'hash')
+    fields = ('id', 'session', 'file_records__relative_path',
+              'file_records__data_repository__globus_path', 'file_size', 'hash')
     # Find all online file records
     records = FileRecord.objects.filter(data_repository__globus_is_personal=False, exists=True)
     query = (
@@ -190,12 +191,14 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     df = pd.DataFrame.from_records(query.values(*fields))
     # NB: Splitting and re-joining all these strings is slow :(
     paths = df.file_records__relative_path.str.split('/', n=3, expand=True)
-    df['rel_path'] = paths.iloc[:, -1]
-    df['session_path'] = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')
+    globus_path = df['file_records__data_repository__globus_path']  # /lab/Subjects/
+    session_path = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')  # subject/date/number
+    df['rel_path'] = paths.iloc[:, -1]  # collection/revision/filename
+    df['session_path'] = (globus_path + session_path).str.strip('/')  # full path relative to root
     df['exists'] = True
     df = (
         (df
-            .drop('file_records__relative_path', axis=1)
+            .filter(regex=r'^(?!file_records).*', axis=1)  # drop file record fields
             .rename({'session': 'eid'}, axis=1)))
 
     if int_id:
