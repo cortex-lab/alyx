@@ -104,6 +104,7 @@ class Command(BaseCommand):
         metadata = create_metadata()
         jsonmeta = {}
         logger.info(f'Saving tables to {self.dst_dir}...')
+        self.dst_dir.mkdir(exist_ok=True)
         for name, df in kwargs.items():
             filename = self.dst_dir / f'{name}.pqt'  # Save to parquet
             _save(filename, df, metadata)
