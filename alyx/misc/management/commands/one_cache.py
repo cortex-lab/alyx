@@ -179,8 +179,8 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'exists'            # bool
     )
     """
-    fields = ('id', 'session', 'file_records__relative_path',
-              'file_records__data_repository__globus_path', 'file_size', 'hash')
+    fields = ('id', 'session', 'file_size', 'hash', 'file_records__relative_path',
+              'file_records__data_repository__globus_path', 'default_dataset')
     # Find all online file records
     records = FileRecord.objects.filter(data_repository__globus_is_personal=False, exists=True)
     query = (
@@ -200,7 +200,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     df = (
         (df
             .filter(regex=r'^(?!file_records).*', axis=1)  # drop file record fields
-            .rename({'session': 'eid'}, axis=1)))
+            .rename({'session': 'eid', 'default_dataset': 'default_revision'}, axis=1)))
 
     if int_id:
         # Convert UUID objects to 2xint64
