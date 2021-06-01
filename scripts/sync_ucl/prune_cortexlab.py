@@ -6,6 +6,7 @@ from actions.models import Session, Surgery, NotificationRule, Notification
 from misc.models import Lab, LabMember, LabLocation
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 from experiments.models import ProbeInsertion, TrajectoryEstimate
+from jobs.models import Task
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
@@ -149,9 +150,24 @@ dpk = [s[0] for s in set(cds).difference(set(ids))]
 FileRecord.objects.filter(data_repository__globus_is_personal=False, dataset__in=dpk).update(
     exists=False, json=None)
 
-# those are the init fixtures that could have different names depending on the location
-# (ibl_cortexlab versus cortexlab for example)
-# they share primary keys accross databases but not necessarily the other fields
+"""
+Sync the tasks: they're all imported except the DLC ones: this is kind of a hack for now
+Spike sorting will have to be the same. Need to think of a way to centralize the task management
+System in only one database. Will be easier when ONE2 is realeased
+"""
+dlc_tasks = Task.objects.using('cortexlab').filter(name__in=['TrainingDLC', 'EphysDLC'])
+ctasks = dlc_tasks.values_list('pk', flat=True)
+ibltasks = Task.objects.filter(name__in=['TrainingDLC', 'EphysDLC']).values_list('pk', flat=True)
+t2add = list(set(list(ctasks)).difference(list(ibltasks)))
+dlc_tasks.exclude(t2add).delete()
+
+"""
+Export all the pruned cortexlab database as Json so it can be loaded back into the IBL one
+those are the init fixtures that could have different names depending on the location
+(ibl_cortexlab versus cortexlab for example)
+they share primary keys accross databases but not necessarily the other fields
+"""
+
 init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
                  'data.datasettype',
