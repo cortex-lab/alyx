@@ -155,11 +155,12 @@ Sync the tasks: they're all imported except the DLC ones: this is kind of a hack
 Spike sorting will have to be the same. Need to think of a way to centralize the task management
 System in only one database. Will be easier when ONE2 is realeased
 """
-dlc_tasks = Task.objects.using('cortexlab').filter(name__in=['TrainingDLC', 'EphysDLC'])
+task_names_to_exclude = ['TrainingDLC', 'EphysDLC']
+dlc_tasks = Task.objects.using('cortexlab').filter(name__in=task_names_to_exclude)
 ctasks = dlc_tasks.values_list('pk', flat=True)
-ibltasks = Task.objects.filter(name__in=['TrainingDLC', 'EphysDLC']).values_list('pk', flat=True)
+ibltasks = Task.objects.filter(name__in=task_names_to_exclude).values_list('pk', flat=True)
 t2add = list(set(list(ctasks)).difference(list(ibltasks)))
-dlc_tasks.exclude(t2add).delete()
+dlc_tasks.exclude(id__in=t2add).delete()
 
 """
 Export all the pruned cortexlab database as Json so it can be loaded back into the IBL one
