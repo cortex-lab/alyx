@@ -24,3 +24,4 @@ python-dateutil
 python-magic
 pytz
 webdavclient3
+django-prometheus
