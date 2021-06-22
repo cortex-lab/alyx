@@ -1351,5 +1351,16 @@
     "description": "Coordinates of the ROI in which camera.motionEnergy is calculated",
     "filename_pattern": "*ROIMotionEnergy.position.*"
     }
-  }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "eb61ea65-870a-4ca8-9703-c7c595284ba4",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.frameData",
+      "created_by": null,
+      "description": "Table containing Timestamp, embeddedTimeStamp, embeddedFrameCounter, embeddedGPIOPinState for each video frame",
+      "filename_pattern": "_iblrig_*Camera.frameData.*"
+      }
+    }
 ]
