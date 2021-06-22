@@ -1,7 +1,7 @@
 """
 adapted from http://www.djangosnippets.org/snippets/828/ by dnordberg
 """
-import logging
+import structlog
 
 import psycopg2 as Database
 

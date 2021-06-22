@@ -1,5 +1,5 @@
 import json
-import logging
+import structlog
 import os
 import os.path as op
 from polymorphic.models import PolymorphicModel
@@ -29,7 +29,7 @@ from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 DISABLE_MAIL = False  # used for testing

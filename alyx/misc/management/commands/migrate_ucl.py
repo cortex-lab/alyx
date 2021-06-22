@@ -1,11 +1,11 @@
-import logging
+import structlog
 import sys
 
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 from data.models import FileRecord
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 

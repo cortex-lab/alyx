@@ -2,7 +2,7 @@ from datetime import timedelta, date
 import inspect
 from itertools import groupby
 import json
-import logging
+import structlog
 from operator import itemgetter
 from textwrap import dedent
 
@@ -15,7 +15,7 @@ from alyx.base import alyx_mail
 from actions.models import Surgery, WaterRestriction, Session
 from subjects.models import Subject
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _repr_log_entry(l):

@@ -1,5 +1,5 @@
 from datetime import datetime
-import logging
+import structlog
 from operator import attrgetter
 import os.path as op
 import sys

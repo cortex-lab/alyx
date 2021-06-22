@@ -1,7 +1,7 @@
 from collections import defaultdict
 import gzip
 import json
-import logging
+import structlog
 import os
 import os.path as op
 import sys
@@ -9,7 +9,7 @@ import sys
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 

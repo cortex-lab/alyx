@@ -1,5 +1,5 @@
 import contextlib
-import logging
+import structlog
 import os
 import sys
 
@@ -8,7 +8,7 @@ from django.db.models import Q
 
 from subjects.models import Subject
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 

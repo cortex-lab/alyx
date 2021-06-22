@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import json
-import logging
+import structlog
 from operator import itemgetter
 import os
 import os.path as op
@@ -19,7 +19,7 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 SEVERITY_CHOICES = (
