@@ -19,7 +19,7 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 SEVERITY_CHOICES = (

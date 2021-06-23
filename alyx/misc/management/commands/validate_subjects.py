@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 from subjects.models import Subject
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):

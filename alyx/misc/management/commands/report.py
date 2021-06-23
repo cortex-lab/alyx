@@ -15,7 +15,7 @@ from alyx.base import alyx_mail
 from actions.models import Surgery, WaterRestriction, Session
 from subjects.models import Subject
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _repr_log_entry(l):

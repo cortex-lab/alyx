@@ -8,7 +8,7 @@ from django.db.models import Q
 
 from subjects.models import Subject
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 

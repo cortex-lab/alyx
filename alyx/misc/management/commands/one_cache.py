@@ -19,7 +19,7 @@ from alyx.settings import TABLES_ROOT
 from actions.models import Session
 from data.models import Dataset, FileRecord
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def measure_time(func):
