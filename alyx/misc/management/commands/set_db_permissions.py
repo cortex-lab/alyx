@@ -1,7 +1,7 @@
 """
 adapted from http://www.djangosnippets.org/snippets/828/ by dnordberg
 """
-import structlog
+import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError

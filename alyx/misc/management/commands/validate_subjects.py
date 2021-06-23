@@ -1,10 +1,10 @@
-import structlog
+import logging
 
 from django.core.management.base import BaseCommand
 
 from subjects.models import Subject
 
-logger = structlog.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 class Command(BaseCommand):

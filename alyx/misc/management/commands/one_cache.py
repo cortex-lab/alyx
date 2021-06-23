@@ -1,7 +1,7 @@
 from time import time
 import socket
 import json
-import structlog
+import logging
 from pathlib import Path
 from datetime import datetime
 from functools import wraps
@@ -19,7 +19,7 @@ from alyx.settings import TABLES_ROOT
 from actions.models import Session
 from data.models import Dataset, FileRecord
 
-logger = structlog.get_logger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def measure_time(func):

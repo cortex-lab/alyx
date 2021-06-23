@@ -1,4 +1,4 @@
-import structlog
+import logging
 from django.core.management import BaseCommand
 from django.db.models import Count, Q
 
@@ -6,7 +6,7 @@ from actions.models import Session
 from data import transfers
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 from misc.models import Lab
-structlog.get_logger(__name__).setLevel(logging.WARNING)
+logging.get_logger(__name__).setLevel(logging.WARNING)
 
 
 def _iter_datasets(dataset_id=None, limit=None, user=None):
@@ -136,7 +136,7 @@ class Command(BaseCommand):
             if reply not in ["", "Y", "y", "Yes", "YES"]:
                 self.stdout.write("exiting")
                 return
-            structlog.get_logger(__name__).setLevel(logging.INFO)
+            logging.get_logger(__name__).setLevel(logging.INFO)
             transfers.globus_delete_local_datasets(dsets, dry=dry)
 
         if action == 'bulksync':

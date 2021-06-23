@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 import glob
-import structlog
+import logging
 import math
 import os
 import os.path as op
@@ -12,7 +12,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-logger = structlog.get_logger(__name__)
+logger = logging.get_logger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
 
 
