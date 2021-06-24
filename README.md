@@ -20,6 +20,7 @@ Go to the directory of your choice (for example: `/var/www/alyx-main`)
 sudo apt-get update
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
 sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
+sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log;
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded

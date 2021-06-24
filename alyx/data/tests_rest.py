@@ -204,7 +204,7 @@ class APIDataTests(BaseTests):
         r = self.post(reverse('dataset-list'), data[1])
         self.ar(r, 201)
         # only one has been created before 2018-01-01
-        r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01')
+        r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01T12:00')
         a = [datetime.datetime.strptime(d['created_datetime'],
                                         '%Y-%m-%dT%H:%M:%S') for d in self.ar(r)]
         self.assertTrue(max(a).date() <= datetime.date(2018, 1, 1))

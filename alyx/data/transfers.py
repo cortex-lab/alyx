@@ -1,8 +1,9 @@
 import json
-import logging
+import structlog
 import os
 import os.path as op
 import re
+import time
 from pathlib import Path
 
 from django.db.models import Case, When, Count, Q
@@ -14,7 +15,7 @@ from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataReposi
 from rest_framework.response import Response
 from actions.models import Session
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Login
 # ------------------------------------------------------------------------------------------------
@@ -645,17 +646,22 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
         delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
 
     def _ls_globus(file_record, add_uuid=False):
-        try:
-            path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
-            ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
-                                      path=path.parent)
-        except globus_sdk.exc.TransferAPIError as err:
-            if 'ClientError.NotFound' in str(err):
-                return
-            else:
-                raise err
+        N_RETRIES = 3
+        for ntry in range(3):
+            try:
+                path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
+                ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
+                                          path=path.parent)
+            except globus_sdk.exc.TransferAPIError as err:
+                logger.warning('Globus error trial %i/%i', ntry + 1, N_RETRIES, exc_info=err)
+                if 'ClientError.NotFound' in str(err):
+                    return
+                elif ntry == N_RETRIES - 1:
+                    raise
+                time.sleep(2)
+                continue
+            break
         return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
-
     # appends each file for deletion
     fr2delete = []
     del_client = []
@@ -668,9 +674,12 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
                            '/' + ds.name + " doesnt exist on server - skipping")
             continue
         ls_server = _ls_globus(fr_server, add_uuid=True)
-        # if the file is not found on the remote server, do nothing
+        # if the file is not found on the remote server, reset the exists flag to False and skip
         if ls_server == [] or ls_server is None:
-            logger.warning(fr_server.relative_path + " not found on server - skipping")
+            logger.warning(fr_server.relative_path + " not found on server - skipping,"
+                                                     "setting exists=False")
+            fr_server.exists = False
+            fr_server.save()
             continue
         fr_local = ds.file_records.filter(data_repository__globus_is_personal=True)
         for frloc in fr_local:

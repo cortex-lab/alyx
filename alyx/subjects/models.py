@@ -1,5 +1,5 @@
 from datetime import datetime
-import logging
+import structlog
 from operator import attrgetter
 import urllib
 
@@ -17,7 +17,7 @@ from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
 from misc.models import Lab, default_lab, Housing
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # Zygosity constants

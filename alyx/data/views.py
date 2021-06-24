@@ -1,4 +1,4 @@
-import logging
+import structlog
 import re
 from pathlib import Path
 
@@ -35,7 +35,7 @@ from .serializers import (DataRepositoryTypeSerializer,
 from .transfers import (_get_session, _get_repositories_for_labs,
                         _create_dataset_file_records, bulk_sync)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
