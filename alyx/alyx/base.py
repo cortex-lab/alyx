@@ -567,5 +567,6 @@ mysite.site_header = 'Alyx'
 mysite.site_title = 'Alyx'
 mysite.site_url = None
 mysite.index_title = 'Welcome to Alyx'
+mysite.enable_nav_sidebar = False
 
 admin.site = mysite
