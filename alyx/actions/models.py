@@ -1,5 +1,5 @@
 from datetime import timedelta
-import logging
+import structlog
 from math import inf
 
 from django.conf import settings
@@ -12,7 +12,7 @@ from alyx.base import BaseModel, modify_fields, alyx_mail, BaseManager
 from misc.models import Lab, LabLocation, LabMember, Note
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def _default_water_type():

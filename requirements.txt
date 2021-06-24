@@ -25,3 +25,4 @@ python-magic
 pytz
 webdavclient3
 django-prometheus
+django-structlog

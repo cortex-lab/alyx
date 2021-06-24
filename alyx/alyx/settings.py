@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
 import os
+import structlog
 from django.conf.locale.en import formats as en_formats
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -63,7 +64,11 @@ LOGGING = {
                 'ERROR': 'red',
                 'CRITICAL': 'bold_red',
             },
-        }
+        },
+        'json_formatter': {
+            '()': structlog.stdlib.ProcessorFormatter,
+            'processor': structlog.processors.JSONRenderer(),
+        },
     },
     'handlers': {
         'file': {
@@ -78,12 +83,22 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
+        'json_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': '/var/log/alyx_json.log',
+            'formatter': 'json_formatter',
+        },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django_structlog': {
+            'handlers': ['json_file'],
+            'level': 'INFO',
         }
     },
     'root': {
@@ -160,6 +175,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'alyx.base.QueryPrintingMiddleware',
+    'django_structlog.middlewares.RequestMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 )
 
@@ -226,3 +242,21 @@ MEDIA_URL = '/uploaded/'
 TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
 
 UPLOADED_IMAGE_WIDTH = 800
+
+
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt='iso'),
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=structlog.threadlocal.wrap_dict(dict),
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
