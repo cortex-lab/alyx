@@ -47,6 +47,7 @@ AUTH_USER_MODEL = 'misc.LabMember'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 LOGGING = {
     'version': 1,

@@ -14,7 +14,6 @@ from django.db import models
 from django.db import connection
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.postgres.fields import JSONField
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.template.response import TemplateResponse
@@ -71,8 +70,8 @@ class QueryPrintingMiddleware:
 class BaseModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, blank=True, help_text="Long name")
-    json = JSONField(null=True, blank=True,
-                     help_text="Structured data, formatted in a user-defined way")
+    json = models.JSONField(null=True, blank=True,
+                            help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         abstract = True
@@ -89,8 +88,8 @@ def modify_fields(**kwargs):
 
 class BasePolymorphicModel(PolymorphicModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    json = JSONField(null=True, blank=True,
-                     help_text="Structured data, formatted in a user-defined way")
+    json = models.JSONField(null=True, blank=True,
+                            help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         abstract = True
@@ -285,7 +284,7 @@ class BaseAdmin(VersionAdmin):
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 8,
                                   'cols': 60})},
-        JSONField: {'widget': JsonWidget},
+        models.JSONField: {'widget': JsonWidget},
         models.UUIDField: {'widget': forms.TextInput(attrs={'size': 32})},
     }
     list_per_page = 50
@@ -347,9 +346,9 @@ class BaseInlineAdmin(admin.TabularInline):
         models.TextField: {'widget': forms.Textarea(
                            attrs={'rows': 3,
                                   'cols': 30})},
-        JSONField: {'widget': forms.Textarea(
-                    attrs={'rows': 3,
-                           'cols': 30})},
+        models.JSONField: {'widget': forms.Textarea(
+            attrs={'rows': 3,
+                   'cols': 30})},
         models.CharField: {'widget': forms.TextInput(attrs={'size': 16})},
     }
 

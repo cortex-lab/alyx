@@ -2,7 +2,6 @@ import structlog
 import uuid
 
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -160,8 +159,8 @@ class TrajectoryEstimate(models.Model):
                                           on_delete=models.SET_NULL,
                                           help_text='3D coordinate system used.')
     datetime = models.DateTimeField(auto_now=True, verbose_name='last update')
-    json = JSONField(null=True, blank=True,
-                     help_text="Structured data, formatted in a user-defined way")
+    json = models.JSONField(null=True, blank=True,
+                            help_text="Structured data, formatted in a user-defined way")
 
     class Meta:
         constraints = [

@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from django.contrib.postgres.fields import JSONField
 
 from alyx.base import BaseModel, modify_fields, alyx_mail, BaseManager
 from misc.models import Lab, LabLocation, LabMember, Note
@@ -255,9 +254,9 @@ class Session(BaseAction):
 
     qc = models.IntegerField(default=0, choices=QC_CHOICES,
                              help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
-    extended_qc = JSONField(null=True, blank=True,
-                            help_text="Structured data about session QC,"
-                                      "formatted in a user-defined way")
+    extended_qc = models.JSONField(null=True, blank=True,
+                                   help_text="Structured data about session QC,"
+                                             "formatted in a user-defined way")
 
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
