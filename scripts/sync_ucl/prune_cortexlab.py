@@ -31,6 +31,8 @@ Session.objects.using('cortexlab').exclude(project__name__icontains='ibl').delet
 ses_ucl = Session.objects.using('cortexlab').all().values_list('pk', flat=True)
 ses_loc2remove = Session.objects.filter(lab__pk='4027da48-7be3-43ec-a222-f75dffe36872')\
     .exclude(pk__in=list(ses_ucl))
+# but keep histology sessions
+ses_loc2remove = ses_loc2remove.exclude(task_protocol__startswith='SWC_Histology_Serial2P')
 ses_loc2remove.delete()
 
 # the sessions should also have the cortexlab lab field properly labeled before import
