@@ -1,15 +1,43 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from django.template import loader
 from django.views.generic.list import ListView
 from experiments.models import TrajectoryEstimate, ProbeInsertion
+from actions.models import Session
 from django.db.models import Count, Q, F, Max
 from misc.models import Lab
 import numpy as np
 
 
+def session_option(request):
+    grouped_purchases = Session.objects.filter(lab__name='hoferlab').order_by('-start_time')
+    options = [purchase.id for purchase in grouped_purchases]
+
+    return JsonResponse({
+        'options': options,
+    })
+
+def plot_task_qc(request, eid):
+    sess = Session.objects.get(id=eid)
+    task = {key: val for key, val in sess.extended_qc.items() if '_task' in key}
+
+    return JsonResponse({
+        'title': f'Sales in {eid}',
+        'data': {
+            'labels': list(task.keys()),
+            'datasets': [{
+                'label': 'Amount ($)',
+                'backgroundColor': "#79AEC8",
+                'borderColor': "#417690",
+                'data': list(task.values()),
+            }]
+        },
+    })
+
+
+
 class AlertsLabView(ListView):
-    template_name = 'reports/alerts2.html'
+    template_name = 'reports/plots.html'
 
     def get_context_data(self, **kwargs):
         lab_name = self.kwargs.get('lab', None)
