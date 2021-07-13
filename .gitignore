@@ -24,3 +24,4 @@ build
 .idea/*
 alyx/alyx_full.sql.gz
 .vscode/
+alyx/data/management/commands/*ibl*
