@@ -61,7 +61,7 @@ urlpatterns = [
     path('revisions', dv.RevisionList.as_view(),
          name="revision-list"),
 
-    path('revisions/<uuid:pk>', dv.RevisionDetail.as_view(),
+    path('revisions/<str:name>', dv.RevisionDetail.as_view(),
          name="revision-detail"),
 
     path('tags', dv.TagList.as_view(),

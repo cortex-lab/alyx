@@ -107,7 +107,7 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
-# Revison
+# Revision
 # -------------------------------------------------------------------------------------------------
 
 class RevisionList(generics.ListCreateAPIView):
@@ -419,8 +419,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         default = request.data.get('default', True)
         # Need to explicitly cast string to a bool
-        if default == 'False':
-            default = False
+        if isinstance(default, str):
+            default = default == 'True'
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
@@ -441,23 +441,24 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             if not filename:
                 continue
             # Get collections/revisions for each file
-            fullpath = Path(rel_dir_path).joinpath(f).as_posix()
+            fullpath = Path(rel_dir_path).joinpath(filename).as_posix()
             # Index of relative path (stuff after session path)
-            i = re.search(f'{subject}/{date}/{session_number:03}', fullpath).end()
+            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
             subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
             # Check for revisions (folders beginning and ending with '#')
             is_rev = [x[0] + x[-1] == '##' for x in subdirs]
             # There may be only 1 revision and it cannot contain sub folders
             if sum(is_rev) > 1:
-                data = {'status_code': 400,
-                        'detail': 'Multiple revision folders are not allowed'}
+                data = {'status_code': 400, 'detail': 'Multiple revision folders are not allowed'}
                 return Response(data=data, status=400)
             elif sum(is_rev[:-1]):
                 data = {'status_code': 400,
                         'detail': 'Revision folders cannot contain sub folders'}
                 return Response(data=data, status=400)
-            revision = \
-                Revision.get_or_create(name=subdirs.pop().strip('#')) if is_rev[-1] else None
+            elif is_rev[-1]:
+                revision, _ = Revision.objects.get_or_create(name=subdirs.pop().strip('#'))
+            else:
+                revision = None
 
             filename = Path(filename).name
             dataset, resp = _create_dataset_file_records(
