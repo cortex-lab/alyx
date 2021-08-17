@@ -441,6 +441,21 @@ class APIDataTests(BaseTests):
         self.assertTrue('#v1#' in r[0]['file_records'][0]['relative_path'])
         self.assertTrue('#v2#' in r[1]['file_records'][0]['relative_path'])
 
+        # Check error status with multiple revision folders
+        data = {'path': '%s/2018-01-01/002/#v1#' % self.subject,
+                'filenames': '#v2#/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+        }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+        # Check error status with subdirectories within revision folder
+        data = {'path': '%s/2018-01-01/002/dir2' % self.subject,
+                'filenames': '#v1#/alf/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
     def test_register_with_tags(self):
         self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})

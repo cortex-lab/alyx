@@ -409,7 +409,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if isinstance(hashes, str):
             hashes = hashes.split(',')
 
-        # filesizes if provided
+        # file sizes if provided
         filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
@@ -447,15 +447,12 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
             # Check for revisions (folders beginning and ending with '#')
             is_rev = [x[0] + x[-1] == '##' for x in subdirs]
-            # There may be only 1 revision and it cannot contain sub folders
-            if sum(is_rev) > 1:
-                data = {'status_code': 400, 'detail': 'Multiple revision folders are not allowed'}
-                return Response(data=data, status=400)
-            elif sum(is_rev[:-1]):
-                data = {'status_code': 400,
-                        'detail': 'Revision folders cannot contain sub folders'}
-                return Response(data=data, status=400)
-            elif is_rev[-1]:
+            if any(is_rev):
+                # There may be only 1 revision and it cannot contain sub folders
+                if is_rev.index(True) != len(is_rev) - 1:
+                    data = {'status_code': 400,
+                            'detail': 'Revision folders cannot contain sub folders'}
+                    return Response(data=data, status=400)
                 revision, _ = Revision.objects.get_or_create(name=subdirs.pop().strip('#'))
             else:
                 revision = None
