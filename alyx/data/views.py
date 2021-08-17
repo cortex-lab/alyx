@@ -446,14 +446,18 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
             subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
             # Check for revisions (folders beginning and ending with '#')
-            is_rev = [x[0] + x[-1] == '##' for x in subdirs]
+            # Fringe cases:
+            #   '#' is a collection
+            #   '##' is an empty revision
+            #   '##blah#5#' is a revision named '#blah#5'
+            is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
             if any(is_rev):
                 # There may be only 1 revision and it cannot contain sub folders
                 if is_rev.index(True) != len(is_rev) - 1:
                     data = {'status_code': 400,
                             'detail': 'Revision folders cannot contain sub folders'}
                     return Response(data=data, status=400)
-                revision, _ = Revision.objects.get_or_create(name=subdirs.pop().strip('#'))
+                revision, _ = Revision.objects.get_or_create(name=subdirs.pop()[1:-1])
             else:
                 revision = None
 
