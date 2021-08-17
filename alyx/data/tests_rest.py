@@ -374,17 +374,15 @@ class APIDataTests(BaseTests):
         r = self.ar(r, 201)[0]
 
         self.assertTrue(not r['revision'])
-        self.assertTrue(not r['collection'])
+        self.assertEqual(r['collection'], 'dir')
         # Check the revision relative path doesn't exist
         self.assertTrue(r['file_records'][0]['relative_path'] ==
                         op.join(data['path'], data['filenames']))
 
-        # Now test specifying a revision with no collection
-        # No collection, revision
-        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-                'filenames': 'v1/a.d.e1',
+        # Now test specifying a revision in path
+        data = {'path': '%s/2018-01-01/002/dir/#v1#' % self.subject,
+                'filenames': 'a.d.e1',
                 'name': 'drb2',  # this is the repository name
-                'revisions': 'v1'
                 }
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)[0]
@@ -395,38 +393,42 @@ class APIDataTests(BaseTests):
         self.assertTrue(r['file_records'][0]['relative_path'] ==
                         op.join(data['path'], data['revisions'], data['filenames'].split('/')[1]))
 
-        # Now test specifying a collection and a revision
-        # Collection and revision
+        # Now test specifying a collection and a revision in filename
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-                'filenames': 'dir1/v1/a.d.e1',
+                'filenames': 'dir1/#v1#/a.d.e1',
                 'name': 'drb2',  # this is the repository name
                 'revisions': 'v1'
                 }
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)[0]
         self.assertTrue(r['revision'] == 'v1')
-        self.assertTrue(r['collection'] == 'dir1')
+        self.assertTrue(r['collection'] == 'dir/dir1')
         # Check filerecord relative path includes revision
         self.assertTrue(r['file_records'][0]['relative_path'] ==
                         op.join(data['path'], data['filenames'].split('/')[0], data['revisions'],
                                 data['filenames'].split('/')[2]))
 
-        # Test that giving wrong revision folder format gives out an error
+        # Test that giving nested revision folders gives out an error
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-                'filenames': 'dir1/v2/a.d.e1',
+                'filenames': '#dir1#/#v2#/a.d.e1',
                 'name': 'drb2',  # this is the repository name
-                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
+        # Test that giving revision containing collection gives out an error
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': '#v2#/dir1/a.d.e1',
+                'name': 'drb2',  # this is the repository name
                 }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 400)
 
         # Test specifying multiple revisions at once
-        # Add an extra revision
-        self.post(reverse('revision-list'), {'name': 'v2', 'collection': 'v2'})
-        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
-                'filenames': 'dir2/v1/a.d.e1,v2/a.c.e1',
+        # Should add an extra revision
+        data = {'path': '%s/2018-01-01/002' % self.subject,
+                'filenames': 'dir2/#v1#/a.d.e1,#v2#/a.c.e1',
                 'name': 'drb2',  # this is the repository name
-                'revisions': 'v1,v2'
                 }
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)
@@ -452,7 +454,6 @@ class APIDataTests(BaseTests):
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test/v1/a.d.e2,test/v1/a.d.e1,',
                 'name': 'drb1',  # this is the repository name
-                'revisions': 'v1,v1',
                 'filesizes': '14564,24564'
                 }
 
@@ -493,7 +494,6 @@ class APIDataTests(BaseTests):
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test_default/v1/a.d.e2',
                 'name': 'drb1',  # this is the repository name
-                'revisions': 'v1',
                 'default': True
                 }
 
@@ -521,7 +521,6 @@ class APIDataTests(BaseTests):
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test_default/v1/a.d.e2',
                 'name': 'drb1',  # this is the repository name
-                'revisions': 'v1',
                 }
         r = self.client.post(reverse('register-file'), data)
         r = self.ar(r, 201)[0]
@@ -543,6 +542,14 @@ class APIDataTests(BaseTests):
         self.assertEqual(r['default'], False)
         r = self.ar(self.client.get(reverse('dataset-list') + '?id=' + str(dataset_id1)))[0]
         self.assertEqual(r['default_dataset'], True)
+
+    def test_revisions(self):
+        # Check revision lookup with name
+        self.post(reverse('revision-list'), {'name': 'v2', 'collection': 'v2'})
+        r = self.client.get(reverse('register-file') + '/v2')
+        self.assertEqual(r['name'], 'v2')
+        r = self.client.get(reverse('register-file') + '/foobar')
+        self.ar(r, 404)
 
     def test_download(self):
         # Create a dataset.

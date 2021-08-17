@@ -226,8 +226,8 @@ def _create_dataset_file_records(
         file_size=None, version=None, revision=None, default=None):
 
     assert session is not None
-    relative_path = op.join(rel_dir_path, collection or '', revision.name if revision
-                            else '', filename)
+    revision_name = f'#{revision.name}#' if revision else ''
+    relative_path = op.join(rel_dir_path, collection or '', revision_name, filename)
     dataset_type = get_dataset_type(filename)
     data_format = get_data_format(filename)
     assert dataset_type
@@ -243,10 +243,7 @@ def _create_dataset_file_records(
         collection=collection, name=filename, session=session,
         dataset_type=dataset_type, data_format=data_format, revision=revision)
 
-    if default:
-        dataset.default_dataset = True
-    else:
-        dataset.default_dataset = False
+    dataset.default_dataset = default is True
     dataset.save()
 
     # If the dataset already existed see if it is protected (i.e can't be overwritten)
@@ -265,7 +262,7 @@ def _create_dataset_file_records(
         dataset.version = version
     """
     if a hash/filesize is provided, label the dataset with it
-    if there was a hash and or filesize in the datset and the provided items are different,
+    if there was a hash and or filesize in the dataset and the provided items are different,
     then set the existing file records exists field to False
     If the hash doesn't exist and/or can't be verified, assume that the dataset is patched
     """
