@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download
+from data.models import Dataset, FileRecord, Download, Tag
 
 
 class APIDataTests(BaseTests):
@@ -22,6 +22,7 @@ class APIDataTests(BaseTests):
         self.post(reverse('dataformat-list'), {'name': 'e1', 'file_extension': '.e1'})
         self.post(reverse('dataformat-list'), {'name': 'e2', 'file_extension': '.e2'})
         self.subject = self.ar(self.client.get(reverse('subject-list')))[0]['nickname']
+        self.post(reverse('revision-list'), {'name': 'v1', 'collection': 'v1'})
 
         # create some more dataset types a.a, a.b, a.c, a.d etc...
         for let in 'abcd':
@@ -133,12 +134,55 @@ class APIDataTests(BaseTests):
         # Post the dataset.
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
+        # Check collection and revision have been set to default values
+        self.assertEqual(r.data['revision'], None)
+        self.assertEqual(r.data['collection'], None)
+        # Check that it has been set as the default dataset
+        self.assertEqual(r.data['default_dataset'], True)
         # Make sure a session has been created.
         session = r.data['session']
         r = self.client.get(session)
         self.ar(r, 200)
         self.assertEqual(r.data['subject'], self.subject)
         self.assertEqual(r.data['start_time'][:10], data['date'])
+
+        # Create dataset with collection and revision specified
+        data = {
+            'name': 'some-dataset',
+            'dataset_type': 'dst',
+            'created_by': 'test',
+            'subject': self.subject,
+            'data_format': 'df',
+            'date': '2018-01-01',
+            'number': 2,
+            'collection': 'test_path',
+        }
+
+        r = self.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+        self.assertEqual(r.data['revision'], None)
+        self.assertEqual(r.data['collection'], data['collection'])
+        self.assertEqual(r.data['default_dataset'], True)
+        data_url = r.data['url']
+
+        # But if we change the collection, we are okay
+        data['revision'] = 'v1'
+        r = self.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+        self.assertEqual(r.data['revision'], data['revision'])
+        self.assertEqual(r.data['collection'], data['collection'])
+        self.assertEqual(r.data['default_dataset'], True)
+
+        # Get the previous dataset and make sure this is no longer the default one
+        r = self.ar(self.client.get(data_url))
+        self.assertEqual(r['default_dataset'], False)
+
+        # Make sure if you specify the default dataset flag to false it is indeed false
+        data['collection'] = None
+        data['default_dataset'] = False
+        r = self.post(reverse('dataset-list'), data)
+        self.ar(r, 201)
+        self.assertEqual(r.data['default_dataset'], False)
 
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
@@ -160,7 +204,7 @@ class APIDataTests(BaseTests):
         r = self.post(reverse('dataset-list'), data[1])
         self.ar(r, 201)
         # only one has been created before 2018-01-01
-        r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01')
+        r = self.client.get(reverse('dataset-list') + '?created_date_lte=2018-01-01T12:00')
         a = [datetime.datetime.strptime(d['created_datetime'],
                                         '%Y-%m-%dT%H:%M:%S') for d in self.ar(r)]
         self.assertTrue(max(a).date() <= datetime.date(2018, 1, 1))
@@ -315,6 +359,190 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
                          op.join(data['path'], 'a.c.e2'))
+
+    def test_register_with_revision(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb2']})
+
+        # First test that adding no revision gives None
+        # No collection, no revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+
+        self.assertTrue(not r['revision'])
+        self.assertTrue(not r['collection'])
+        # Check the revision relative path doesn't exist
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames']))
+
+        # Now test specifying a revision with no collection
+        # No collection, revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'v1/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+
+        self.assertTrue(r['revision'] == 'v1')
+        self.assertTrue(not r['collection'])
+        # Check filerecord relative path includes revision
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['revisions'], data['filenames'].split('/')[1]))
+
+        # Now test specifying a collection and a revision
+        # Collection and revision
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir1/v1/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        self.assertTrue(r['revision'] == 'v1')
+        self.assertTrue(r['collection'] == 'dir1')
+        # Check filerecord relative path includes revision
+        self.assertTrue(r['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split('/')[0], data['revisions'],
+                                data['filenames'].split('/')[2]))
+
+        # Test that giving wrong revision folder format gives out an error
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir1/v2/a.d.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
+        # Test specifying multiple revisions at once
+        # Add an extra revision
+        self.post(reverse('revision-list'), {'name': 'v2', 'collection': 'v2'})
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'dir2/v1/a.d.e1,v2/a.c.e1',
+                'name': 'drb2',  # this is the repository name
+                'revisions': 'v1,v2'
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)
+        self.assertTrue(r[0]['revision'] == 'v1')
+        self.assertTrue(r[1]['revision'] == 'v2')
+        self.assertTrue(r[0]['collection'] == 'dir2')
+        self.assertTrue(not r[1]['collection'])
+        # Check filerecord relative path includes revision
+        self.assertTrue(r[0]['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split(',')[0]))
+        self.assertTrue(r[1]['file_records'][0]['relative_path'] ==
+                        op.join(data['path'], data['filenames'].split(',')[1]))
+
+    def test_register_with_tags(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
+
+        # Create two tags, one that is protected (can't be overwritten) and one not
+        self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': False})
+        self.client.post(reverse('tag-list'), {'name': 'tag2', 'protected': True})
+
+        # Create some datasets
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test/v1/a.d.e2,test/v1/a.d.e1,',
+                'name': 'drb1',  # this is the repository name
+                'revisions': 'v1,v1',
+                'filesizes': '14564,24564'
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)
+        self.assertEqual(r[0]['file_size'], int(data['filesizes'].split(',')[0]))
+        self.assertEqual(r[1]['file_size'], int(data['filesizes'].split(',')[1]))
+
+        # Add the unprotected tag to both datasets
+        dataset1 = Dataset.objects.get(pk=r[0]['id'])
+        dataset2 = Dataset.objects.get(pk=r[1]['id'])
+        tag1 = Tag.objects.get(name='tag1')
+        tag2 = Tag.objects.get(name='tag2')
+        dataset1.tags.add(tag1)
+        dataset2.tags.add(tag1)
+
+        # Change the filesize of datasets, reregister and check that the dataset filesize have
+        # been updated
+        data['filesizes'] = '20000,30000'
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)
+        self.assertEqual(r[0]['file_size'], int(data['filesizes'].split(',')[0]))
+        self.assertEqual(r[1]['file_size'], int(data['filesizes'].split(',')[1]))
+
+        # Add protected tag to just the second dataset
+        dataset2.tags.add(tag2)
+
+        # Check that we get an error if we register a file that is protected
+        data['filesizes'] = '22456,40506'
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 403)
+
+    def test_register_default_dataset(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
+
+        # Create a dataset and explicitly set default to True
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_default/v1/a.d.e2',
+                'name': 'drb1',  # this is the repository name
+                'revisions': 'v1',
+                'default': True
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        dataset_id1 = r['id']
+        self.assertEqual(r['default'], True)
+
+        # Create same dataset with no revision and don't explicitly set default to True
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_default/a.d.e2',
+                'name': 'drb1',  # this is the repository name
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        dataset_id2 = r['id']
+        self.assertEqual(r['default'], True)
+
+        # Check that the previous dataset has it's default status set to false
+        r = self.ar(self.client.get(reverse('dataset-list') + '?id=' + str(dataset_id1)))[0]
+        self.assertEqual(r['default_dataset'], False)
+
+        # If we update again make sure roles are reversed
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_default/v1/a.d.e2',
+                'name': 'drb1',  # this is the repository name
+                'revisions': 'v1',
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        self.assertEqual(r['default'], True)
+        # Also make sure it is the same dataset as before
+        self.assertEqual(r['id'], dataset_id1)
+        # Check the other revision has correctly been changed
+        r = self.ar(self.client.get(reverse('dataset-list') + '?id=' + str(dataset_id2)))[0]
+        self.assertEqual(r['default_dataset'], False)
+
+        # Now check that if we register with false, this is correctly set
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_default/a.d.e2',
+                'name': 'drb1',  # this is the repository name
+                'default': False
+                }
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        self.assertEqual(r['default'], False)
+        r = self.ar(self.client.get(reverse('dataset-list') + '?id=' + str(dataset_id1)))[0]
+        self.assertEqual(r['default_dataset'], True)
 
     def test_download(self):
         # Create a dataset.

@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from experiments.models import ProbeInsertion
 from alyx.base import BaseModel, modify_fields, BaseManager
 
 
@@ -69,8 +68,8 @@ class DataRepository(BaseModel):
         help_text="absolute path to the repository on the server e.g. /mnt/something/")
     globus_endpoint_id = models.UUIDField(
         blank=True, null=True, help_text="UUID of the globus endpoint")
-    globus_is_personal = models.NullBooleanField(
-        blank=True, help_text="whether the Globus endpoint is personal or not. "
+    globus_is_personal = models.BooleanField(
+        null=True, blank=True, help_text="whether the Globus endpoint is personal or not. "
         "By default, Globus cannot transfer a file between two personal endpoints.")
 
     def __str__(self):
@@ -211,6 +210,40 @@ def default_data_format():
     return DataFormat.objects.get_or_create(name='unknown')[0].pk
 
 
+class Tag(BaseModel):
+    objects = NameManager()
+    name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
+    description = models.CharField(max_length=1023, blank=True)
+    protected = models.BooleanField(default=False)
+    public = models.BooleanField(default=False)
+    hash = models.CharField(blank=True, null=True, max_length=64,
+                            help_text=("Hash of the data buffer, SHA-1 is 40 hex chars, while md5"
+                                       "is 32 hex chars"))
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return "<Tag %s>" % self.name
+
+
+class Revision(BaseModel):
+    """
+    Dataset revision information
+    """
+    objects = NameManager()
+    name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
+    description = models.CharField(max_length=1023, blank=True)
+    created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
+                                            help_text="created date")
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return "<Revision %s>" % self.name
+
+
 class DatasetManager(BaseManager):
     def get_queryset(self):
         qs = super(DatasetManager, self).get_queryset()
@@ -256,15 +289,17 @@ class Dataset(BaseExperimentalData):
         DataFormat, blank=False, null=False, on_delete=models.SET_DEFAULT,
         default=default_data_format)
 
+    revision = models.ForeignKey(
+        Revision, blank=True, null=True, on_delete=models.SET_NULL)
+
+    tags = models.ManyToManyField('data.Tag', blank=True, related_name='datasets')
+
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
 
-    @property
-    def find_insertion(self):
-        name = self.collection.rsplit('/')[-1]
-        pr = ProbeInsertion.objects.get(session=self.session, name=name)
-        if pr:
-            return pr
+    default_dataset = models.BooleanField(default=True,
+                                          help_text="Whether this dataset is the default "
+                                                    "latest revision")
 
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
@@ -281,16 +316,42 @@ class Dataset(BaseExperimentalData):
         else:
             return False
 
+    @property
+    def protected(self):
+        tags = self.tags.filter(protected=True)
+        if tags.count() > 0:
+            return True
+        else:
+            return False
+
+    @property
+    def public(self):
+        tags = self.tags.filter(public=True)
+        if tags.count() > 0:
+            return True
+        else:
+            return False
+
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
         return "<Dataset %s %s '%s' by %s on %s>" % (
             str(self.pk)[:8], getattr(self.dataset_type, 'name', ''),
             self.name, self.created_by, date)
 
+    def save(self, *args, **kwargs):
+        # when a dataset is saved / created make sure the probe insertion is set in the reverse m2m
+        super(Dataset, self).save(*args, **kwargs)
+        if self.collection is None:
+            return
+        from experiments.models import ProbeInsertion
+        name = self.collection.rsplit('/')[-1]
+        pis = ProbeInsertion.objects.filter(session=self.session, name=name)
+        if len(pis):
+            self.probe_insertion.set(pis.values_list('pk', flat=True))
+
 
 # Files
 # ------------------------------------------------------------------------------------------------
-
 class FileRecordManager(models.Manager):
     def get_queryset(self):
         qs = super(FileRecordManager, self).get_queryset()

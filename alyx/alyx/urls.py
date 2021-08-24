@@ -27,6 +27,7 @@ urlpatterns = [
     path('', include('misc.urls')),
     path('', include('experiments.urls')),
     path('', include('jobs.urls')),
+    path('', include('django_prometheus.urls')),
 
     path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
@@ -58,6 +59,18 @@ urlpatterns = [
 
     path('data-repository/<str:name>', dv.DataRepositoryDetail.as_view(),
          name="datarepository-detail"),
+
+    path('revisions', dv.RevisionList.as_view(),
+         name="revision-list"),
+
+    path('revisions/<uuid:pk>', dv.RevisionDetail.as_view(),
+         name="revision-detail"),
+
+    path('tags', dv.TagList.as_view(),
+         name="tag-list"),
+
+    path('tags/<uuid:pk>', dv.TagDetail.as_view(),
+         name="tag-detail"),
 
     path('datasets', dv.DatasetList.as_view(),
          name="dataset-list"),

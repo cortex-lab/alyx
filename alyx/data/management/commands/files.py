@@ -113,7 +113,7 @@ class Command(BaseCommand):
                                                    "--before=yyyy-mm-dd flag. Exiting now."))
                 return
             dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',
-                      '_iblrig_Camera.raw']
+                      '_iblrig_Camera.raw', '_kilosort_raw.output']
             frecs = FileRecord.objects.filter(
                 ~Q(data_repository__name__icontains='flatiron'),
                 dataset__dataset_type__name__in=dtypes,

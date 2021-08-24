@@ -1,4 +1,4 @@
-import logging
+import structlog
 import re
 from pathlib import Path
 
@@ -19,6 +19,8 @@ from .models import (DataRepositoryType,
                      Download,
                      FileRecord,
                      new_download,
+                     Revision,
+                     Tag
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -27,11 +29,13 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DatasetSerializer,
                           DownloadSerializer,
                           FileRecordSerializer,
+                          RevisionSerializer,
+                          TagSerializer
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
                         _create_dataset_file_records, bulk_sync)
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
@@ -103,8 +107,35 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
+# Revison
+# -------------------------------------------------------------------------------------------------
+
+class RevisionList(generics.ListCreateAPIView):
+    queryset = Revision.objects.all()
+    serializer_class = RevisionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class RevisionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Revision.objects.all()
+    serializer_class = RevisionSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class TagList(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+
+class TagDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
 # Dataset
 # ------------------------------------------------------------------------------------------------
+
 
 class DatasetFilter(BaseFilterSet):
     subject = django_filters.CharFilter('session__subject__nickname')
@@ -120,6 +151,10 @@ class DatasetFilter(BaseFilterSet):
                                                      lookup_expr='lte')
     exists = django_filters.BooleanFilter(method='filter_exists')
     probe_insertion = django_filters.UUIDFilter(method='probe_insertion_filter')
+    public = django_filters.BooleanFilter(method='filter_public')
+    protected = django_filters.BooleanFilter(method='filter_protected')
+    tag = django_filters.CharFilter('tags__name')
+    revision = django_filters.CharFilter('revision__name')
 
     class Meta:
         model = Dataset
@@ -145,6 +180,18 @@ class DatasetFilter(BaseFilterSet):
         dsets = dsets.filter(session=probe.session, collection__icontains=probe.name)
         return dsets
 
+    def filter_public(self, dsets, name, value):
+        if value:
+            return dsets.filter(tags__public=True).distinct()
+        else:
+            return dsets.exclude(tags__public=True)
+
+    def filter_protected(self, dsets, name, value):
+        if value:
+            return dsets.filter(tags__protected=True).distinct()
+        else:
+            return dsets.exclude(tags__protected=True)
+
 
 class DatasetList(generics.ListCreateAPIView):
     """
@@ -160,6 +207,9 @@ class DatasetList(generics.ListCreateAPIView):
     -   **exists**: only returns datasets for which a file record exists or doesn't exit on a
     server repo (boolean)  `/datasets?exists=True`
     -   **probe_insertions**: probe insertion id '/datasets?probe_insertion=uuid
+    -   **tag**: tag name '/datasets?tag=repeated_site
+    -   **public**: only returns datasets that are public or not public
+    -   **protected**: only returns datasets that are protected or not protected
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """
@@ -243,6 +293,9 @@ def _make_dataset_response(dataset):
         'session_number': dataset.session.number,
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
+        'collection': dataset.collection,
+        'revision': getattr(dataset.revision, 'name', None),
+        'default': dataset.default_dataset,
     }
     out['file_records'] = file_records
     return out
@@ -299,6 +352,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               # records in the server repositories and skips local repositories
               'versions': ['1.4.4', '1.4.4'],  # optional,usually refers to the software version
               # used to generate the file
+              'revisions': ['v1', 'v2'] # optional, refers to the revision of dataset. Revision
+              must be represented in folder path of filename
+              'default': False #optional , defaults to True, if more than one revision of dataset,
+              whether to set current one as the default
               }
         ```
 
@@ -313,6 +370,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         If the dataset already exists, it will use the file hash to deduce if the file has been
         patched or not (ie. the filerecords will be created as not existing)
         """
+        filenames = request.data.get('filenames', ())
         user = request.data.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
@@ -361,6 +419,23 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
 
+        # revisions if provided
+        _revisions = request.data.get('revisions', [None for f in filenames])
+        if isinstance(_revisions, str):
+            _revisions = _revisions.split(',')
+        # Get the revision object from the revision name
+        revisions = []
+        for rev in _revisions:
+            if rev:
+                revisions.append(Revision.objects.get(name=rev))
+            else:
+                revisions.append(None)
+
+        default = request.data.get('default', True)
+        # Need to explicitly cast string to a bool
+        if default == 'False':
+            default = False
+
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
@@ -376,18 +451,37 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
+        for filename, hash, fsize, version, revision in zip(filenames, hashes, filesizes, versions,
+                                                            revisions):
             if not filename:
                 continue
             # if filename contains path elements, interpret them as the collection field, otherwise
             # collection field is None
             collection = str(Path(filename.replace('\\', '/')).parent)
             collection = None if collection == '.' else collection
+
+            # If the revision is specified need to check that the collection path doesn't contain
+            # the revision path too
+            if revision and collection:
+                # If the last part of the collection contains the revision collection we want to
+                # remove this from the collection
+                if Path(collection).parts[-1] == revision.name:
+                    collection = str(Path(*Path(collection).parts[:-1]))
+                    # case where all of collection is the revision
+                    collection = None if collection == '.' else collection
+                else:
+                    data = {'status_code': 400,
+                            'detail': ('Revision folder ' + str(Path(collection).parts[-1]) +
+                                       ' does not equal revision name "' + revision.name + '"')}
+                    return Response(data=data, status=400)
+
             filename = Path(filename).name
-            dataset = _create_dataset_file_records(
+            dataset, resp = _create_dataset_file_records(
                 collection=collection, rel_dir_path=rel_dir_path, filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize, version=version)
+                hash=hash, file_size=fsize, version=version, revision=revision, default=default)
+            if resp:
+                return resp
             out = _make_dataset_response(dataset)
             response.append(out)
 

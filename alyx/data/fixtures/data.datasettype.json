@@ -1329,5 +1329,38 @@
       "description": "Spike sorting output from kilosort",
       "filename_pattern": "_kilosort_raw.output*.tar"
     }
-  }
+  },
+  {
+  "model": "data.datasettype",
+  "pk": "9ded820c-130d-4193-b279-ba167043acde",
+  "fields": {
+    "json": null,
+    "name": "camera.ROIMotionEnergy",
+    "created_by": null,
+    "description": "Motion energy across camera frames calculated within ROI (motionEnergy.position)",
+    "filename_pattern": "*Camera.ROIMotionEnergy.*"
+    }
+  },
+  {
+  "model": "data.datasettype",
+  "pk": "29f23be7-2cbc-4b53-a675-90c626e06d65",
+  "fields": {
+    "json": null,
+    "name": "ROIMotionEnergy.position",
+    "created_by": null,
+    "description": "Coordinates of the ROI in which camera.motionEnergy is calculated",
+    "filename_pattern": "*ROIMotionEnergy.position.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "eb61ea65-870a-4ca8-9703-c7c595284ba4",
+    "fields": {
+      "json": null,
+      "name": "_iblrig_Camera.frameData",
+      "created_by": null,
+      "description": "Table containing Timestamp, embeddedTimeStamp, embeddedFrameCounter, embeddedGPIOPinState for each video frame",
+      "filename_pattern": "_iblrig_*Camera.frameData.*"
+      }
+    }
 ]

@@ -1,6 +1,6 @@
 import base64
 import json
-import logging
+import structlog
 
 from django import forms
 from django.conf import settings
@@ -24,7 +24,7 @@ from subjects.models import Subject
 from .water_control import WaterControl
 from experiments.models import ProbeInsertion
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 # Filters

@@ -1,4 +1,4 @@
-django==3.0.7
+django>=3.2.4
 coreapi
 psycopg2-binary
 drfdocs
@@ -24,3 +24,5 @@ python-dateutil
 python-magic
 pytz
 webdavclient3
+django-prometheus
+django-structlog

@@ -1,7 +1,7 @@
 # alyx
 
-[![Build Status on master](https://travis-ci.org/cortex-lab/alyx.svg?branch=master)](https://travis-ci.org/cortex-lab/alyx)
-[![Build Status on dev](https://travis-ci.org/cortex-lab/alyx.svg?branch=dev)](https://travis-ci.org/cortex-lab/alyx)
+[![Github Actions](https://github.com/cortex-lab/alyx/actions/workflows/main.yml/badge.svg)](https://github.com/cortex-lab/alyx/actions/)
+[![Coverage Status](https://coveralls.io/repos/github/cortex-lab/alyx/badge.svg?branch=github_action)](https://coveralls.io/github/cortex-lab/alyx?branch=master)
 
 Database for experimental neuroscience laboratories
 
@@ -20,6 +20,7 @@ Go to the directory of your choice (for example: `/var/www/alyx-main`)
 sudo apt-get update
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
 sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
+sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log;
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded

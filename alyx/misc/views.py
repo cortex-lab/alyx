@@ -1,8 +1,10 @@
+from pathlib import Path
 import os.path as op
+import json
 
 import magic
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 
 from rest_framework import viewsets, views
 from rest_framework.response import Response
@@ -13,7 +15,7 @@ from rest_framework import generics, permissions
 from alyx.base import BaseFilterSet
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
-from alyx.settings import MEDIA_ROOT
+from alyx.settings import TABLES_ROOT, MEDIA_ROOT
 
 
 @api_view(['GET'])
@@ -118,3 +120,26 @@ class UploadedView(views.APIView):
         with open(path, 'rb') as f:
             data = f.read()
         return HttpResponse(data, content_type=mime)
+
+
+def _get_cache_info():
+    file_json_cache = Path(TABLES_ROOT).joinpath('cache_info.json')
+    with open(file_json_cache) as fid:
+        cache_info = json.load(fid)
+    return cache_info
+
+
+class CacheVersionView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, **kwargs):
+        return JsonResponse(_get_cache_info())
+
+
+class CacheDownloadView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request=None, **kwargs):
+        cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
+        response = FileResponse(open(cache_file, 'br'))
+        return response
