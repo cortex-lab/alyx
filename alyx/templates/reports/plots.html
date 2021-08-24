@@ -1,3 +1,4 @@
+{% load jobs_template_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,57 +6,41 @@
     <title>Plot Test</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css">
+    <style>
+          .bg-2 {
+              background-color: #474e5d; /* Dark Blue */
+              color: #ffffff;
+              padding-left: 1.5rem;
+
+  }
+          .pad2 {
+              padding-left: 2.0rem;
+              padding-right: 2.0rem;
+          }
+
+    </style>
 </head>
 <body>
-    <form id="filterForm">
-        <label for="session">Choose a year:</label>
-        <select name="session" id="session"></select>
-        <input type="submit" value="Load" name="_load">
-    </form>
-    <form id="searchForm">
-        <label for="session">Choose a year:</label>
-        <input type="text" value="" name="_load" id="text">
-        <input type="submit" value="Load", id="name">
-    </form>
-
+    <div class="header bg-2">
+        <h2>Probe ID: {{ probe.id }}</h2>
+        <p><h3>{{ probe.session|get_session_path }} {{ probe.name }}</h3></p>
+    </div>
     <script>
+      var pid = "{{ probe.id }}"
       $(document).ready(function() {
           $.ajax({
-            url: "/reports/blabla/filter",
-            type: "GET",
-            dataType: "json",
-            success: (jsonResponse) => {
-              // Load all the options
-              jsonResponse.options.forEach(option => {
-                $("#session").append(new Option(option, option));
-              });
-              // Load data for the first option
 
-              loadAllCharts($("#session").children().first().val());
-            },
-            error: () => console.log("Failed to fetch chart filter options!")
+              success: function () {
+                  loadAllCharts(pid)
+              }
           });
         });
 
-        $("#filterForm").on("submit", (event) => {
-          event.preventDefault();
-
-          const year = $("#session").val();
-          console.log(year)
-          loadAllCharts(year)
-        });
-
-       $("#searchForm").on("submit", (event) => {
-          event.preventDefault();
-
-          const year = $("#text").val();
-          loadAllCharts(year)
-        });
-
-
-
-        function loadChart(chart, booboo, endpoint) {
+        function loadChart(chart, status, endpoint) {
           $.ajax({
             url: endpoint,
             type: "GET",
@@ -71,35 +56,79 @@
               chart.data.labels = [];
 
               // Load new data into the chart
-              chart.options.title.text = title;
-              chart.options.title.display = true;
+              // chart.options.title.text = title;
+              // chart.options.title.display = true;
               chart.data.labels = labels;
               datasets.forEach(dataset => {
                 chart.data.datasets.push(dataset);
               });
               chart.update();
-              booboo.innerHTML = title
+              status.innerHTML = title
             },
             error: () => console.log("Failed to fetch chart data from " + endpoint + "!")
           });
         }
 
         function loadAllCharts(year) {
-          loadChart(taskqc_chart, bla, `/reports/alerts/session/task_qc/${year}`);
+          loadChart(taskqc_chart, bla, `/reports/alerts/task_qc/${year}`);
         }
     </script>
-    <div class="card" style="width: 20rem;">
-      <div class="card-body">
-        <h4 class="card-title">Card title</h4>
-        <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-        <a href="#" class="card-link">Card link</a>
-        <a href="#" class="card-link">Another link</a>
-      </div>
-    </div>
-    <div class="col-lg-6" >
-        <h2 id="myHeader">My Header</h2>
+    <div class="row">
+        <div class="col-lg-6 pad2">
+            <h2>Dataset Status</h2>
+            {%  for key, value in data.items %}
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col"><h4 class="card-title">{{ value.title }}</h4></div>
+                            <div class="col"><h4 class="card-title" style="{% get_colour value.critical value.n_dsets value.n_exp_dsets %}">{{ value.n_dsets }}/{{ value.n_exp_dsets }}</h4></div>
+                            <div class="col">
+                                {% for key, value in value.tasks.items %}
+                                    {% if value %}
+                                        <h5 class="card-title">{{ key }} : <a style="{{ value.status|get_task_colour }}" href="{% url 'admin:jobs_task_change' value.id %}">{{ value.get_status_display }}</a></h5>
+                                    {% else %}
+                                        <h5 class="card-title">{{ key }} : No task</h5>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <a data-toggle="collapse" href="#collapse{{ forloop.counter }}">
+                            <h6 class="card-subtitle mb-2 text-muted">Details</h6></a>
+                    </div>
+                </div>
+                <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th>Dataset type</th>
+                            <th>Collection</th>
+                            <th>Dataset name</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {%  for data in value.dsets %}
+                          <tr>
+                            <td>{{ data.type }}</td>
+                            <td>{{ data.collection }}</td>
+                            <td>{{ data.name }}</td>
+                            <td>{{ data.status|get_icon }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {%  endfor %}
+        </div>
+
+
+    <div class="col-lg-6 pad2">
+        <h2 id="myHeader">Task QC: </h2>
         <canvas id="taskqc_chart" width="100" height="50"></canvas>
+        <h2 id="lala">Video QC</h2>
+        <canvas id="taskqc_lala" width="100" height="50"></canvas>
+    </div>
+
     </div>
     <script>
         let ctx_taskqc = document.getElementById("taskqc_chart").getContext("2d");
@@ -108,7 +137,10 @@
           type: "bar",
 
           options: {
-             responsive: true,
+              responsive: true,
+              legend: {
+                    display: false
+              },
           }
         });
 

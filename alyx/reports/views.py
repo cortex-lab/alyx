@@ -1,39 +1,85 @@
 from django.http import HttpResponse, JsonResponse
-
+from django_filters.views import FilterView
+import django_filters
 from django.template import loader
 from django.views.generic.list import ListView
 from experiments.models import TrajectoryEstimate, ProbeInsertion
 from actions.models import Session
-from django.db.models import Count, Q, F, Max
+from django.db.models import Count, Q, F, Max, OuterRef, Exists
 from misc.models import Lab
 import numpy as np
+from reports.qc_check import get_task_qc_colours
+from reports import data_check
 
 
-def session_option(request):
-    grouped_purchases = Session.objects.filter(lab__name='hoferlab').order_by('-start_time')
-    options = [purchase.id for purchase in grouped_purchases]
+class InsertionOverview(ListView):
+    template_name = 'reports/plots.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(InsertionOverview, self).get_context_data(**kwargs)
+        pid = self.kwargs.get('pid', None)
+        probe = ProbeInsertion.objects.get(id=pid)
+        dsets = probe.session.data_dataset_session_related
+
+        context['probe'] = probe
+        context['data'] = {}
+        context['data']['passive'] = data_check.passive_data_status(dsets, probe)
+        context['data']['behaviour'] = data_check.behaviour_data_status(dsets, probe)
+        context['data']['trials'] = data_check.trial_data_status(dsets, probe)
+        context['data']['wheel'] = data_check.wheel_data_status(dsets, probe)
+        context['data']['raw_ephys'] = data_check.raw_ephys_data_status(dsets, probe)
+        context['data']['dlc'] = data_check.dlc_data_status(dsets, probe)
+        context['data']['video'] = data_check.video_data_status(dsets, probe)
+        context['data']['spikesort'] = data_check.spikesort_data_status(dsets, probe)
+
+        return context
+
+    def get_queryset(self):
+        lab = self.kwargs.get('lab', None)
+        qs = Lab.objects.all().filter(name=lab)
+
+        return qs
+
+
+def plot_task_qc(request, pid):
+    extended_qc = ProbeInsertion.objects.get(id=pid).session.extended_qc
+    # TODO fix error when the extended qc is None
+    task = {key: val for key, val in extended_qc.items() if '_task_' in key}
+    col, bord = get_task_qc_colours(task)
+
 
     return JsonResponse({
-        'options': options,
-    })
-
-def plot_task_qc(request, eid):
-    sess = Session.objects.get(id=eid)
-    task = {key: val for key, val in sess.extended_qc.items() if '_task' in key}
-
-    return JsonResponse({
-        'title': f'Sales in {eid}',
+        'title': f'Task QC: {extended_qc.get("task", "Not computed")}',
         'data': {
             'labels': list(task.keys()),
             'datasets': [{
-                'label': 'Amount ($)',
-                'backgroundColor': "#79AEC8",
-                'borderColor': "#417690",
+                'label': 'QC Value',
+                'backgroundColor': col,
+                'borderColor': bord,
+                'borderWidth': 3,
                 'data': list(task.values()),
             }]
         },
     })
 
+def plot_video_qc(request, pid):
+    extended_qc = ProbeInsertion.objects.get(id=pid).session.extended_qc
+    video = {key: val for key, val in extended_qc.items() if '_video_' in key}
+    col, bord = get_task_qc_colours(video)
+
+    return JsonResponse({
+        'title': f'Task QC: {extended_qc["task"]}',
+        'data': {
+            'labels': list(video.keys()),
+            'datasets': [{
+                'label': 'QC Value',
+                'backgroundColor': col,
+                'borderColor': bord,
+                'borderWidth': 2,
+                'data': list(video.values()),
+            }]
+        },
+    })
 
 
 class AlertsLabView(ListView):
@@ -91,63 +137,45 @@ class AlertsLabView(ListView):
 
         return qs
 
-class AlertsInsertionView(ListView):
-    template_name = 'reports/insertions.html'
+
+class InsertionTable(ListView):
+    template_name = 'reports/table.html'
+    paginate_by = 50
 
     def get_context_data(self, **kwargs):
-        lab_name = self.kwargs.get('lab', None)
-        labs_all = Lab.objects.all().order_by('name')
-        context = super(AlertsInsertionView, self).get_context_data(**kwargs)
-        labs = Lab.objects.all().filter(name=lab_name)
-
-        ins = ProbeInsertion.objects.filter(session__lab__name=lab_name)
-        # annotate by if they are first pass map
-
-
-        traj_plan = TrajectoryEstimate.objects.filter(
-            probe_insertion__session__lab__name=lab_name, provenance=10)
-        traj_micro = TrajectoryEstimate.objects.filter(
-            probe_insertion__session__lab__name=lab_name, provenance=30)
-        traj_hist = TrajectoryEstimate.objects.filter(
-            probe_insertion__session__lab__name=lab_name, provenance=50)
-        traj_ephys = TrajectoryEstimate.objects.filter(
-            probe_insertion__session__lab__name=lab_name, provenance=70)
-
-        context['no_ins_plan'] = ins.exclude(pk__in=traj_plan.values_list('probe_insertion',
-                                                                          flat=True))
-        context['no_ins_micro'] = ins.exclude(pk__in=traj_micro.values_list('probe_insertion',
-                                                                            flat=True))
-        context['no_ins_hist'] = ins.exclude(pk__in=traj_hist.values_list('probe_insertion',
-                                                                          flat=True))
-        context['no_ins_ephys'] = ins.filter(pk__in=traj_hist.values_list('probe_insertion',
-                                                                          flat=True)).\
-            exclude(pk__in=traj_ephys.values_list('probe_insertion', flat=True))
-
-
-        ntraining = Count("session", filter=Q(session__procedures__name='Behavior training/tasks'))
-        nephys = Count("session", filter=Q(session__procedures__name__icontains='ephys'))
-        lt_training = Max("session__start_time",
-                          filter=Q(session__procedures__name='Behavior training/tasks'))
-        lt_ephys = Max("session__start_time",
-                       filter=Q(session__procedures__name__icontains='ephys'))
-        labs = labs.annotate(ntraining=ntraining, nephys=nephys, latest_training=lt_training,
-                             latest_ephys=lt_ephys)
-
-        # Annotate with latest ephys session
-
-        space = np.array(labs.values_list(
-            'json__raid_available', flat=True), dtype=np.float)
-        context['space_left'] = np.round(space / 1000, decimals=1)
-        context['labs'] = labs
-        context['labs_all'] = labs_all
+        context = super(InsertionTable, self).get_context_data(**kwargs)
+        context['chosen_lab'] = self.lab
+        context['data_status'] = data_check.get_data_status_qs(context['object_list'])
+        context['labs'] = Lab.objects.all().exclude(name=self.lab)
 
         return context
 
     def get_queryset(self):
-        lab = self.kwargs.get('lab', None)
-        qs = Lab.objects.all().filter(name=lab)
 
-        return qs
+        self.lab = self.request.GET.get('lab', None)
+        qs = ProbeInsertion.objects.all().filter(
+            session__project__name='ibl_neuropixel_brainwide_01')
+        if self.lab:
+            qs = qs.filter(session__lab__name=self.lab)
+
+        qs = qs.annotate(task=F('session__extended_qc__task'),
+                         video_left=F('session__extended_qc__videoLeft'),
+                         video_right=F('session__extended_qc__videoRight'),
+                         video_body=F('session__extended_qc__videoBody'),
+                         behavior=F('session__extended_qc__behavior'),
+                         insertion_qc=F('json__qc'))
+        qs = qs.annotate(planned=Exists(
+            TrajectoryEstimate.objects.filter(probe_insertion=OuterRef('pk'), provenance=10)))
+        qs = qs.annotate(micro=Exists(
+            TrajectoryEstimate.objects.filter(probe_insertion=OuterRef('pk'), provenance=30)))
+        qs = qs.annotate(histology=Exists(
+            TrajectoryEstimate.objects.filter(probe_insertion=OuterRef('pk'), provenance=50,
+                                              x__isnull=False)))
+        #qs = qs.annotate(resolved=Exists(
+        #   TrajectoryEstimate.objects.filter(probe_insertion=OuterRef('pk'), provenance=70)))
+        qs = qs.annotate(resolved=F('json__extended_qc__alignment_resolved'))
+
+        return qs.order_by('-session__start_time')
 
 
 def basepage(request):

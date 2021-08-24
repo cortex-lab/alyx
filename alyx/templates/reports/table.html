@@ -1,0 +1,97 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list%}
+{% load jobs_template_tags %} {# custom template tags in app #}
+
+{% block content %}
+    <form action="{% url 'insertion table' %}" method="GET">
+    <select name="lab">
+        {% if chosen_lab %}
+            <option value={{ chosen_lab }}>{{ chosen_lab }}</option>
+            <option value={{  null }}>-------------</option>
+        {% else %}
+            <option value={{ null }}>-------------</option>
+        {% endif %}
+
+        {% for lab in labs %}
+            <option value={{ lab }}>{{ lab }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-info btn-sm mt-1 mb-1">Filter</button>
+</form>
+
+<table>
+<thead>
+    <tr>
+        <th>probe id</th>
+        <th>project</th>
+        <th>session</th>
+        <th>probe</th>
+        <th>session qc</th>
+        <th>insertion qc</th>
+        <th>behavior qc</th>
+        <th>task qc</th>
+        <th>video left qc</th>
+        <th>video right qc</th>
+        <th>video body qc</th>
+        <th>planned</th>
+        <th>micro</th>
+        <th>histology</th>
+        <th>resolved</th>
+        <th>trials</th>
+        <th>passive</th>
+        <th>video</th>
+        <th>spikesorting</th>
+    </tr>
+</thead>
+
+<tbody>
+{% for obj in object_list %}
+    <tr>
+        <td><a href="{% url 'insertion overview' obj.id %}">{{ obj.id }}</a></td>
+        <td>{{ obj.session.project.name }}</td>
+        <td><a href="{% url 'admin:actions_session_change' obj.session.id %}">{{ obj.session|get_session_path }}</a></td>
+        <td><a href="{% url 'admin:experiments_probeinsertion_change' obj.id %}">{{ obj.name }}</a></td>
+        <td>{{ obj.session.get_qc_display }}</td>
+        <td>{{ obj.insertion_qc|assign_none_to_val }}</td>
+        <td>{{ obj.behavior|get_icon }}</td>
+        <td>{{ obj.task|assign_none_to_val }}</td>
+        <td>{{ obj.video_left|assign_none_to_val }}</td>
+        <td>{{ obj.video_right|assign_none_to_val }}</td>
+        <td>{{ obj.video_body|assign_none_to_val }}</td>
+        <td>{{ obj.planned|get_icon }}</td>
+        <td>{{ obj.micro|get_icon }}</td>
+        <td>{{ obj.histology|get_icon }}</td>
+        <td>{{ obj.resolved|get_icon }}</td>
+        <td>{{ data_status.behav|index:forloop.counter0|get_icon }}</td>
+        <td>{{ data_status.passive|index:forloop.counter0|get_icon }}</td>
+        <td>{{ data_status.video|index:forloop.counter0|get_icon }}</td>
+        <td>{{ data_status.spikesort|index:forloop.counter0|get_icon }}</td>
+
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
+
+{% block title %}
+{{ title|striptags }}
+{% endblock %}
