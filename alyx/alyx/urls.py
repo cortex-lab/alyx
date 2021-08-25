@@ -156,4 +156,6 @@ urlpatterns = [
 
     path('weighings/<uuid:pk>', av.WeighingAPIDetail.as_view(),
          name="weighing-detail"),
+
+    path('ibl_reports/', include('ibl_reports.urls')),
 ]
