@@ -69,8 +69,9 @@
           });
         }
 
-        function loadAllCharts(year) {
-          loadChart(taskqc_chart, bla, `/reports/alerts/task_qc/${year}`);
+        function loadAllCharts(pid) {
+          loadChart(taskqc_chart, taskqc_header, `/reports/alerts/task_qc/${pid}`);
+          loadChart(videoqc_chart, videoqc_header, `/reports/alerts/video_qc/${pid}`);
         }
     </script>
     <div class="row">
@@ -123,16 +124,15 @@
 
 
     <div class="col-lg-6 pad2">
-        <h2 id="myHeader">Task QC: </h2>
+        <h2 id="taskqc_header">Task QC: </h2>
         <canvas id="taskqc_chart" width="100" height="50"></canvas>
-        <h2 id="lala">Video QC</h2>
-        <canvas id="taskqc_lala" width="100" height="50"></canvas>
+        <h2 id="videoqc_header">Video QC: </h2>
+        <canvas id="videoqc_chart" width="100" height="50"></canvas>
     </div>
 
     </div>
     <script>
         let ctx_taskqc = document.getElementById("taskqc_chart").getContext("2d");
-
         let taskqc_chart = new Chart(ctx_taskqc, {
           type: "bar",
 
@@ -144,7 +144,21 @@
           }
         });
 
-        let bla = document.getElementById("myHeader")
+        let taskqc_header = document.getElementById("taskqc_header")
+
+        let ctx_videoqc = document.getElementById("videoqc_chart").getContext("2d");
+        let videoqc_chart = new Chart(ctx_videoqc, {
+          type: "bar",
+
+          options: {
+              responsive: true,
+              legend: {
+                    display: false
+              },
+          }
+        });
+
+        let videoqc_header = document.getElementById("videoqc_header")
 
     </script>
 

@@ -3,21 +3,16 @@
 {% load jobs_template_tags %} {# custom template tags in app #}
 
 {% block content %}
-    <form action="{% url 'insertion table' %}" method="GET">
-    <select name="lab">
-        {% if chosen_lab %}
-            <option value={{ chosen_lab }}>{{ chosen_lab }}</option>
-            <option value={{  null }}>-------------</option>
-        {% else %}
-            <option value={{ null }}>-------------</option>
-        {% endif %}
-
-        {% for lab in labs %}
-            <option value={{ lab }}>{{ lab }}</option>
-        {% endfor %}
-    </select>
-    <button type="submit" class="btn btn-info btn-sm mt-1 mb-1">Filter</button>
-</form>
+<div class="row">
+    <div class="col">
+	<div class="card card-body">
+	<form method="get">
+           {{tableFilter.form}}
+        <button class="btn btn-primary" type="submit">Search</button>
+	</form>
+	</div>
+    </div>
+</div>
 
 <table>
 <thead>
@@ -75,8 +70,8 @@
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">previous</a>
+            <a href="?{% param_replace page=1 %}">&laquo; first</a>
+            <a href="?{% param_replace page=page_obj.previous_page_number %}">previous</a>
         {% endif %}
 
         <span class="current">
@@ -84,11 +79,12 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}{% if chosen_lab %}&lab={{ chosen_lab }}{% endif %}">last &raquo;</a>
+            <a href="?{% param_replace page=page_obj.next_page_number %}">next</a>
+            <a href="?{% param_replace page=paginator.num_pages %}">last &raquo;</a>
         {% endif %}
     </span>
 </div>
+
 
 {% endblock %}
 
