@@ -1362,5 +1362,38 @@
       "description": "Table containing Timestamp, embeddedTimeStamp, embeddedFrameCounter, embeddedGPIOPinState for each video frame",
       "filename_pattern": "_iblrig_*Camera.frameData.*"
       }
+    },
+   {
+    "model": "data.datasettype",
+    "pk": "fb0bf47d-e393-4c32-bac7-69076140f7af",
+    "fields": {
+      "json": null,
+      "name": "drift.um",
+      "created_by": null,
+      "description": "Result of the drift registration. 1D vector of drift estimation in um. A cell moving downwards relative to the probe will show as negative drift (ie. it overlays on the raster). For non-rigid drift, 2D vector where the first dimension corresponds to the time of the estimation and the second dimension to the depth of the estimate (see the scale datasets)",
+      "filename_pattern": "drift.um.npy"
+      }
+    },
+   {
+    "model": "data.datasettype",
+    "pk": "3389350b-bdab-4bcd-a76d-6568dd930bc5",
+    "fields": {
+      "json": null,
+      "name": "drift_depths.um",
+      "created_by": null,
+      "description": "For non-rigid registration, depth corresponding to each of the drift matrix column (um)",
+      "filename_pattern": "drift_depths.um.npy"
+      }
+    },
+   {
+  "model": "data.datasettype",
+  "pk": "958e0b17-b739-41ff-8f35-00e854eb53cf",
+  "fields": {
+    "json": null,
+    "name": "drift.times",
+    "created_by": null,
+    "description": "Time of the probe corresponding to each of the drift matrix row (secs)",
+    "filename_pattern": "drift.times.npy"
     }
+  }
 ]
