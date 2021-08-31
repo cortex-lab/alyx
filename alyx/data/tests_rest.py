@@ -442,9 +442,10 @@ class APIDataTests(BaseTests):
         self.assertTrue('#v2#' in r[1]['file_records'][0]['relative_path'])
 
         # Check error status with multiple revision folders
-        data = {'path': '%s/2018-01-01/002/#v1#' % self.subject,
-                'filenames': '#v2#/a.d.e1',
-                'name': 'drb2',  # this is the repository name
+        data = {
+            'path': '%s/2018-01-01/002/#v1#' % self.subject,
+            'filenames': '#v2#/a.d.e1',
+            'name': 'drb2',  # this is the repository name
         }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 400)

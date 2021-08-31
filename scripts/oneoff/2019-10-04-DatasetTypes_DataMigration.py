@@ -19,8 +19,8 @@ dtypes_old2delte_reassign = [
 ]
 
 # load init fixtures
-call_command('loaddata',  './data/fixtures/data.dataformat.json')
-call_command('loaddata',  './data/fixtures/data.datasettype.json')
+call_command('loaddata', './data/fixtures/data.dataformat.json')
+call_command('loaddata', './data/fixtures/data.datasettype.json')
 
 for pks in dtypes_old2delte_reassign:
     dt2del = DatasetType.objects.filter(pk=pks[0])

@@ -1,4 +1,4 @@
-## do the synchronisation of IBL patcher files DMZ
+# do the synchronisation of IBL patcher files DMZ
 import logging
 from data.models import FileRecord, Dataset
 import data.transfers as transfers

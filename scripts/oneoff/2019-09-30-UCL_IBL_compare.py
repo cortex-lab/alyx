@@ -3,6 +3,7 @@ from django.forms.models import model_to_dict
 from subjects.models import Subject, Project
 from actions.models import Cull
 
+
 def compare_querysets(qs0, qs1, exclude_fields=None, include_fields=None, verbose=True):
     pk0 = list(qs0.values_list('pk', flat=True))
     pk1 = list(qs1.values_list('pk', flat=True))
