@@ -3,14 +3,12 @@
 from getpass import getpass
 import os
 import os.path as op
-import shutil
 import platform
 from django.utils.crypto import get_random_string
 import sys
 from warnings import warn
 
 MACOS = platform.system() == 'Darwin'
-
 
 
 def _secret_key():
@@ -44,13 +42,17 @@ def _replace_in_file(source_file, target_file, replacements=None, target_mode='w
     if chmod:
         os.chmod(target_file, chmod)
 
+
 # Check if we are inside a virtual environment
 if not MACOS and not hasattr(sys, 'real_prefix') and sys.base_prefix == sys.prefix:
-    warn('You are not currently in a virtual environment, would you like to proceed anyway? (y/n): ', RuntimeWarning)
+    warn('You are not currently in a virtual environment, '
+         'would you like to proceed anyway? (y/n): ', RuntimeWarning)
     continue_anyway = input()
-    if continue_anyway not in  ("y", 'yes'):
-        print('Create a virtual environment from the repository root with: "virtualenv alyxvenv --python=python3"')
-        print('Enter a virtual environment from the repository root with: "source alyxvenv/bin/activate"')
+    if continue_anyway not in ("y", 'yes'):
+        print('Create a virtual environment from the repository root with: '
+              '"virtualenv alyxvenv --python=python3"')
+        print('Enter a virtual environment from the repository root with: '
+              '"source alyxvenv/bin/activate"')
         sys.exit()
 
 
@@ -82,7 +84,8 @@ if not out:
 # Set up the roles for the user.
 try:
     _psql("ALTER ROLE {DBUSER} SET client_encoding TO 'utf8';", DBUSER=DBUSER)
-    _psql("ALTER ROLE {DBUSER} SET default_transaction_isolation TO 'read committed';", DBUSER=DBUSER)
+    _psql("ALTER ROLE {DBUSER} SET default_transaction_isolation TO 'read committed';",
+          DBUSER=DBUSER)
     _psql("ALTER ROLE {DBUSER} SET timezone TO 'UTC';", DBUSER=DBUSER)
     _psql("GRANT ALL PRIVILEGES ON DATABASE {DBNAME} TO {DBUSER};", DBNAME=DBNAME, DBUSER=DBUSER)
     _psql("ALTER USER {DBUSER} WITH CREATEROLE;", DBUSER=DBUSER)
@@ -93,9 +96,6 @@ try:
 except Exception as e:
     print('Could not create database, error message:\n')
     raise e
-
-
-
 
 
 repl = {
@@ -112,11 +112,9 @@ try:
                      replacements=repl,
                      )
 
-
     # Set up the .pgpass file to avoid typing the postgres password.
     _replace_in_file('scripts/templates/.pgpass_template', '~/.pgpass',
                      replacements=repl, target_mode='a', chmod=0o600)
-
 
     # Set up the maintainance scripts.
     _replace_in_file('scripts/templates/load_db.sh', 'scripts/load_db.sh',
@@ -133,7 +131,6 @@ except Exception as e:
 try:
     _system('python3 alyx/manage.py makemigrations')
     _system('python3 alyx/manage.py migrate')
-
 
     _system('''echo "from misc.models import LabMember;'''
             '''LabMember.objects.create_superuser('admin', 'admin@example.com', 'admin')"'''

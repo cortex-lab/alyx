@@ -107,7 +107,7 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
 
-# Revison
+# Revision
 # -------------------------------------------------------------------------------------------------
 
 class RevisionList(generics.ListCreateAPIView):
@@ -120,6 +120,7 @@ class RevisionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'name'
 
 
 class TagList(generics.ListCreateAPIView):
@@ -350,10 +351,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'filesizes': [145684, 354213],    # optional
               'server_only': True,   # optional, defaults to False. Will only create file
               # records in the server repositories and skips local repositories
-              'versions': ['1.4.4', '1.4.4'],  # optional,usually refers to the software version
+              'versions': ['1.4.4', '1.4.4'],  # optional, usually refers to the software version
               # used to generate the file
-              'revisions': ['v1', 'v2'] # optional, refers to the revision of dataset. Revision
-              must be represented in folder path of filename
               'default': False #optional , defaults to True, if more than one revision of dataset,
               whether to set current one as the default
               }
@@ -370,7 +369,6 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         If the dataset already exists, it will use the file hash to deduce if the file has been
         patched or not (ie. the filerecords will be created as not existing)
         """
-        filenames = request.data.get('filenames', ())
         user = request.data.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
@@ -402,39 +400,27 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             filenames = filenames.split(',')
 
         # versions if provided
-        versions = request.data.get('versions', [None for f in filenames])
+        versions = request.data.get('versions', [None] * len(filenames))
         if isinstance(versions, str):
             versions = versions.split(',')
 
         # file hashes if provided
-        hashes = request.data.get('hashes', [None for f in filenames])
+        hashes = request.data.get('hashes', [None] * len(filenames))
         if isinstance(hashes, str):
             hashes = hashes.split(',')
 
-        # filesizes if provided
-        filesizes = request.data.get('filesizes', [None for f in filenames])
+        # file sizes if provided
+        filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
 
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
 
-        # revisions if provided
-        _revisions = request.data.get('revisions', [None for f in filenames])
-        if isinstance(_revisions, str):
-            _revisions = _revisions.split(',')
-        # Get the revision object from the revision name
-        revisions = []
-        for rev in _revisions:
-            if rev:
-                revisions.append(Revision.objects.get(name=rev))
-            else:
-                revisions.append(None)
-
         default = request.data.get('default', True)
         # Need to explicitly cast string to a bool
-        if default == 'False':
-            default = False
+        if isinstance(default, str):
+            default = default == 'True'
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
@@ -451,33 +437,33 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         assert session
 
         response = []
-        for filename, hash, fsize, version, revision in zip(filenames, hashes, filesizes, versions,
-                                                            revisions):
+        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
-            # if filename contains path elements, interpret them as the collection field, otherwise
-            # collection field is None
-            collection = str(Path(filename.replace('\\', '/')).parent)
-            collection = None if collection == '.' else collection
-
-            # If the revision is specified need to check that the collection path doesn't contain
-            # the revision path too
-            if revision and collection:
-                # If the last part of the collection contains the revision collection we want to
-                # remove this from the collection
-                if Path(collection).parts[-1] == revision.name:
-                    collection = str(Path(*Path(collection).parts[:-1]))
-                    # case where all of collection is the revision
-                    collection = None if collection == '.' else collection
-                else:
+            # Get collections/revisions for each file
+            fullpath = Path(rel_dir_path).joinpath(filename).as_posix()
+            # Index of relative path (stuff after session path)
+            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
+            subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+            # Check for revisions (folders beginning and ending with '#')
+            # Fringe cases:
+            #   '#' is a collection
+            #   '##' is an empty revision
+            #   '##blah#5#' is a revision named '#blah#5'
+            is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
+            if any(is_rev):
+                # There may be only 1 revision and it cannot contain sub folders
+                if is_rev.index(True) != len(is_rev) - 1:
                     data = {'status_code': 400,
-                            'detail': ('Revision folder ' + str(Path(collection).parts[-1]) +
-                                       ' does not equal revision name "' + revision.name + '"')}
+                            'detail': 'Revision folders cannot contain sub folders'}
                     return Response(data=data, status=400)
+                revision, _ = Revision.objects.get_or_create(name=subdirs.pop()[1:-1])
+            else:
+                revision = None
 
             filename = Path(filename).name
             dataset, resp = _create_dataset_file_records(
-                collection=collection, rel_dir_path=rel_dir_path, filename=filename,
+                collection='/'.join(subdirs), rel_dir_path=fullpath[:i], filename=filename,
                 session=session, user=user, repositories=repositories, exists_in=exists_in,
                 hash=hash, file_size=fsize, version=version, revision=revision, default=default)
             if resp:

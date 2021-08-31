@@ -106,12 +106,13 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         read_only=False, slug_field='name',
         queryset=DatasetType.objects.all(),
     )
+    default_revision = serializers.CharField(source='default_dataset')
 
     class Meta:
         list_serializer_class = FilterDatasetSerializer
         model = Dataset
         fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
-                  'hash', 'version', 'collection')
+                  'hash', 'version', 'collection', 'default_revision')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):

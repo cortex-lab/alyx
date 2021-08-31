@@ -206,7 +206,7 @@ class APIActionsTests(BaseTests):
         d = self.ar(self.client.get(reverse('session-list') + '?performance_lte=50'))
         self.assertEqual(d[0]['url'], s2['url'])
         self.assertTrue(len(d) == 1)
-        # test the Session serializer wateradmin related field
+        # test the Session serializer water admin related field
         ses = Session.objects.get(subject=self.subject, users=self.superuser,
                                   project=self.projectX, start_time__date='2018-07-09')
         WaterAdministration.objects.create(subject=self.subject, session=ses, water_administered=1)

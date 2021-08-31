@@ -3,6 +3,7 @@ DATA RELEASE PROTOTYPE
 From a full database, prune only the sessions needed for a public data release
 At the end, generates commands to be run on the flatiron server
 """
+from pathlib import Path
 
 from django.conf import settings
 
@@ -10,15 +11,14 @@ from actions.models import Session
 from subjects.models import Subject
 from misc.models import LabMember
 from data.models import DataRepository
-eids = ['89f0d6ff-69f4-45bc-b89e-72868abb042a',
-        'd33baf74-263c-4b37-a0d0-b79dcb80a764']
+
+eids = ['89f0d6ff-69f4-45bc-b89e-72868abb042a', 'd33baf74-263c-4b37-a0d0-b79dcb80a764']
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Makes sure this is not run on a production database
 # THE CODE BELOW WILL PERMANENTLY DELETE ALL SESSIONS NOT IN THE EIDS LIST ABOVE
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 assert 'public.alyx.internationalbrainlab.org' in settings.ALLOWED_HOSTS
-
 
 # first prune the database
 # have to delete sessions batch by batch to avoid out of memory issues
@@ -41,16 +41,15 @@ DataRepository.objects.filter(globus_is_personal=True).delete()
 
 repos = DataRepository.objects.all()
 for repo in repos:
-     repo.data_url = repo.data_url.replace("http://ibl.flatironinstitute.org/",
-                                           "http://ibl.flatironinstitute.org/public/")
-     repo.save()
-
+    repo.data_url = repo.data_url.replace(
+        "http://ibl.flatironinstitute.org/", "http://ibl.flatironinstitute.org/public/")
+    repo.save()
 
 LabMember.objects.create_user('iblpublic', password="NeuroPhysTest")
 
 # Then create the commands to be run on the flatiron server
 # (TODO run commands from here but needs SSH keypairs)
-from pathlib import Path
+
 ROOT_PATH = Path('/mnt/ibl')
 PUBLIC_PATH = Path('/mnt/ibl/public')
 for s in ses:
