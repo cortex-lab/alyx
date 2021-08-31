@@ -118,7 +118,7 @@ if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Production settings:
 if not DEBUG:
@@ -238,9 +238,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
+MEDIA_ROOT = '/backups/uploaded/'
 MEDIA_URL = '/uploaded/'
 
 TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
+TABLES_ROOT = '/backups/tables/'
 
 UPLOADED_IMAGE_WIDTH = 800
 

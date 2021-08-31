@@ -1,15 +1,15 @@
 from textwrap import dedent
 
 # ALYX-SPECIFIC
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'alyx.internationalbrainlab.org', '3.10.51.160']
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'GB'
 GLOBUS_CLIENT_ID = '525cc517-8ccb-4d11-8036-af332da5eafd'
-SUBJECT_REQUEST_EMAIL_FROM = 'alyx-noreply@cortexlab.net'
-DEFAULT_SOURCE = 'Cruciform BSU'
+SUBJECT_REQUEST_EMAIL_FROM = 'alyx@internationalbrainlab.org'
+DEFAULT_SOURCE = 'IBL'
 DEFAULT_PROTOCOL = '1'
-SUPERUSERS = ('root',)
-STOCK_MANAGERS = ('charu',)
+SUPERUSERS = ('root')
+STOCK_MANAGERS = ('olivier',)
 WEIGHT_THRESHOLD = 0.75
 DEFAULT_LAB_NAME = 'cortexlab'
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
