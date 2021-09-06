@@ -16,6 +16,7 @@ class Task(models.Model):
         (40, 'Errored',),
         (45, 'Abandoned',),
         (50, 'Empty'),
+        (55, 'Incomplete'),
         (60, 'Complete',),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
