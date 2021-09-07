@@ -3,6 +3,17 @@
 {% load jobs_template_tags %} {# custom template tags in app #}
 
 {% block content %}
+<div class="row">
+    <div class="col">
+	<div class="card card-body">
+	<form method="get">
+           {{tableFilter.form}}
+        <button class="btn btn-primary" type="submit">Search</button>
+	</form>
+	</div>
+    </div>
+</div>
+
 <table>
     <thead>
         <tr>

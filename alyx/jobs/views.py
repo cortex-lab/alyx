@@ -6,6 +6,7 @@ from django.views.generic.list import ListView
 import numpy as np
 
 from alyx.base import BaseFilterSet
+import django_filters
 
 from misc.models import Lab
 from jobs.models import Task
@@ -20,6 +21,7 @@ class TasksStatusView(ListView):
     def get_context_data(self, **kwargs):
         graph = self.kwargs.get('graph', None)
         context = super(TasksStatusView, self).get_context_data(**kwargs)
+        context['tableFilter'] = self.f
         context['graphs'] = list(Task.objects.all().values_list('graph', flat=True).distinct())
         # annotate the labs for template display
         cw = Count('session__tasks', filter=Q(session__tasks__status=20))
@@ -53,7 +55,34 @@ class TasksStatusView(ListView):
             qs = qs.filter(lab__name=lab)
         if graph:
             qs = qs.filter(tasks__graph=self.kwargs['graph'])
-        return qs.distinct().order_by("-start_time")
+
+        self.f = ProjectFilter(self.request.GET, queryset=qs)
+
+        return self.f.qs.distinct().order_by('-start_time')
+        # return qs.distinct().order_by("-start_time")
+
+
+class ProjectFilter(django_filters.FilterSet):
+    """
+    Filter used in combobox of task admin page
+    """
+
+    class Meta:
+        model = Session
+        fields = ['project']
+        exclude = ['json']
+
+    def __init__(self, *args, **kwargs):
+
+        super(ProjectFilter, self).__init__(*args, **kwargs)
+
+        #self.filters['id'].label = "Probe ID"
+        #self.filters['session__lab'].label = "Lab"
+        #self.filters['session__project'].label = "Project"
+
+    #def filter_resolved(self, queryset, name, value):
+    #    return queryset.filter(resolved=value)
+
 
 
 class TaskFilter(BaseFilterSet):
@@ -85,3 +114,5 @@ class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+
