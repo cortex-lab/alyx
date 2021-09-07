@@ -48,7 +48,7 @@ class TasksStatusView(ListView):
     def get_queryset(self):
         graph = self.kwargs.get('graph', None)
         lab = self.kwargs.get('lab', None)
-        qs = Session.objects.all()
+        qs = Session.objects.exclude(session__qc=50)
         if lab:
             qs = qs.filter(lab__name=lab)
         if graph:
