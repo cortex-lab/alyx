@@ -36,8 +36,9 @@ class TasksStatusView(ListView):
             # on value lists and unique together constraints. bof.
             # https://code.djangoproject.com/ticket/16058
             context['task_names'] = list(
-                Task.objects.filter(graph=graph).order_by("-priority").order_by(
-                    "level").order_by().values_list('name', flat=True).distinct())
+                Task.objects.filter(graph=graph).exclude(session__qc=50).order_by(
+                    "-priority").order_by("level").order_by().values_list(
+                    'name', flat=True).distinct())
         else:
             context['task_names'] = []
         context['title'] = 'Tasks Recap'
