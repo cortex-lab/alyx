@@ -51,15 +51,17 @@ class TasksStatusView(ListView):
         graph = self.kwargs.get('graph', None)
         lab = self.kwargs.get('lab', None)
         qs = Session.objects.exclude(qc=50)
-        if lab:
-            qs = qs.filter(lab__name=lab)
-        if graph:
-            qs = qs.filter(tasks__graph=self.kwargs['graph'])
+        if lab is None and graph is None:
+            qs = Session.objects.none()
+        else:
+            if lab:
+                qs = qs.filter(lab__name=lab)
+            if graph:
+                qs = qs.filter(tasks__graph=self.kwargs['graph'])
 
         self.f = ProjectFilter(self.request.GET, queryset=qs)
 
         return self.f.qs.distinct().order_by('-start_time')
-        # return qs.distinct().order_by("-start_time")
 
 
 class ProjectFilter(django_filters.FilterSet):
