@@ -86,8 +86,10 @@ LOGGING = {
         },
         'json_file': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.WatchedFileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx_json.log',
+	    'maxBytes': 16777216,
+	    'backupCount': 3,
             'formatter': 'json_formatter',
         },
     },
