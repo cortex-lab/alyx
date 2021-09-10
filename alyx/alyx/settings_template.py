@@ -31,7 +31,6 @@ if 'TRAVIS' in os.environ:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-	    # 'ENGINE': 'django_prometheus.db.backends.postgresql',
             'NAME': 'travisci',
             'USER': 'postgres',
             'PASSWORD': '',
@@ -150,7 +149,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django_prometheus',
     'mptt',
     'polymorphic',
     'rangefilter',
@@ -170,7 +168,6 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
-    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -179,8 +176,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'alyx.base.QueryPrintingMiddleware',
-    # 'django_structlog.middlewares.RequestMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
+    'django_structlog.middlewares.RequestMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'
