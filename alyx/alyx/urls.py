@@ -157,8 +157,3 @@ urlpatterns = [
          name="weighing-detail"),
 
 ]
-
-try:
-    urlpatterns += [path('ibl_reports/', include('ibl_reports.urls')), ]
-except ModuleNotFoundError:
-    pass
