@@ -29,10 +29,11 @@ class TasksStatusView(ListView):
         lj = Max('session__tasks__datetime')
         context['labs'] = Lab.objects.annotate(
             count_waiting=cw, last_session=ls, last_job=lj).order_by('name')
-        context['health'] = []
         space = np.array(context['labs'].values_list(
             'json__raid_available', flat=True), dtype=np.float)
         context['space_left'] = np.round(space / 1000, decimals=1)
+        context['ibllib_version'] = list(context['labs'].values_list(
+            'json__ibllib_version', flat=True))
         if graph:
             # here the empty order_by is to fix a low level SQL bug with distinct when called
             # on value lists and unique together constraints. bof.
@@ -68,23 +69,13 @@ class ProjectFilter(django_filters.FilterSet):
     """
     Filter used in combobox of task admin page
     """
-
     class Meta:
         model = Session
         fields = ['project']
         exclude = ['json']
 
     def __init__(self, *args, **kwargs):
-
         super(ProjectFilter, self).__init__(*args, **kwargs)
-
-        #self.filters['id'].label = "Probe ID"
-        #self.filters['session__lab'].label = "Lab"
-        #self.filters['session__project'].label = "Project"
-
-    #def filter_resolved(self, queryset, name, value):
-    #    return queryset.filter(resolved=value)
-
 
 
 class TaskFilter(BaseFilterSet):
@@ -116,5 +107,3 @@ class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-

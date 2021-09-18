@@ -155,5 +155,4 @@ urlpatterns = [
 
     path('weighings/<uuid:pk>', av.WeighingAPIDetail.as_view(),
          name="weighing-detail"),
-
 ]

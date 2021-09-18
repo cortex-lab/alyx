@@ -23,6 +23,7 @@
         <th>Queued</th>
         <th>Last Job Activity</th>
         <th>Last Session Date</th>
+        <th>ibllib</th>
         <th>Space left (Tb)</th>
         </tr>
     </thead>
@@ -35,6 +36,7 @@
             <td>{{ lab.count_waiting }}</td>
             <td>{{ lab.last_job }}</td>
             <td>{{ lab.last_session }}</td>
+            <td>{{ ibllib_version|index:forloop.counter0 }}</td>
             <td>{{ space_left|index:forloop.counter0 }}</td>
             </tr>
         {% endfor %}

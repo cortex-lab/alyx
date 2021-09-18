@@ -28,5 +28,3 @@ except ModuleNotFoundError:
     pass
     # redirect the page to admin interface
     # urlpatterns += [path('', RedirectView.as_view(url='/admin')), ]
-
-
