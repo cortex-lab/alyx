@@ -197,6 +197,7 @@ class RevisionAdmin(BaseAdmin):
 class TagAdmin(BaseAdmin):
     fields = ['name', 'description', 'protected', 'public', 'dataset_count', 'session_count']
     list_display = ['name', 'description', 'dataset_count', 'session_count', 'protected', 'public']
+    readonly_fields = ['dataset_count', 'session_count']
     search_fields = ('name',)
     ordering = ('name',)
 
