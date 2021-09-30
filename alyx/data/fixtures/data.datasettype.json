@@ -1395,5 +1395,16 @@
     "description": "Time of the probe corresponding to each of the drift matrix row (secs)",
     "filename_pattern": "drift.times.npy"
     }
+  },
+    {
+  "model": "data.datasettype",
+  "pk": "2c56c793-c3ac-4968-9798-f31a6453c105",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.RMS",
+    "created_by": null,
+    "description": "Median RMS per channel from samples of raw [nch, 0] and destriped [nch, 1] ephys data.",
+    "filename_pattern": "_iblqc_ephysChannels.*RMS.*"
+    }
   }
 ]
