@@ -1297,6 +1297,17 @@
       "filename_pattern": "_ibl_passiveStims.table*.csv"
     }
   },
+    {
+    "model": "data.datasettype",
+    "pk": "5d6c5026-31ec-45c8-8f37-f1304c360fb3",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.laser_intervals",
+      "created_by": null,
+      "description": "Time in seconds, relative to the session start, of the onset and offset of the laser stimulation.",
+      "filename_pattern": "_ibl_trials.laser_intervals.npy"
+    }
+  },
    {
     "model": "data.datasettype",
     "pk": "2be5a2b1-4f52-4570-a2ac-3412dde50cc3",
