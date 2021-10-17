@@ -155,4 +155,10 @@ urlpatterns = [
 
     path('weighings/<uuid:pk>', av.WeighingAPIDetail.as_view(),
          name="weighing-detail"),
+
 ]
+
+try:
+    urlpatterns += [path('ibl_reports/', include('ibl_reports.urls')), ]
+except ModuleNotFoundError:
+    pass

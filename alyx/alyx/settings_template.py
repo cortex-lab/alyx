@@ -27,15 +27,15 @@ en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 
 
-if 'TRAVIS' in os.environ:
+if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'travisci',
+            'ENGINE': 'django_prometheus.db.backends.postgresql',
+            'NAME': 'githubactions',
             'USER': 'postgres',
-            'PASSWORD': '',
+            'PASSWORD': 'postgres',
             'HOST': 'localhost',
-            'PORT': '',
+            'PORT': '5432',
         }
     }
 
