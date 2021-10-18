@@ -1302,10 +1302,10 @@
     "pk": "5d6c5026-31ec-45c8-8f37-f1304c360fb3",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laser_intervals",
+      "name": "_ibl_trials.laserIntervals",
       "created_by": null,
       "description": "Time in seconds, relative to the session start, of the onset and offset of the laser stimulation.",
-      "filename_pattern": "_ibl_trials.laser_intervals.npy"
+      "filename_pattern": "_ibl_trials.laserIntervals.npy"
     }
   },
    {
@@ -1313,10 +1313,10 @@
     "pk": "2be5a2b1-4f52-4570-a2ac-3412dde50cc3",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laser_stimulation",
+      "name": "_ibl_trials.laserStimulation",
       "created_by": null,
       "description": "Whether or not the laser was actuating during the trial (outcome): 0:no laser, 1: laser, np.nan: no info",
-      "filename_pattern": "_ibl_trials.laser_stimulation.npy"
+      "filename_pattern": "_ibl_trials.laserStimulation.npy"
     }
   },
     {
@@ -1324,10 +1324,10 @@
     "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laser_probability",
+      "name": "_ibl_trials.laserProbability",
       "created_by": null,
       "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "_ibl_trials.laser_probability.npy"
+      "filename_pattern": "_ibl_trials.laserProbability.npy"
     }
   },
     {
