@@ -160,9 +160,20 @@ System in only one database. Will be easier when ONE2 is realeased
 task_names_to_exclude = ['TrainingDLC', 'EphysDLC']
 dlc_tasks = Task.objects.using('cortexlab').filter(name__in=task_names_to_exclude)
 ctasks = dlc_tasks.values_list('pk', flat=True)
-ibltasks = Task.objects.filter(name__in=task_names_to_exclude).values_list('pk', flat=True)
-t2add = list(set(list(ctasks)).difference(list(ibltasks)))
+ibl_tasks = Task.objects.filter(name__in=task_names_to_exclude)
+ibl_tids = ibl_tasks.values_list('pk', flat=True)
+t2add = list(set(list(ctasks)).difference(list(ibl_tids)))
 dlc_tasks.exclude(id__in=t2add).delete()
+
+tfields = ('name', 'session')
+its = ibl_tasks.values_list(*tfields)
+cts = Task.objects.using('cortexlab').filter(name__in=task_names_to_exclude).values_list(*tfields)
+
+# there should not be a whole lot of them so loop
+duplicates = set(cts).intersection(its)
+for dup in duplicates:
+    task = Task.objects.using('cortexlab').get(name=dup[0], session=dup[1])
+    task.delete()
 
 """
 Sync the tasks part 2: for the other tasks we want to make sure there are no duplicate tasks with
