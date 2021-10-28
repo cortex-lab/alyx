@@ -1417,5 +1417,16 @@
     "description": "Median RMS per channel from samples of raw [nch, 0] and destriped [nch, 1] ephys data.",
     "filename_pattern": "_iblqc_ephysChannels.*RMS.*"
     }
+  },
+     {
+  "model": "data.datasettype",
+  "pk": "935a4f55-4a9b-49c5-8898-661559b3616a",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.rawSpikeRates",
+    "created_by": null,
+    "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
+    "filename_pattern": "_iblqc_ephysChannels.*rawSpikeRates.*"
+    }
   }
 ]
