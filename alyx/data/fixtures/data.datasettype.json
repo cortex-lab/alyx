@@ -1428,5 +1428,27 @@
     "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
     "filename_pattern": "_iblqc_ephysChannels.*rawSpikeRates.*"
     }
+  },
+      {
+  "model": "data.datasettype",
+  "pk": "49adb321-17d3-43e5-8cf6-672236b0c345",
+  "fields": {
+    "json": null,
+    "name": "camera.features",
+    "created_by": null,
+    "description": "Contains features calculated from DLC traces, currently pupilDiameter_raw, pupilDiameter_smooth",
+    "filename_pattern": "*camera.features.*"
+    }
+  },
+       {
+  "model": "data.datasettype",
+  "pk": "c6efb782-dfa6-4244-90fe-e24fead5df00",
+  "fields": {
+    "json": null,
+    "name": "licks.times",
+    "created_by": null,
+    "description": "Times of licks as detected from DLC tongue traces.",
+    "filename_pattern": "licks.times*"
+    }
   }
 ]
