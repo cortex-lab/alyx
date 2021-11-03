@@ -1448,7 +1448,7 @@
     "name": "licks.times",
     "created_by": null,
     "description": "Times of licks as detected from DLC tongue traces.",
-    "filename_pattern": "licks.times*"
+    "filename_pattern": "licks.times.*"
     }
   }
 ]
