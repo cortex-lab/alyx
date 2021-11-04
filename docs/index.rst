@@ -21,7 +21,6 @@ Table of contents:
 .. toctree::
    :maxdepth: 2
 
-   motivation.rst
    considerations.rst
    api.rst
    models.rst
