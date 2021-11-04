@@ -15,13 +15,12 @@ from django.conf.locale.en import formats as en_formats
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 try:
     from .settings_secret import *  # noqa
+    from .settings_lab import *  # noq
 except ImportError:
     # We're probably autobuilding some documentation so let's just import something
     # to keep Django happy...
     from .settings_secret_template import *  # noqa
-
-# Lab-specific settings
-from .settings_lab import *  # noqa
+    from .settings_lab_template import *  # noq
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
@@ -30,7 +29,7 @@ DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
-            'ENGINE': 'django_prometheus.db.backends.postgresql',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'githubactions',
             'USER': 'postgres',
             'PASSWORD': 'postgres',
