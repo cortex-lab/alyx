@@ -15,12 +15,16 @@ from django.conf.locale.en import formats as en_formats
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 try:
     from .settings_secret import *  # noqa
-    from .settings_lab import *  # noq
 except ImportError:
     # We're probably autobuilding some documentation so let's just import something
     # to keep Django happy...
     from .settings_secret_template import *  # noqa
-    from .settings_lab_template import *  # noq
+
+# Lab-specific settings
+try:
+    from .settings_lab import *  # noqa
+except ImportError:
+    from .settings_lab_template import *  # noqa
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
