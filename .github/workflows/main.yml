@@ -51,7 +51,7 @@ jobs:
           coverage run manage.py test -n
           coveralls --service=github
         env:
-          DJANGO_SETTINGS_MODULE: alyx.settings
+          DJANGO_SETTINGS_MODULE: alyx.settings_template
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Flake
