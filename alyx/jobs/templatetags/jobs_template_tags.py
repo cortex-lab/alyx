@@ -9,6 +9,11 @@ def index(indexable, i):
     return indexable[i]
 
 
+@register.filter(name='zip')
+def zip_lists(a, b):
+  return zip(a, b)
+
+
 @register.filter
 def filter_tasks(tasks, task_list):
     """
@@ -59,6 +64,15 @@ def get_session_path(obj):
     path = obj.__str__()[37:]
 
     return mark_safe(f'{lab}/{path}')
+
+
+@register.filter
+def get_session_path_with_eid(obj):
+    lab = obj.subject.lab.name
+    path = obj.__str__()[37:]
+    eid = obj.id
+
+    return mark_safe(f'{eid} {lab}/{path}')
 
 
 @register.filter

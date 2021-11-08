@@ -344,10 +344,12 @@ class Dataset(BaseExperimentalData):
         if self.collection is None:
             return
         from experiments.models import ProbeInsertion
-        name = self.collection.rsplit('/')[1]
-        pis = ProbeInsertion.objects.filter(session=self.session, name=name)
-        if len(pis):
-            self.probe_insertion.set(pis.values_list('pk', flat=True))
+        parts = self.collection.rsplit('/')
+        if len(parts) > 1:
+            name = parts[1]
+            pis = ProbeInsertion.objects.filter(session=self.session, name=name)
+            if len(pis):
+                self.probe_insertion.set(pis.values_list('pk', flat=True))
 
 
 # Files
