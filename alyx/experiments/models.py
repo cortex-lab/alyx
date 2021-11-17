@@ -119,7 +119,7 @@ def update_m2m_relationships_on_save(sender, instance, **kwargs):
     from data.models import Dataset
     try:
         dsets = Dataset.objects.filter(session=instance.session,
-                                       collection__endswith=instance.name)
+                                       collection__icontains=instance.name)
         instance.datasets.set(dsets, clear=True)
     except Exception:
         logger.warning("Skip update m2m relationship on saving ProbeInsertion")
