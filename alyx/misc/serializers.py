@@ -19,12 +19,17 @@ class NoteSerializer(serializers.ModelSerializer):
     )
     image = serializers.ImageField(use_url=True, required=False)
 
-    def save(self, **kwargs):
+    def _check_related_object_exists(self):
         # makes sure the object referred to actually exists in the database
         ct = self.validated_data['content_type']
         ct.model_class().objects.get(id=self.validated_data['object_id'])
+
+    def save(self, **kwargs):
+        self._check_related_object_exists()
         # get optional parameter width of image in the request
         image_width = self.context['request'].data.get('width', None)
+        if image_width is not None:
+            image_width = int(image_width)
         if self.instance is not None:
             self.instance = self.update(self.instance, self.validated_data)
             assert self.instance is not None, (
@@ -38,7 +43,7 @@ class NoteSerializer(serializers.ModelSerializer):
         return self.instance
 
     def create(self, validated_data, image_width=None):
-        ct = self.validated_data['content_type']
+        self._check_related_object_exists()
         obj = self.Meta.model.objects.create(**validated_data)
         obj.save(image_width=image_width)
         return obj
