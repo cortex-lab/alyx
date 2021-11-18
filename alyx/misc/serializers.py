@@ -19,6 +19,12 @@ class NoteSerializer(serializers.ModelSerializer):
     )
     image = serializers.ImageField(use_url=True, required=False)
 
+    def save(self, **kwargs):
+        # makes sure we can access the content type object the note refers to
+        ct = self.validated_data['content_type']
+        ct.model_class().objects.get(id=self.validated_data['object_id'])
+        super(NoteSerializer, self).save(**kwargs)
+
     class Meta:
         model = Note
         fields = ('id', 'user', 'date_time', 'content_type', 'object_id', 'text', 'image')
