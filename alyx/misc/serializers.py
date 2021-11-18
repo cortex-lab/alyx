@@ -20,10 +20,28 @@ class NoteSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(use_url=True, required=False)
 
     def save(self, **kwargs):
-        # makes sure we can access the content type object the note refers to
+        # makes sure the object referred to actually exists in the database
         ct = self.validated_data['content_type']
         ct.model_class().objects.get(id=self.validated_data['object_id'])
-        super(NoteSerializer, self).save(**kwargs)
+        # get optional parameter width of image in the request
+        image_width = self.context['request'].data.get('width', None)
+        if self.instance is not None:
+            self.instance = self.update(self.instance, self.validated_data)
+            assert self.instance is not None, (
+                '`update()` did not return an object instance.'
+            )
+        else:
+            self.instance = self.create(self.validated_data, image_width=image_width)
+            assert self.instance is not None, (
+                '`create()` did not return an object instance.'
+            )
+        return self.instance
+
+    def create(self, validated_data, image_width=None):
+        ct = self.validated_data['content_type']
+        obj = self.Meta.model.objects.create(**validated_data)
+        obj.save(image_width=image_width)
+        return obj
 
     class Meta:
         model = Note

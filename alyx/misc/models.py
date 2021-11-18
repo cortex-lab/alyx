@@ -127,13 +127,13 @@ class Note(BaseModel):
     object_id = models.UUIDField()
     content_object = GenericForeignKey()
 
-    def save(self, **kwargs):
+    def save(self, image_width=None, **kwargs):
         if self.image:
             # Resize image
             with Image.open(self.image) as im:
                 with BytesIO() as output:
                     # Compute new size by keeping the aspect ratio.
-                    width = UPLOADED_IMAGE_WIDTH
+                    width = image_width or UPLOADED_IMAGE_WIDTH
                     wpercent = width / float(im.size[0])
                     height = int((float(im.size[1]) * float(wpercent)))
                     im.thumbnail((width, height))
