@@ -28,18 +28,12 @@ class NoteSerializer(serializers.ModelSerializer):
         self._check_related_object_exists()
         # get optional parameter width of image in the request
         image_width = self.context['request'].data.get('width', None)
-        if image_width is not None:
-            image_width = int(image_width)
         if self.instance is not None:
             self.instance = self.update(self.instance, self.validated_data)
-            assert self.instance is not None, (
-                '`update()` did not return an object instance.'
-            )
+            assert self.instance is not None, '`update()` did not return an object instance.'
         else:
             self.instance = self.create(self.validated_data, image_width=image_width)
-            assert self.instance is not None, (
-                '`create()` did not return an object instance.'
-            )
+            assert self.instance is not None, '`create()` did not return an object instance.'
         return self.instance
 
     def create(self, validated_data, image_width=None):
