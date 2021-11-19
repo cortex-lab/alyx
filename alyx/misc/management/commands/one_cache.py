@@ -12,7 +12,7 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 
 from django.db import connection
-from django.db.models import Subquery
+from django.db.models import Subquery, Case, When, Value
 from django.core.management.base import BaseCommand
 
 from alyx.settings import TABLES_ROOT
@@ -180,14 +180,17 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     )
     """
     fields = ('id', 'session', 'file_size', 'hash', 'file_records__relative_path',
-              'file_records__data_repository__globus_path', 'default_dataset')
+              'file_records__data_repository__globus_path', 'default_dataset', 'exists_aws')
     # Find all online file records
     records = FileRecord.objects.filter(data_repository__globus_is_personal=False, exists=True)
     query = (
         (Dataset
             .objects
             .select_related('file_records')
-            .filter(file_records__in=Subquery(records.values('id'))))
+            .filter(file_records__in=Subquery(records.values('id')))
+            .annotate(exists_aws=Case(
+                When(file_records__data_repository__name__contains='aws', then=Value(True)),
+                default=Value(False))))
     )
     df = pd.DataFrame.from_records(query.values(*fields))
     # NB: Splitting and re-joining all these strings is slow :(
