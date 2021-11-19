@@ -129,12 +129,12 @@ class Note(BaseModel):
     content_object = GenericForeignKey()
 
     def save(self, image_width=None, **kwargs):
-        if self.image and self._state.adding and image_width != 'orig':
+        if self.image and not self._state.adding and image_width != 'orig':
             # Resize image - saving
             with Image.open(self.image) as im:
                 with BytesIO() as output:
                     # Compute new size by keeping the aspect ratio.
-                    width = int(image_width) or UPLOADED_IMAGE_WIDTH
+                    width = int(image_width or UPLOADED_IMAGE_WIDTH)
                     wpercent = width / float(im.size[0])
                     height = int((float(im.size[1]) * float(wpercent)))
                     im.thumbnail((width, height))
