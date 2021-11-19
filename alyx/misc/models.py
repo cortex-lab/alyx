@@ -128,10 +128,11 @@ class Note(BaseModel):
     content_object = GenericForeignKey()
 
     def save(self, image_width=None, **kwargs):
-        if self.image:
-            # Resize image
+        if self.image and not self._state.adding:
+            # Resize image - saving
             with Image.open(self.image) as im:
                 with BytesIO() as output:
+                    print(self._state.adding, im.width, im.height, image_width)
                     # Compute new size by keeping the aspect ratio.
                     width = image_width or UPLOADED_IMAGE_WIDTH
                     wpercent = width / float(im.size[0])
