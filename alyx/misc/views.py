@@ -103,7 +103,8 @@ class NoteList(generics.ListCreateAPIView):
     post:
     If an image is provided, the request body can contain an additional item
 
-    `width`: desired width to resize the image for storage. Aspect ratio will be maintained. Options are
+    `width`: desired width to resize the image for storage. Aspect ratio will be maintained.
+    Options are
 
     - **None** to use the UPLOADED_IMAGE_WIDTH specified in settings (default)
     - **'orig'** to keep original image size
