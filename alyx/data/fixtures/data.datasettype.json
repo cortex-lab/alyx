@@ -1442,6 +1442,17 @@
   },
        {
   "model": "data.datasettype",
+  "pk": "1fd9c881-0c02-468a-ab0a-8974170bd875",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.labels",
+    "created_by": null,
+    "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
+    "filename_pattern": "_iblqc_ephysChannels.*labels.*"
+    }
+  },
+       {
+  "model": "data.datasettype",
   "pk": "e03266de-098b-493d-a52b-a8967f9c58ae",
   "fields": {
     "json": null,
