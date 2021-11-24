@@ -28,7 +28,7 @@ class DataRepositorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DataRepository
         fields = ('name', 'timezone', 'globus_path', 'hostname', 'data_url', 'repository_type',
-                  'globus_endpoint_id', 'globus_is_personal')
+                  'globus_endpoint_id', 'globus_is_personal', 'json')
         extra_kwargs = {'url': {'view_name': 'datarepository-detail', 'lookup_field': 'name'}}
 
 
