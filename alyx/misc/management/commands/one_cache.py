@@ -12,7 +12,6 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 
 from django.db import connection
-from django.db.models import Subquery, Case, When, Value
 from django.core.management.base import BaseCommand
 
 from alyx.settings import TABLES_ROOT
@@ -179,32 +178,41 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'exists'            # bool
     )
     """
-    fields = ('id', 'session', 'file_size', 'hash', 'file_records__relative_path',
-              'file_records__data_repository__globus_path', 'default_dataset', 'exists_aws')
     # Find all online file records
-    records = FileRecord.objects.filter(data_repository__globus_is_personal=False, exists=True)
-    query = (
-        (Dataset
+    records = (
+        (FileRecord
             .objects
-            .select_related('file_records')
-            .filter(file_records__in=Subquery(records.values('id')))
-            .annotate(exists_aws=Case(
-                When(file_records__data_repository__name__contains='aws', then=Value(True)),
-                default=Value(False))))
+            .select_related('data_repository')
+            .filter(data_repository__globus_is_personal=False, exists=True))
     )
-    df = pd.DataFrame.from_records(query.values(*fields))
+    fields = (
+        'dataset_id', 'relative_path', 'exists',
+        'data_repository__name', 'data_repository__globus_path'
+    )
+    fr = pd.DataFrame.from_records(records.values(*fields))
+    fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
+    df = pd.DataFrame.from_records(Dataset.objects.values(*fields))
+    df = df.set_index('id').join(fr.set_index('dataset_id'))
+    df = df.sort_index().sort_values('data_repository__name', kind='mergesort')
+    # Remove datasets where no file records exist
+    df.dropna(subset=('exists', 'relative_path'), inplace=True)
+    df['exists_aws'] = df['data_repository__name'].str.startswith('aws')
+    exists_aws = df.groupby(level=0)['exists_aws'].any()  # Any associated file records are AWS
+    # Sorted by data repository name, this should select the flatiron records
+    df = df.groupby(level=0).last()
+    df.update(exists_aws)
     # NB: Splitting and re-joining all these strings is slow :(
-    paths = df.file_records__relative_path.str.split('/', n=3, expand=True)
-    globus_path = df['file_records__data_repository__globus_path']  # /lab/Subjects/
+    paths = df.relative_path.str.split('/', n=3, expand=True)
+    globus_path = df['data_repository__globus_path']  # /lab/Subjects/
     session_path = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')  # subject/date/number
     df['rel_path'] = paths.iloc[:, -1]  # collection/revision/filename
     df['session_path'] = (globus_path + session_path).str.strip('/')  # full path relative to root
-    df['exists'] = True
+    fields_map = {'session': 'eid', 'default_dataset': 'default_revision', 'index': 'id'}
     df = (
         (df
-            .filter(regex=r'^(?!file_records).*', axis=1)  # drop file record fields
-            .rename({'session': 'eid', 'default_dataset': 'default_revision'}, axis=1)))
-
+            .filter(regex=r'^(?!data_repository).*', axis=1)  # drop file record fields
+            .reset_index()
+            .rename(fields_map, axis=1)))
     if int_id:
         # Convert UUID objects to 2xint64
         df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
