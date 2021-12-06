@@ -5,7 +5,6 @@
 alyx-backups
 uploaded
 tables
-alyx/alyx/settings_secret.py
 docs/_build
 docs/_templates
 *.tsv
@@ -27,3 +26,6 @@ alyx/alyx_full.sql.gz
 alyx/data/management/commands/*ibl*
 alyx/ibl_reports
 alyx/templates/ibl_reports
+alyx/alyx/settings_secret.py
+alyx/alyx/settings_lab.py
+alyx/alyx/settings.py

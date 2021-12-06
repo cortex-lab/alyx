@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.contrib import admin
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
@@ -194,10 +195,23 @@ class RevisionAdmin(BaseAdmin):
 
 
 class TagAdmin(BaseAdmin):
-    fields = ['name', 'description', 'protected', 'public']
-    list_display = ['name', 'description', 'protected', 'public']
+    fields = ['name', 'description', 'protected', 'public', 'dataset_count', 'session_count']
+    list_display = ['name', 'description', 'dataset_count', 'session_count', 'protected', 'public']
+    readonly_fields = ['dataset_count', 'session_count']
     search_fields = ('name',)
     ordering = ('name',)
+
+    def dataset_count(self, tag):
+        return tag.dataset_count
+
+    def session_count(self, tag):
+        return tag.session_count
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(dataset_count=Count("datasets"))
+        queryset = queryset.annotate(session_count=Count("datasets__session", distinct=True))
+        return queryset
 
 
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)

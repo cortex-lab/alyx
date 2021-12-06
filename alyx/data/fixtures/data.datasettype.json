@@ -1297,15 +1297,26 @@
       "filename_pattern": "_ibl_passiveStims.table*.csv"
     }
   },
+    {
+    "model": "data.datasettype",
+    "pk": "5d6c5026-31ec-45c8-8f37-f1304c360fb3",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.laserIntervals",
+      "created_by": null,
+      "description": "Time in seconds, relative to the session start, of the onset and offset of the laser stimulation.",
+      "filename_pattern": "_ibl_trials.laserIntervals.npy"
+    }
+  },
    {
     "model": "data.datasettype",
     "pk": "2be5a2b1-4f52-4570-a2ac-3412dde50cc3",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laser_stimulation",
+      "name": "_ibl_trials.laserStimulation",
       "created_by": null,
       "description": "Whether or not the laser was actuating during the trial (outcome): 0:no laser, 1: laser, np.nan: no info",
-      "filename_pattern": "_ibl_trials.laser_stimulation.npy"
+      "filename_pattern": "_ibl_trials.laserStimulation.npy"
     }
   },
     {
@@ -1313,10 +1324,10 @@
     "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laser_probability",
+      "name": "_ibl_trials.laserProbability",
       "created_by": null,
       "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "_ibl_trials.laser_probability.npy"
+      "filename_pattern": "_ibl_trials.laserProbability.npy"
     }
   },
     {
@@ -1394,6 +1405,61 @@
     "created_by": null,
     "description": "Time of the probe corresponding to each of the drift matrix row (secs)",
     "filename_pattern": "drift.times.npy"
+    }
+  },
+    {
+  "model": "data.datasettype",
+  "pk": "2c56c793-c3ac-4968-9798-f31a6453c105",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.RMS",
+    "created_by": null,
+    "description": "Median RMS per channel from samples of raw [nch, 0] and destriped [nch, 1] ephys data.",
+    "filename_pattern": "_iblqc_ephysChannels.*RMS.*"
+    }
+  },
+     {
+  "model": "data.datasettype",
+  "pk": "935a4f55-4a9b-49c5-8898-661559b3616a",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.rawSpikeRates",
+    "created_by": null,
+    "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
+    "filename_pattern": "_iblqc_ephysChannels.*rawSpikeRates.*"
+    }
+  },
+      {
+  "model": "data.datasettype",
+  "pk": "49adb321-17d3-43e5-8cf6-672236b0c345",
+  "fields": {
+    "json": null,
+    "name": "camera.features",
+    "created_by": null,
+    "description": "Contains features calculated from DLC traces, currently pupilDiameter_raw, pupilDiameter_smooth",
+    "filename_pattern": "*camera.features.*"
+    }
+  },
+       {
+  "model": "data.datasettype",
+  "pk": "1fd9c881-0c02-468a-ab0a-8974170bd875",
+  "fields": {
+    "json": null,
+    "name": "_iblqc_ephysChannels.labels",
+    "created_by": null,
+    "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
+    "filename_pattern": "_iblqc_ephysChannels.*labels.*"
+    }
+  },
+       {
+  "model": "data.datasettype",
+  "pk": "e03266de-098b-493d-a52b-a8967f9c58ae",
+  "fields": {
+    "json": null,
+    "name": "licks.times",
+    "created_by": null,
+    "description": "Times of licks as detected from DLC tongue traces.",
+    "filename_pattern": "licks.times.*"
     }
   }
 ]

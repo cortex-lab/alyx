@@ -87,7 +87,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
 
     [===> probe insertion model reference](/admin/doc/models/experiments.probeinsertion)
     """
-    queryset = ProbeInsertion.objects.all()
+    queryset = ProbeInsertion.objects.all().order_by('-session__start_time')
     serializer_class = ProbeInsertionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = ProbeInsertionFilter

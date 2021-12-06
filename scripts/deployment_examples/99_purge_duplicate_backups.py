@@ -41,8 +41,9 @@ for fn in sorted(files_aws):
     if fn in sorted(files_flatiron):
         ds = r.search(fn).group(0)
         d = isoparse(ds)
+        tol = 15  # size diff in blocks  <2021-08-23 increased from 12>
         if ((datetime.now() - d).days >= KEEP_DAYS and
-                abs(files_aws[fn] - files_flatiron[fn]) <= 12 and d.day != 1):
+                abs(files_aws[fn] - files_flatiron[fn]) <= tol and d.day != 1):
             sql_file = Path(LOCAL_DIR).joinpath('%s/alyx_full.sql.gz' % ds)
             json_file = Path(LOCAL_DIR).joinpath('%s/alyx_full.json.gz' % ds)
             if sql_file.exists():

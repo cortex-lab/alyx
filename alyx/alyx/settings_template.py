@@ -21,7 +21,10 @@ except ImportError:
     from .settings_secret_template import *  # noqa
 
 # Lab-specific settings
-from .settings_lab import *  # noqa
+try:
+    from .settings_lab import *  # noqa
+except ImportError:
+    from .settings_lab_template import *  # noqa
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
@@ -30,7 +33,7 @@ DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
-            'ENGINE': 'django_prometheus.db.backends.postgresql',
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'githubactions',
             'USER': 'postgres',
             'PASSWORD': 'postgres',
@@ -86,8 +89,10 @@ LOGGING = {
         },
         'json_file': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.WatchedFileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx_json.log',
+            'maxBytes': 16777216,
+            'backupCount': 3,
             'formatter': 'json_formatter',
         },
     },
@@ -147,7 +152,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_prometheus',
     'mptt',
     'polymorphic',
     'rangefilter',
@@ -167,7 +171,6 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -177,7 +180,6 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'alyx.base.QueryPrintingMiddleware',
     'django_structlog.middlewares.RequestMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'

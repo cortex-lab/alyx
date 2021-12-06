@@ -1,8 +1,19 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base.html" %}
 {% load i18n admin_urls static admin_list%}
 {% load jobs_template_tags %} {# custom template tags in app #}
 
 {% block content %}
+<div class="row">
+    <div class="col">
+	<div class="card card-body">
+	<form method="get">
+           {{tableFilter.form}}
+        <button class="btn btn-primary" type="submit">Search</button>
+	</form>
+	</div>
+    </div>
+</div>
+
 <table>
     <thead>
         <tr>
@@ -12,6 +23,7 @@
         <th>Queued</th>
         <th>Last Job Activity</th>
         <th>Last Session Date</th>
+        <th>ibllib</th>
         <th>Space left (Tb)</th>
         </tr>
     </thead>
@@ -24,6 +36,7 @@
             <td>{{ lab.count_waiting }}</td>
             <td>{{ lab.last_job }}</td>
             <td>{{ lab.last_session }}</td>
+            <td>{{ ibllib_version|index:forloop.counter0 }}</td>
             <td>{{ space_left|index:forloop.counter0 }}</td>
             </tr>
         {% endfor %}
@@ -74,7 +87,7 @@
                 <td><a style="color:Maroon" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 50 %}  {# empty orange #}
                 <td><a style="color:Orange" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
-            {% elif task.status == 55 %}  {# incomplete  #}
+            {% elif task.status == 55 %}  {# incomplete darkblue #}
                 <td><a style="color:DarkBlue" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>
             {% elif task.status == 60 %}  {# complete green #}
                 <td><a style="color:MediumSeaGreen" href="{% url 'admin:jobs_task_change' task.id %}">{{ task.get_status_display }}</a></td>

@@ -48,6 +48,7 @@ jobs:
           sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
           sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
           cd alyx
+          mv alyx/settings_template.py alyx/settings.py
           coverage run manage.py test -n
           coveralls --service=github
         env:
