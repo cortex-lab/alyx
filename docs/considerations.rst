@@ -7,8 +7,8 @@ The data accompanying a neurophysiology experiment has two components: **metadat
 
 Storage of complex relational data, and storage of large numerical arrays are both solved problems in computing. We apply tried-and-tested solutions:
 
-* Metadata is stored in an SQL database
-* Bulk data is stored with one binary file per numerical array, and the URI (i.e. location) of each file stored in the SQL database.
+* Metadata is stored in an SQL database. A web interface allows users to update this metadata quickly and easily, for example while doing an experiment.
+* Bulk data is stored with one binary file per numerical array, and the URI (i.e. location) of each file stored in the SQL database. The Open Neurophysiology Environment (ONE) interface allows users to search and access this bulk data.
 
 Unstructured and arbitrary metadata
 ------------------------------------
@@ -26,6 +26,4 @@ Initially, only the data which is likely to be accessed programmatically is made
 
 Sharing
 ------------------------------------
-This system is designed to be used within a lab, as an “electronic lab notebook” that keeps track of the experiments performed and datasets produced. Eventually, multi-lab support is planned:
-
-This system also makes data sharing straightforward: a lab can share selected datasets by granting read-only access to the REST API and bulk data store; and a user can analyze this data using exactly the same tools they would use to analyze data collected in their own lab. Alternatively, the bulk data files and database entries for a set of completed experiments can uploaded to a centralized store, to ensure long-term archival without requiring continuing support from the originating lab.
+This system was originally designed to be used within a single lab, as an “electronic lab notebook” that keeps track of the experiments performed and datasets produced. It can also be used by multi-lab collaborations, and is now used for data management by the International Brain Lab. 

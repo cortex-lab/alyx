@@ -8,7 +8,6 @@ from django.dispatch import receiver
 
 from mptt.models import MPTTModel, TreeForeignKey
 
-from actions.models import EphysSession
 from alyx.base import BaseModel, BaseManager
 
 logger = structlog.get_logger(__name__)
@@ -86,16 +85,16 @@ class ProbeInsertion(BaseModel):
     """
 
     objects = BaseManager()
-
-    session = models.ForeignKey(EphysSession, blank=True, null=True, on_delete=models.CASCADE,
-                                related_name='probe_insertion')
+    session = models.ForeignKey('actions.EphysSession', blank=True, null=True,
+                                on_delete=models.CASCADE, related_name='probe_insertion')
     model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
                               related_name='probe_insertion')
     serial = models.CharField(max_length=255, blank=True, help_text="Probe serial number")
-
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
     datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='probe_insertion')
+    chronic_recording = models.ForeignKey('actions.ChronicRecording', blank=True, null=True,
+                                          on_delete=models.CASCADE, related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
@@ -120,7 +119,7 @@ def update_m2m_relationships_on_save(sender, instance, **kwargs):
     from data.models import Dataset
     try:
         dsets = Dataset.objects.filter(session=instance.session,
-                                       collection__endswith=instance.name)
+                                       collection__icontains=instance.name)
         instance.datasets.set(dsets, clear=True)
     except Exception:
         logger.warning("Skip update m2m relationship on saving ProbeInsertion")

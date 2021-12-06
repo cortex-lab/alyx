@@ -9,7 +9,7 @@ SECRET_KEY = '%SECRET_KEY%'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_prometheus.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': '%DBNAME%',
         'USER': '%DBUSER%',
         'PASSWORD': '%DBPASSWORD%',

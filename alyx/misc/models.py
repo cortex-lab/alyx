@@ -119,21 +119,23 @@ def get_image_path(instance, filename):
 class Note(BaseModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date_time = models.DateTimeField(default=timezone.now)
-    text = models.TextField(blank=True)
+    text = models.TextField(blank=True,
+                            help_text="String, content of the note or description of the image.")
     image = models.ImageField(upload_to=get_image_path, blank=True, null=True)
 
     # Generic foreign key to arbitrary model instances.
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.UUIDField()
+    object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
+                                           "ID must already exist to attach a note.")
     content_object = GenericForeignKey()
 
-    def save(self, **kwargs):
-        if self.image:
-            # Resize image
+    def save(self, image_width=None, **kwargs):
+        if self.image and not self._state.adding and image_width != 'orig':
+            # Resize image - saving
             with Image.open(self.image) as im:
                 with BytesIO() as output:
                     # Compute new size by keeping the aspect ratio.
-                    width = UPLOADED_IMAGE_WIDTH
+                    width = int(image_width or UPLOADED_IMAGE_WIDTH)
                     wpercent = width / float(im.size[0])
                     height = int((float(im.size[1]) * float(wpercent)))
                     im.thumbnail((width, height))

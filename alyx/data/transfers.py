@@ -104,6 +104,8 @@ def _incomplete_dataset_ids():
 
 
 def _add_uuid_to_filename(fn, uuid):
+    if str(uuid) in fn:
+        return fn
     dpath, ext = op.splitext(fn)
     return dpath + '.' + str(uuid) + ext
 

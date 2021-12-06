@@ -21,22 +21,24 @@ except ImportError:
     from .settings_secret_template import *  # noqa
 
 # Lab-specific settings
-from .settings_lab import *  # noqa
+try:
+    from .settings_lab import *  # noqa
+except ImportError:
+    from .settings_lab_template import *  # noqa
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 
 
-if 'TRAVIS' in os.environ:
+if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-	    # 'ENGINE': 'django_prometheus.db.backends.postgresql',
-            'NAME': 'travisci',
+            'NAME': 'githubactions',
             'USER': 'postgres',
-            'PASSWORD': '',
+            'PASSWORD': 'postgres',
             'HOST': 'localhost',
-            'PORT': '',
+            'PORT': '5432',
         }
     }
 
@@ -74,23 +76,23 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx.log',
             'maxBytes': 16777216,
             'formatter': 'simple'
         },
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
         'json_file': {
-            'level': 'WARNING',
+            'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx_json.log',
-	    'maxBytes': 16777216,
-	    'backupCount': 3,
+            'maxBytes': 16777216,
+            'backupCount': 3,
             'formatter': 'json_formatter',
         },
     },
@@ -102,12 +104,12 @@ LOGGING = {
         },
         'django_structlog': {
             'handlers': ['json_file'],
-            'level': 'WARNING',
+            'level': 'INFO',
         }
     },
     'root': {
         'handlers': ['file', 'console'],
-        'level': 'INFO',
+        'level': 'WARNING',
         'propagate': True,
     }
 }
@@ -150,7 +152,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django_prometheus',
     'mptt',
     'polymorphic',
     'rangefilter',
@@ -170,7 +171,6 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
-    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -180,7 +180,6 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'alyx.base.QueryPrintingMiddleware',
     'django_structlog.middlewares.RequestMiddleware',
-    # 'django_prometheus.middleware.PrometheusAfterMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'
@@ -240,10 +239,12 @@ USE_TZ = False
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = 'backups/uploaded/'
+MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
+MEDIA_ROOT = '/backups/uploaded/'
 MEDIA_URL = '/uploaded/'
 
 TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
+TABLES_ROOT = '/backups/tables/'
 
 UPLOADED_IMAGE_WIDTH = 800
 

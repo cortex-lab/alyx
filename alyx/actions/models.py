@@ -181,6 +181,10 @@ def _default_surgery_location():
     return None
 
 
+class ChronicRecording(BaseAction):
+    pass
+
+
 class Surgery(BaseAction):
     """
     Surgery performed on a subject.
