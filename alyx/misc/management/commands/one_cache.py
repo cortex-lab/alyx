@@ -205,9 +205,13 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     paths = df.relative_path.str.split('/', n=3, expand=True)
     globus_path = df['data_repository__globus_path']  # /lab/Subjects/
     session_path = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')  # subject/date/number
-    df['rel_path'] = paths.iloc[:, -1]  # collection/revision/filename
+    df['relative_path'] = paths.iloc[:, -1]  # collection/revision/filename
     df['session_path'] = (globus_path + session_path).str.strip('/')  # full path relative to root
-    fields_map = {'session': 'eid', 'default_dataset': 'default_revision', 'index': 'id'}
+    fields_map = {
+        'session': 'eid',
+        'default_dataset': 'default_revision',
+        'relative_path': 'rel_path',
+        'index': 'id'}
     df = (
         (df
             .filter(regex=r'^(?!data_repository).*', axis=1)  # drop file record fields
