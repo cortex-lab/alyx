@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import numpy as np
+
 from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
@@ -111,16 +113,24 @@ for sp in session_pname:
     pi_cortexlab.delete()
 
 
+
 """
-Sync the datasets 1/2. Look for duplicates. If for one reason or another a file has been created
+Sync the datasets 1/3. Compute primary keys
+"""
+
+dfields = ('session', 'collection', 'name')
+cds_pk = set(Dataset.objects.using('cortexlab').values_list('pk', flat=True))
+ids_pk = set(Dataset.objects.filter(session__lab__name='cortexlab').values_list('pk', flat=True))
+
+"""
+Sync the datasets 2/3. Set(IBL) - Set(Cortexlab)
+Look for duplicates. If for one reason or another a file has been created
 on the IBL database and cortexlab (new dataset patch), there will be a consistency error.
 In this case we remove the offending datasets from IBL: the UCL version always has priority
 (at some point using pandas might be much easier and legible)
 """
-dfields = ('session', 'collection', 'name')
-cds_pk = list(Dataset.objects.using('cortexlab').values_list('pk', flat=True))
-ids_pk = list(Dataset.objects.filter(session__lab__name='cortexlab').values_list('pk', flat=True))
-pk2check = set(ids_pk).difference(cds_pk)
+
+pk2check = ids_pk.difference(cds_pk)
 ibl_datasets = Dataset.objects.filter(pk__in=pk2check)
 ids = ibl_datasets.values_list(*dfields)
 cds = Dataset.objects.using('cortexlab').values_list(*dfields)
@@ -133,24 +143,44 @@ for dup in duplicates:
     dset.delete()
 
 """
-Sync the datasets 2/2. If a dataset already exist on both database but has a different hash
-then it means its' been patched. In this case we set the filerecord from the server
-to exist=False and reset the json field
+Sync the datasets 3/3. Set(IBL) intersection Set(Cortexlab)
+If a dataset already exist on both database but has a different hash
+then it means its' been patched. In this case we get the latest dataset as per the auto-update
+and set IBL filerecord to exist=False and reset the json field
 (at some point using pandas might be much easier and legible)
 """
-
 dfields = ('pk', 'hash')
-cds = Dataset.objects.using('cortexlab').values_list(*dfields)
-cds_pk = [ds[0] for ds in cds]
 
-ids = Dataset.objects.filter(pk__in=cds_pk).values_list(*dfields)
-ids_pk = [ds[0] for ds in ids]
-ids_md5 = [ds[1] for ds in ids]
-cds = Dataset.objects.using('cortexlab').filter(pk__in=ids_pk).values_list(*dfields)
+set_cortex_lab_only = cds_pk.difference(ids_pk)
+set_ibl_only = ids_pk.difference(cds_pk)
+# get the interection querysets
+cqs = Dataset.objects.using('cortexlab').exclude(pk__in=set_cortex_lab_only).order_by('pk').values_list(*dfields)
+iqs = Dataset.objects.filter(session__lab__name='cortexlab').exclude(pk__in=set_ibl_only).order_by('pk').values_list(*dfields)
 
+# manual check but this is expensive
+# assert len(set(iqs).difference(set(cqs))) == len(set(cqs).difference(set(iqs)))
+
+# this is the set of pks for which there is a md5 mismatch - for all the others, do not import anything by deleting
+# many datasets from the cortexlab database
 dpk = [s[0] for s in set(cds).difference(set(ids))]
-FileRecord.objects.filter(data_repository__globus_is_personal=False, dataset__in=dpk).update(
-    exists=False, json=None)
+Dataset.objects.using('cortexlab').exclude(pk__in=set_cortex_lab_only.union(dpk)).delete()
+
+
+dfields = ('pk', 'hash', 'auto_datetime')
+cqs_md5 = Dataset.objects.using('cortexlab').filter(pk__in=dpk).order_by('pk')
+iqs_md5 = Dataset.objects.filter(session__lab__name='cortexlab', pk__in=dpk).order_by('pk')
+
+ti = np.array(iqs_md5.values_list('auto_datetime', flat=True)).astype(np.datetime64)
+tc = np.array(cqs_md5.values_list('auto_datetime', flat=True)).astype(np.datetime64)
+# those are the indices where the autodatetiem from IBL is posterior to cortexlab - do not import by deleting the datasets
+# from the cortexlab database
+ind_ibl = np.where(ti >= tc)[0]
+pk2remove = list(np.array(iqs_md5.values_list('pk', flat=True))[ind_ibl])
+Dataset.objects.using('cortexlab').filter(pk__in=pk2remove).delete()
+# for those that will imported from UCL, set the filerecord status to exist=False fr the local server fierecords
+ind_ucl = np.where(tc > ti)[0]
+pk2import = list(np.array(iqs_md5.values_list('pk', flat=True))[ind_ucl])
+FileRecord.objects.filter(dataset__in=pk2import).update(exists=False, json=None)
 
 """
 Sync the tasks: they're all imported except the DLC ones: this is kind of a hack for now
