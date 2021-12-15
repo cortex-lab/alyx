@@ -397,7 +397,7 @@ def bulk_sync(dry_run=False, lab=None, gc=None):
     for patching files
     """
     dfs = FileRecord.objects.filter(
-        Q(exists=False, data_repository__globus_is_personal=False) |
+        Q(exists=False, data_repository__globus_is_personal=False, data_repository__name__icontains='flatiron') |
         Q(json__has_key="mismatch_hash"))
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
@@ -497,7 +497,7 @@ def _bulk_transfer(dry_run=False, lab=None, maxsize=None, minsize=None, gc=None)
     :return: globus_client, transfer_matrix (an array of transfer objects)
     """
     dfs = FileRecord.objects.filter(
-        (Q(exists=False, data_repository__globus_is_personal=False) |
+        (Q(exists=False, data_repository__globus_is_personal=False, data_repository__name__icontains='flatiron') |
          Q(json__has_key="mismatch_hash")) &
         ~Q(json__has_key="transfer_pending")
     )
@@ -525,7 +525,7 @@ def _globus_transfer_filerecords(dfs, dry=True, gc=None):
     """
     gc = None if dry else gc or globus_transfer_client()
     dfs = dfs.order_by('data_repository__globus_endpoint_id', 'relative_path')
-    pri_repos = DataRepository.objects.filter(globus_is_personal=False)
+    pri_repos = DataRepository.objects.filter(globus_is_personal=False, name__icontains='flatiron')
     sec_repos = DataRepository.objects.filter(globus_is_personal=True)
     tm = np.zeros([pri_repos.count(), sec_repos.count()], dtype=object)
     nfiles = dfs.count()
@@ -534,7 +534,7 @@ def _globus_transfer_filerecords(dfs, dry=True, gc=None):
     for ds in dfs:
         c += 1
         ipri = [ind for ind, cr in enumerate(pri_repos) if cr == ds.data_repository][0]
-        src_file = ds.dataset.file_records.filter(exists=True).first()
+        src_file = ds.dataset.file_records.filter(~Q(data_repository__name__icontains='aws'), exists=True).first()
         if not src_file:
             logger.warning(str(ds.data_repository.name) + ':' + ds.relative_path +
                            ' is nowhere to ' + 'be found in local AND remote repositories')
@@ -666,7 +666,8 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
     for ds in datasets:
         # check the existence of the server file
         fr_server = ds.file_records.filter(exists=True,
-                                           data_repository__globus_is_personal=False).first()
+                                           data_repository__globus_is_personal=False,
+                                           data_repository__name__icontains='flatiron').first()
         if fr_server is None:
             logger.warning(str(ds.session) + '/' + ds.collection +
                            '/' + ds.name + " doesnt exist on server - skipping")
@@ -723,6 +724,7 @@ def globus_delete_datasets(datasets, dry=True, local_only=False, gc=None):
     """
     # first get the list of Globus endpoints concerned
     file_records = FileRecord.objects.filter(dataset__in=datasets)
+    file_records = file_records.exclude(data_repository__name__icontains='aws')
     if local_only:
         file_records = file_records.filter(data_repository__globus_is_personal=True)
         file_records = file_records.exclude(data_repository__name__icontains='flatiron')
