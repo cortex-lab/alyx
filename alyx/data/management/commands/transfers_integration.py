@@ -1,5 +1,5 @@
 from misc.models import Lab, LabLocation, LabMember
-from data.models import DataRepository, DataRepositoryType, FileRecord, Revision, Dataset
+from data.models import DataRepository, DataRepositoryType, FileRecord, Dataset
 from data.transfers import (bulk_sync, _bulk_transfer, globus_delete_local_datasets,
                             globus_delete_datasets)
 from subjects.models import Subject
@@ -153,7 +153,7 @@ class TestTransfers(object):
                                   data_url=data_url, globus_path=self.flatiron_globus_path,
                                   globus_endpoint_id=self.flatiron_endpoint_id,
                                   globus_is_personal=globus_is_personal)
-        
+
         # 2. For local server
         name = f'{self.lab_name}_SR'
         globus_is_personal = True
@@ -163,7 +163,7 @@ class TestTransfers(object):
             objects.get_or_create(name=name, repository_type=repo_type,
                                   globus_path=self.local_globus_path,
                                   globus_endpoint_id=self.local_endpoint_id,
-                                  globus_is_personal=globus_is_personal) 
+                                  globus_is_personal=globus_is_personal)
 
         # 3. Make an aws file server
         name = f'aws_{self.lab_name}'
@@ -176,18 +176,18 @@ class TestTransfers(object):
                                   data_url=data_url, globus_path=aws_globus_path,
                                   globus_endpoint_id=self.flatiron_endpoint_id,
                                   globus_is_personal=globus_is_personal)
-        
+
         # Add the data repos to the lab
         self.lab.repositories.add(self.flatiron_data_repo)
         self.lab.repositories.add(self.local_data_repo)
         self.lab.repositories.add(self.aws_data_repo)
         self.lab.save()
-        
+
         # Now make a subject matched to the lab
         nickname = f'{self.lab_name}_001'
         subject, _ = Subject.objects.get_or_create(nickname=nickname, lab=self.lab,
                                                    responsible_user=self.user)
-        
+
         # And a session associated with the subject
         self.session, _ = Session.objects.get_or_create(subject=subject, location=lab_location,
                                                         lab=self.lab, start_time='2021-03-03',
@@ -217,7 +217,6 @@ class TestTransfers(object):
                               for d in dsets_list],
                 'server_only': False,
                 'filesizes': [d.stat().st_size for d in dsets_list]}
-
 
         r = self.client.post(reverse('register-file'), data, SERVER_NAME=SERVER_NAME,
                              content_type='application/json')

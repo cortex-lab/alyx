@@ -363,21 +363,21 @@ def transfers_required(dataset):
     # Launch the file transfers for the missing files.
     missing_files = FileRecord.objects.filter(dataset=dataset, exists=False)
     for missing_file in missing_files:
-            assert existing_file.exists
-            assert not missing_file.exists
-            # WARNING: we should check that the destination data_repository is not personal if
-            # the source repository is personal.
-            if (missing_file.data_repository.globus_is_personal and
-                    existing_file.data_repository.globus_is_personal):
-                continue
-            yield {
-                'source_data_repository': existing_file.data_repository.name,
-                'destination_data_repository': missing_file.data_repository.name,
-                'source_path': _get_absolute_path(existing_file),
-                'destination_path': _get_absolute_path(missing_file),
-                'source_file_record': str(existing_file.pk),
-                'destination_file_record': str(missing_file.pk),
-            }
+        assert existing_file.exists
+        assert not missing_file.exists
+        # WARNING: we should check that the destination data_repository is not personal if
+        # the source repository is personal.
+        if (missing_file.data_repository.globus_is_personal and
+                existing_file.data_repository.globus_is_personal):
+            continue
+        yield {
+            'source_data_repository': existing_file.data_repository.name,
+            'destination_data_repository': missing_file.data_repository.name,
+            'source_path': _get_absolute_path(existing_file),
+            'destination_path': _get_absolute_path(missing_file),
+            'source_file_record': str(existing_file.pk),
+            'destination_file_record': str(missing_file.pk),
+        }
 
 
 def bulk_sync(dry_run=False, lab=None, gc=None):
