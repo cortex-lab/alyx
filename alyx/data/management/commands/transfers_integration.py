@@ -113,7 +113,8 @@ class TestTransfers(object):
         assert(endpoint_info['gcp_connected'])
 
         # Check that the flatiron endpoint is connected
-        self.flatiron_endpoint_id = (DataRepository.objects.filter(globus_is_personal=False, name__icontains='flatiron').
+        self.flatiron_endpoint_id = (DataRepository.objects.filter(globus_is_personal=False,
+                                                                   name__icontains='flatiron').
                                      first().globus_endpoint_id)
         endpoint_info = self.gtc.get_endpoint(self.flatiron_endpoint_id)
         assert(endpoint_info['gcp_connected'] is not False)
@@ -125,7 +126,7 @@ class TestTransfers(object):
         # Connect to client and check we can log in properly
         client = Client()
         self.client = client_login(client)
-        r = client.get(path='/', SERVER_NAME=SERVER_NAME)
+        _ = client.get(path='/', SERVER_NAME=SERVER_NAME)
         # assert(r.status_code == 200)
 
         # Create a test lab
@@ -208,7 +209,8 @@ class TestTransfers(object):
 
         data_path = Path(local_path).joinpath(self.session_path, collection, revision or '')
 
-        dsets = ['spikes.times', 'spikes.clusters', 'spikes.amps', 'clusters.amps', 'clusters.waveforms']
+        dsets = ['spikes.times', 'spikes.clusters', 'spikes.amps', 'clusters.amps',
+                 'clusters.waveforms']
         dsets_list = create_data(dsets, data_path, size=200)
 
         data = {'created_by': self.username,
@@ -310,7 +312,8 @@ class TestTransfers(object):
                                               name__icontains='clusters')
         frs = FileRecord.objects.filter(dataset__in=dsets_to_del)
         frs_local = frs.filter(data_repository__globus_is_personal=True).order_by('dataset__name')
-        frs_server = (frs.filter(data_repository__globus_is_personal=False, data_repository__name__icontains='flatiron').
+        frs_server = (frs.filter(data_repository__globus_is_personal=False,
+                                 data_repository__name__icontains='flatiron').
                       order_by('dataset__name'))
         exp_files = [fr.data_repository.globus_path + fr.relative_path for fr in frs_local]
         exp_files_server = [fr.data_repository.globus_path + fr.relative_path for fr in frs_server]
@@ -356,7 +359,8 @@ class TestTransfers(object):
             dsets = Dataset.objects.filter(pk__in=dsets2del.values_list('id', flat=True))
             assert (dsets.count() == dsets2del.count())
             # But the local file records to have been deleted
-            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'), dataset__in=dsets2del)
+            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'),
+                                            dataset__in=dsets2del)
             assert (frs.count() == 2 * dsets2del.count())
 
             return
@@ -365,14 +369,16 @@ class TestTransfers(object):
             dsets = Dataset.objects.filter(pk__in=dsets2del.values_list('id', flat=True))
             assert (dsets.count() == dsets2del.count())
             # But the local file records to have been deleted
-            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'), dataset__in=dsets2del)
+            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'),
+                                            dataset__in=dsets2del)
             assert (frs.count() == dsets2del.count())
             assert (all([not fr.data_repository.globus_is_personal for fr in frs]))
         else:
             dsets = Dataset.objects.filter(pk__in=dsets2del.values_list('id', flat=True))
             assert (dsets.count() == 0)
             # But the local file records to have been deleted
-            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'), dataset__in=dsets2del)
+            frs = FileRecord.objects.filter(~Q(data_repository__name__icontains='aws'),
+                                            dataset__in=dsets2del)
             assert (frs.count() == 0)
 
     @staticmethod
@@ -439,7 +445,8 @@ class TestTransfers(object):
         """
         data_repo_local = DataRepository.objects.filter(lab__name=lab_name,
                                                         globus_is_personal=True).first()
-        data_repo_flatiron = DataRepository.objects.filter(lab__name=lab_name, name__icontains='flatiron',
+        data_repo_flatiron = DataRepository.objects.filter(lab__name=lab_name,
+                                                           name__icontains='flatiron',
                                                            globus_is_personal=False).first()
         # Get entry in transfer matrix that is non zero
         tm_data = tm[np.where(tm != 0)[0], np.where(tm != 0)[1]][0]
@@ -451,8 +458,8 @@ class TestTransfers(object):
         # Check individual file transfers
         for it, t in enumerate(tm_data['DATA']):
             assert (t['source_path'] == data_repo_local.globus_path + expected_files[it])
-            assert (t['destination_path'] in data_repo_flatiron.globus_path + expected_files_uuid[
-                it])
+            assert (t['destination_path'] in data_repo_flatiron.globus_path +
+                    expected_files_uuid[it])
 
     @staticmethod
     def assert_bulk_transfer(expected_files, lab_name='testlab', revision_name=None):
