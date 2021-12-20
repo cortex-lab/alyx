@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from functools import wraps
+from sys import getsizeof
 
 import numpy as np
 import pandas as pd
@@ -66,6 +67,7 @@ class Command(BaseCommand):
     help = "Generate ONE cache tables"
     dst_dir = None
     tables = None
+    metadata = None
 
     def add_arguments(self, parser):
         parser.add_argument('-D', '--destination', default=TABLES_ROOT,
@@ -85,37 +87,43 @@ class Command(BaseCommand):
         self.generate_tables(tables, int_id=int_id)
 
     def generate_tables(self, tables, **kwargs) -> None:
-        caches = dict()
+        self.metadata = create_metadata()
         for table in tables:
             if table.lower() == 'sessions':
                 logger.debug('Generating sessions DataFrame')
-                caches[table] = generate_sessions_frame(**kwargs)
+                self._save_table(generate_sessions_frame(**kwargs), table)
             elif table.lower() == 'datasets':
                 logger.debug('Generating datasets DataFrame')
-                caches[table] = generate_datasets_frame(**kwargs)
+                self._save_table(generate_datasets_frame(**kwargs), table)
             else:
                 raise ValueError(f'Unknown table "{table}"')
-        self.save(**caches)
+        self._compress_tables()
 
-    def save(self, **kwargs) -> None:
-        from zipfile import ZipFile
+    def _save_table(self, table, name):
         self.dst_dir.mkdir(exist_ok=True)
+        logger.info(f'Saving table "{name}" to {self.dst_dir}...')
+        filename = self.dst_dir / f'{name}.pqt'  # Save to parquet
+        _save(filename, table, self.metadata)
+
+    def _compress_tables(self) -> None:
+        """Write cache_info JSON and create zip file comprising parquet tables + JSON"""
+        from zipfile import ZipFile
         zip = ZipFile(self.dst_dir / 'cache.zip', 'w')
-        metadata = create_metadata()
         jsonmeta = {}
-        logger.info(f'Saving tables to {self.dst_dir}...')
-        for name, df in kwargs.items():
-            filename = self.dst_dir / f'{name}.pqt'  # Save to parquet
-            _save(filename, df, metadata)
+        logger.info(f'Compressing tables to {zip.filename}...')
+        for filename in self.dst_dir.glob('*.pqt'):
             zip.write(filename, filename.name)
             pqtinfo = pq.read_metadata(filename)
-            jsonmeta[name] = {'nrecs': pqtinfo.num_rows, 'size': pqtinfo.serialized_size}
+            jsonmeta[filename.stem] = {'nrecs': pqtinfo.num_rows, 'size': pqtinfo.serialized_size}
         # creates a json file containing metadata and add it to the zip file
         tag_file = self.dst_dir / 'cache_info.json'
         with open(tag_file, 'w') as fid:
-            json.dump({**metadata, 'tables': jsonmeta}, fid, indent=1)
+            json.dump({**self.metadata, 'tables': jsonmeta}, fid, indent=1)
         zip.write(tag_file, tag_file.name)
+        write_fail = zip.testzip()
         zip.close()
+        if write_fail:
+            logger.error(f'Failed to compress {write_fail}')
 
 
 @measure_time
@@ -137,6 +145,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
              .select_related('subject', 'lab', 'project')
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
     df = pd.DataFrame.from_records(query.values(*fields))
+    logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
     df = (
         (df
@@ -163,6 +172,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
         df['id'] = df['id'].astype(str)
         df.set_index('id', inplace=True)
 
+    logger.debug(f'Final session frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     return df
 
 
@@ -190,9 +200,12 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'data_repository__name', 'data_repository__globus_path'
     )
     fr = pd.DataFrame.from_records(records.values(*fields))
+    logger.debug(f'File records frame = {getsizeof(fr) / 1024 ** 2:.1f} MiB')
     fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
     df = pd.DataFrame.from_records(Dataset.objects.values(*fields))
+    logger.debug(f'Datasets frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     df = df.set_index('id').join(fr.set_index('dataset_id'))
+    del fr  # Clearing vars saves about 100 MB
     df = df.sort_index().sort_values('data_repository__name', kind='mergesort')
     # Remove datasets where no file records exist
     df.dropna(subset=('exists', 'relative_path'), inplace=True)
@@ -201,12 +214,14 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     # Sorted by data repository name, this should select the flatiron records
     df = df.groupby(level=0).last()
     df.update(exists_aws)
+    del exists_aws
     # NB: Splitting and re-joining all these strings is slow :(
-    paths = df.relative_path.str.split('/', n=3, expand=True)
+    paths = df.pop('relative_path').str.split('/', n=3, expand=True)
     globus_path = df['data_repository__globus_path']  # /lab/Subjects/
     session_path = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')  # subject/date/number
     df['relative_path'] = paths.iloc[:, -1]  # collection/revision/filename
     df['session_path'] = (globus_path + session_path).str.strip('/')  # full path relative to root
+    del paths, session_path
     fields_map = {
         'session': 'eid',
         'default_dataset': 'default_revision',
@@ -232,6 +247,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         df[['id', 'eid']] = df[['id', 'eid']].astype(str)
         df = df.set_index('id').sort_index()
 
+    logger.debug(f'Final datasets frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     return df
 
 
