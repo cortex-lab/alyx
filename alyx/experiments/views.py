@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions
-from django_filters.rest_framework import CharFilter, UUIDFilter
+from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
 from django.db.models import F, Func, Value, CharField, functions, Q
 
 
@@ -15,6 +15,21 @@ Probe insertion objects REST filters and views
 """
 
 
+def _filter_qs_with_brain_regions(self, queryset, region_field, region_value):
+    brs = BrainRegion.objects.filter(
+        **{region_field: region_value}).get_descendants(include_self=True)
+    qs_trajs = TrajectoryEstimate.objects.filter(provenance__gte=70). \
+        prefetch_related('channels__brain_region'). \
+        filter(channels__brain_region__in=brs).distinct()
+    if queryset.model.__name__ == 'Session':
+        qs = queryset.prefetch_related('probe_insertion__trajectory_estimate').filter(
+            probe_insertion__trajectory_estimate__in=qs_trajs)
+    elif queryset.model.__name__ == 'ProbeInsertion':
+        qs = queryset.prefetch_related('trajectory_estimate').filter(
+            trajectory_estimate__in=qs_trajs)
+    return qs
+
+
 class ProbeInsertionFilter(BaseFilterSet):
     subject = CharFilter('session__subject__nickname')
     date = CharFilter('session__start_time__date')
@@ -24,6 +39,19 @@ class ProbeInsertionFilter(BaseFilterSet):
     model = CharFilter('model__name')
     dataset_type = CharFilter(method='dtype_exists')
     no_dataset_type = CharFilter(method='dtype_not_exists')
+    project = CharFilter(field_name='session__project__name', lookup_expr='icontains')
+    task_protocol = CharFilter(field_name='session__task_protocol', lookup_expr='icontains')
+    # brain region filters
+    atlas_name = CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
 
     def dtype_exists(self, probes, _, dtype_name):
         """
@@ -80,14 +108,24 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
     -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **task_protocol** (icontains)
+    -   **location**: location name (icontains)
+    -   **project**: project name (icontains)
     -   **model**: probe model name `/insertions?model=3A`
     -   **dataset_type**: contains dataset type `/insertions?dataset_type=clusters.metrics`
     -   **no_dataset_type**: doesn't contain dataset type
     `/insertions?no_dataset_type=clusters.metrics`
+    -   **atlas_name**: returns a session if any channel name icontains
+     the value: `/insertions?brain_region=visual cortex`
+    -   **atlas_acronym**: returns a session if any of its channels name exactly
+     matches the value `/insertions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
+    -   **atlas_id**: returns a session if any of its channels id matches the
+     provided value: `/insertions?atlas_id=950`, cf Allen CCFv2017
 
     [===> probe insertion model reference](/admin/doc/models/experiments.probeinsertion)
     """
-    queryset = ProbeInsertion.objects.all().order_by('-session__start_time')
+    queryset = ProbeInsertion.objects.all()
+    queryset = ProbeInsertionListSerializer.setup_eager_loading(queryset)
     serializer_class = ProbeInsertionListSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_class = ProbeInsertionFilter
