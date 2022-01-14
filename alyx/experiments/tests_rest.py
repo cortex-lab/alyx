@@ -86,6 +86,31 @@ class APISubjectsTests(BaseTests):
         response = self.client.delete(url + '/' + d[0]['id'])
         self.ar(response, 204)
 
+    def test_probe_insertion_rest(self):
+        # First create two insertions and attach to session
+        probe_names = ['probe00', 'probe01']
+        insertions = []
+        for name in probe_names:
+            insertion = {'session': str(self.session.id),
+                         'name': name,
+                         'model': '3A'
+                         }
+            url = reverse('probeinsertion-list')
+            insertions.append(self.ar(self.post(url, insertion), 201))
+
+        # test the task_protocol filter
+        urlf = (reverse('probeinsertion-list') + '?&task_protocol=ephy')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 2)
+        urlf = (reverse('probeinsertion-list') + '?&task_protocol=training')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 0)
+
+        # test the project filter
+        urlf = (reverse('probeinsertion-list') + '?&project=brain_wide')
+        probe_ins = self.ar(self.client.get(urlf))
+        self.assertTrue(len(probe_ins) == 0)
+
     def test_probe_insertion_dataset_interaction(self):
         # First create two insertions and attach to session
         probe_names = ['probe00', 'probe01']
@@ -93,7 +118,8 @@ class APISubjectsTests(BaseTests):
         for name in probe_names:
             insertion = {'session': str(self.session.id),
                          'name': name,
-                         'model': '3A'}
+                         'model': '3A'
+                         }
             url = reverse('probeinsertion-list')
             insertions.append(self.ar(self.post(url, insertion), 201))
 

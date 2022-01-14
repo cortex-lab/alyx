@@ -88,6 +88,14 @@ class ProbeInsertionDatasetsSerializer(serializers.ModelSerializer):
 
 
 class ProbeInsertionListSerializer(serializers.ModelSerializer):
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('model', 'session')
+        queryset = queryset.prefetch_related('session__subject', 'session__lab', 'datasets')
+        return queryset.order_by('-session__start_time')
+
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
         queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
