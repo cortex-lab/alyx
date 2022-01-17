@@ -198,16 +198,20 @@ ibl_dlc_pk = set(Task.objects.filter(session__lab__name='cortexlab').filter(name
                                                                             ).values_list('pk', flat=True))
 # Get the intersection primary keys and the respective tasks from each DB
 duplicate_pk = cortex_dlc_pk.intersection(ibl_dlc_pk)
-dlc_cortex = Task.objects.using('cortexlab').filter(pk__in=duplicate_pk).order_by('pk')
-dlc_ibl = Task.objects.filter(session__lab__name='cortexlab').filter(pk__in=duplicate_pk).order_by('pk')
+dlc_cortex = Task.objects.using('cortexlab').filter(pk__in=duplicate_pk, name__in=task_names_to_check).order_by('pk')
+dlc_ibl = Task.objects.filter(session__lab__name='cortexlab', name__in=task_names_to_check).filter(
+    pk__in=duplicate_pk).order_by('pk')
 # Get time stamps from those tasks
 times_cortex = np.array(dlc_cortex.values_list('datetime', flat=True)).astype(np.datetime64)
 times_ibl = np.array(dlc_ibl.values_list('datetime', flat=True)).astype(np.datetime64)
 # Indices where datetime from IBL is newer than cortexlab -- do not import by deleting the datasets from cortexlab db
+# Indices where datetime from IBL is older than cortexlab -- delete from ibl db
 keep_ibl = np.where(times_ibl >= times_cortex)[0]
+keep_cortex = np.where(times_ibl < times_cortex)[0]
 pk_del_cortex = list(np.array(dlc_cortex.values_list('pk', flat=True))[keep_ibl])
-Task.objects.using('cortexlab').filter(pk__in=pk_del_cortex).delete()
-
+pk_del_ibl = list(np.array(dlc_ibl.values_list('pk', flat=True))[keep_cortex])
+Task.objects.using('cortexlab').filter(pk__in=pk_del_cortex, name__in=task_names_to_check).delete()
+Task.objects.filter(pk__in=pk_del_ibl, name__in=task_names_to_check).delete()
 
 """
 Sync the tasks 2/2: for the other tasks we want to make sure there are no duplicate tasks with
