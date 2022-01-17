@@ -91,6 +91,12 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
         fields = ('id', 'data_repository', 'data_repository_path', 'relative_path', 'data_url',
                   'exists')
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('data_repository', 'data_repository__globus_path')
+        return queryset
+
 
 class TagSerializer(serializers.ModelSerializer):
 
@@ -153,9 +159,9 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related(
             'created_by', 'dataset_type', 'data_format', 'session',
-            'session__subject')
+            'session__subject', 'revision')
         queryset = queryset.prefetch_related(
-            'file_records', 'file_records__data_repository')
+            'file_records', 'file_records__data_repository', 'tags')
         return queryset
 
     def get_experiment_number(self, obj):
