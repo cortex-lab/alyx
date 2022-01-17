@@ -197,15 +197,17 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     # fields to keep from Dataset table
     dataset_fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
     # fields to keep from FileRecord table
-    filerecord_fields = ('dataset_id', 'relative_path', 'exists', 'data_repository__name', 'data_repository__globus_path')
+    filerecord_fields = ('dataset_id', 'relative_path', 'exists', 'data_repository__name',
+                         'data_repository__globus_path')
 
     all_df = []
     for i in paginator.page_range:
         data = paginator.get_page(i)
         current_qs = data.object_list
         ids = current_qs.values('id')
-        frs = FileRecord.objects.select_related('data_repository').filter(dataset_id__in=ids, exists=True,
-                                                                          data_repository__globus_is_personal=False)
+        frs = FileRecord.objects.select_related('data_repository').\
+            filter(dataset_id__in=ids, exists=True,
+                   data_repository__globus_is_personal=False)
         df = pd.DataFrame.from_records(current_qs.values(*dataset_fields))
         fr = pd.DataFrame.from_records(frs.values(*filerecord_fields))
         df = df.set_index('id').join(fr.set_index('dataset_id'))
