@@ -302,10 +302,26 @@ class Dataset(BaseExperimentalData):
                                                     "latest revision")
 
     @property
-    def online(self):
+    def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
         if fr:
             return all(fr.values_list('exists', flat=True))
+        else:
+            return False
+
+    @property
+    def is_protected(self):
+        tags = self.tags.filter(protected=True)
+        if tags.count() > 0:
+            return True
+        else:
+            return False
+
+    @property
+    def is_public(self):
+        tags = self.tags.filter(public=True)
+        if tags.count() > 0:
+            return True
         else:
             return False
 
