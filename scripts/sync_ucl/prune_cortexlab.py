@@ -192,15 +192,17 @@ Sync the tasks 1/2: For DLC tasks there might be duplicates, as we sometimes run
 Import the cortexlab tasks unless there is a NEWER version in the ibl database
 """
 task_names_to_check = ['TrainingDLC', 'EphysDLC']
-# Get the pks of the DLC tasks from both the cortexlab db and ibl db with cortexlab as lab name
-cortex_dlc_pk = set(Task.objects.using('cortexlab').filter(name__in=task_names_to_check).values_list('pk', flat=True))
-ibl_dlc_pk = set(Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check
-                                                                            ).values_list('pk', flat=True))
-# Get the intersection primary keys and the respective tasks from each DB
-duplicate_pk = cortex_dlc_pk.intersection(ibl_dlc_pk)
-dlc_cortex = Task.objects.using('cortexlab').filter(pk__in=duplicate_pk, name__in=task_names_to_check).order_by('pk')
-dlc_ibl = Task.objects.filter(session__lab__name='cortexlab', name__in=task_names_to_check).filter(
-    pk__in=duplicate_pk).order_by('pk')
+# Get the session_id of the DLC tasks from both the cortexlab db and ibl db with cortexlab as lab name
+cortex_dlc_eid = set(Task.objects.using('cortexlab').filter(name__in=task_names_to_check
+                                                            ).values_list('session_id', flat=True))
+ibl_dlc_eid = set(Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check
+                                                                             ).values_list('session_id', flat=True))
+# Get the intersection and the respective tasks from each DB
+duplicate_eid = cortex_dlc_eid.intersection(ibl_dlc_eid)
+dlc_cortex = Task.objects.using('cortexlab').filter(session_id__in=duplicate_eid, name__in=task_names_to_check
+                                                    ).order_by('session_id')
+dlc_ibl = Task.objects.filter(session__lab__name='cortexlab', name__in=task_names_to_check
+                              ).filter(session_id__in=duplicate_eid).order_by('session_id')
 # Get time stamps from those tasks
 times_cortex = np.array(dlc_cortex.values_list('datetime', flat=True)).astype(np.datetime64)
 times_ibl = np.array(dlc_ibl.values_list('datetime', flat=True)).astype(np.datetime64)
@@ -214,9 +216,8 @@ Task.objects.using('cortexlab').filter(pk__in=pk_del_cortex, name__in=task_names
 Task.objects.filter(pk__in=pk_del_ibl, name__in=task_names_to_check).delete()
 
 """
-Sync the tasks 2/2: for the other tasks we want to make sure there are no duplicate tasks with
-different ids that have been made on IBL and cortex lab database. In the case of duplicates cortex
-lab database are kept and IBL deleted
+Sync the tasks 2/2: For all other tasks, make sure there are no duplicate tasks with different ids that have been made
+on IBL and cortex lab database. In the case of duplicates cortex lab database are kept and IBL deleted
 """
 task_names_to_exclude = ['TrainingDLC', 'EphysDLC']
 cortex_eids = Task.objects.using('cortexlab').exclude(name__in=task_names_to_exclude).values_list('session', flat=True)
