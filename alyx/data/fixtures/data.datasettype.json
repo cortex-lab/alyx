@@ -1461,5 +1461,38 @@
     "description": "Times of licks as detected from DLC tongue traces.",
     "filename_pattern": "licks.times.*"
     }
+  },
+      {
+  "model": "data.datasettype",
+  "pk": "828c691b-1f94-4454-9477-a29e2e445b27",
+  "fields": {
+    "json": null,
+    "name": "electrodeSites.localCoordinates",
+    "created_by": null,
+    "description": "Location of each channel relative to probe coordinate system (µm): (first) dimension is on the width of the shank; Second is the depth where 0 is the deepest site, and positive above this. Straight mapping to the raw electrophysiology binary files",
+    "filename_pattern": "electrodeSites.localCoordinates*.npy"
+    }
+  },
+       {
+  "model": "data.datasettype",
+  "pk": "e9d47477-f4ee-4421-b2d0-817e7e889521",
+  "fields": {
+    "json": null,
+    "name": "electrodeSites.mlapdv",
+    "created_by": null,
+    "description": "3d location of the channels relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um) straight mapping to the raw electrophysiology binary file channels",
+    "filename_pattern": "electrodeSites.mlapdv*.npy"
+    }
+  },
+       {
+  "model": "data.datasettype",
+  "pk": "e1cda381-5a32-4f76-927b-43bb7fbfc874",
+  "fields": {
+    "json": null,
+    "name": "electrodeSites.brainLocationIds_ccf_2017",
+    "created_by": null,
+    "description": "Brain location id of channels following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework - straight mapping to the raw electrophysiology binary file channels.",
+    "filename_pattern": "electrodeSites.brainLocationIds_ccf_2017*.npy"
+    }
   }
 ]

@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 
 from alyx.base import base_json_filter, BaseFilterSet
 from subjects.models import Subject
+from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
@@ -208,10 +209,7 @@ class SessionFilter(BaseFilterSet):
         returns sessions containing at least one channel in the given brain region.
         Hierarchical tree search"
         """
-        from experiments.models import BrainRegion
-        brs = BrainRegion.objects.filter(**{name: value}).get_descendants(include_self=True)
-        return queryset.filter(
-            probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
 
     def has_histology(self, queryset, name, value):
         """returns sessions whose subjects have an histology session available"""
@@ -314,7 +312,7 @@ class SessionAPIList(generics.ListCreateAPIView):
         -   chained lookups: `/sessions/?extended_qc=qc_pct__gte;0.5;qc_bool;True`,
     -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
     -   **brain_region**: returns a session if any channel name icontains the value:
-        `/sessions?brain_region=vis`
+        `/sessions?brain_region=visual cortex`
     -   **atlas_acronym**: returns a session if any of its channels name exactly matches the value
         `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
     -   **atlas_id**: returns a session if any of its channels id matches the provided value:

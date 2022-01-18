@@ -115,7 +115,7 @@ class Command(BaseCommand):
             dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',
                       '_iblrig_Camera.raw', '_kilosort_raw.output']
             frecs = FileRecord.objects.filter(
-                ~Q(data_repository__name__icontains='flatiron'),
+                data_repository__globus_is_personal=True,
                 dataset__dataset_type__name__in=dtypes,
                 exists=True,
                 dataset__session__start_time__date__lte=before,

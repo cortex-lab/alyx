@@ -44,7 +44,7 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ('id', 'user', 'date_time', 'content_type', 'object_id', 'text', 'image')
+        fields = ('id', 'user', 'date_time', 'content_type', 'object_id', 'text', 'image', 'json')
 
 
 class UserSerializer(serializers.ModelSerializer):
