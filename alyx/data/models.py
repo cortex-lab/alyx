@@ -301,13 +301,6 @@ class Dataset(BaseExperimentalData):
                                           help_text="Whether this dataset is the default "
                                                     "latest revision")
 
-    def data_url(self):
-        records = self.file_records.filter(data_repository__data_url__isnull=False,
-                                           exists=True)
-        # returns preferentially globus non-personal endpoint
-        if records:
-            return records.order_by('data_repository__globus_is_personal')[0].data_url()
-
     @property
     def online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
@@ -316,21 +309,12 @@ class Dataset(BaseExperimentalData):
         else:
             return False
 
-    @property
-    def protected(self):
-        tags = self.tags.filter(protected=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
-
-    @property
-    def public(self):
-        tags = self.tags.filter(public=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
+    def data_url(self):
+        records = self.file_records.filter(data_repository__data_url__isnull=False,
+                                           exists=True)
+        # returns preferentially globus non-personal endpoint
+        if records:
+            return records.order_by('data_repository__globus_is_personal')[0].data_url()
 
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
