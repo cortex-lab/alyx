@@ -13,12 +13,13 @@ Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recom
 this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 `ubuntu`.
 
-## Install apache, wsgi module, and set acl permissions
+## Install apache, wsgi module, and set group and acl permissions
     sudo apt-get update    
     sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
     sudo a2enmod wsgi
-    sudo setfacl -d -m u:www-data:rw /var/log/
-    sudo setfacl -d -m u:ubuntu:rw /var/log/
+    sudo adduser www-data syslog
+    sudo setfacl -d -m u:www-data:rwx /var/log/
+    sudo setfacl -d -m u:ubuntu:rwx /var/log/
 
 ### Setup Python/Django and the database
 Go to the directory of your choice (for example: `/var/www/alyx-main`)
