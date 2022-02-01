@@ -80,6 +80,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx.log',
             'maxBytes': 16777216,
+            'backupCount': 5,
             'formatter': 'simple'
         },
         'console': {
@@ -92,7 +93,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx_json.log',
             'maxBytes': 16777216,
-            'backupCount': 3,
+            'backupCount': 5,
             'formatter': 'json_formatter',
         },
     },
