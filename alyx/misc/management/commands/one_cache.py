@@ -191,7 +191,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     """
     # Find all online file records
     batch_size = 50000
-    qs = Dataset.objects.all().prefetch_related('file_records').order_by('created_datetime')
+    qs = Dataset.objects.all().order_by('created_datetime')
     paginator = Paginator(qs, batch_size)
 
     # fields to keep from Dataset table
@@ -204,11 +204,10 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     for i in paginator.page_range:
         data = paginator.get_page(i)
         current_qs = data.object_list
-        ids = current_qs.values('id')
-        frs = FileRecord.objects.select_related('data_repository').\
-            filter(dataset_id__in=ids, exists=True,
-                   data_repository__globus_is_personal=False)
         df = pd.DataFrame.from_records(current_qs.values(*dataset_fields))
+        frs = FileRecord.objects.select_related('data_repository').\
+            filter(dataset_id__in=df['id'].values, exists=True,
+                   data_repository__globus_is_personal=False)
         fr = pd.DataFrame.from_records(frs.values(*filerecord_fields))
         df = df.set_index('id').join(fr.set_index('dataset_id'))
         all_df.append(df)
