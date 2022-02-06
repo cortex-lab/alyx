@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
 import os
+
+import boto3
 import structlog
 from django.conf.locale.en import formats as en_formats
 
@@ -29,7 +31,6 @@ except ImportError:
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 
-
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
@@ -42,15 +43,22 @@ if 'GITHUB_ACTIONS' in os.environ:
         }
     }
 
-
 # Custom User model with UUID primary key
 AUTH_USER_MODEL = 'misc.LabMember'
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# Configuration for watchtower cloudwatch log export, env variables set in /etc/apache2/envvars
+# Ideally, this will be done with IAM Roles in the future
+boto3_logs_client = boto3.client(
+    "logs",
+    region_name=os.environ.get('CLOUDWATCH_DJANGO_DEV_REGION'),
+    aws_access_key_id=os.environ.get('CLOUDWATCH_DJANGO_DEV_ID'),
+    aws_secret_access_key=os.environ.get('CLOUDWATCH_DJANGO_DEV_KEY')
+)
 
 LOGGING = {
     'version': 1,
@@ -96,6 +104,12 @@ LOGGING = {
             'backupCount': 5,
             'formatter': 'json_formatter',
         },
+        'watchtower': {
+            'level': 'INFO',
+            'class': 'watchtower.CloudWatchLogHandler',
+            'boto3_client': boto3_logs_client,
+            'log_group_name': 'django_dev',
+        },
     },
     'loggers': {
         'django': {
@@ -106,10 +120,10 @@ LOGGING = {
         'django_structlog': {
             'handlers': ['json_file'],
             'level': 'INFO',
-        }
+        },
     },
     'root': {
-        'handlers': ['file', 'console'],
+        'handlers': ['file', 'console', 'watchtower'],
         'level': 'WARNING',
         'propagate': True,
     }
