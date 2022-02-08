@@ -248,13 +248,13 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         df = (
             (df
                 .drop(['id', 'eid'], axis=1)
-                .set_index(['id_0', 'id_1'])
+                .set_index(['eid_0', 'eid_1', 'id_0', 'id_1'])
                 .sort_index())
         )
     else:
         # Convert UUIDs to str: not supported by parquet
         df[['id', 'eid']] = df[['id', 'eid']].astype(str)
-        df = df.set_index('id').sort_index()
+        df = df.set_index(['eid', 'id']).sort_index()
 
     logger.debug(f'Final datasets frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     return df
@@ -265,6 +265,7 @@ def create_metadata() -> dict:
     return {
         'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
         'origin': connection.settings_dict['NAME'] or socket.gethostname(),
+        'min_api_version': '1.0.0'
     }
 
 
