@@ -14,6 +14,7 @@ import pyarrow as pa
 
 from django.db import connection
 from django.core.management.base import BaseCommand
+from django.core.paginator import Paginator
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
@@ -189,23 +190,31 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     )
     """
     # Find all online file records
-    records = (
-        (FileRecord
-            .objects
-            .select_related('data_repository')
-            .filter(data_repository__globus_is_personal=False, exists=True))
-    )
-    fields = (
-        'dataset_id', 'relative_path', 'exists',
-        'data_repository__name', 'data_repository__globus_path'
-    )
-    fr = pd.DataFrame.from_records(records.values(*fields))
-    logger.debug(f'File records frame = {getsizeof(fr) / 1024 ** 2:.1f} MiB')
-    fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
-    df = pd.DataFrame.from_records(Dataset.objects.values(*fields))
-    logger.debug(f'Datasets frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
-    df = df.set_index('id').join(fr.set_index('dataset_id'))
-    del fr  # Clearing vars saves about 100 MB
+    batch_size = 50000
+    qs = Dataset.objects.all().order_by('created_datetime')
+    paginator = Paginator(qs, batch_size)
+
+    # fields to keep from Dataset table
+    dataset_fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
+    # fields to keep from FileRecord table
+    filerecord_fields = ('dataset_id', 'relative_path', 'exists', 'data_repository__name',
+                         'data_repository__globus_path')
+
+    all_df = []
+    for i in paginator.page_range:
+        data = paginator.get_page(i)
+        current_qs = data.object_list
+        df = pd.DataFrame.from_records(current_qs.values(*dataset_fields))
+        frs = FileRecord.objects.select_related('data_repository').\
+            filter(dataset_id__in=df['id'].values, exists=True,
+                   data_repository__globus_is_personal=False)
+        fr = pd.DataFrame.from_records(frs.values(*filerecord_fields))
+        df = df.set_index('id').join(fr.set_index('dataset_id'))
+        all_df.append(df)
+
+    df = pd.concat(all_df, ignore_index=False)
+    del all_df
+
     df = df.sort_index().sort_values('data_repository__name', kind='mergesort')
     # Remove datasets where no file records exist
     df.dropna(subset=('exists', 'relative_path'), inplace=True)
@@ -239,13 +248,13 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         df = (
             (df
                 .drop(['id', 'eid'], axis=1)
-                .set_index(['id_0', 'id_1'])
+                .set_index(['eid_0', 'eid_1', 'id_0', 'id_1'])
                 .sort_index())
         )
     else:
         # Convert UUIDs to str: not supported by parquet
         df[['id', 'eid']] = df[['id', 'eid']].astype(str)
-        df = df.set_index('id').sort_index()
+        df = df.set_index(['eid', 'id']).sort_index()
 
     logger.debug(f'Final datasets frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     return df
@@ -256,6 +265,7 @@ def create_metadata() -> dict:
     return {
         'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
         'origin': connection.settings_dict['NAME'] or socket.gethostname(),
+        'min_api_version': '1.8.0'
     }
 
 
