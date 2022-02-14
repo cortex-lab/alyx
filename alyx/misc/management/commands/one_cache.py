@@ -265,7 +265,7 @@ def create_metadata() -> dict:
     return {
         'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
         'origin': connection.settings_dict['NAME'] or socket.gethostname(),
-        'min_api_version': '1.0.0'
+        'min_api_version': '1.8.0'
     }
 
 
