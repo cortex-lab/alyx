@@ -78,13 +78,47 @@ Location of error logs for apache if it fails to start
 
     /var/log/apache2/
 
-### [Optional] Setup AWS Cloudwatch logging
+### [Optional] Setup AWS Cloudwatch logging with watchtower
 
-If you are running the alyx instance as an EC2 instance on AWS, perform the following steps to export the django logs to a Cloudwatch log stream.
+If you are running the alyx as an EC2 instance on AWS, perform the following steps to export the django logs to a 
+Cloudwatch log stream. Please be sure that you are in the same virtualenv as before.
 
-https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html
-
-arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs
+- Navigate to your AWS console and open the 'Identity and Access Management (IAM)' page
+- Create an IAM Role named something along the lines of 'Alyx-Prod' and attach the following policy:
+`arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`
+- Navigate to your EC2 instance and with the instance selected choose: Actions -> Security -> Modify IAM Role
+- Attach the newly created IAM policy to your EC2 instance (instance may require reboot for metadata to populate for 
+boto3)
+- For more thorough guides on how to create and manage your IAM Roles; working with EC2 metadata:
+  - [IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) 
+  - [EC2 metadata documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+- uncomment the `boto3` and `watchtower` lines in the `alyx/requirements.txt` file and rerun 
+`pip install -r requirements.txt`
+- open your `alyx/alyx/settings.py` file, find and uncomment the following lines: 
+  - `import boto3`
+  - `AWS_REGION_NAME = <your aws region>`
+  - `boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)`
+  - ```
+    LOGGING = {
+    ...
+        'handlers': {
+        ...
+            'watchtower': {
+                'level': 'INFO',
+                'class': 'watchtower.CloudWatchLogHandler',
+                'boto3_client': boto3_logs_client,
+                'log_group_name': 'django_dev',
+            },
+        },
+        'root': {
+            'handlers': [
+                ...
+                'watchtower',
+                ...
+    ```
+- restart apache gracefully with a `apachectl -k graceful` command
+- navigate to your alyx instance web page, refresh the page a few times to generate logs and take note of the time
+- after a few minutes, you can verify that the newly generated logs are being written in your AWS Cloudwatch console  
 
 ---
 
