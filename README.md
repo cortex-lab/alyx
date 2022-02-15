@@ -13,7 +13,7 @@ Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recom
 this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 `ubuntu`.
 
-## Install apache, wsgi module, and set group and acl permissions
+### Install apache, wsgi module, and set group and acl permissions
     sudo apt-get update    
     sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
     sudo a2enmod wsgi
@@ -77,6 +77,14 @@ it should not interrupt current user transactions if any.
 Location of error logs for apache if it fails to start
 
     /var/log/apache2/
+
+### [Optional] Setup AWS Cloudwatch logging
+
+If you are running the alyx instance as an EC2 instance on AWS, perform the following steps to export the django logs to a Cloudwatch log stream.
+
+https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html
+
+arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs
 
 ---
 
