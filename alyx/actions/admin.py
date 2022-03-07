@@ -257,7 +257,7 @@ class WaterRestrictionForm(forms.ModelForm):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def has_change_permission(self, request, obj=None):
         return True
-  
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
             kwargs['queryset'] = Subject.objects.filter(cull__isnull=True).order_by('nickname')
