@@ -321,8 +321,13 @@ class BaseAdmin(VersionAdmin):
             return True
         if request.user.is_superuser:
             return True
-        # Subject associated to the object.
-        subj = obj if hasattr(obj, 'responsible_user') else getattr(obj, 'subject', None)
+        # Find subject associated to the object.
+        if hasattr(obj, 'responsible_user'):
+            subj = obj
+        elif getattr(obj, 'session', None):
+            subj = obj.session.subject
+        elif getattr(obj, 'subject', None):
+            subj = obj.subject
         resp_user = getattr(subj, 'responsible_user', None)
         # List of allowed users for the subject.
         allowed = getattr(resp_user, 'allowed_users', None)
