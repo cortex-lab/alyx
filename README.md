@@ -9,18 +9,22 @@ Documentation: http://alyx.readthedocs.io
 
 
 ## Installation
+Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recommended. There are no guarantees that 
+this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
+`ubuntu`.
+
+### Install apache, wsgi module, and set group and acl permissions
+    sudo apt-get update    
+    sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
+    sudo a2enmod wsgi
+    sudo adduser www-data syslog
+    sudo setfacl -d -m u:www-data:rwx /var/log/
+    sudo setfacl -d -m u:ubuntu:rwx /var/log/
 
 ### Setup Python/Django and the database
-Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04). Latest recommended. 
-It could work on other systems but with no guarantees.
-
 Go to the directory of your choice (for example: `/var/www/alyx-main`)
-
 ```
-sudo apt-get update
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
-sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log;
-sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log;
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded
@@ -50,16 +54,10 @@ Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You ca
 The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the `alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual environment with the dependencies (including django), and it creates all the required SQL tables.
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
-### [Ubuntu] Web deployment
-
-Install apache, and wsgi module, then make sure it's enabled
-
-    sudo apt-get install apache2 libapache2-mod-wsgi-py3
-    sudo a2enmod wsgi
-
+### Apache Site Configuration
 Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
 -   make sure the paths within the file match the alyx installation path.
--   update Servername parameter `ServerName  alyx.internationalbrainlab.org`
+-   update ServerName parameter `ServerName  alyx.internationalbrainlab.org`
 -   it should match the [alyx/alyx/settings_lab.py](alyx/alyx/settings_lab.py) `ALLOWED_HOSTS` parameter
 
 
@@ -68,16 +66,61 @@ Activate the website
     sudo a2ensite
         001-alyx-main
 
-Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as it should not interreupt current user transactions if any
-.
+Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as 
+it should not interrupt current user transactions if any.
+
 
     sudo /etc/init.d/apache2 restart
     sudo /etc/init.d/apache2 reload
 
 
-Location of error logs if the server fails to start
+Location of error logs for apache if it fails to start
 
     /var/log/apache2/
+
+### [Optional] Setup AWS Cloudwatch logging with watchtower
+
+If you are running the alyx as an EC2 instance on AWS, perform the following steps to export the django logs to a 
+Cloudwatch log stream. Please be sure that you are in the same virtualenv as before.
+
+- Navigate to your AWS console and open the 'Identity and Access Management (IAM)' page
+- Create an IAM Role named something along the lines of 'Alyx-Prod' and attach the following policy:
+`arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`
+- Navigate to your EC2 instance and with the instance selected choose: Actions -> Security -> Modify IAM Role
+- Attach the newly created IAM policy to your EC2 instance (instance may require reboot for metadata to populate for 
+boto3)
+- For more thorough guides on how to create and manage your IAM Roles; working with EC2 metadata:
+  - [IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) 
+  - [EC2 metadata documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+- uncomment the `boto3` and `watchtower` lines in the `alyx/requirements.txt` file and rerun 
+`pip install -r requirements.txt`
+- open your `alyx/alyx/settings.py` file, find and uncomment the following lines: 
+  - `import boto3`
+  - `AWS_REGION_NAME = <your aws region>`
+  - `boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)`
+  - ```
+    LOGGING = {
+    ...
+        'handlers': {
+        ...
+            'watchtower': {
+                'level': 'INFO',
+                'class': 'watchtower.CloudWatchLogHandler',
+                'boto3_client': boto3_logs_client,
+                'log_group_name': 'django_dev',
+            },
+        },
+        'root': {
+            'handlers': [
+                ...
+                'watchtower',
+                ...
+    ```
+- restart apache gracefully with a `apachectl -k graceful` command
+- navigate to your alyx instance web page, refresh the page a few times to generate logs and take note of the time
+- after a few minutes, you can verify that the newly generated logs are being written in your AWS Cloudwatch console  
+
+---
 
 ### [macOS] Local installation of alyx
 
@@ -133,5 +176,5 @@ $ /manage.py test -n
     -   `./manage.py migrate`
 7. Full test on alyx-dev
 8. Repeat 4,5,6,7 on alyx-main
-9. If there was migrations, update database permission: `./manage.py set_db_permissions`
+9. If there were migrations, update database permission: `./manage.py set_db_permissions`
 10. If webserver, reload Apache `sudo /etc/init.d/apache2 reload`

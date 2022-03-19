@@ -25,3 +25,6 @@ python-magic
 pytz
 webdavclient3
 django-structlog
+structlog~=21.5.0
+# boto3~=1.21.22  # Optional, only required if AWS Cloudwatch logging is desired
+# watchtower~=3.0.0  # Optional, only required if AWS Cloudwatch logging is desired
