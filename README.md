@@ -78,47 +78,26 @@ Location of error logs for apache if it fails to start
 
     /var/log/apache2/
 
-### [Optional] Setup AWS Cloudwatch logging with watchtower
+### [Optional] Setup AWS Cloudwatch Agent logging
 
-If you are running the alyx as an EC2 instance on AWS, perform the following steps to export the django logs to a 
-Cloudwatch log stream. Please be sure that you are in the same virtualenv as before.
+If you are running alyx as an EC2 instance on AWS, you can easily add the AWS Cloudwatch agent to the server to ease log
+evaluation and alerting. This can also be done with a non-ec2 server, but is likely not worth it unless you are already 
+using Cloudwatch for other logs.
 
-- Navigate to your AWS console and open the 'Identity and Access Management (IAM)' page
-- Create an IAM Role named something along the lines of 'Alyx-Prod' and attach the following policy:
-`arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`
-- Navigate to your EC2 instance and with the instance selected choose: Actions -> Security -> Modify IAM Role
-- Attach the newly created IAM policy to your EC2 instance (instance may require reboot for metadata to populate for 
-boto3)
-- For more thorough guides on how to create and manage your IAM Roles; working with EC2 metadata:
-  - [IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) 
-  - [EC2 metadata documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
-- uncomment the `boto3` and `watchtower` lines in the `alyx/requirements.txt` file and rerun 
-`pip install -r requirements.txt`
-- open your `alyx/alyx/settings.py` file, find and uncomment the following lines: 
-  - `import boto3`
-  - `AWS_REGION_NAME = <your aws region>`
-  - `boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)`
-  - ```
-    LOGGING = {
-    ...
-        'handlers': {
-        ...
-            'watchtower': {
-                'level': 'INFO',
-                'class': 'watchtower.CloudWatchLogHandler',
-                'boto3_client': boto3_logs_client,
-                'log_group_name': 'django_dev',
-            },
-        },
-        'root': {
-            'handlers': [
-                ...
-                'watchtower',
-                ...
-    ```
-- restart apache gracefully with a `apachectl -k graceful` command
-- navigate to your alyx instance web page, refresh the page a few times to generate logs and take note of the time
-- after a few minutes, you can verify that the newly generated logs are being written in your AWS Cloudwatch console  
+To give an overview of the installation process for an EC2 instance:
+* Create an IAM role that enables the agent to collect metrics from the server and attach the role to the server.
+* Download the agent package to the instance.
+* Modify the CloudWatch agent configuration file, specify the metrics and the log files that you want to collect.
+* Install and start the agent on your server.
+* Verify in Cloudwatch 
+  * you are now able to generate alerts from the metrics of interest
+  * you are now shipping the logs files to your log group
+
+Follow the latest instructions from the official [AWS Cloudwatch Agent documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html).
+
+Other useful references:
+* [IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html)
+* [EC2 metadata documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) 
 
 ---
 

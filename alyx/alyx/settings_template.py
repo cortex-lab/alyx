@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 
 import os
 
-# import boto3  # Optional, only required if AWS Cloudwatch logging is desired
 import structlog
 from django.conf.locale.en import formats as en_formats
 
@@ -50,10 +49,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-
-# Optional, only required if AWS Cloudwatch logging is desired
-# AWS_REGION_NAME = 'eu-west-2'
-# boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)
 
 LOGGING = {
     'version': 1,
@@ -99,13 +94,6 @@ LOGGING = {
             'backupCount': 5,
             'formatter': 'json_formatter',
         },
-        # Optional, watchtower entry only required for AWS Cloudwatch logging
-        # 'watchtower': {
-        #     'level': 'INFO',
-        #     'class': 'watchtower.CloudWatchLogHandler',
-        #     'boto3_client': boto3_logs_client,
-        #     'log_group_name': 'django_dev',
-        # },
     },
     'loggers': {
         'django': {
@@ -122,7 +110,6 @@ LOGGING = {
         'handlers': [
             'file',
             'console',
-            # 'watchtower',  # Optional, watchtower entry only required for AWS Cloudwatch logging
         ],
         'level': 'WARNING',
         'propagate': True,
