@@ -20,6 +20,8 @@ this setup will work on other systems. Assumptions made are that you have sudo p
     sudo adduser www-data syslog
     sudo setfacl -d -m u:www-data:rwx /var/log/
     sudo setfacl -d -m u:ubuntu:rwx /var/log/
+    sudo touch /var/log/alyx.log /var/log/alyx_json.log
+    sudo www-data:www-data /var/log/alyx.log /var/log/alyx_json.log
 
 ### Setup Python/Django and the database
 Go to the directory of your choice (for example: `/var/www/alyx-main`)
@@ -28,8 +30,12 @@ sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-con
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded
+```
+Ensure current user account has write permissions
+```
 git clone https://github.com/cortex-lab/alyx.git
 cd alyx
+mv alyx/settings_template.py alyx/settings.py
 virtualenv alyxvenv --python=python3
 source ./alyxvenv/bin/activate
 pip install -r requirements.txt
@@ -41,12 +47,13 @@ python setup.py
     $ Enter a postgres password:
     ...
 
-python alyx/manage.py check
-python alyx/manage.py runserver
-
 # An then initialize fixtures (ie. load default objects in the database)
 cd alyx
 ../scripts/load-init-fixtures.sh
+
+cd ..
+python alyx/manage.py check
+python alyx/manage.py runserver
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
