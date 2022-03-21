@@ -1,34 +1,35 @@
-from time import time
-import socket
 import json
 import logging
-from pathlib import Path
+import socket
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 from sys import getsizeof
+from time import time
 
 import numpy as np
 import pandas as pd
-import pyarrow.parquet as pq
+import psutil
 import pyarrow as pa
-
-from django.db import connection
+import pyarrow.parquet as pq
+from actions.models import Session
+from alyx.settings import TABLES_ROOT
+from data.models import Dataset, FileRecord
 from django.core.management.base import BaseCommand
 from django.core.paginator import Paginator
-
-from alyx.settings import TABLES_ROOT
-from actions.models import Session
-from data.models import Dataset, FileRecord
+from django.db import connection
 
 logger = logging.getLogger(__name__)
 
 
-def measure_time(func):
+def measure_time_and_mem_use(func):
     @wraps(func)
     def wrapper(*arg, **kwargs):
         t0 = time()
         res = func(*arg, **kwargs)
-        logger.debug(f'{func.__name__} took {time() - t0:.2f} seconds to run')
+        mem_use = psutil.Process().memory_info().rss / (1024 * 1024 * 1024)  # measure in GB
+        logger.debug(f'{func.__name__} took {time() - t0:.2f} seconds to run and is consuming '
+                     f'{mem_use} GB of resident memory (not always accurate)')
         return res
     return wrapper
 
@@ -127,7 +128,7 @@ class Command(BaseCommand):
             logger.error(f'Failed to compress {write_fail}')
 
 
-@measure_time
+@measure_time_and_mem_use
 def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     """SESSIONS_COLUMNS = (
         'id',               # uuid str
@@ -177,7 +178,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     return df
 
 
-@measure_time
+@measure_time_and_mem_use
 def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     """DATASETS_COLUMNS = (
         'id',               # uuid str
