@@ -796,7 +796,10 @@ class BreedingPairAdminForm(forms.ModelForm):
             for w in ('father', 'mother1', 'mother2'):
                 p = getattr(self.instance, w, None)
                 if p:
-                    p.cage = int(cage)
+
+                    # Bug fix (request by Charu in 03/2022): allow cage ids to be non integers
+                    # p.cage = int(cage)
+
                     p.save()
         return super(BreedingPairAdminForm, self).save(commit=commit)
 
