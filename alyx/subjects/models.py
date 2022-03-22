@@ -336,8 +336,12 @@ class Subject(BaseModel):
             self.strain = self.line.strain
         # Update the zygosities when the subject is created or assigned a litter.
         is_created = self._state.adding is True
-        if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
-            ZygosityFinder().genotype_from_litter(self)
+
+        # Remove the automatic zygosity creation when assigning a litter, as requested by Charu
+        # in 03/2022.
+        # if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
+        #     ZygosityFinder().genotype_from_litter(self)
+
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not _get_old_field(self, 'genotype_date'):
             self.to_be_genotyped = False
@@ -719,6 +723,7 @@ def _update_zygosities(line, sequence):
 
 
 class ZygosityRule(BaseModel):
+    """This model encodes a rule to automatically create a zygosity from genotyping results."""
     line = models.ForeignKey('Line', null=True, on_delete=models.SET_NULL)
     allele = models.ForeignKey('Allele', null=True, on_delete=models.SET_NULL)
     sequence0 = models.ForeignKey('Sequence', blank=True, null=True, on_delete=models.SET_NULL,
