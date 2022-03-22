@@ -782,8 +782,11 @@ class BreedingPairAdminForm(forms.ModelForm):
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
             p = getattr(self.instance, w, None)
-            if p and p.cage:
-                self.fields['cage'].initial = p.cage
+
+            # Remove this feature as requested by Charu (03/2022)
+            # if p and p.cage:
+            #     self.fields['cage'].initial = p.cage
+
             if w in self.fields:
                 self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
