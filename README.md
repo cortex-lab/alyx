@@ -69,7 +69,15 @@ python alyx/manage.py check
 python alyx/manage.py runserver
 ```
 
-Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
+Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users 
+and user groups.
+
+You will then want to restore the latest backup of the production database to your local host. Download the most recent 
+backup of the alyx db, named something like `alyx_full.sql.gz` from the production alyx ec2 instance and extract the 
+contents of the file to your working directory. You will then need to run something like the following:
+```
+psql --host "localhost" --port "5432" --username "labdbuser" -W --dbname "labdb" < alyx_full.sql
+```
 
 ### Apache Site Configuration
 Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
