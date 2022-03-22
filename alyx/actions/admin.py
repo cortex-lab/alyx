@@ -118,7 +118,9 @@ class BaseActionForm(forms.ModelForm):
             self.fields['users'].queryset = get_user_model().objects.all().order_by('username')
         if 'user' in self.fields:
             self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
-        if 'subject' in self.fields:
+        # restricts the subject choices only to managed subjects
+        if 'subject' in self.fields and not (
+                self.current_user.is_stock_manager or self.current_user.is_superuser):
             inst = self.instance
             ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
                                                         cull__isnull=True).order_by('nickname')]
