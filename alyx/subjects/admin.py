@@ -790,18 +790,18 @@ class BreedingPairAdminForm(forms.ModelForm):
             if w in self.fields:
                 self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
-    def save(self, commit=True):
-        cage = self.cleaned_data.get('cage')
-        if cage:
-            for w in ('father', 'mother1', 'mother2'):
-                p = getattr(self.instance, w, None)
-                if p:
+    # def save(self, commit=True):
+    #     cage = self.cleaned_data.get('cage')
+    #     if cage:
+    #         for w in ('father', 'mother1', 'mother2'):
+    #             p = getattr(self.instance, w, None)
+    #             if p:
 
-                    # Bug fix (request by Charu in 03/2022): allow cage ids to be non integers
-                    # p.cage = int(cage)
+    #                 # Bug fix (request by Charu in 03/2022): allow cage ids to be non integers
+    #                 # p.cage = int(cage)
 
-                    p.save()
-        return super(BreedingPairAdminForm, self).save(commit=commit)
+    #                 p.save()
+    #     return super(BreedingPairAdminForm, self).save(commit=commit)
 
     class Meta:
         fields = '__all__'
