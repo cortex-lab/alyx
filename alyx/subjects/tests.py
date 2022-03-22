@@ -244,6 +244,30 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert a.zygosity == 2
 
 
+class SubjectProtocolNumber(TestCase):
+
+    def setUp(self):
+        self.lab = Lab.objects.create(name='awesomelab')
+        self.sub = Subject.objects.create(nickname='lawes', lab=self.lab, birth_date='2019-01-01')
+
+    def test(self):
+        from actions.models import Surgery
+        assert self.sub.protocol_number == '1'
+        # after a surgery protocol number goes to 2
+        self.surgery = Surgery.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0))
+        assert self.sub.protocol_number == '2'
+        # after water restriction number goes to 3
+        self.wr = WaterRestriction.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0))
+        assert self.sub.protocol_number == '3'
+        self.wr.end_time = datetime(2019, 1, 2, 12, 0, 0)
+        self.wr.save()
+        assert self.sub.protocol_number == '2'
+        self.surgery.delete()
+        assert self.sub.protocol_number == '1'
+
+
 class SubjectCullTests(TestCase):
 
     def setUp(self):

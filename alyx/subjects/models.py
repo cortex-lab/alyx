@@ -15,6 +15,7 @@ from django.utils import timezone
 from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
+from actions.models import Surgery
 from misc.models import Lab, default_lab, Housing
 
 logger = structlog.get_logger(__name__)
@@ -379,6 +380,14 @@ class Subject(BaseModel):
         # Keep the history of some fields in the JSON.
         save_old_fields(self, self._fields_history)
         return super(Subject, self).save(*args, **kwargs)
+
+    def set_protocol_number(self):
+        if self.water_control.is_water_restricted():
+            self.protocol_number = '3'
+        elif Surgery.objects.filter(subject=self).count() > 0:
+            self.protocol_number = '2'
+        else:
+            self.protocol_number = '1'
 
     def __str__(self):
         return self.nickname

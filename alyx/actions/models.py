@@ -209,17 +209,20 @@ class Surgery(BaseAction):
 
     def save(self, *args, **kwargs):
         # Issue #422.
-        if self.subject.protocol_number == '1':
-            # NOTE: changing this to 2 following request by Charu in 03/2022
-            self.subject.protocol_number = '2'
-        # Change from mild to moderate.
+        output = super(Surgery, self).save(*args, **kwargs)
+        self.subject.set_protocol_number()
         if self.subject.actual_severity == 2:
             self.subject.actual_severity = 3
-
         if self.outcome_type == 'a' and self.start_time:
             self.subject.death_date = self.start_time
         self.subject.save()
-        return super(Surgery, self).save(*args, **kwargs)
+        return output
+
+    def delete(self, *args, **kwargs):
+        output = super(Surgery, self).delete(*args, **kwargs)
+        self.subject.set_protocol_number()
+        self.subject.save()
+        return output
 
 
 class Session(BaseAction):
@@ -315,6 +318,13 @@ class WaterRestriction(BaseAction):
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 
+    def delete(self, *args, **kwargs):
+        output = super(WaterRestriction, self).delete(*args, **kwargs)
+        self.subject.reinit_water_control()
+        self.subject.set_protocol_number()
+        self.subject.save()
+        return output
+
     def save(self, *args, **kwargs):
         if not self.reference_weight and self.subject:
             w = self.subject.water_control.last_weighing_before(self.start_time)
@@ -322,19 +332,13 @@ class WaterRestriction(BaseAction):
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
                 assert(abs(w[0] - self.start_time) < timedelta(days=7))
-
+        output = super(WaterRestriction, self).save(*args, **kwargs)
         # When creating a water restriction, the subject's protocol number should be changed to 3
         # (request by Charu in 03/2022)
-        if self.subject:
-            if self.is_active():
-                # Water restricted? ==> protocol number 3
-                self.subject.protocol_number = '3'
-            else:
-                # Full water? ==> protocol number 2
-                self.subject.protocol_number = '2'
-            self.subject.save()
-
-        return super(WaterRestriction, self).save(*args, **kwargs)
+        self.subject.reinit_water_control()
+        self.subject.set_protocol_number()
+        self.subject.save()
+        return output
 
 
 class OtherAction(BaseAction):
