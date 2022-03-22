@@ -37,7 +37,7 @@ Ensure current user account has write permissions to the chosen directory
 ```
 git clone https://github.com/cortex-lab/alyx.git alyx-main
 cd alyx-main
-mv alyx/settings_template.py alyx/settings.py
+mv alyx/alyx/settings_template.py alyx/alyx/settings.py
 virtualenv alyxvenv --python=python3
 source ./alyxvenv/bin/activate
 pip install -r requirements.txt
@@ -49,21 +49,27 @@ python setup.py
     $ Enter a postgres password:
     ...
 ```
+The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the 
+`alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual 
+environment with the dependencies (including django), and it creates all the required SQL tables. Note that the postgres 
+username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only 
+used locally for maintenance task or by Django.
 
 Then initialize fixtures (ie. load default objects in the database)
 ```
 cd alyx
 ../scripts/load-init-fixtures.sh
+```
 
+### Running the server on a local dev machine
+If running locally, be sure to modify `alyx/alyx/settings.py` file, set `DEBUG = True`
+```
 cd ..
 python alyx/manage.py check
 python alyx/manage.py runserver
 ```
 
 Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
-
-The `setup.py` script sets up postgres (it creates the database and postgres user), it sets up the `alyx/alyx/settings_secret.py` file with the postgres database connection information, it creates the Python virtual environment with the dependencies (including django), and it creates all the required SQL tables.
-Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
 ### Apache Site Configuration
 Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
