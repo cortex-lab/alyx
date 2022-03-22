@@ -1,0 +1,11 @@
+# docker build -t internationalbrainlab/alyx:apache -f Dockerfile.apache .
+version: "2"
+
+services:
+  django-apache2:
+    build: .
+    container_name: django-deployment
+    ports:
+      - '8005:80'
+    volumes:
+      - $PWD/../../..:/var/www/alyx

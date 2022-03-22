@@ -1,0 +1,14 @@
+# docker build -t internationalbrainlab/alyx:django -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.django .
+# docker run -it --rm internationalbrainlab/alyx:django
+# syntax=docker/dockerfile:1
+
+FROM internationalbrainlab/alyx:django
+RUN ls
+
+ADD ./scripts/deployment_examples/docker-apache/settings.py /var/www/alyx/alyx/alyx/settings.py
+ADD ./scripts/deployment_examples/docker-apache/settings_secret.py /var/www/alyx/alyx/alyx/settings_secret.py
+ADD ./scripts/deployment_examples/docker-apache/settings_lab.py /var/www/alyx/alyx/alyx/settings_lab.py
+
+WORKDIR /var/www/alyx/alyx
+
+# ADD ./site-config.conf /etc/apache2/sites-available/000-default.conf
