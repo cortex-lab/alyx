@@ -14,27 +14,29 @@ this setup will work on other systems. Assumptions made are that you have sudo p
 `ubuntu`.
 
 ### Install apache, wsgi module, and set group and acl permissions
-    sudo apt-get update    
-    sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
-    sudo a2enmod wsgi
-    sudo adduser www-data syslog
-    sudo setfacl -d -m u:www-data:rwx /var/log/
-    sudo setfacl -d -m u:ubuntu:rwx /var/log/
-    sudo touch /var/log/alyx.log /var/log/alyx_json.log
-    sudo www-data:www-data /var/log/alyx.log /var/log/alyx_json.log
-
+```
+sudo apt-get update
+sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
+sudo a2enmod wsgi
+sudo adduser www-data syslog
+sudo touch /var/log/alyx.log /var/log/alyx_json.log
+sudo www-data:www-data /var/log/alyx.log
+sudo www-data:www-data /var/log/alyx_json.log
+sudo setfacl -d -m u:www-data:rwx /var/log/
+sudo setfacl -d -m u:ubuntu:rwx /var/log/
+```
 ### Setup Python/Django and the database
-Go to the directory of your choice (for example: `/var/www/alyx-main`)
+Go to the directory of your choice (for example: `cd /var/www/`)
 ```
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded
 ```
-Ensure current user account has write permissions
+Ensure current user account has write permissions to the chosen directory
 ```
-git clone https://github.com/cortex-lab/alyx.git
-cd alyx
+git clone https://github.com/cortex-lab/alyx.git alyx-main
+cd alyx-main
 mv alyx/settings_template.py alyx/settings.py
 virtualenv alyxvenv --python=python3
 source ./alyxvenv/bin/activate
@@ -46,8 +48,10 @@ python setup.py
     $ Enter a postgres username [labdbuser]:
     $ Enter a postgres password:
     ...
+```
 
-# An then initialize fixtures (ie. load default objects in the database)
+Then initialize fixtures (ie. load default objects in the database)
+```
 cd alyx
 ../scripts/load-init-fixtures.sh
 
