@@ -250,7 +250,7 @@ class SubjectProtocolNumber(TestCase):
         self.lab = Lab.objects.create(name='awesomelab')
         self.sub = Subject.objects.create(nickname='lawes', lab=self.lab, birth_date='2019-01-01')
 
-    def test(self):
+    def test_protocol_number(self):
         from actions.models import Surgery
         assert self.sub.protocol_number == '1'
         # after a surgery protocol number goes to 2
@@ -284,6 +284,8 @@ class SubjectCullTests(TestCase):
         self.assertFalse(hasattr(self.sub1, 'cull'))
         # self.assertIsNone(self.wr.end_time)
         # makes sure than when creating the cull
+        # if there is an integrity error here, it means the save functions are saving the cull
+        # several time and the water restriction/ cull / subjects save are interdependent
         cull = Cull.objects.create(subject=self.sub1, date='2019-07-15', cull_method=self.CO2)
         self.assertEqual(self.sub1.death_date, cull.date)
         # change cull properties and make sure the corresponding subject properties changed too

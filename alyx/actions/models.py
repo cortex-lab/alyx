@@ -335,9 +335,10 @@ class WaterRestriction(BaseAction):
         output = super(WaterRestriction, self).save(*args, **kwargs)
         # When creating a water restriction, the subject's protocol number should be changed to 3
         # (request by Charu in 03/2022)
-        self.subject.reinit_water_control()
-        self.subject.set_protocol_number()
-        self.subject.save()
+        if self.subject:
+            self.subject.reinit_water_control()
+            self.subject.set_protocol_number()
+            self.subject.save()
         return output
 
 
@@ -560,13 +561,13 @@ class Cull(BaseModel):
             self.subject.cull_method = str(self.cull_method)
             subject_change = True
         if subject_change:
-            self.subject.save()
             # End all open water restrictions.
             for wr in WaterRestriction.objects.filter(
                     subject=self.subject, start_time__isnull=False, end_time__isnull=True):
                 wr.end_time = self.date
                 logger.debug("Ending water restriction %s.", wr)
                 wr.save()
+            self.subject.save()
         return super(Cull, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
