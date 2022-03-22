@@ -172,7 +172,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         subject = m.Subject.objects.create(
             nickname='subject', line=line, litter=litter, lab=self.lab)
         z = m.Zygosity.objects.filter(subject=subject).first()
-        assert z.zygosity == 2  # from parents
+        assert z is None  # no zygosity should be assigned from parents
 
         # Create a rule and a genotype test ; the subject should be automatically genotyped.
         zr = m.ZygosityRule.objects.create(
