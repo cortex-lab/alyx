@@ -210,7 +210,8 @@ class Surgery(BaseAction):
     def save(self, *args, **kwargs):
         # Issue #422.
         if self.subject.protocol_number == '1':
-            self.subject.protocol_number = '3'
+            # NOTE: changing this to 2 following request by Charu in 03/2022
+            self.subject.protocol_number = '2'
         # Change from mild to moderate.
         if self.subject.actual_severity == 2:
             self.subject.actual_severity = 3
@@ -321,6 +322,18 @@ class WaterRestriction(BaseAction):
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
                 assert(abs(w[0] - self.start_time) < timedelta(days=7))
+
+        # When creating a water restriction, the subject's protocol number should be changed to 3
+        # (request by Charu in 03/2022)
+        if self.subject:
+            if self.is_active():
+                # Water restricted? ==> protocol number 3
+                self.subject.protocol_number = '3'
+            else:
+                # Full water? ==> protocol number 2
+                self.subject.protocol_number = '2'
+            self.subject.save()
+
         return super(WaterRestriction, self).save(*args, **kwargs)
 
 
