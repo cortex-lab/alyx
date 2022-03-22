@@ -335,10 +335,9 @@ class Subject(BaseModel):
         if self.line and not self.strain:
             self.strain = self.line.strain
         # Update the zygosities when the subject is created or assigned a litter.
-        is_created = self._state.adding is True
-
         # Remove the automatic zygosity creation when assigning a litter, as requested by Charu
         # in 03/2022.
+        # is_created = self._state.adding is True
         # if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
         #     ZygosityFinder().genotype_from_litter(self)
 
