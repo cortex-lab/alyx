@@ -1503,18 +1503,7 @@
       "name": "widefieldU.images",
       "created_by": null,
       "description": "Projected SVD spatial components (denoised/decomposed) with the shape [H, W, nComponents] where H and W are the dimensions of a single frame.",
-      "filename_pattern": "widefieldU.images.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "42bd07d3-9d7f-473e-9f15-c77acdf57ed4",
-    "fields": {
-      "json": null,
-      "name": "widefieldU.images_atlasTransformed",
-      "created_by": null,
-      "description": "the spatial SVD components transformed to a common atlas reference frame",
-      "filename_pattern": "widefieldU.images_atlasTransformed.*"
+      "filename_pattern": "widefieldU.images*"
     }
   },
   {
@@ -1547,7 +1536,7 @@
       "name": "widefield.times",
       "created_by": null,
       "description": "the time of each frame in seconds from experiment start",
-      "filename_pattern": "widefield.times.*"
+      "filename_pattern": "widefield.times*"
     }
   },
   {
@@ -1592,6 +1581,17 @@
       "created_by": null,
       "description": "Compressed raw video data with dimensions [nFrames, H, W]",
       "filename_pattern": "widefield.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "b23b5e73-0278-49e9-ab22-08663aa48555",
+    "fields": {
+      "json": null,
+      "name": "widefieldChannels.frameAverage",
+      "created_by": null,
+      "description": "average across all frames for each channel of imaging",
+      "filename_pattern": "widefieldChannels.frameAverage*"
     }
   }
 ]
