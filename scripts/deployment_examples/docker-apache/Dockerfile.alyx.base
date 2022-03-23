@@ -10,11 +10,14 @@ RUN apt-get update && apt-get install -y \
     apache2-utils \
     git \
     libapache2-mod-wsgi-py3 \
+    libssl-dev \
     python3.10 \
     python3.10-dev \
     python3.10-tk \
     python3-pip \
     python3.10-venv \
+    vim \
+    && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/*
 RUN touch /var/log/alyx.log
 

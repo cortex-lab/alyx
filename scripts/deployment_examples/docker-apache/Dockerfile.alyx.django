@@ -1,16 +1,20 @@
 # docker build -t internationalbrainlab/alyx:django -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.django .
-# docker run -it --rm internationalbrainlab/alyx:django
+# docker run -it -p 80:80 -p 443:443 --rm internationalbrainlab/alyx:django
 # syntax=docker/dockerfile:1
 
 FROM internationalbrainlab/alyx:base
-RUN ls
 
 ADD ./scripts/deployment_examples/docker-apache/settings.py /var/www/alyx/alyx/alyx/settings.py
 ADD ./scripts/deployment_examples/docker-apache/settings_secret.py /var/www/alyx/alyx/alyx/settings_secret.py
 ADD ./scripts/deployment_examples/docker-apache/settings_lab.py /var/www/alyx/alyx/alyx/settings_lab.py
 ADD ./scripts/deployment_examples/docker-apache/site-config.conf /etc/apache2/sites-available/000-default.conf
+# ADD ./scripts/deployment_examples/docker-apache/fullchain.pem /etc/letsencrypt/live/alyx.internationalbrainlab.org/fullchain.pem
+# ADD ./scripts/deployment_examples/docker-apache/privkey.pem /etc/letsencrypt/live/alyx.internationalbrainlab.org/privkey.pem
+# ADD ./scripts/deployment_examples/docker-apache/options-ssl-apache.conf /etc/letsencrypt/options-ssl-apache.conf
 
-CMD [“apache2ctl”, “-D”, “FOREGROUND”]
+EXPOSE 80 443
+
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
 
 RUN mkdir -p /backups/tables
 WORKDIR /var/www/alyx/alyx
