@@ -2,21 +2,26 @@
 
 ## Base container
 
-The base container is the basic install with the current version of the repository.
+The base container is the basic install with the current version of the repository. 
+The following commands build the container and connect to it (only for testing it worked)
 
 `TODO` install the apache packages here
 ```shell
 docker build -t internationalbrainlab/alyx:base -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.base .
-docker run -it --rm internationalbrainlab/alyx:django
+docker run -it --rm internationalbrainlab/alyx:base 
 ```
 
 
 ## Alyx container
 
-This container builds on top of the base one and adds the settings files located in 
-`./scripts/deployments_examples/docker-apache`
-
-`TODO` put the apache config files here
+This container builds on top of the base one. Make sure that the following files exist and are the correct settings
+ files for the alyx installation you are trying to build
+```shell
+./scripts/deployment_examples/docker-apache/settings.py
+./scripts/deployment_examples/docker-apache/settings_secret.py
+./scripts/deployment_examples/docker-apache/settings_lab.py
+```
+ Then run these commands
 ```shell
 docker build -t internationalbrainlab/alyx:django -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.django .
 docker run -it --rm internationalbrainlab/alyx:django 
