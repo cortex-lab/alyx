@@ -1,5 +1,5 @@
 # docker build -t internationalbrainlab/alyx:base -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.base .
-# docker run -it --rm -u $(id -u):$(id -g) internationalbrainlab/alyx:django
+# docker run -it --rm internationalbrainlab/alyx:base
 # syntax=docker/dockerfile:1
 
 FROM ubuntu
@@ -7,12 +7,11 @@ RUN apt-get update
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
-RUN apt-get install -y python3.10 python3.10-dev python3.10-tk python3-pip python3.10-venv
+RUN apt-get install -y python3.10 python3.10-dev python3.10-tk python3-pip python3.10-venv git
 RUN touch /var/log/alyx.log
 
-ADD . / /var/www/alyx/
+RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git  /var/www/alyx
 WORKDIR /var/www/alyx
-
+RUN git clone --depth 1 --single-branch --branch main https://github.com/int-brain-lab/iblalyx.git /var/www/alyx/ibl-alyx
 RUN pip install -r requirements.txt
-
-# ADD ./site-config.conf /etc/apache2/sites-available/000-default.conf
+RUN pip install ibllib
