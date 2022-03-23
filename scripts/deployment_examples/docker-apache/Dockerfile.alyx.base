@@ -3,11 +3,16 @@
 # syntax=docker/dockerfile:1
 
 FROM ubuntu
-RUN apt-get update
-RUN apt-get install -y software-properties-common
+RUN apt-get update && apt-get install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get update
-RUN apt-get install -y python3.10 python3.10-dev python3.10-tk python3-pip python3.10-venv git
+RUN apt-get update && apt-get install -y \
+    git \
+    python3.10 \
+    python3.10-dev \
+    python3.10-tk \
+    python3-pip \
+    python3.10-venv \
+    && rm -rf /var/lib/apt/lists/*
 RUN touch /var/log/alyx.log
 
 RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git  /var/www/alyx
