@@ -6,6 +6,7 @@ services:
     build: .
     container_name: django-deployment
     ports:
-      - '8005:80'
+      - '80'
+      - '443'
     volumes:
       - $PWD/../../..:/var/www/alyx
