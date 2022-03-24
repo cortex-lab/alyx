@@ -24,7 +24,7 @@ This container builds on top of the base one. Make sure that the following files
  Then run these commands
 ```shell
 docker build -t internationalbrainlab/alyx:django -f ./scripts/deployment_examples/docker-apache/Dockerfile.alyx.django .
-docker run -it --rm internationalbrainlab/alyx:django 
+docker run -it -p 80:80 -p 443:443 --rm internationalbrainlab/alyx:django
 ```
 
 Generate the cache tables, in the container

@@ -8,9 +8,8 @@ ADD ./scripts/deployment_examples/docker-apache/settings.py /var/www/alyx/alyx/a
 ADD ./scripts/deployment_examples/docker-apache/settings_secret.py /var/www/alyx/alyx/alyx/settings_secret.py
 ADD ./scripts/deployment_examples/docker-apache/settings_lab.py /var/www/alyx/alyx/alyx/settings_lab.py
 ADD ./scripts/deployment_examples/docker-apache/site-config.conf /etc/apache2/sites-available/000-default.conf
-# ADD ./scripts/deployment_examples/docker-apache/fullchain.pem /etc/letsencrypt/live/alyx.internationalbrainlab.org/fullchain.pem
-# ADD ./scripts/deployment_examples/docker-apache/privkey.pem /etc/letsencrypt/live/alyx.internationalbrainlab.org/privkey.pem
-# ADD ./scripts/deployment_examples/docker-apache/options-ssl-apache.conf /etc/letsencrypt/options-ssl-apache.conf
+ADD ./scripts/deployment_examples/docker-apache/fullchain.pem /etc/apache2/ssl/fullchain.pem
+ADD ./scripts/deployment_examples/docker-apache/privkey.pem /etc/apache2/ssl/privkey.pem
 
 EXPOSE 80 443
 
