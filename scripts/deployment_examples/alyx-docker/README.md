@@ -27,7 +27,7 @@ sudo docker exec -it webserver_con /bin/bash
 
 This container builds on top of the base one. Make sure that the following files exist and are the correct settings
  files for the alyx installation you are trying to build
-```shell
+```
 000-default-conf-<BUILD_ENV> (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
 ```
 

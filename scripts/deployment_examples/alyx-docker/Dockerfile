@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     apache2-utils \
     git \
     libapache2-mod-wsgi-py3 \
+    postgresql \
     python3.8 \
     python3-pip \
     python3-venv \
