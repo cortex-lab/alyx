@@ -1,6 +1,14 @@
+## TODO
+* image is enormous, look for ways to reduce size
+* find home for ibl alyx files (settings, configs)
+* documentation
+
+## Infrastructure steps (EC2, RDS, Gandi)
+* placeholder
+
 ## Useful docker commands 
 
-Post docker installation, have the ability to run docker commands without sudo:
+Post docker installation on ec2 instance; grant the ability to run docker commands without sudo:
 ```shell
 # Add the docker group if it doesn't already exist:
 sudo groupadd docker
@@ -16,12 +24,14 @@ newgrp docker
 docker run hello-world
 ```
 
-To be run from within scripts/deployment_examples/alyx-docker
+---
+
+To be run from within `scripts/deployment_examples/alyx-docker`
 ```shell
 # Builds our webserver image with a tag 
 docker image build --tag webserver_img .
 
-# Builds our tagged image a webserver container
+# Builds our tagged image in a webserver container
 docker run \
   --detach \
   --interactive \
@@ -30,7 +40,6 @@ docker run \
   --publish 443:443 \
   --publish 5432:5432 \
   --name=webserver_con webserver_img
-
 
 # Enters the bash shell of the running container
 docker exec --interactive --tty webserver_con /bin/bash
@@ -41,14 +50,6 @@ docker container stop --time 0 webserver_con \
   && docker image prune --force \
   && docker network prune --force
 ```
-
-## TODO
-* evaluate wsgi errors that are present on both dockerized version of alyx and on prod alyx `/var/log/apache/error_alyx.log`
-* RDS connection, PSQL install configs
-
-## Base image
-
-* to be reimplemented
 
 ## IBL Alyx image
 
@@ -67,6 +68,10 @@ settings.py
 settings_secret.py
 settings_lab.py
 ```
+
+## Base image
+
+* to be reimplemented? required?
 
 ### Notes on generate the cache tables
 

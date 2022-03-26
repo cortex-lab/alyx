@@ -1,6 +1,3 @@
-# sudo docker image build -t webserver_img .
-# sudo docker run -i -t -d -p 80:80 -p 443:443 --name=webserver_con webserver_img
-# sudo docker container stop -t 0 webserver_con && sudo docker container prune -f && sudo docker image prune -f
 FROM ubuntu
 
 # Set build environtment (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
