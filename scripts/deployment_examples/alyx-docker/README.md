@@ -1,18 +1,45 @@
 ## Useful docker commands 
 
+Post docker installation, have the ability to run docker commands without sudo:
+```shell
+# Add the docker group if it doesn't already exist:
+sudo groupadd docker
+
+# Add the connected user "$USER" to the docker group. Change the user name to match your preferred user if you do not 
+# want to use your current user:
+sudo gpasswd -a $USER docker
+
+# Either log out/in to activate the changes to groups or run the following in your current session:
+newgrp docker
+
+# Test the permissions
+docker run hello-world
+```
+
 To be run from within scripts/deployment_examples/alyx-docker
 ```shell
 # Builds our webserver image with a tag 
-sudo docker image build -t webserver_img .
+docker image build --tag webserver_img .
 
 # Builds our tagged image a webserver container
-sudo docker run -i -t -d -p 80:80 -p 443:443 --name=webserver_con webserver_img
+docker run \
+  --detach \
+  --interactive \
+  --tty \
+  --publish 80:80 \
+  --publish 443:443 \
+  --publish 5432:5432 \
+  --name=webserver_con webserver_img
 
-# Stops our container && removes container && removes any images that might be consuming vast amounts of storage 
-sudo docker container stop -t 0 webserver_con && sudo docker container prune -f && sudo docker image prune -f
 
 # Enters the bash shell of the running container
-sudo docker exec -it webserver_con /bin/bash
+docker exec --interactive --tty webserver_con /bin/bash
+
+# Stops our container && removes container && removes any images that might be consuming vast amounts of storage 
+docker container stop --time 0 webserver_con \
+  && docker container prune --force \
+  && docker image prune --force \
+  && docker network prune --force
 ```
 
 ## TODO

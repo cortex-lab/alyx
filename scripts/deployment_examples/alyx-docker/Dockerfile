@@ -59,7 +59,7 @@ RUN touch /var/log/alyx.log \
     && chmod 755 /var/log/alyx.log
 
 # Expose ports, enable apache ssl, and launch apache
-EXPOSE 80 443
+EXPOSE 80 443 5432
 RUN a2enmod ssl
 RUN a2enmod wsgi
 CMD ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
