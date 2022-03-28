@@ -1,6 +1,6 @@
 FROM ubuntu
 
-# Set build environtment, passed from command line --build-arg (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
+# Set build environtment, passed from command line --build-arg (alyx-prod, alyx-dev, openalyx, etc)
 ARG BUILD_ENV
 
 # Apache ENVs
@@ -41,7 +41,7 @@ RUN echo "ServerName ${BUILD_ENV}.internationalbrainlab.org" >> /etc/apache2/apa
 RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git /var/www/${BUILD_ENV}
 RUN git clone --depth 1 --single-branch --branch main https://github.com/int-brain-lab/iblalyx.git /var/www/${BUILD_ENV}/ibl-alyx
 WORKDIR /var/www/${BUILD_ENV}
-# Docker best practice for configuring python venv
+# Best practice for configuring python venv
 ENV VIRTUAL_ENV=/var/www/${BUILD_ENV}/venv
 RUN virtualenv ${VIRTUAL_ENV} --python=python3
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -56,8 +56,9 @@ RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 755 /var/log/alyx.log
 
-# Expose ports, enable apache ssl, and launch apache
+# Expose ports, enable apache modules, and launch apache
 EXPOSE 80 443 5432
+RUN a2enmod rewrite
 RUN a2enmod ssl
 RUN a2enmod wsgi
 CMD ["/usr/sbin/apache2ctl", "-DFOREGROUND"]

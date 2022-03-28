@@ -1,5 +1,4 @@
 ## TODO
-* image is enormous, look for ways to reduce size...ibllib...
 * find home for ibl alyx files (settings, configs, certs)
 * determine if using github actions to build and deploy container is feasible
   * https://github.com/iamamutt/IBL-pipeline/blob/master/.github/workflows/iblenv-docker-image.yml
@@ -47,18 +46,6 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 # Verify Docker is installed
 sudo docker run hello-world
 
-# Perform any remaining package upgrades
-sudo apt upgrade -y
-```
-* Restart the instance (Note that if an Elastic IP address is not being used, the IP will likely change)
-* Create/update Gandi DNS entry for environment (alyx, alyx-dev, openalyx, etc)
-  * Create either an `A record` with the `Public IPv4 address` or a `CNAME record` with the `Public IPv4 DNS`
-  * Be sure to note the TTL (time to live) as this will give you a sense how quickly the DNS entry will become available
-* Modify AWS security groups
-  * Note that the security group assigned to the RDS instance will need the `Private IPv4 address` of the EC2 instance 
----
-* Optional step to allow docker to run without sudo:
-```shell
 # Add the docker group if it doesn't already exist:
 sudo groupadd docker
 
@@ -71,14 +58,34 @@ newgrp docker
 
 # Test the permissions
 docker run hello-world
+
+# Download and configure cloudwatch logging (if relevant)
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+
+# Perform any remaining package upgrades
+sudo apt upgrade -y
+
+# Restart the instance (Note that if an Elastic IP address is not being used, the IP will likely change)
+sudo reboot
 ```
+* Create/update Gandi DNS entry for environment (alyx, alyx-dev, openalyx, etc)
+  * Create either an `A record` with the `Public IPv4 address` or a `CNAME record` with the `Public IPv4 DNS`
+  * Be sure to note the TTL (time to live) as this will give you a sense how quickly the DNS entry will become available
+* Modify AWS security groups
+  * Note that the security group assigned to the RDS instance will need the `Private IPv4 address` of the EC2 instance
 
 ## Useful docker commands 
 
 Commands to be run from within `.../scripts/deployment_examples/alyx-docker`
 ```shell
-# Builds our webserver image with tag 
-docker image build --build-arg BUILD_ENV=alyx-dev --tag webserver_img .
+# Builds our webserver image with tag, specify the BUILD_ENV (alyx-prod, alyx-dev, openalyx, etc)
+docker image build --build-arg BUILD_ENV=openalyx --tag webserver_img .
+
+# If using layered image approach and specifying Dockerfiles...
+docker image build --build-arg BUILD_ENV=alyx-dev --file Dockerfile.alyx-dev --tag webserver_img .
 
 # Builds our tagged image in a webserver container
 docker run \
@@ -93,11 +100,16 @@ docker run \
 # Enters the bash shell of the running container
 docker exec --interactive --tty webserver_con /bin/bash
 
-# Stops our container && removes container && removes any images that might be consuming vast amounts of storage 
+# Stops our container && removes container 
 docker container stop --time 0 webserver_con \
-  && docker container prune --force \
-  && docker image prune --force \
+  && docker container prune --force
+
+# Removes unused images && remove unused networks
+docker image prune --force \
   && docker network prune --force
+
+# Crontab entry to copy log files of the container (not good, but works)
+*/5 * * * * docker cp webserver_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1
 ```
 
 ## IBL Alyx image
@@ -105,7 +117,7 @@ docker container stop --time 0 webserver_con \
 If you are trying to build the image, make sure that the following files exist in the same directory as the Dockerfile 
 and are the correct settings files for the installation (db settings, servername, etc)
 ```
-000-default-conf-<BUILD_ENV> (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
+000-default-conf-<BUILD_ENV> (alyx-prod, alyx-dev, openalyx, etc)
 
 -----
 
