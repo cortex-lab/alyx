@@ -41,6 +41,7 @@ RUN echo "ServerName ${BUILD_ENV}.internationalbrainlab.org" >> /etc/apache2/apa
 RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git /var/www/${BUILD_ENV}
 RUN git clone --depth 1 --single-branch --branch main https://github.com/int-brain-lab/iblalyx.git /var/www/${BUILD_ENV}/ibl-alyx
 WORKDIR /var/www/${BUILD_ENV}
+# Docker best practice for configuring python venv
 ENV VIRTUAL_ENV=/var/www/${BUILD_ENV}/venv
 RUN virtualenv ${VIRTUAL_ENV} --python=python3
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -48,9 +49,9 @@ RUN pip install -r requirements.txt
 RUN pip install ONE-api
 
 # Alyx configs
-COPY settings.py                  /var/www/${BUILD_ENV}/alyx/alyx/settings.py
-COPY settings_secret.py           /var/www/${BUILD_ENV}/alyx/alyx/settings_secret.py
-COPY settings_lab.py-${BUILD_ENV} /var/www/${BUILD_ENV}/alyx/alyx/settings_lab.py
+COPY settings.py-${BUILD_ENV}        /var/www/${BUILD_ENV}/alyx/alyx/settings.py
+COPY settings_secret.py-${BUILD_ENV} /var/www/${BUILD_ENV}/alyx/alyx/settings_secret.py
+COPY settings_lab.py-${BUILD_ENV}    /var/www/${BUILD_ENV}/alyx/alyx/settings_lab.py
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 755 /var/log/alyx.log
