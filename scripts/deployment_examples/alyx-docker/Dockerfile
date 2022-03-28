@@ -1,7 +1,7 @@
 FROM ubuntu
 
-# Set build environtment (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
-ARG BUILD_ENV=alyx-dev
+# Set build environtment, passed from command line --build-arg (alyx-main, alyx-dev, local-alyx-dev, openalyx, etc)
+ARG BUILD_ENV
 
 # Apache ENVs
 ENV APACHE_RUN_USER www-data
@@ -48,9 +48,9 @@ RUN pip install -r requirements.txt
 RUN pip install ONE-api
 
 # Alyx configs
-COPY settings.py        /var/www/${BUILD_ENV}/alyx/alyx/settings.py
-COPY settings_secret.py /var/www/${BUILD_ENV}/alyx/alyx/settings_secret.py
-COPY settings_lab.py    /var/www/${BUILD_ENV}/alyx/alyx/settings_lab.py
+COPY settings.py                  /var/www/${BUILD_ENV}/alyx/alyx/settings.py
+COPY settings_secret.py           /var/www/${BUILD_ENV}/alyx/alyx/settings_secret.py
+COPY settings_lab.py-${BUILD_ENV} /var/www/${BUILD_ENV}/alyx/alyx/settings_lab.py
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 755 /var/log/alyx.log

@@ -78,7 +78,7 @@ docker run hello-world
 Commands to be run from within `.../scripts/deployment_examples/alyx-docker`
 ```shell
 # Builds our webserver image with tag 
-docker image build --tag webserver_img .
+docker image build --build-arg BUILD_ENV=alyx-dev --tag webserver_img .
 
 # Builds our tagged image in a webserver container
 docker run \
@@ -110,13 +110,23 @@ and are the correct settings files for the installation (db settings, servername
 -----
 
 Files intentionally not included in the repo, appropriate location has yet to be determined:
-fullchain.pem (self signed for dev is ok)
-privkey.pem (self signed for dev is ok)
+fullchain.pem (self-signed for dev is ok)
+privkey.pem (self-signed for dev is ok)
 ip-whitelist-conf
 settings.py
 settings_secret.py
 settings_lab.py
 ```
+---
+Useful command for generating self-signed cert:
+```shell
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout selfsigned.key -out selfsigned.crt
+
+# To adhere to certbot conventions
+mv selfsigned.key privkey.pem
+mv selfsigned.crt fullchain.pem
+```
+
 
 ## Base image
 
