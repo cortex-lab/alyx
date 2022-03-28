@@ -38,14 +38,14 @@ COPY privkey.pem                   /etc/apache2/ssl/privkey.pem
 RUN echo "ServerName ${BUILD_ENV}.internationalbrainlab.org" >> /etc/apache2/apache2.conf
 
 # Clone repos, configure virtual environment, and make our image massive
-RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git  /var/www/${BUILD_ENV}
+RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git /var/www/${BUILD_ENV}
 RUN git clone --depth 1 --single-branch --branch main https://github.com/int-brain-lab/iblalyx.git /var/www/${BUILD_ENV}/ibl-alyx
 WORKDIR /var/www/${BUILD_ENV}
 ENV VIRTUAL_ENV=/var/www/${BUILD_ENV}/venv
 RUN virtualenv ${VIRTUAL_ENV} --python=python3
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install -r requirements.txt
-RUN pip install ibllib
+RUN pip install ONE-api
 
 # Alyx configs
 COPY settings.py        /var/www/${BUILD_ENV}/alyx/alyx/settings.py

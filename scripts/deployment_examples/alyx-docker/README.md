@@ -42,7 +42,7 @@ echo \
 
 # Now that the correct repo is configured, update apt package index again, install docker
 sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
 # Verify Docker is installed
 sudo docker run hello-world
