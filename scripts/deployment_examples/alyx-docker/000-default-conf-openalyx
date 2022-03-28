@@ -46,6 +46,6 @@
     # Configurations for easy maintenance mode
     RewriteEngine On
     RewriteCond %{ENV:REDIRECT_STATUS} !=503
-    RewriteCond "/var/www/alyx-public/maintenance.trigger" -f
+    RewriteCond "/var/www/openalyx/maintenance.trigger" -f
     RewriteRule ^(.*)$ /$1 [R=503,L]
 </VirtualHost>
