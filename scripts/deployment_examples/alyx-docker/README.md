@@ -1,5 +1,6 @@
 ## TODO
-* find home for ibl alyx files (settings, configs, certs)
+* build out alyx_bootstrap.sh to handle most of the code deployment
+* use github actions to update s3 bucket files
 * determine if using github actions to build and deploy container is feasible
   * https://github.com/iamamutt/IBL-pipeline/blob/master/.github/workflows/iblenv-docker-image.yml
   * https://github.com/iamamutt/IBL-pipeline/tree/master/docker
@@ -17,17 +18,17 @@ Steps involved to ensure the appropriate infrastructure is in place for running 
   * prod/dev requires read/write
   * openalyx requires just read (maybe?)
   * Not entirely useful as django needs connection info included anyway, but this does make testing db connections easier
-* SSH into newly created EC2 instance and run the following (assuming Ubuntu 20.04)
+* SSH into newly created EC2 instance and run the following (assuming Ubuntu 20.04):
 ```shell
 # Set the hostname to something appropriate to your environment (alyx-prod, alyx-dev, openalyx, etc)
 sudo hostnamectl set-hostname alyx-dev
 
-# Update apt package index, install packages to allow apt to use a repository over HTTPS and git
+# Update apt package index, install packages to allow apt to use a repository over HTTPS
 sudo apt-get update
 sudo apt-get install \
+  aws-cli \
   ca-certificates \
   curl \
-  git \
   gnupg \
   lsb-release
 
@@ -39,7 +40,7 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Now that the correct repo is configured, update apt package index again, install docker
+# Now that the correct repo is configured; update apt package index again, install docker
 sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
@@ -63,6 +64,9 @@ docker run hello-world
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+# modify the config if mistakes were made or just for more granular logging
+sudo vim /opt/aws/amazon-cloudwatch-agent/bin/config.json
+# start logging
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
 
 # Perform any remaining package upgrades
@@ -76,7 +80,13 @@ sudo reboot
   * Be sure to note the TTL (time to live) as this will give you a sense how quickly the DNS entry will become available
 * Modify AWS security groups
   * Note that the security group assigned to the RDS instance will need the `Private IPv4 address` of the EC2 instance
+* Ensure all the appropriate settings files and certs are in the `alyx-docker` s3 bucket 
+```shell
+# Copy the alyx_bootstrip.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
+# Be sure to pass an argument for the environment (alyx-prod, alyx-dev, openalyx, etc)
+sh alyx_bootstrip.sh alyx-dev
 
+```
 ## Useful docker commands 
 
 Commands to be run from within `.../scripts/deployment_examples/alyx-docker`
@@ -91,6 +101,7 @@ docker image build --build-arg BUILD_ENV=alyx-dev --file Dockerfile.alyx-dev --t
 docker run \
   --detach \
   --interactive \
+  --restart unless-stopped \
   --tty \
   --publish 80:80 \
   --publish 443:443 \

@@ -33,8 +33,8 @@ RUN apt-get update && apt-get install -y \
 COPY apache-conf                   /etc/apache2/apache2.conf
 COPY 000-default-conf-${BUILD_ENV} /etc/apache2/sites-available/000-default.conf
 COPY ip-whitelist-conf             /etc/apache2/sites-available/ip_whitelist.conf
-COPY fullchain.pem                 /etc/apache2/ssl/fullchain.pem
-COPY privkey.pem                   /etc/apache2/ssl/privkey.pem
+COPY fullchain.pem-${BUILD_ENV}    /etc/apache2/ssl/fullchain.pem
+COPY privkey.pem-${BUILD_ENV}      /etc/apache2/ssl/privkey.pem
 RUN echo "ServerName ${BUILD_ENV}.internationalbrainlab.org" >> /etc/apache2/apache2.conf
 
 # Clone repos, configure virtual environment, and make our image massive
