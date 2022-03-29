@@ -16,7 +16,7 @@ Steps involved to ensure the appropriate infrastructure is in place for running 
   * prod/dev requires read/write to RDS
   * openalyx requires just read to RDS (maybe?)
   * S3 bucket just need read permissions
-  * RDS piece is completely necessary, but useful for troubleshooting
+  * RDS piece is not completely necessary, but useful for troubleshooting
 * SSH into newly created EC2 instance and run the following (assuming Ubuntu 20.04):
 ```shell
 # Copy the ibl_alyx_bootstrip.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
