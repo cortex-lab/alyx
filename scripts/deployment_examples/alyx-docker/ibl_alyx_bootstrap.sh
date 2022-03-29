@@ -29,7 +29,7 @@ sudo hostnamectl set-hostname "$1"
 echo "Update apt package index and install packages to allow apt to use a repository over HTTPS..."
 sudo apt-get update
 sudo apt-get install \
-  aws-cli \
+  awscli \
   ca-certificates \
   curl \
   gnupg \

@@ -49,7 +49,7 @@ sudo hostnamectl set-hostname alyx-dev
 # Update apt package index, install packages to allow apt to use a repository over HTTPS
 sudo apt-get update
 sudo apt-get install \
-  aws-cli \
+  awscli \
   ca-certificates \
   curl \
   gnupg \
