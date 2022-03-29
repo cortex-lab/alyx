@@ -16,19 +16,19 @@ if [ -z "$1" ]
     echo "Argument supplied: $1"
 fi
 
-# check to make sure the script is not being run as root
-if [ "$(id -u)" -eq "0" ]
+# check to make sure the script is being run as root
+if [ "$(id -u)" != "0" ]
   then
-    echo "Script should not be run as root, exiting."
+    echo "Script needs to be run as root, exiting."
     exit 1
 fi
 
 echo "Setting hostname of instance..."
-sudo hostnamectl set-hostname "$1"
+hostnamectl set-hostname "$1"
 
 echo "Update apt package index and install packages to allow apt to use a repository over HTTPS..."
-sudo apt-get update
-sudo apt-get install \
+apt-get update
+apt-get install \
   awscli \
   ca-certificates \
   curl \
@@ -36,27 +36,18 @@ sudo apt-get install \
   lsb-release
 
 echo "Add Docker's official GPG key.."
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 echo "Setup for Docker's stable repo..."
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-echo "Now that the correct repo is configured; update apt package index again, install docker..."
-sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+echo "Docker repo is configured; update apt package index again, install docker..."
+apt-get update
+apt-get install docker-ce docker-ce-cli containerd.io -y
 
-echo "Adding the docker group if it doesn't already exist..."
-sudo groupadd docker
-
-echo "Adding the connected user to the docker group..."
-sudo gpasswd -a "$USER" docker
-
-echo "Activating the changes to groups in current session..."
-newgrp docker
-
-echo "Testing docker permissions..."
+echo "Testing docker..."
 docker run hello-world
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
@@ -78,7 +69,7 @@ docker run \
   --name=webserver_con webserver_img
 
 echo "Performing any remaining package upgrades..."
-sudo apt upgrade -y
+apt upgrade -y
 
 echo "Instance needs to be reboot to ensure everything works correctly."
 echo "NOTE: If an elastic IP address was not assigned, there is a possibility that the IP address will change."
@@ -86,7 +77,7 @@ while true; do
   echo "Reboot now? [y/n]"
   IFS= read -r yn
   case $yn in
-    [Yy]* ) echo "Rebooting now..."; sudo reboot;;
+    [Yy]* ) echo "Rebooting now..."; reboot;;
     [Nn]* ) echo "Exiting..."; exit;;
     * ) echo "Please answer [y]es or [n]o.";;
   esac
