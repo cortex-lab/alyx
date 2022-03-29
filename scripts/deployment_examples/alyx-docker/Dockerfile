@@ -30,12 +30,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
  
 # Apache configs
-COPY apache-conf                   /etc/apache2/apache2.conf
+COPY apache-conf-${BUILD_ENV}      /etc/apache2/apache2.conf
 COPY 000-default-conf-${BUILD_ENV} /etc/apache2/sites-available/000-default.conf
 COPY ip-whitelist-conf             /etc/apache2/sites-available/ip_whitelist.conf
 COPY fullchain.pem-${BUILD_ENV}    /etc/apache2/ssl/fullchain.pem
 COPY privkey.pem-${BUILD_ENV}      /etc/apache2/ssl/privkey.pem
-RUN if [[ "${BUILD_ENV}" -eq "alyx-prod" ]] ; then echo "ServerName alyx.internationalbrainlab.org" >> /etc/apache2/apache2.conf ; else echo "ServerName ${BUILD_ENV}.internationalbrainlab.org" >> /etc/apache2/apache2.conf ; fi
 
 # Clone repos, configure virtual environment, and make our image massive
 RUN git clone --depth 1 --single-branch --branch master https://github.com/cortex-lab/alyx.git /var/www/${BUILD_ENV}
