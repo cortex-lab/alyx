@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 
 import django_filters
-from rest_framework import generics, permissions
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -414,7 +414,7 @@ def _merge_lists_dicts(la, lb, key):
 
 
 class WaterRequirement(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request, format=None, nickname=None):
         assert nickname
@@ -440,7 +440,7 @@ class WaterRestrictionList(generics.ListAPIView):
     """
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
     serializer_class = WaterRestrictionListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = WaterRestrictionFilter
 
 
@@ -450,7 +450,7 @@ class LabLocationList(generics.ListAPIView):
     """
     queryset = LabLocation.objects.all()
     serializer_class = LabLocationSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
@@ -469,4 +469,4 @@ class SurgeriesList(generics.ListAPIView):
     """
     queryset = Surgery.objects.all()
     serializer_class = SurgerySerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()

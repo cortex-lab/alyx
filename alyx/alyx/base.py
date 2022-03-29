@@ -571,9 +571,13 @@ def rest_filters_exception_handler(exc, context):
 
 
 class BaseRestPublicPermission(permissions.BasePermission):
-
+    """
+    The purpose is to prevent public users from interfering in any way using writable methods
+    """
     def has_permission(self, request, view):
-        if request.user.is_public_user:
+        if request.method == 'GET':
+            return True
+        elif request.user.is_public_user:
             return False
         else:
             return True

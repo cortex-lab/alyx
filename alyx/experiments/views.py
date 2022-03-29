@@ -1,9 +1,9 @@
-from rest_framework import generics, permissions
+from rest_framework import generics
 from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
 from django.db.models import F, Func, Value, CharField, functions, Q
 
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 from data.models import Dataset
 from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
@@ -127,14 +127,14 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     queryset = ProbeInsertion.objects.all()
     queryset = ProbeInsertionListSerializer.setup_eager_loading(queryset)
     serializer_class = ProbeInsertionListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = ProbeInsertionFilter
 
 
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProbeInsertion.objects.all()
     serializer_class = ProbeInsertionDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 """
@@ -174,14 +174,14 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
     """
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = TrajectoryEstimateFilter
 
 
 class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class ChannelFilter(BaseFilterSet):
@@ -215,14 +215,14 @@ class ChannelList(generics.ListCreateAPIView):
 
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = ChannelFilter
 
 
 class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class BrainRegionFilter(BaseFilterSet):
@@ -261,11 +261,11 @@ class BrainRegionList(generics.ListAPIView):
     """
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = BrainRegionFilter
 
 
 class BrainRegionDetail(generics.RetrieveUpdateAPIView):
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
