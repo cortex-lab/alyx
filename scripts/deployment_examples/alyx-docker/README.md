@@ -53,7 +53,7 @@ sudo apt-get install \
   ca-certificates \
   curl \
   gnupg \
-  lsb-release
+  lsb-release -y
 
 # Add Docker's official GPG key 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -69,19 +69,6 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
 # Verify Docker is installed
 sudo docker run hello-world
-
-# Add the docker group if it doesn't already exist:
-sudo groupadd docker
-
-# Add the connected user "$USER" to the docker group. Change the user name to match your preferred user if you do not 
-# want to use your current user:
-sudo gpasswd -a $USER docker
-
-# Either log out/in to activate the changes to groups or run the following in your current session:
-newgrp docker
-
-# Test the permissions
-docker run hello-world
 
 # Perform any remaining package upgrades
 sudo apt upgrade -y
@@ -124,6 +111,21 @@ docker image prune --force \
 
 # Crontab entry to copy log files of the container (not good, but works)
 */5 * * * * docker cp webserver_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1
+
+# --- Give current user the ability to run docker without sudo, can not be scripted b/c newgrp command --- 
+# Add the docker group if it doesn't already exist:
+sudo groupadd docker
+
+# Add the connected user "$USER" to the docker group. Change the user name to match your preferred user if you do not 
+# want to use your current user:
+sudo gpasswd -a $USER docker
+
+# Either log out/in to activate the changes to groups or run the following in your current session:
+newgrp docker
+
+# Test the permissions
+docker run hello-world
+
 ```
 
 ## IBL Alyx image
