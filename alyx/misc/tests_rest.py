@@ -45,7 +45,6 @@ class APIActionsTests(BaseTests):
         self.client.force_login(user=self.public_user)
         response = self.post(reverse('lab-list'), {'name': 'prank'})
         self.ar(response, 403)
-        assert False
 
     def test_user_rest(self):
         response = self.client.get(reverse('user-list') + '/test')
