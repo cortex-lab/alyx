@@ -16,7 +16,7 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from alyx.base import base_json_filter, BaseFilterSet
+from alyx.base import base_json_filter, BaseFilterSet, rest_permission_classes
 from subjects.models import Subject
 from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
@@ -332,7 +332,8 @@ class SessionAPIList(generics.ListCreateAPIView):
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
+
     filter_class = SessionFilter
 
     def get_serializer_class(self):
@@ -351,14 +352,14 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Session.objects.all().order_by('-start_time')
     queryset = SessionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = SessionDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class WeighingAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new weighing.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
     queryset = WeighingDetailSerializer.setup_eager_loading(queryset)
@@ -369,7 +370,7 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     """
     Allows viewing of full detail and deleting a weighing.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
 
@@ -377,7 +378,7 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
 class WaterTypeList(generics.ListCreateAPIView):
     queryset = WaterType.objects.all()
     serializer_class = WaterTypeDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -385,7 +386,7 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
     queryset = WaterAdministrationDetailSerializer.setup_eager_loading(queryset)
@@ -396,7 +397,7 @@ class WaterAdministrationAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
 
@@ -456,7 +457,7 @@ class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'

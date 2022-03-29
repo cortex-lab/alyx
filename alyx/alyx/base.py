@@ -24,6 +24,7 @@ from django_filters import CharFilter
 from django_filters.rest_framework import FilterSet
 from rest_framework.views import exception_handler
 
+from rest_framework import permissions
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 
@@ -317,6 +318,8 @@ class BaseAdmin(VersionAdmin):
         return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
     def has_change_permission(self, request, obj=None):
+        if request.user.is_public_user:
+            return False
         if not obj:
             return True
         if request.user.is_superuser:
@@ -565,6 +568,20 @@ def rest_filters_exception_handler(exc, context):
         response = Response(data, status=500)
 
     return response
+
+
+class BaseRestPublicPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.user.is_public_user:
+            return False
+        else:
+            return True
+
+
+def rest_permission_classes():
+    permission_classes = (permissions.IsAuthenticated & BaseRestPublicPermission,)
+    return permission_classes
 
 
 mysite = MyAdminSite()
