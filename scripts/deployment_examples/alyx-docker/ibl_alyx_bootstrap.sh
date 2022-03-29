@@ -2,7 +2,7 @@
 
 # TODO:
 # * configure logging/cron jobs for logging (not great, but workable for now)
-# * reboot instance with confirmation from user
+# * configure cron jobs for auto-deployment
 
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
@@ -83,10 +83,11 @@ sudo apt upgrade -y
 echo "Instance needs to be reboot to ensure everything works correctly."
 echo "NOTE: If an elastic IP address was not assigned, there is a possibility that the IP address will change."
 while true; do
-    read -p "Reboot now? [y/n] " yn
-    case $yn in
-        [Yy]* ) echo "Rebooting now..."; sudo reboot;;
-        [Nn]* ) echo "Exiting..."; exit;;
-        * ) echo "Please answer [y]es or [n]o.";;
-    esac
+  echo "Reboot now? [y/n]"
+  IFS= read -r yn
+  case $yn in
+    [Yy]* ) echo "Rebooting now..."; sudo reboot;;
+    [Nn]* ) echo "Exiting..."; exit;;
+    * ) echo "Please answer [y]es or [n]o.";;
+  esac
 done
