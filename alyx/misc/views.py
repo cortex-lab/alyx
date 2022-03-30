@@ -10,9 +10,9 @@ from rest_framework import viewsets, views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
-from rest_framework import generics, permissions
+from rest_framework import generics
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
@@ -72,7 +72,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class LabFilter(BaseFilterSet):
@@ -86,7 +86,7 @@ class LabFilter(BaseFilterSet):
 class LabList(generics.ListCreateAPIView):
     queryset = Lab.objects.all()
     serializer_class = LabSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
     filter_class = LabFilter
 
@@ -94,7 +94,7 @@ class LabList(generics.ListCreateAPIView):
 class LabDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lab.objects.all()
     serializer_class = LabSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -112,18 +112,18 @@ class NoteList(generics.ListCreateAPIView):
     """
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = BaseFilterSet
 
 
 class NoteDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class UploadedView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, format=None, img_url=''):
         path = op.join(MEDIA_ROOT, img_url)
@@ -141,14 +141,14 @@ def _get_cache_info():
 
 
 class CacheVersionView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, **kwargs):
         return JsonResponse(_get_cache_info())
 
 
 class CacheDownloadView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, **kwargs):
         cache_file = Path(TABLES_ROOT).joinpath('cache.zip')

@@ -1,11 +1,11 @@
 from django.db.models import Q, Count, Max
-from rest_framework import generics, permissions
+from rest_framework import generics
 from django_filters.rest_framework import CharFilter
 from django.views.generic.list import ListView
 
 import numpy as np
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 import django_filters
 
 from misc.models import Lab
@@ -99,11 +99,11 @@ class TaskList(generics.ListCreateAPIView):
     """
     queryset = Task.objects.all().order_by('level', '-priority', '-session__start_time')
     serializer_class = TaskSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = TaskFilter
 
 
 class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
