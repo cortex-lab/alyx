@@ -317,6 +317,12 @@ class BaseAdmin(VersionAdmin):
                                      for model in category_list[0].models]
         return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
+    def has_add_permission(self, request, *args, **kwargs):
+        if request.user.is_public_user:
+            return False
+        else:
+            return super(BaseAdmin, self).has_add_permission(request, *args, **kwargs)
+
     def has_change_permission(self, request, obj=None):
         if request.user.is_public_user:
             return False
