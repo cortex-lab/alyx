@@ -6,17 +6,25 @@
 
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
+ALYX_BRANCH=master
 
-# check if an arg was passed, we require one arg
+# check on arguments passed, at least one is required
 if [ -z "$1" ]
   then
-    echo "Error: No argument supplied, script requires one argument for the build env (alyx-prod, alyx-dev, openalyx, etc)"
+    echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc) and, optionally, an argument for alyx branch selection (master, dev, test123, etc)"
     exit 1
   else
-    echo "Argument supplied: $1"
+    echo "Build environment argument supplied: $1"
+    if [ -z "$2" ]
+      then
+        echo "No branch selection argument supplied, defaulting to master"
+      else
+        echo "Branch selection argument supplied: $2"
+        ALYX_BRANCH="$2"
+    fi
 fi
 
-# check to make sure the script is being run as root
+# check to make sure the script is being run as root (not ideal)
 if [ "$(id -u)" != "0" ]
   then
     echo "Script needs to be run as root, exiting."
@@ -26,26 +34,25 @@ fi
 echo "Setting hostname of instance..."
 hostnamectl set-hostname "$1"
 
-echo "Update apt package index and install packages to allow apt to use a repository over HTTPS..."
-apt-get update
-apt-get install \
+echo "Update apt package index, install awscli, and allow apt to use a repository over HTTPS..."
+apt-get -qq update
+apt-get install -y \
   awscli \
   ca-certificates \
   curl \
   gnupg \
-  lsb-release -y
+  lsb-release
 
-echo "Add Docker's official GPG key.."
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-echo "Setup for Docker's stable repo..."
+echo "Add Docker's official GPG key, setup for the stable repo, update, and install packages"
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-echo "Docker repo is configured; update apt package index again, install docker..."
-apt-get update
-apt-get install docker-ce docker-ce-cli containerd.io -y
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get -qq update
+sudo apt-get install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io
 
 echo "Testing docker..."
 docker run hello-world
@@ -54,8 +61,16 @@ echo "Copying files from s3 bucket..." # this is dependant on the correct IAM ro
 aws s3 cp s3://alyx-docker $WORKING_DIR --recursive
 cd $WORKING_DIR || exit 1
 
-echo "Building out docker image..."
-docker image build --build-arg BUILD_ENV="$1" --tag webserver_img .
+echo "Building out docker images..."
+docker build \
+  --build-arg BUILD_ENV="$1" \
+  --build-arg ALYX_BRANCH="$ALYX_BRANCH" \
+  --file Dockerfile.base \
+  --tag internationalbrainlab/alyx:base .
+docker build \
+  --build-arg BUILD_ENV="$1" \
+  --file Dockerfile.ibl \
+  --tag internationalbrainlab/alyx:ibl .
 
 echo "Building out docker container..."
 docker run \
@@ -66,7 +81,7 @@ docker run \
   --publish 80:80 \
   --publish 443:443 \
   --publish 5432:5432 \
-  --name=webserver_con webserver_img
+  --name=alyx_con internationalbrainlab/alyx:ibl
 
 echo "Performing any remaining package upgrades..."
 apt upgrade -y

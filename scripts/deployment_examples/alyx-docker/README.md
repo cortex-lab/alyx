@@ -82,10 +82,19 @@ sudo reboot
 Cheat sheet of docker commands for troubleshooting
 ```shell
 # Builds our webserver image with tag, specify the BUILD_ENV (alyx-prod, alyx-dev, openalyx, etc)
-docker image build --build-arg BUILD_ENV=openalyx --tag webserver_img .
+docker image build --build-arg BUILD_ENV=openalyx --build-arg ALYX_BRANCH=dev --tag webserver_img .
 
-# If using layered image approach and specifying Dockerfiles...
-docker image build --build-arg BUILD_ENV=alyx-dev --file Dockerfile.alyx-dev --tag webserver_img .
+# If using layered image approach and specifying Dockerfiles
+docker build \
+  --build-arg BUILD_ENV=openalyx \
+  --build-arg ALYX_BRANCH=dev \
+  --file Dockerfile.base \
+  --tag internationalbrainlab/alyx:base .
+
+docker build \
+  --build-arg BUILD_ENV=openalyx \
+  --file Dockerfile.ibl \
+  --tag webserver_img .
 
 # Builds our tagged image in a webserver container
 docker run \

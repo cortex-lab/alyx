@@ -1,0 +1,34 @@
+FROM ubuntu
+
+# Set build environtment, passed from command line --build-arg (alyx-prod, alyx-dev, openalyx, etc)
+ARG BUILD_ENV
+ARG ALYX_BRANCH=master
+
+# Time zone autoconfig
+ENV TZ=Europe/Lisbon
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install services, packages and do cleanup
+RUN apt-get -qq update && apt-get install -y \
+    apache2 \
+    apache2-utils \
+    git \
+    libapache2-mod-wsgi-py3 \
+    postgresql \
+    python3.8 \
+    python3-pip \
+    python3-venv \
+    virtualenv \
+    && apt-get autoremove \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone repos, configure virtual environment, and make our image massive
+RUN git clone --depth 1 --single-branch --branch ${ALYX_BRANCH} https://github.com/cortex-lab/alyx.git /var/www/${BUILD_ENV}
+RUN git clone --depth 1 --single-branch --branch main https://github.com/int-brain-lab/iblalyx.git /var/www/${BUILD_ENV}/ibl-alyx
+# Best practice for configuring python venv
+ENV VIRTUAL_ENV=/var/www/${BUILD_ENV}/venv
+RUN virtualenv ${VIRTUAL_ENV} --python=python3
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+WORKDIR /var/www/${BUILD_ENV}
+RUN pip install -r requirements.txt
+RUN pip install ONE-api
