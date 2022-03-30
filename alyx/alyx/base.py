@@ -319,7 +319,6 @@ class BaseAdmin(VersionAdmin):
 
     def has_change_permission(self, request, obj=None):
         if request.user.is_public_user:
-            print('toto')
             return False
         if not obj:
             return True
