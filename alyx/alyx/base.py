@@ -319,6 +319,7 @@ class BaseAdmin(VersionAdmin):
 
     def has_change_permission(self, request, obj=None):
         if request.user.is_public_user:
+            print('toto')
             return False
         if not obj:
             return True
@@ -331,6 +332,8 @@ class BaseAdmin(VersionAdmin):
             subj = obj.session.subject
         elif getattr(obj, 'subject', None):
             subj = obj.subject
+        else:
+            return False
         resp_user = getattr(subj, 'responsible_user', None)
         # List of allowed users for the subject.
         allowed = getattr(resp_user, 'allowed_users', None)
