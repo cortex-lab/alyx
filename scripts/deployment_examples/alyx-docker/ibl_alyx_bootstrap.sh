@@ -24,7 +24,7 @@ if [ -z "$1" ]
     fi
 fi
 
-# check to make sure the script is being run as root (not ideal)
+# check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
 if [ "$(id -u)" != "0" ]
   then
     echo "Script needs to be run as root, exiting."

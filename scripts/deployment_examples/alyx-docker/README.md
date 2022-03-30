@@ -19,9 +19,10 @@ Steps involved to ensure the appropriate infrastructure is in place for running 
   * RDS piece is not completely necessary, but useful for troubleshooting
 * SSH into newly created EC2 instance and run the following (assuming Ubuntu 20.04):
 ```shell
-# Copy the ibl_alyx_bootstrip.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
+# Copy the ibl_alyx_bootstrap.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
 # Be sure to pass an argument for the environment (alyx-prod, alyx-dev, openalyx, etc)
-sh alyx_bootstrip.sh alyx-dev
+# Optionally, include a secondary argument for alyx branch selection (master, dev, test123, etc)
+sh ibl_alyx_bootstrap.sh alyx-dev test123
 
 # Download and configure cloudwatch logging (if relevant)
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
@@ -41,19 +42,19 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-c
   * log in to ensure db connection is also working
   * navigate the site and attempt to break things
 ---
-Below commands are included in the `ibl_alyx_bootstrap.sh`, included here just for documentation purposes
+Below commands are in the `ibl_alyx_bootstrap.sh`, included here just for documentation purposes
 ```shell
 # Set the hostname to something appropriate to your environment (alyx-prod, alyx-dev, openalyx, etc)
 sudo hostnamectl set-hostname alyx-dev
 
 # Update apt package index, install packages to allow apt to use a repository over HTTPS
-sudo apt-get update
-sudo apt-get install \
+sudo apt-get -qq update
+sudo apt-get install -y \
   awscli \
   ca-certificates \
   curl \
   gnupg \
-  lsb-release -y
+  lsb-release
 
 # Add Docker's official GPG key 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -64,8 +65,11 @@ echo \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Now that the correct repo is configured; update apt package index again, install docker
-sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+sudo apt-get -qq update
+sudo apt-get install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io
 
 # Verify Docker is installed
 sudo docker run hello-world
@@ -90,11 +94,10 @@ docker build \
   --build-arg ALYX_BRANCH=dev \
   --file Dockerfile.base \
   --tag internationalbrainlab/alyx:base .
-
 docker build \
   --build-arg BUILD_ENV=openalyx \
   --file Dockerfile.ibl \
-  --tag webserver_img .
+  --tag internationalbrainlab/alyx:ibl .
 
 # Builds our tagged image in a webserver container
 docker run \
@@ -105,13 +108,34 @@ docker run \
   --publish 80:80 \
   --publish 443:443 \
   --publish 5432:5432 \
-  --name=webserver_con webserver_img
+  --name=alyx_con internationalbrainlab/alyx:ibl
 
 # Enters the bash shell of the running container
-docker exec --interactive --tty webserver_con /bin/bash
+docker exec --interactive --tty alyx_con /bin/bash 
+
+# To be performed when changing branches/troubleshooting
+docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py makemigrations
+docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py migrate
+
+# fixtures pulled from scripts/load-init-fixtures.sh (some files are excluded)
+docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py loaddata \
+  /var/www/openalyx/alyx/actions/fixtures/actions.proceduretype.json \
+  /var/www/openalyx/alyx/actions/fixtures/actions.watertype.json \
+  /var/www/openalyx/alyx/actions/fixtures/actions.cullreason.json \
+  /var/www/openalyx/alyx/data/fixtures/data.datarepositorytype.json \
+  /var/www/openalyx/alyx/data/fixtures/data.dataformat.json \
+  /var/www/openalyx/alyx/data/fixtures/data.datasettype.json \
+  /var/www/openalyx/alyx/misc/fixtures/misc.cagetype.json \
+  /var/www/openalyx/alyx/misc/fixtures/misc.enrichment.json \
+  /var/www/openalyx/alyx/misc/fixtures/misc.food.json \
+  /var/www/openalyx/alyx/subjects/fixtures/subjects.source.json \
+  /var/www/openalyx/alyx/experiments/fixtures/experiments.coordinatesystem.json \
+  /var/www/openalyx/alyx/experiments/fixtures/experiments.probemodel.json \
+  /var/www/openalyx/alyx/experiments/fixtures/experiments.brainregion.json
+
 
 # Stops our container && removes container 
-docker container stop --time 0 webserver_con \
+docker container stop --time 0 alyx_con \
   && docker container prune --force
 
 # Removes unused images && remove unused networks
@@ -120,8 +144,10 @@ docker image prune --force \
 
 # Crontab entry to copy log files of the container (not good, but works)
 */5 * * * * docker cp webserver_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1
-
-# --- Give current user the ability to run docker without sudo, can not be scripted b/c newgrp command --- 
+```
+---
+Give current user the ability to run Docker without sudo, if we want IP logging, we need to run Docker as root 
+```shell
 # Add the docker group if it doesn't already exist:
 sudo groupadd docker
 
@@ -134,7 +160,6 @@ newgrp docker
 
 # Test the permissions
 docker run hello-world
-
 ```
 
 ## IBL Alyx image
