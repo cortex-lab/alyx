@@ -50,6 +50,7 @@ echo "Testing docker..."
 docker run hello-world
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
+mkdir -p $WORKING_DIR
 aws s3 cp s3://alyx-docker/000-default-conf-"$1" $WORKING_DIR
 aws s3 cp s3://alyx-docker/apache-conf-"$1" $WORKING_DIR
 aws s3 cp s3://alyx-docker/Dockerfile.ibl $WORKING_DIR
