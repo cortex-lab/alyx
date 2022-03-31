@@ -1,11 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
 # Once this script is in the desired directory of a newly created instance, sample command to run:
 # sudo sh ibl_alyx_bootstrap.sh alyx-dev
-
-# TODO:
-# * configure logging/cron jobs for logging (not great, but workable for now)
-# * configure cron jobs for auto-deployment
 
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
@@ -84,6 +80,11 @@ docker run \
 
 echo "Performing any remaining package upgrades..."
 apt upgrade -y
+
+echo "Adding alias to .bashrc..."
+echo '' >> /home/ubuntu/.bashrc \
+  && echo '# IBL Alias' >> /home/ubuntu/.bashrc \
+  && echo "alias docker-bash='sudo docker exec --interactive --tty alyx_con /bin/bash'" >> /home/ubuntu/.bashrc
 
 echo "Instance will now reboot to ensure everything works correctly on a fresh boot."
 sleep 10s

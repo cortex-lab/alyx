@@ -1,7 +1,12 @@
 ## TODO
-* flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment
-* use github actions to update s3 bucket files
-* detach apache configs image from Dockerfile
+* add logging/cron jobs to ibl_alyx_bootstrap.sh script (not great, but workable for now)
+* flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment?
+* write instructions in the Alyx playbook
+---
+Nice to haves:
+* auto-deployment/auto-redeployment when a PR for master or dev is completed (there are a few different ways to tackle this)
+* auto update relevant aws security groups when deploying
+* auto update gandi DNS when deploying (gandi api - https://api.gandi.net/docs/livedns/)
 
 ## Infrastructure (AWS, Gandi)
 Steps involved to ensure the appropriate infrastructure is in place for running docker.
