@@ -21,8 +21,7 @@ Steps involved to ensure the appropriate infrastructure is in place for running 
 ```shell
 # Copy the ibl_alyx_bootstrap.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
 # Be sure to pass an argument for the environment (alyx-prod, alyx-dev, openalyx, etc)
-# Optionally, include a secondary argument for alyx branch selection (master, dev, test123, etc)
-sh ibl_alyx_bootstrap.sh alyx-dev test123
+sh ibl_alyx_bootstrap.sh alyx-dev
 
 # Download and configure cloudwatch logging (if relevant)
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
@@ -86,16 +85,15 @@ sudo reboot
 Cheat sheet of docker commands for troubleshooting
 ```shell
 # Builds our webserver image with tag, specify the BUILD_ENV (alyx-prod, alyx-dev, openalyx, etc)
-docker image build --build-arg BUILD_ENV=openalyx --build-arg ALYX_BRANCH=dev --tag webserver_img .
+docker image build --build-arg BUILD_ENV=openalyx --tag webserver_img .
 
-# If using layered image approach and specifying Dockerfiles
+# Builds base image
 docker build \
-  --build-arg BUILD_ENV=openalyx \
-  --build-arg ALYX_BRANCH=dev \
   --file Dockerfile.base \
   --tag internationalbrainlab/alyx:base .
+# Builds IBL specific image, specify the BUILD_ENV (alyx-prod, alyx-dev, openalyx, etc)
 docker build \
-  --build-arg BUILD_ENV=openalyx \
+  --build-arg BUILD_ENV=alyx-dev \
   --file Dockerfile.ibl \
   --tag internationalbrainlab/alyx:ibl .
 
@@ -111,7 +109,7 @@ docker run \
   --name=alyx_con internationalbrainlab/alyx:ibl
 
 # Enters the bash shell of the running container
-docker exec --interactive --tty alyx_con /bin/bash 
+docker exec --interactive --tty alyx_con /bin/bash
 
 # To be performed when changing branches/troubleshooting
 docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py makemigrations
@@ -133,10 +131,9 @@ docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py load
   /var/www/openalyx/alyx/experiments/fixtures/experiments.probemodel.json \
   /var/www/openalyx/alyx/experiments/fixtures/experiments.brainregion.json
 
-
 # Stops our container && removes container 
-docker container stop --time 0 alyx_con \
-  && docker container prune --force
+docker container stop --time 0 alyx_con
+docker container prune --force
 
 # Removes unused images && remove unused networks
 docker image prune --force \
@@ -160,6 +157,16 @@ newgrp docker
 
 # Test the permissions
 docker run hello-world
+```
+
+## Useful AWSCLI commands
+Requires awscli be to installed and configured with the correct permissions on your development machine
+```shell
+# alyx-dev template
+aws ec2 run-instances \
+  --launch-template LaunchTemplateName=alyx-dev
+
+ssh-keygen -f "/home/dirigibles/.ssh/known_hosts" -R "alyx-dev.internationalbrainlab.org"
 ```
 
 ## IBL Alyx image

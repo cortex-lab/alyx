@@ -6,22 +6,14 @@
 
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
-ALYX_BRANCH=master
 
 # check on arguments passed, at least one is required
 if [ -z "$1" ]
   then
-    echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc) and, optionally, an argument for alyx branch selection (master, dev, test123, etc)"
+    echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc)"
     exit 1
   else
     echo "Build environment argument supplied: $1"
-    if [ -z "$2" ]
-      then
-        echo "No branch selection argument supplied, defaulting to master"
-      else
-        echo "Branch selection argument supplied: $2"
-        ALYX_BRANCH="$2"
-    fi
 fi
 
 # check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
@@ -58,15 +50,18 @@ echo "Testing docker..."
 docker run hello-world
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
-aws s3 cp s3://alyx-docker $WORKING_DIR --recursive
+aws s3 cp s3://alyx-docker/000-default-conf-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/apache-conf-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/Dockerfile.ibl $WORKING_DIR
+aws s3 cp s3://alyx-docker/fullchain.pem-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/ip-whitelist-conf $WORKING_DIR
+aws s3 cp s3://alyx-docker/privkey.pem-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/settings.py-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/settings_lab.py-"$1" $WORKING_DIR
+aws s3 cp s3://alyx-docker/settings_secret.py-"$1" $WORKING_DIR
 cd $WORKING_DIR || exit 1
 
-echo "Building out docker images..."
-docker build \
-  --build-arg BUILD_ENV="$1" \
-  --build-arg ALYX_BRANCH="$ALYX_BRANCH" \
-  --file Dockerfile.base \
-  --tag internationalbrainlab/alyx:base .
+echo "Building out docker image..."
 docker build \
   --build-arg BUILD_ENV="$1" \
   --file Dockerfile.ibl \

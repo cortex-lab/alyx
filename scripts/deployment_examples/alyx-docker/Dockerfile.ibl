@@ -19,9 +19,9 @@ COPY fullchain.pem-${BUILD_ENV}    /etc/apache2/ssl/fullchain.pem
 COPY privkey.pem-${BUILD_ENV}      /etc/apache2/ssl/privkey.pem
 
 # Alyx configs
-COPY settings.py-${BUILD_ENV}        /var/www/${BUILD_ENV}/alyx/alyx/settings.py
-COPY settings_secret.py-${BUILD_ENV} /var/www/${BUILD_ENV}/alyx/alyx/settings_secret.py
-COPY settings_lab.py-${BUILD_ENV}    /var/www/${BUILD_ENV}/alyx/alyx/settings_lab.py
+COPY settings.py-${BUILD_ENV}        /var/www/alyx/alyx/alyx/settings.py
+COPY settings_secret.py-${BUILD_ENV} /var/www/alyx/alyx/alyx/settings_secret.py
+COPY settings_lab.py-${BUILD_ENV}    /var/www/alyx/alyx/alyx/settings_lab.py
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 755 /var/log/alyx.log
