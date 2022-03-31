@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Once this script is in the desired directory of a newly created instance, sample command to run:
+# sudo sh ibl_alyx_bootstrap.sh alyx-dev
+
 # TODO:
 # * configure logging/cron jobs for logging (not great, but workable for now)
 # * configure cron jobs for auto-deployment
@@ -7,20 +10,20 @@
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
 
-# check on arguments passed, at least one is required
+# check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
+if [ "$(id -u)" != "0" ]
+  then
+    echo "Script needs to be run as root, exiting."
+    exit 1
+fi
+
+# check on arguments passed, at least one is required to pick build env
 if [ -z "$1" ]
   then
     echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc)"
     exit 1
   else
     echo "Build environment argument supplied: $1"
-fi
-
-# check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
-if [ "$(id -u)" != "0" ]
-  then
-    echo "Script needs to be run as root, exiting."
-    exit 1
 fi
 
 echo "Setting hostname of instance..."
@@ -82,14 +85,6 @@ docker run \
 echo "Performing any remaining package upgrades..."
 apt upgrade -y
 
-echo "Instance needs to be reboot to ensure everything works correctly."
-echo "NOTE: If an elastic IP address was not assigned, there is a possibility that the IP address will change."
-while true; do
-  echo "Reboot now? [y/n]"
-  IFS= read -r yn
-  case $yn in
-    [Yy]* ) echo "Rebooting now..."; reboot;;
-    [Nn]* ) echo "Exiting..."; exit;;
-    * ) echo "Please answer [y]es or [n]o.";;
-  esac
-done
+echo "Instance will now reboot to ensure everything works correctly on a fresh boot."
+sleep 10s
+reboot

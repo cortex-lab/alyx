@@ -112,24 +112,28 @@ docker run \
 docker exec --interactive --tty alyx_con /bin/bash
 
 # To be performed when changing branches/troubleshooting
-docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py makemigrations
-docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py migrate
+docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx status
+docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx fetch
+docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx checkout dev
+docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx pull
+docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py makemigrations
+docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py migrate
 
 # fixtures pulled from scripts/load-init-fixtures.sh (some files are excluded)
-docker exec --interactive --tty alyx_con /var/www/openalyx/alyx/./manage.py loaddata \
-  /var/www/openalyx/alyx/actions/fixtures/actions.proceduretype.json \
-  /var/www/openalyx/alyx/actions/fixtures/actions.watertype.json \
-  /var/www/openalyx/alyx/actions/fixtures/actions.cullreason.json \
-  /var/www/openalyx/alyx/data/fixtures/data.datarepositorytype.json \
-  /var/www/openalyx/alyx/data/fixtures/data.dataformat.json \
-  /var/www/openalyx/alyx/data/fixtures/data.datasettype.json \
-  /var/www/openalyx/alyx/misc/fixtures/misc.cagetype.json \
-  /var/www/openalyx/alyx/misc/fixtures/misc.enrichment.json \
-  /var/www/openalyx/alyx/misc/fixtures/misc.food.json \
-  /var/www/openalyx/alyx/subjects/fixtures/subjects.source.json \
-  /var/www/openalyx/alyx/experiments/fixtures/experiments.coordinatesystem.json \
-  /var/www/openalyx/alyx/experiments/fixtures/experiments.probemodel.json \
-  /var/www/openalyx/alyx/experiments/fixtures/experiments.brainregion.json
+docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py loaddata \
+  /var/www/alyx/alyx/actions/fixtures/actions.proceduretype.json \
+  /var/www/alyx/alyx/actions/fixtures/actions.watertype.json \
+  /var/www/alyx/alyx/actions/fixtures/actions.cullreason.json \
+  /var/www/alyx/alyx/data/fixtures/data.datarepositorytype.json \
+  /var/www/alyx/alyx/data/fixtures/data.dataformat.json \
+  /var/www/alyx/alyx/data/fixtures/data.datasettype.json \
+  /var/www/alyx/alyx/misc/fixtures/misc.cagetype.json \
+  /var/www/alyx/alyx/misc/fixtures/misc.enrichment.json \
+  /var/www/alyx/alyx/misc/fixtures/misc.food.json \
+  /var/www/alyx/alyx/subjects/fixtures/subjects.source.json \
+  /var/www/alyx/alyx/experiments/fixtures/experiments.coordinatesystem.json \
+  /var/www/alyx/alyx/experiments/fixtures/experiments.probemodel.json \
+  /var/www/alyx/alyx/experiments/fixtures/experiments.brainregion.json
 
 # Stops our container && removes container 
 docker container stop --time 0 alyx_con
