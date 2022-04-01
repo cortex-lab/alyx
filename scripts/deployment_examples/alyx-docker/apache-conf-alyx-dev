@@ -1,4 +1,4 @@
-ServerName alyx-dev.internationalbrainlab.org
+ServerName dev.alyx.internationalbrainlab.org
 Mutex file:${APACHE_LOCK_DIR} default
 PidFile ${APACHE_PID_FILE}
 Timeout 300

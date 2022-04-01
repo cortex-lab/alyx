@@ -1,10 +1,10 @@
 <VirtualHost *:80>
-    ServerName alyx-dev.internationalbrainlab.org
-    Redirect permanent / https://alyx-dev.internationalbrainlab.org/
+    ServerName dev.alyx.internationalbrainlab.org
+    Redirect permanent / https://dev.alyx.internationalbrainlab.org/
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName alyx-dev.internationalbrainlab.org
+    ServerName dev.alyx.internationalbrainlab.org
     ServerAdmin webmaster@internationalbrainlab.org
     DocumentRoot /var/www/alyx
 
