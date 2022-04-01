@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Once this script is in the desired directory of a newly created instance, sample command to run:
+# Once this script is in the desired directory of a newly created instance, a sample command to run:
 # sudo sh ibl_alyx_bootstrap.sh alyx-dev
 
+{
 # Set vars
 WORKING_DIR=/home/ubuntu/alyx-docker
 LOG_DIR=/home/ubuntu/logs
@@ -23,6 +24,8 @@ if [ -z "$1" ]
   else
     echo "Build environment argument supplied: $1"
 fi
+
+echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
 
 echo "Creating relevant directories..."
 mkdir -p $WORKING_DIR
@@ -105,4 +108,6 @@ apt upgrade -y
 
 echo "Instance will now reboot to ensure everything works correctly on a fresh boot."
 sleep 10s
+} | tee -a ibl_alyx_bootstrap_install.log
+
 reboot
