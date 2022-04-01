@@ -1,5 +1,4 @@
 ## TODO
-* add logging/cron jobs to ibl_alyx_bootstrap.sh script (not great, but workable for now)
 * flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment?
 * write instructions in the Alyx playbook
 ---
@@ -35,7 +34,7 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
 # modify the config if mistakes were made or just for more granular logging
 sudo vim /opt/aws/amazon-cloudwatch-agent/bin/config.json
 # start logging
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json
 ```
 * Create/update Gandi DNS entry for environment (alyx, alyx-dev, openalyx, etc)
   * Create either an `A record` with the `Public IPv4 address` or a `CNAME record` with the `Public IPv4 DNS`
@@ -149,7 +148,7 @@ docker image prune --force \
   && docker network prune --force
 
 # Crontab entry to copy log files of the container (not good, but works)
-*/5 * * * * docker cp webserver_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp webserver_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1
+*/5 * * * * docker cp alyx_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1
 ```
 ---
 Give current user the ability to run Docker without sudo, if we want IP logging, we need to run Docker as root 
@@ -214,7 +213,7 @@ mv selfsigned.crt fullchain.pem
 
 Open a bash shell in the container
 ```shell
-sudo docker exec -it webserver_con /bin/bash
+sudo docker exec -it alyx_con /bin/bash
 ```
 
 ```shell
