@@ -24,7 +24,7 @@ COPY settings_secret.py-${BUILD_ENV} /var/www/alyx/alyx/alyx/settings_secret.py
 COPY settings_lab.py-${BUILD_ENV}    /var/www/alyx/alyx/alyx/settings_lab.py
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
-    && chmod 755 /var/log/alyx.log
+    && chmod 644 /var/log/alyx.log
 
 # Expose ports, enable apache modules, and launch apache
 EXPOSE 80 443 5432
