@@ -68,7 +68,7 @@ aws s3 cp s3://alyx-docker/privkey.pem-"$1" .
 aws s3 cp s3://alyx-docker/settings.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_lab.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_secret.py-"$1" .
-aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" .
+aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" cloudwatch_config.json
 
 echo "Building out docker image..."
 docker build \
