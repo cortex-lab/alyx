@@ -120,9 +120,10 @@ docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx status
 docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx fetch
 docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx checkout dev
 docker exec --interactive --tty alyx_con /bin/git -C /var/www/alyx pull
+
+# Below command is super dangerous, only included below for reference
 docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py makemigrations
 docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py migrate
-
 # fixtures pulled from scripts/load-init-fixtures.sh (some files are excluded)
 docker exec --interactive --tty alyx_con /var/www/alyx/alyx/./manage.py loaddata \
   /var/www/alyx/alyx/actions/fixtures/actions.proceduretype.json \

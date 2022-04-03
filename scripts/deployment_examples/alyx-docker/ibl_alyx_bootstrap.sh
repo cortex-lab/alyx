@@ -34,6 +34,9 @@ mkdir -p $LOG_DIR
 echo "Setting hostname of instance..."
 hostnamectl set-hostname "$1"
 
+echo "Setting timezone to Europe\Lisbon..."
+timedatectl set-timezone Europe/Lisbon
+
 echo "Update apt package index, install awscli, and allow apt to use a repository over HTTPS..."
 apt-get -qq update
 apt-get install -y \
@@ -68,7 +71,7 @@ aws s3 cp s3://alyx-docker/privkey.pem-"$1" .
 aws s3 cp s3://alyx-docker/settings.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_lab.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_secret.py-"$1" .
-aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" cloudwatch_config.json
+aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" .
 
 echo "Building out docker image..."
 docker build \
@@ -95,7 +98,7 @@ rm temp_cron # remove temp_cron file
 echo "Download and configure cloudwatch logging..."
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i -E ./amazon-cloudwatch-agent.deb
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json-"$1"
 
 
 echo "Adding alias to .bashrc..."
