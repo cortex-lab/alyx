@@ -27,7 +27,7 @@ from rest_framework.views import exception_handler
 from rest_framework import permissions
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
-
+from alyx import __version__ as version
 
 logger = structlog.get_logger(__name__)
 
@@ -600,7 +600,7 @@ mysite = MyAdminSite()
 mysite.site_header = 'Alyx'
 mysite.site_title = 'Alyx'
 mysite.site_url = None
-mysite.index_title = 'Welcome to Alyx'
+mysite.index_title = f'Welcome to Alyx {version}'
 mysite.enable_nav_sidebar = False
 
 admin.site = mysite
