@@ -46,7 +46,7 @@ apt-get install -y \
   gnupg \
   lsb-release
 
-echo "Add Docker's official GPG key, setup for the stable repo, update, and install packages"
+echo "Add Docker's official GPG key, setup for the docker stable repo, update, and install packages"
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \

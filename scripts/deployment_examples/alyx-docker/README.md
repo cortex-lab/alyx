@@ -1,40 +1,32 @@
 ## TODO
-* flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment?
 * write instructions in the Alyx playbook
 ---
 Nice to haves:
 * auto-deployment/auto-redeployment when a PR for master or dev is completed (there are a few different ways to tackle this)
-* auto update relevant aws security groups when deploying
+* cleanup aws security groups (find better organization)
+* auto update relevant aws security groups when deploying, utilize awscli
 * auto update gandi DNS when deploying (gandi api - https://api.gandi.net/docs/livedns/)
+* flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment?
 
 ## Infrastructure (AWS, Gandi)
 Steps involved to ensure the appropriate infrastructure is in place for running docker.
 
-* Create EC2 instance
+* Create EC2 instance from launch template
   * [AWS CLI Documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-services.html)
   * AWS Console interface
 * (Optional) Assign Elastic IP address
-* Create RDS instance for environment, populate db with appropriate data 
+* Create RDS instance for environment, populate db with appropriate data
   * Verify the correct connection parameters are in `settings_secret.py` (intentionally not included in this repo)
-* (Optional) Create IAM Role with appropriate RDS and S3 permissions; assign it to the EC2 instance
+* (Optional) Create IAM Role with appropriate RDS and S3 permissions; assign it to the EC2 instance (this step is taken care of by the ec2 launch template)
   * prod/dev requires read/write to RDS
   * openalyx requires just read to RDS (maybe?)
   * S3 bucket just need read permissions
-  * RDS piece is not completely necessary, but useful for troubleshooting
+  * RDS permissions to the IAM Role is not completely necessary, but useful for troubleshooting
 * SSH into newly created EC2 instance and run the following (assuming Ubuntu 20.04):
 ```shell
 # Copy the ibl_alyx_bootstrap.sh file, or the contents of the file, to the home directory (assuming /home/ubuntu)
 # Be sure to pass an argument for the environment (alyx-prod, alyx-dev, openalyx, etc)
 sh ibl_alyx_bootstrap.sh alyx-dev
-
-# Download and configure cloudwatch logging (if relevant)
-wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
-# modify the config if mistakes were made or just for more granular logging
-sudo vim /opt/aws/amazon-cloudwatch-agent/bin/config.json
-# start logging
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json
 ```
 * Create/update Gandi DNS entry for environment (alyx, alyx-dev, openalyx, etc)
   * Create either an `A record` with the `Public IPv4 address` or a `CNAME record` with the `Public IPv4 DNS`
@@ -76,6 +68,16 @@ sudo apt-get install -y \
 
 # Verify Docker is installed
 sudo docker run hello-world
+
+# Download and configure cloudwatch logging (if relevant)
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+# modify the config if mistakes were made or just for more granular logging
+sudo vim /opt/aws/amazon-cloudwatch-agent/bin/config.json
+sudo mv /opt/aws/amazon-cloudwatch-agent/bin/config.json /home/ubuntu/alyx-docker/cloudwatch_config.json 
+# start logging
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json
 
 # Perform any remaining package upgrades
 sudo apt upgrade -y
