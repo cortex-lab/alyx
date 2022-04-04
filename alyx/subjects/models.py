@@ -15,6 +15,7 @@ from django.utils import timezone
 from alyx.base import BaseModel, alyx_mail, modify_fields
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
+from actions.models import Surgery
 from misc.models import Lab, default_lab, Housing
 
 logger = structlog.get_logger(__name__)
@@ -335,9 +336,12 @@ class Subject(BaseModel):
         if self.line and not self.strain:
             self.strain = self.line.strain
         # Update the zygosities when the subject is created or assigned a litter.
-        is_created = self._state.adding is True
-        if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
-            ZygosityFinder().genotype_from_litter(self)
+        # Remove the automatic zygosity creation when assigning a litter, as requested by Charu
+        # in 03/2022.
+        # is_created = self._state.adding is True
+        # if is_created or (self.litter_id and not _get_old_field(self, 'litter')):
+        #     ZygosityFinder().genotype_from_litter(self)
+
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not _get_old_field(self, 'genotype_date'):
             self.to_be_genotyped = False
@@ -376,6 +380,14 @@ class Subject(BaseModel):
         # Keep the history of some fields in the JSON.
         save_old_fields(self, self._fields_history)
         return super(Subject, self).save(*args, **kwargs)
+
+    def set_protocol_number(self):
+        if self.water_control.is_water_restricted():
+            self.protocol_number = '3'
+        elif Surgery.objects.filter(subject=self).count() > 0:
+            self.protocol_number = '2'
+        else:
+            self.protocol_number = '1'
 
     def __str__(self):
         return self.nickname
@@ -719,6 +731,7 @@ def _update_zygosities(line, sequence):
 
 
 class ZygosityRule(BaseModel):
+    """This model encodes a rule to automatically create a zygosity from genotyping results."""
     line = models.ForeignKey('Line', null=True, on_delete=models.SET_NULL)
     allele = models.ForeignKey('Allele', null=True, on_delete=models.SET_NULL)
     sequence0 = models.ForeignKey('Sequence', blank=True, null=True, on_delete=models.SET_NULL,

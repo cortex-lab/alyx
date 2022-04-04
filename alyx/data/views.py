@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
-from rest_framework import generics, permissions, viewsets, mixins, serializers
+from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 from subjects.models import Subject, Project
 from experiments.models import ProbeInsertion
 from misc.models import Lab
@@ -44,14 +44,14 @@ logger = structlog.get_logger(__name__)
 class DataRepositoryTypeList(generics.ListCreateAPIView):
     queryset = DataRepositoryType.objects.all()
     serializer_class = DataRepositoryTypeSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
 class DataRepositoryTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DataRepositoryType.objects.all()
     serializer_class = DataRepositoryTypeSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -61,7 +61,7 @@ class DataRepositoryTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
     lookup_field = 'name'
 
@@ -69,7 +69,7 @@ class DataRepositoryList(generics.ListCreateAPIView):
 class DataRepositoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -79,14 +79,14 @@ class DataRepositoryDetail(generics.RetrieveUpdateDestroyAPIView):
 class DataFormatList(generics.ListCreateAPIView):
     queryset = DataFormat.objects.all()
     serializer_class = DataFormatSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
 class DataFormatDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DataFormat.objects.all()
     serializer_class = DataFormatSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -96,14 +96,14 @@ class DataFormatDetail(generics.RetrieveUpdateDestroyAPIView):
 class DatasetTypeList(generics.ListCreateAPIView):
     queryset = DatasetType.objects.all()
     serializer_class = DatasetTypeSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
 class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = DatasetType.objects.all()
     serializer_class = DatasetTypeSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -113,26 +113,26 @@ class DatasetTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 class RevisionList(generics.ListCreateAPIView):
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class RevisionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
 class TagList(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class TagDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 # Dataset
 # ------------------------------------------------------------------------------------------------
@@ -217,14 +217,14 @@ class DatasetList(generics.ListCreateAPIView):
     queryset = Dataset.objects.all()
     queryset = DatasetSerializer.setup_eager_loading(queryset)
     serializer_class = DatasetSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = DatasetFilter
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 # FileRecord
@@ -254,14 +254,14 @@ class FileRecordList(generics.ListCreateAPIView):
     queryset = FileRecord.objects.all()
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
     serializer_class = FileRecordSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = FileRecordFilter
 
 
 class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = FileRecord.objects.all()
     serializer_class = FileRecordSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 # Register file
@@ -534,7 +534,7 @@ class DownloadDetail(generics.RetrieveUpdateAPIView):
     """
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class DownloadFilter(BaseFilterSet):
@@ -561,5 +561,5 @@ class DownloadList(generics.ListAPIView):
     """
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = DownloadFilter

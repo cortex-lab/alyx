@@ -12,6 +12,7 @@ SUPERUSERS = ('root',)
 STOCK_MANAGERS = ('root',)
 WEIGHT_THRESHOLD = 0.75
 DEFAULT_LAB_NAME = 'defaultlab'
+WATER_RESTRICTIONS_EDITABLE = False  # if set to True, all users can edit water restrictions
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 SESSION_REPO_URL = \
     "http://ibl.flatironinstitute.org/{lab}/Subjects/{subject}/{date}/{number:03d}/"

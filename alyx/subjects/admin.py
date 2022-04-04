@@ -781,21 +781,26 @@ class BreedingPairAdminForm(forms.ModelForm):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
-            p = getattr(self.instance, w, None)
-            if p and p.cage:
-                self.fields['cage'].initial = p.cage
+            # Remove this feature as requested by Charu (03/2022)
+            # p = getattr(self.instance, w, None)
+            # if p and p.cage:
+            #     self.fields['cage'].initial = p.cage
+
             if w in self.fields:
                 self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
-    def save(self, commit=True):
-        cage = self.cleaned_data.get('cage')
-        if cage:
-            for w in ('father', 'mother1', 'mother2'):
-                p = getattr(self.instance, w, None)
-                if p:
-                    p.cage = int(cage)
-                    p.save()
-        return super(BreedingPairAdminForm, self).save(commit=commit)
+    # def save(self, commit=True):
+    #     cage = self.cleaned_data.get('cage')
+    #     if cage:
+    #         for w in ('father', 'mother1', 'mother2'):
+    #             p = getattr(self.instance, w, None)
+    #             if p:
+
+    #                 # Bug fix (request by Charu in 03/2022): allow cage ids to be non integers
+    #                 # p.cage = int(cage)
+
+    #                 p.save()
+    #     return super(BreedingPairAdminForm, self).save(commit=commit)
 
     class Meta:
         fields = '__all__'
@@ -1287,7 +1292,8 @@ class LabMemberAdmin(UserAdmin):
     form = LabMemberAdminForm
 
     fieldsets = UserAdmin.fieldsets + (
-        ('Extra fields', {'fields': ('allowed_users',)}),
+        ('Extra fields', {'fields': ('allowed_users',)},),
+        ('Permissions', {'fields': ('is_stock_manager', 'is_public_user')})
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Extra fields', {'fields': ('allowed_users',)}),
@@ -1297,8 +1303,9 @@ class LabMemberAdmin(UserAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l', 'allowed_users_',
                     'is_staff', 'is_superuser', 'is_stock_manager',
+                    'is_public_user'
                     ]
-    list_editable = ['is_stock_manager']
+    list_editable = ['is_stock_manager', 'is_public_user']
     save_on_top = True
 
     def get_form(self, request, obj=None, **kwargs):

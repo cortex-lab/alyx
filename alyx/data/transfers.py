@@ -380,7 +380,7 @@ def transfers_required(dataset):
         }
 
 
-def bulk_sync(dry_run=False, lab=None, gc=None):
+def bulk_sync(dry_run=False, lab=None, gc=None, check_mismatch=False):
     """
     updates the Alyx database file records field 'exists' by looking at each Globus repository.
     This is meant to be launched before the transfer() function
@@ -394,12 +394,19 @@ def bulk_sync(dry_run=False, lab=None, gc=None):
     :param lab (optional) specific lab name only
     :param gc (optional) globus transfer client. If not given will instantiated within fucntion
     :param local_only: (False) if set to True, only local files will be checked. This is useful
+    :param check_mismatch: (False) if set to True, will add to the queries filerecords existing
+     on SDSC but labeled as mismatched hash
     for patching files
     """
-    dfs = FileRecord.objects.filter(
-        Q(exists=False, data_repository__globus_is_personal=False,
-          data_repository__name__icontains='flatiron') |
-        Q(json__has_key="mismatch_hash"))
+    if check_mismatch:
+        dfs = FileRecord.objects.filter(
+            Q(exists=False, data_repository__globus_is_personal=False,
+              data_repository__name__icontains='flatiron') |
+            Q(json__has_key="mismatch_hash"))
+    else:
+        dfs = FileRecord.objects.filter(
+            Q(exists=False, data_repository__globus_is_personal=False,
+              data_repository__name__icontains='flatiron'))
     if lab:
         dfs = dfs.filter(data_repository__lab__name=lab)
     # get all the datasets concerned and then back down to get all files for all those datasets

@@ -31,3 +31,5 @@ alyx/alyx/settings_lab.py
 alyx/alyx/settings.py
 
 alyx/.idea/
+
+alyx.log

@@ -12,6 +12,8 @@ class APIActionsTests(BaseTests):
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.lab = Lab.objects.create(name='basement')
+        self.public_user = get_user_model().objects.create(
+            username='troublemaker', password='azerty', is_public_user=True)
 
     def test_create_lab_membership(self):
         # first test creation of lab through rest endpoint
@@ -36,6 +38,13 @@ class APIActionsTests(BaseTests):
         response = self.client.get(reverse('user-list') + '/test')
         d = self.ar(response, 200)
         self.assertTrue(set(d['lab']) == set(self.superuser.lab))
+
+    def test_public_user(self):
+        # makes sure the public user can't post
+        self.client.login(username='troublemaker', password='azerty')
+        self.client.force_login(user=self.public_user)
+        response = self.post(reverse('lab-list'), {'name': 'prank'})
+        self.ar(response, 403)
 
     def test_user_rest(self):
         response = self.client.get(reverse('user-list') + '/test')

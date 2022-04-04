@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
 import os
+
 import structlog
 from django.conf.locale.en import formats as en_formats
 
@@ -29,7 +30,6 @@ except ImportError:
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
 
-
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
         'default': {
@@ -42,10 +42,8 @@ if 'GITHUB_ACTIONS' in os.environ:
         }
     }
 
-
 # Custom User model with UUID primary key
 AUTH_USER_MODEL = 'misc.LabMember'
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -106,10 +104,13 @@ LOGGING = {
         'django_structlog': {
             'handlers': ['json_file'],
             'level': 'INFO',
-        }
+        },
     },
     'root': {
-        'handlers': ['file', 'console'],
+        'handlers': [
+            'file',
+            'console',
+        ],
         'level': 'WARNING',
         'propagate': True,
     }

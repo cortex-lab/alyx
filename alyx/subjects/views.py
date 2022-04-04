@@ -1,7 +1,7 @@
-from rest_framework import generics, permissions
+from rest_framework import generics
 import django_filters
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
@@ -48,28 +48,28 @@ class SubjectList(generics.ListCreateAPIView):
     queryset = Subject.objects.all()
     queryset = SubjectListSerializer.setup_eager_loading(queryset)
     serializer_class = SubjectListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = SubjectFilter
 
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subject.objects.all()
     serializer_class = SubjectDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'nickname'
 
 
 class ProjectList(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
 class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -79,4 +79,4 @@ class WaterRestrictedSubjectList(generics.ListAPIView):
         (SELECT subject_id FROM actions_waterrestriction
          WHERE end_time IS NULL)'''])
     serializer_class = WaterRestrictedSubjectListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()

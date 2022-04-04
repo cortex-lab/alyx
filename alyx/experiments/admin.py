@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils.safestring import SafeString
 from django.utils.html import format_html
 from django.contrib.admin import TabularInline
-from reversion.admin import VersionAdmin
 
 from mptt.admin import MPTTModelAdmin
 
@@ -59,7 +58,7 @@ class ChannelAdmin(BaseAdmin):
     readonly_fields = ['trajectory_estimate', 'brain_region']
 
 
-class TrajectoryEstimateAdmin(VersionAdmin):
+class TrajectoryEstimateAdmin(BaseAdmin):
     exclude = ['probe_insertion']
     readonly_fields = ['datetime', '_probe_insertion', 'session', '_channel_count']
     list_display = ['datetime', 'subject', '_probe_insertion', 'provenance', '_channel_count',

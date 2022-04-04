@@ -13,7 +13,7 @@ Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recom
 this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 `ubuntu`.
 
-## Install apache, wsgi module, and set group and acl permissions
+### Install apache, wsgi module, and set group and acl permissions
     sudo apt-get update    
     sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
     sudo a2enmod wsgi
@@ -77,6 +77,27 @@ it should not interrupt current user transactions if any.
 Location of error logs for apache if it fails to start
 
     /var/log/apache2/
+
+### [Optional] Setup AWS Cloudwatch Agent logging
+
+If you are running alyx as an EC2 instance on AWS, you can easily add the AWS Cloudwatch agent to the server to ease log
+evaluation and alerting. This can also be done with a non-ec2 server, but is likely not worth it unless you are already 
+using Cloudwatch for other logs.
+
+To give an overview of the installation process for an EC2 instance:
+* Create an IAM role that enables the agent to collect metrics from the server and attach the role to the server.
+* Download the agent package to the instance.
+* Modify the CloudWatch agent configuration file, specify the metrics and the log files that you want to collect.
+* Install and start the agent on your server.
+* Verify in Cloudwatch 
+  * you are now able to generate alerts from the metrics of interest
+  * you are now shipping the logs files to your log group
+
+Follow the latest instructions from the official [AWS Cloudwatch Agent documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html).
+
+Other useful references:
+* [IAM documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html)
+* [EC2 metadata documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) 
 
 ---
 

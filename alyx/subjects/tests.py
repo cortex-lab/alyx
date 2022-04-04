@@ -172,7 +172,7 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         subject = m.Subject.objects.create(
             nickname='subject', line=line, litter=litter, lab=self.lab)
         z = m.Zygosity.objects.filter(subject=subject).first()
-        assert z.zygosity == 2  # from parents
+        assert z is None  # no zygosity should be assigned from parents
 
         # Create a rule and a genotype test ; the subject should be automatically genotyped.
         zr = m.ZygosityRule.objects.create(
@@ -244,6 +244,30 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert a.zygosity == 2
 
 
+class SubjectProtocolNumber(TestCase):
+
+    def setUp(self):
+        self.lab = Lab.objects.create(name='awesomelab')
+        self.sub = Subject.objects.create(nickname='lawes', lab=self.lab, birth_date='2019-01-01')
+
+    def test_protocol_number(self):
+        from actions.models import Surgery
+        assert self.sub.protocol_number == '1'
+        # after a surgery protocol number goes to 2
+        self.surgery = Surgery.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0))
+        assert self.sub.protocol_number == '2'
+        # after water restriction number goes to 3
+        self.wr = WaterRestriction.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0))
+        assert self.sub.protocol_number == '3'
+        self.wr.end_time = datetime(2019, 1, 2, 12, 0, 0)
+        self.wr.save()
+        assert self.sub.protocol_number == '2'
+        self.surgery.delete()
+        assert self.sub.protocol_number == '1'
+
+
 class SubjectCullTests(TestCase):
 
     def setUp(self):
@@ -260,6 +284,8 @@ class SubjectCullTests(TestCase):
         self.assertFalse(hasattr(self.sub1, 'cull'))
         # self.assertIsNone(self.wr.end_time)
         # makes sure than when creating the cull
+        # if there is an integrity error here, it means the save functions are saving the cull
+        # several time and the water restriction/ cull / subjects save are interdependent
         cull = Cull.objects.create(subject=self.sub1, date='2019-07-15', cull_method=self.CO2)
         self.assertEqual(self.sub1.death_date, cull.date)
         # change cull properties and make sure the corresponding subject properties changed too
