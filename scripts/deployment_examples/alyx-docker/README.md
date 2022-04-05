@@ -1,5 +1,6 @@
 ## TODO
 * write instructions in the Alyx playbook
+* automated docker build via github actions
 ---
 Nice to haves:
 * auto-deployment/auto-redeployment when a PR for master or dev is completed (there are a few different ways to tackle this)
