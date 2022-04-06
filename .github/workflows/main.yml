@@ -5,63 +5,63 @@ on:
     branches:
       - master
       - dev
-      - docker
   pull_request:
     branches:
       - master
       - dev
 
 jobs:
-#  run_tests:
-#    runs-on: ubuntu-latest
-#    services:
-#      postgres:
-#        image: postgres
-#        env:
-#          POSTGRES_PASSWORD: postgres
-#          POSTGRES_USER: postgres
-#        options: >-
-#          --health-cmd pg_isready
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
-#        ports:
-#          - 5432:5432
-#    steps:
-#      - uses: actions/checkout@v2
-#      - name: Build database
-#        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
-#        env:
-#          PGPASSWORD: postgres
-#      - name: Set up Python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: '3.7'
-#      - name: Install dependecies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install -r requirements.txt
-#          pip install coverage coveralls
-#        env:
-#          PIP_USE_MIRRORS: true
-#      - name: Run tests
-#        run: |
-#          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
-#          sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
-#          cd alyx
-#          mv alyx/settings_ci.py alyx/settings.py
-#          coverage run manage.py test -n
-#          coveralls --service=github
-#        env:
-#          DJANGO_SETTINGS_MODULE: alyx.settings
-#          PYTHONPATH: $HOME/builds/cortexlab/alyx
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      - name: Flake
-#        run: |
-#          cd alyx
-#          flake8 .
+  run_tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build database
+        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
+        env:
+          PGPASSWORD: postgres
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+      - name: Install dependecies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install coverage coveralls
+        env:
+          PIP_USE_MIRRORS: true
+      - name: Run tests
+        run: |
+          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
+          sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
+          cd alyx
+          mv alyx/settings_ci.py alyx/settings.py
+          coverage run manage.py test -n
+          coveralls --service=github
+        env:
+          DJANGO_SETTINGS_MODULE: alyx.settings
+          PYTHONPATH: $HOME/builds/cortexlab/alyx
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Flake
+        run: |
+          cd alyx
+          flake8 .
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2

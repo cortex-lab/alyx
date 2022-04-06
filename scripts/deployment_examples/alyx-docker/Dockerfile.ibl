@@ -22,6 +22,10 @@ COPY privkey.pem-${BUILD_ENV}      /etc/apache2/ssl/privkey.pem
 COPY settings.py-${BUILD_ENV}        /var/www/alyx/alyx/alyx/settings.py
 COPY settings_secret.py-${BUILD_ENV} /var/www/alyx/alyx/alyx/settings_secret.py
 COPY settings_lab.py-${BUILD_ENV}    /var/www/alyx/alyx/alyx/settings_lab.py
+RUN mkdir -p /backups/tables/
+RUN mkdir -p /backups/uploaded/ \
+    && chown www-data:www-data /backups/uploaded/ \
+    && chmod 777 /backups/uploaded/
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 644 /var/log/alyx.log
