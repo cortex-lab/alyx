@@ -1327,7 +1327,7 @@
       "name": "_ibl_trials.laserProbability",
       "created_by": null,
       "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "_ibl_trials.laserProbability.npy"
+      "filename_pattern": "*trials.laserProbability.npy"
     }
   },
   {
@@ -1504,6 +1504,17 @@
       "created_by": null,
       "description": "A table of trial events, one per trial. Events include: intervals, goCue_times, response_times, choice, stimOn_times, contrastLeft, contrastRight, feedback_times, feedbackType, rewardVolume, probabilityLeft, firstMovement_times",
       "filename_pattern": "*trials.table*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "fa05d8a7-5ce5-42a6-9941-69ffe3acc1c1",
+    "fields": {
+      "json": null,
+      "name": "trials.probabilityRewardLeft",
+      "created_by": null,
+      "description": "Probability of a left response (i.e. CW turn) being rewarded.  The probability of the right response being rewarded is 1-probabilityRewardLeft. The two probabilities are sampled independently therefore both sides may or may not be rewarded.",
+      "filename_pattern": "*trials.probabilityRewardLeft.npy"
     }
   }
 ]
