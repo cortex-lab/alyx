@@ -228,14 +228,16 @@ class Command(BaseCommand):
         scheme = parsed.scheme or 'file'
         try:
             if scheme == 's3':
-                zip_file = f'{parsed.path.strip("/")}/{ZIP_NAME}'
-                tag_file = f'{parsed.path.strip("/")}/{META_NAME}'
+                zip_file = f'{parsed.netloc}/{parsed.path.strip("/")}/{ZIP_NAME}'
+                tag_file = f'{parsed.netloc}/{parsed.path.strip("/")}/{META_NAME}'
                 s3 = _s3_filesystem()
                 metadata['location'] = _get_s3_virtual_host(zip_file, s3.region)  # Add URL
                 # Write cache info json to s3
+                logger.debug(f'Opening output stream to {tag_file}')
                 with s3.open_output_stream(tag_file) as stream:
                     stream.writelines(json.dumps(metadata, indent=1))
                 # Write zip file to s3
+                logger.debug(f'Opening output stream to {zip_file}')
                 with s3.open_output_stream(zip_file) as stream:
                     stream.write(zip_buffer.getbuffer())
             elif scheme == 'file':
