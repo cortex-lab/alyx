@@ -3,8 +3,9 @@ import os.path as op
 import json
 
 import magic
+import requests
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, FileResponse, JsonResponse
+from django.http import HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect
 
 from rest_framework import viewsets, views
 from rest_framework.response import Response
@@ -134,6 +135,23 @@ class UploadedView(views.APIView):
 
 
 def _get_cache_info():
+    """
+    Load and return the cache info JSON file. Contains information such as cache table timestamp,
+    size and API version.
+
+    :return: dict of cache table information
+    """
+    # Cache table is remote
+    if TABLES_ROOT.startswith('http'):
+        file_json_cache = TABLES_ROOT.strip('/') + '/cache_info.json'
+        resp = requests.get(file_json_cache)
+        resp.raise_for_status()
+        resp_json = resp.json()
+        if 'location' not in resp_json:
+            resp_json['location'] = TABLES_ROOT.strip('/') + '/cache.zip'
+        return resp.json()
+
+    # Cache table is local
     file_json_cache = Path(TABLES_ROOT).joinpath('cache_info.json')
     with open(file_json_cache) as fid:
         cache_info = json.load(fid)
@@ -151,6 +169,9 @@ class CacheDownloadView(views.APIView):
     permission_classes = rest_permission_classes()
 
     def get(self, request=None, **kwargs):
-        cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
-        response = FileResponse(open(cache_file, 'br'))
+        if TABLES_ROOT.startswith('http'):
+            response = HttpResponseRedirect(TABLES_ROOT.strip('/') + '/cache.zip')
+        else:
+            cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
+            response = FileResponse(open(cache_file, 'br'))
         return response
