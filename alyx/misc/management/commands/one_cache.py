@@ -108,7 +108,7 @@ def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> 
         elif parsed.scheme == '':
             pq.write_table(table, filename)
         else:
-            raise ValueError(f'Unsupported URI "{parsed.scheme}"')
+            raise ValueError(f'Unsupported URI scheme "{parsed.scheme}"')
     return table
 
 
@@ -242,7 +242,7 @@ class Command(BaseCommand):
                 with open(zip_file, 'wb') as fid:
                     fid.write(zip_buffer.getbuffer())
             else:
-                raise ValueError(f'Unsupported URI "{scheme}"')
+                raise ValueError(f'Unsupported URI scheme "{scheme}"')
         finally:
             zip_buffer.close()
         return zip_file, tag_file

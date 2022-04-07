@@ -1,6 +1,7 @@
 from pathlib import Path
 import os.path as op
 import json
+import urllib.parse
 
 import magic
 import requests
@@ -141,20 +142,33 @@ def _get_cache_info():
 
     :return: dict of cache table information
     """
-    # Cache table is remote
-    if TABLES_ROOT.startswith('http'):
-        file_json_cache = TABLES_ROOT.strip('/') + '/cache_info.json'
+    META_NAME = 'cache_info.json'
+    parsed = urllib.parse.urlparse(TABLES_ROOT)
+    scheme = parsed.scheme or 'file'
+    if scheme == 'file':
+        # Cache table is local
+        file_json_cache = Path(TABLES_ROOT).joinpath(META_NAME)
+        with open(file_json_cache) as fid:
+            cache_info = json.load(fid)
+    elif scheme.startswith('http'):
+        file_json_cache = TABLES_ROOT.strip('/') + f'/{META_NAME}'
         resp = requests.get(file_json_cache)
         resp.raise_for_status()
-        resp_json = resp.json()
-        if 'location' not in resp_json:
-            resp_json['location'] = TABLES_ROOT.strip('/') + '/cache.zip'
-        return resp.json()
+        cache_info = resp.json()
+        if 'location' not in cache_info:
+            cache_info['location'] = TABLES_ROOT.strip('/') + '/cache.zip'
+    elif scheme == 's3':
+        # Use PyArrow to read file from s3
+        from misc.management.commands.one_cache import _s3_filesystem
+        s3 = _s3_filesystem()
+        file_json_cache = parsed.netloc + '/' + parsed.path.strip('/') + '/' + META_NAME
+        with s3.open_input_stream(file_json_cache) as stream:
+            cache_info = json.load(stream)
+        if 'location' not in cache_info:
+            cache_info['location'] = TABLES_ROOT.strip('/') + '/' + META_NAME
+    else:
+        raise ValueError(f'Unsupported URI scheme "{scheme}"')
 
-    # Cache table is local
-    file_json_cache = Path(TABLES_ROOT).joinpath('cache_info.json')
-    with open(file_json_cache) as fid:
-        cache_info = json.load(fid)
     return cache_info
 
 
