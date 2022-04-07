@@ -235,7 +235,7 @@ class Command(BaseCommand):
                 # Write cache info json to s3
                 logger.debug(f'Opening output stream to {tag_file}')
                 with s3.open_output_stream(tag_file) as stream:
-                    stream.writelines(json.dumps(metadata, indent=1))
+                    stream.writelines(json.dumps(metadata, indent=1).encode())
                 # Write zip file to s3
                 logger.debug(f'Opening output stream to {zip_file}')
                 with s3.open_output_stream(zip_file) as stream:
