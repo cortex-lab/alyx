@@ -156,14 +156,15 @@ class Command(BaseCommand):
         """
         self.metadata = create_metadata()
         to_compress = {}
+        dry = self.compress
         for table in tables:
             if table.lower() == 'sessions':
                 logger.debug('Generating sessions DataFrame')
-                tbl, filename = self._save_table(generate_sessions_frame(**kwargs), table, dry=self.compress)
+                tbl, filename = self._save_table(generate_sessions_frame(**kwargs), table, dry=dry)
                 to_compress[filename] = tbl
             elif table.lower() == 'datasets':
                 logger.debug('Generating datasets DataFrame')
-                tbl, filename = self._save_table(generate_datasets_frame(**kwargs), table, dry=self.compress)
+                tbl, filename = self._save_table(generate_datasets_frame(**kwargs), table, dry=dry)
                 to_compress[filename] = tbl
             else:
                 raise ValueError(f'Unknown table "{table}"')
@@ -204,7 +205,7 @@ class Command(BaseCommand):
         ZIP_NAME = 'cache.zip'
         META_NAME = 'cache_info.json'
 
-        logger.info(f'Compressing tables...')  # Write zip in memory
+        logger.info('Compressing tables...')  # Write zip in memory
         zip_buffer = io.BytesIO()  # Mem buffer to store compressed table data
         with tempfile.TemporaryDirectory() as tmp, \
                 zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip:
@@ -214,11 +215,14 @@ class Command(BaseCommand):
                 pq.write_table(table, tmp_filename)  # Write table to tempdir
                 zip.write(tmp_filename, Path(filename).name)  # Load and compress
                 pqtinfo = pq.read_metadata(tmp_filename)  # Load metadata for cache_info file
-                jsonmeta[Path(filename).stem] = {'nrecs': pqtinfo.num_rows, 'size': pqtinfo.serialized_size}
+                jsonmeta[Path(filename).stem] = {
+                    'nrecs': pqtinfo.num_rows,
+                    'size': pqtinfo.serialized_size
+                }
             metadata = {**self.metadata, 'tables': jsonmeta}
             zip.writestr(META_NAME, json.dumps(metadata, indent=1))  # Compress cache info
 
-        logger.info(f'Writing to file...')
+        logger.info('Writing to file...')
         parsed = urllib.parse.urlparse(self.dst_dir)
         scheme = parsed.scheme or 'file'
         try:
