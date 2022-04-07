@@ -185,7 +185,8 @@ class Command(BaseCommand):
         :param dry: If True, does not actually write to disk
         :return: A PyArrow table and the full path to the saved file
         """
-        logger.info(f'Saving table "{name}" to {self.dst_dir}...')
+        if not kwargs.get('dry'):
+            logger.info(f'Saving table "{name}" to {self.dst_dir}...')
         scheme = urllib.parse.urlparse(self.dst_dir).scheme or 'file'
         if scheme == 'file':
             Path(self.dst_dir).mkdir(exist_ok=True)
@@ -227,8 +228,8 @@ class Command(BaseCommand):
         scheme = parsed.scheme or 'file'
         try:
             if scheme == 's3':
-                zip_file = f'{parsed.path}/{ZIP_NAME}'
-                tag_file = f'{parsed.path}/{META_NAME}'
+                zip_file = f'{parsed.path.strip("/")}/{ZIP_NAME}'
+                tag_file = f'{parsed.path.strip("/")}/{META_NAME}'
                 s3 = _s3_filesystem()
                 metadata['location'] = _get_s3_virtual_host(zip_file, s3.region)  # Add URL
                 # Write cache info json to s3
