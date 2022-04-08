@@ -127,10 +127,7 @@ class UploadedView(views.APIView):
 
     def get(self, request=None, format=None, img_url=''):
         path = op.join(MEDIA_ROOT, img_url)
-        mime = magic.from_file(path, mime=True)
-        with open(path, 'rb') as f:
-            data = f.read()
-        return HttpResponse(data, content_type=mime)
+        return HttpResponse(path)
 
 
 def _get_cache_info():
