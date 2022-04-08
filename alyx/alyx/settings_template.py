@@ -245,8 +245,9 @@ MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
 MEDIA_ROOT = '/backups/uploaded/'
 MEDIA_URL = '/uploaded/'
 
+# The location for saving and/or serving the cache tables.
+# May be a local path, http address or s3 uri (i.e. s3://)
 TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
-TABLES_ROOT = '/backups/tables/'
 
 UPLOADED_IMAGE_WIDTH = 800
 

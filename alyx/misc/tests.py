@@ -1,8 +1,16 @@
 from datetime import datetime, timedelta
+import unittest
 from django.test import TestCase
 
 from subjects.models import Subject
 from misc.models import Housing, HousingSubject, CageType
+
+SKIP_ONE_CACHE = False
+try:
+    import pyarrow as pa
+    from misc.management.commands import one_cache
+except ImportError:
+    SKIP_ONE_CACHE = True
 
 
 class HousingTests(TestCase):
@@ -103,3 +111,31 @@ class HousingTests(TestCase):
                                       start_datetime=datetime.now())
         self.assertEqual(self.hou2.subjects_current().count(), 1)
         self.assertEqual(self.hou1.subjects_current().count(), 2)
+
+
+@unittest.skipIf(SKIP_ONE_CACHE, 'Missing dependencies')
+class ONECache(TestCase):
+    """Tests for misc.management.commands.one_cache"""
+
+    def test_s3_filesystem(self):
+        """Test the _s3_filesystem function"""
+        region = 'eu-east-1'
+        s3 = one_cache._s3_filesystem(region=region)
+        self.assertIsInstance(s3, pa.fs.S3FileSystem)
+        self.assertEqual(s3.region, region)
+
+    def test_get_s3_virtual_host(self):
+        """Tests for _get_s3_virtual_host function"""
+        expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/'
+        url = one_cache._get_s3_virtual_host('s3://my-s3-bucket', 'eu-east-1')
+        self.assertEqual(expected, url)
+
+        url = one_cache._get_s3_virtual_host('my-s3-bucket/', 'eu-east-1')
+        self.assertEqual(expected, url)
+
+        expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/path/to/file'
+        url = one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'eu-east-1')
+        self.assertEqual(expected, url)
+
+        with self.assertRaises(AssertionError):
+            one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'wrong-foo-4')
