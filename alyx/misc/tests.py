@@ -9,7 +9,8 @@ SKIP_ONE_CACHE = False
 try:
     import pyarrow as pa
     from misc.management.commands import one_cache
-except ImportError:
+except ImportError as ex:
+    print(f'Failed to import one_cache: {ex}')
     SKIP_ONE_CACHE = True
 
 
