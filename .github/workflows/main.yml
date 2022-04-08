@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build database
-        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432 
+        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
         env:
           PGPASSWORD: postgres
       - name: Set up Python
@@ -40,8 +40,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage coveralls
-        env: 
+          pip install coverage coveralls pyarrow  # for one_cache tests
+        env:
           PIP_USE_MIRRORS: true
       - name: Run tests
         run: |
