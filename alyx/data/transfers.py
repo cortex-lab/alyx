@@ -165,7 +165,7 @@ def globus_file_exists(file_record):
     name_uuid = _add_uuid_to_filename(name, file_record.dataset.pk)
     try:
         existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=dir_path)
-    except globus_sdk.exc.TransferAPIError as e:
+    except globus_sdk.TransferAPIError as e:
         logger.warning(e)
         return False
     for existing_file in existing:
@@ -303,7 +303,7 @@ def iter_registered_directories(data_repository=None, tc=None, path=None):
     path = path or data_repository.path
     try:
         contents = tc.operation_ls(data_repository.globus_endpoint_id, path=path)
-    except globus_sdk.exc.TransferAPIError as e:
+    except globus_sdk.TransferAPIError as e:
         logger.warning(e)
         return
     contents = contents['DATA']
@@ -451,7 +451,7 @@ def bulk_sync(dry_run=False, lab=None, gc=None, check_mismatch=False):
             try:
                 print(str(c) + '/' + str(nfiles) + ' ls ' + cpath + ' on ' + str(_last_ep))
                 ls_result = gc.operation_ls(_last_ep, path=_last_path)
-            except globus_sdk.exc.TransferAPIError:
+            except globus_sdk.TransferAPIError:
                 ls_result = []
         # compare the current file against the ls list, update the file_size if necessary
         exists = False
@@ -660,7 +660,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
                 path = Path(_filename_from_file_record(file_record, add_uuid=add_uuid))
                 ls_obj = gtc.operation_ls(file_record.data_repository.globus_endpoint_id,
                                           path=path.parent)
-            except globus_sdk.exc.TransferAPIError as err:
+            except globus_sdk.TransferAPIError as err:
                 logger.warning('Globus error trial %i/%i', ntry + 1, N_RETRIES, exc_info=err)
                 if 'ClientError.NotFound' in str(err):
                     return
@@ -796,7 +796,7 @@ def globus_delete_file_records(file_records, dry=True, gc=None):
                     try:
                         ls_current_path = [f['name'] for f in
                                            gtc.operation_ls(ge, path=current_path)]
-                    except globus_sdk.exc.TransferAPIError as err:
+                    except globus_sdk.TransferAPIError as err:
                         if 'ClientError.NotFound' in str(err):
                             logger.warning('DIR NOT FOUND: ' + file2del + ' on ' +
                                            str(fr.data_repository.name))
