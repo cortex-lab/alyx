@@ -26,6 +26,7 @@ from actions.models import Session
 from data.models import Dataset, FileRecord
 
 logger = logging.getLogger(__name__)
+ONE_API_VERSION = '1.10.0'  # Minimum compatible ONE api version
 
 
 def measure_time(func):
@@ -59,7 +60,8 @@ def _s3_filesystem(**kwargs) -> pa.fs.S3FileSystem:
 
 def _get_s3_virtual_host(uri, region) -> str:
     """
-    Convert a given bucket URI to a URL by
+    Convert a given bucket URI to a generic Amazon virtual host URL.
+    URI may be the bucket (+ path) or a full URI starting with 's3://'
 
     S3 documentation:
     https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html#virtual-host-style-url-ex
@@ -68,7 +70,7 @@ def _get_s3_virtual_host(uri, region) -> str:
     :param region: The region, e.g. eu-west-1
     :return: The Web URL (virtual host name and https scheme)
     """
-    assert region and re.match(r'\w{2}-\w+-[1-3]', region)
+    assert region and re.match(r'\w{2}-\w+-[1-3]', region), 'Invalid region'
     parsed = urllib.parse.urlparse(uri)  # remove scheme if necessary
     key = parsed.path.strip('/').split('/')
     bucket = parsed.netloc or key.pop(0)
@@ -83,7 +85,7 @@ def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> 
     If using S3, by default the aws default credentials are used.  These may be overridden by the
     S3_ACCESS dict in settings_secret.py.
 
-    :param filename: Parquet save location, may be local file path or S3 location
+    :param filename: Parquet save location, may be local file path or S3 location (starting s3://)
     :param df: A DataFrame to save as parquet table
     :param metadata: A dict of optional metadata
     :param dry: if True, return pyarrow table without saving to disk
@@ -129,7 +131,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('-D', '--destination', default=TABLES_ROOT,
-                            help='File(s) destination')
+                            help='File(s) destination, may be local path or s3 URI starting s3://')
         parser.add_argument('-t', '--tables', nargs='*', default=('sessions', 'datasets'),
                             help="List of tables to generate")
         parser.add_argument('--int-id', action='store_true',
@@ -393,7 +395,7 @@ def create_metadata() -> dict:
     return {
         'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
         'origin': connection.settings_dict['NAME'] or socket.gethostname(),
-        'min_api_version': '1.8.0'
+        'min_api_version': ONE_API_VERSION
     }
 
 
