@@ -29,6 +29,8 @@ RUN mkdir -p /backups/uploaded/ \
 RUN touch /var/log/alyx.log \
     && chown www-data:www-data /var/log/alyx.log \
     && chmod 644 /var/log/alyx.log
+RUN ln -s /home/ubuntu/iblalyx/management/ibl_reports /var/www/alyx/alyx/ibl_reports
+RUN ln -s /home/ubuntu/iblalyx/management/ibl_reports/templates /var/www/alyx/alyx/templates/ibl_reports
 
 # Expose ports, enable apache modules, and launch apache
 EXPOSE 80 443 5432
