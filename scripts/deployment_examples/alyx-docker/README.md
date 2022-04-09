@@ -2,11 +2,11 @@
 * write instructions in the Alyx playbook
 ---
 Nice to haves:
+* autodeploy docker base image from master merge or PR 
 * auto-deployment/auto-redeployment when a PR for master or dev is completed (there are a few different ways to tackle this)
 * cleanup aws security groups (find better organization)
-* auto update relevant aws security groups when deploying, utilize awscli
-* auto update gandi DNS when deploying (gandi api - https://api.gandi.net/docs/livedns/)
-* flesh out ibl_alyx_bootstrap.sh to handle more of the deployment/redeployment?
+  * auto update relevant aws security groups when deploying, utilize awscli
+* auto update gandi DNS when deploying alyx-dev (gandi api - https://api.gandi.net/docs/livedns/)
 
 ## Infrastructure (AWS, Gandi)
 Steps involved to ensure the appropriate infrastructure is in place for running docker.
