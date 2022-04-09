@@ -2,16 +2,18 @@ from pathlib import Path
 import os.path as op
 import json
 
+import urllib.parse
+import requests
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, FileResponse, JsonResponse
+from django.http import HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect
 
 from rest_framework import viewsets, views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
-from rest_framework import generics, permissions
+from rest_framework import generics
 
-from alyx.base import BaseFilterSet
+from alyx.base import BaseFilterSet, rest_permission_classes
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
@@ -71,7 +73,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserSerializer.setup_eager_loading(queryset)
     serializer_class = UserSerializer
     lookup_field = 'username'
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class LabFilter(BaseFilterSet):
@@ -85,7 +87,7 @@ class LabFilter(BaseFilterSet):
 class LabList(generics.ListCreateAPIView):
     queryset = Lab.objects.all()
     serializer_class = LabSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
     filter_class = LabFilter
 
@@ -93,7 +95,7 @@ class LabList(generics.ListCreateAPIView):
 class LabDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lab.objects.all()
     serializer_class = LabSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -111,18 +113,18 @@ class NoteList(generics.ListCreateAPIView):
     """
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = BaseFilterSet
 
 
 class NoteDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class UploadedView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, format=None, img_url=''):
         path = op.join(MEDIA_ROOT, img_url)
@@ -130,23 +132,56 @@ class UploadedView(views.APIView):
 
 
 def _get_cache_info():
-    file_json_cache = Path(TABLES_ROOT).joinpath('cache_info.json')
-    with open(file_json_cache) as fid:
-        cache_info = json.load(fid)
+    """
+    Load and return the cache info JSON file. Contains information such as cache table timestamp,
+    size and API version.
+
+    :return: dict of cache table information
+    """
+    META_NAME = 'cache_info.json'
+    parsed = urllib.parse.urlparse(TABLES_ROOT)
+    scheme = parsed.scheme or 'file'
+    if scheme == 'file':
+        # Cache table is local
+        file_json_cache = Path(TABLES_ROOT).joinpath(META_NAME)
+        with open(file_json_cache) as fid:
+            cache_info = json.load(fid)
+    elif scheme.startswith('http'):
+        file_json_cache = TABLES_ROOT.strip('/') + f'/{META_NAME}'
+        resp = requests.get(file_json_cache)
+        resp.raise_for_status()
+        cache_info = resp.json()
+        if 'location' not in cache_info:
+            cache_info['location'] = TABLES_ROOT.strip('/') + '/cache.zip'
+    elif scheme == 's3':
+        # Use PyArrow to read file from s3
+        from misc.management.commands.one_cache import _s3_filesystem
+        s3 = _s3_filesystem()
+        file_json_cache = parsed.netloc + '/' + parsed.path.strip('/') + '/' + META_NAME
+        with s3.open_input_stream(file_json_cache) as stream:
+            cache_info = json.load(stream)
+        if 'location' not in cache_info:
+            cache_info['location'] = TABLES_ROOT.strip('/') + '/' + META_NAME
+    else:
+        raise ValueError(f'Unsupported URI scheme "{scheme}"')
+
     return cache_info
 
 
 class CacheVersionView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, **kwargs):
         return JsonResponse(_get_cache_info())
 
 
 class CacheDownloadView(views.APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request=None, **kwargs):
-        cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
-        response = FileResponse(open(cache_file, 'br'))
+        if TABLES_ROOT.startswith('http'):
+            response = HttpResponseRedirect(TABLES_ROOT.strip('/') + '/cache.zip')
+        else:
+            cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
+            response = FileResponse(open(cache_file, 'br'))
         return response

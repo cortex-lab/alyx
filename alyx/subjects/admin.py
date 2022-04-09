@@ -1292,7 +1292,8 @@ class LabMemberAdmin(UserAdmin):
     form = LabMemberAdminForm
 
     fieldsets = UserAdmin.fieldsets + (
-        ('Extra fields', {'fields': ('allowed_users',)}),
+        ('Extra fields', {'fields': ('allowed_users',)},),
+        ('Permissions', {'fields': ('is_stock_manager', 'is_public_user')})
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Extra fields', {'fields': ('allowed_users',)}),
@@ -1302,8 +1303,9 @@ class LabMemberAdmin(UserAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l', 'allowed_users_',
                     'is_staff', 'is_superuser', 'is_stock_manager',
+                    'is_public_user'
                     ]
-    list_editable = ['is_stock_manager']
+    list_editable = ['is_stock_manager', 'is_public_user']
     save_on_top = True
 
     def get_form(self, request, obj=None, **kwargs):
