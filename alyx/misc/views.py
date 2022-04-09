@@ -2,7 +2,6 @@ from pathlib import Path
 import os.path as op
 import json
 
-import magic
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, FileResponse, JsonResponse
 
