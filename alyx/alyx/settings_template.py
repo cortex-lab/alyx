@@ -29,6 +29,7 @@ except ImportError:
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
+USE_DEPRECATED_PYTZ = True  # Support for using pytz will be removed in Django 5.0
 
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
