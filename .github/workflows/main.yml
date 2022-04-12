@@ -6,10 +6,10 @@ on:
 #      - master
 #      - dev
       - pip_req_txt_test
-  pull_request:
-    branches:
-      - master
-      - dev
+#  pull_request:
+#    branches:
+#      - master
+#      - dev
 
 jobs:
   run_tests:
@@ -43,31 +43,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install coverage coveralls
-          pip freeze > req_test.txt
-          cat req_test.txt
         env:
           PIP_USE_MIRRORS: true
-      - name: Commit files
-        id: commit
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "github-actions"
-          git switch pip_req_txt_test_target
-          git add req_test.txt
-          git commit -m "Freeze requirements from GitHub actions"
-#          git add --all
-#          if [-z "$(git status --porcelain)"]; then
-#             echo "::set-output name=push::false"
-#          else
-#             git commit -m "Add changes" -a
-#             echo "::set-output name=push::true"
-#          fi
-        shell: bash
-      - name: Push changes
-#        if: steps.commit.outputs.push == 'true'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 #      - name: Run tests
 #        run: |
 #          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
@@ -84,3 +61,21 @@ jobs:
 #        run: |
 #          cd alyx
 #          flake8 .
+      - name: Generate pip requirements frozen
+        run: |
+          pip freeze > requirements_frozen.txt
+          echo ">>> Contents of requirements_frozen.txt <<<"
+          cat requirements_frozen.txt
+      - name: Copy files to S3
+        shell: bash
+        env:
+          aws_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_ID }}
+          aws_s3_bucket: ${{ secrets.AWS_S3BUCKET_NAME }}
+          aws_region: ${{ secrets.AWS_REGION }}
+        run: |
+          sudo apt-get update && sudo apt-get -y install awscli
+          aws configure set aws_access_key_id $aws_key_id
+          aws configure set aws_secret_access_key $aws_secret_access_key 
+          aws configure set default.region $aws_region
+          aws s3 cp requirements_frozen.txt s3://$aws_s3_bucket/github_actions/
