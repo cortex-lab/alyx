@@ -11,12 +11,11 @@ jobs:
 
       - name: Checkout branch
         uses: actions/checkout@v2
-        run: |
-          echo ">>> Git Status <<<"
-          git status
 
       - name: Install Python dependecies
         run: |
+          echo ">>> Git Status <<<"
+          git status
           python -m pip install --upgrade pip
           pip install -r requirements.txt
         env:
