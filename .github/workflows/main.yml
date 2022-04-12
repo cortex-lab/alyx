@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - master
-      - dev
+#      - master
+#      - dev
+      - pip_req_txt_test
   pull_request:
     branches:
       - master
@@ -13,49 +14,70 @@ on:
 jobs:
   run_tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+#    services:
+#      postgres:
+#        image: postgres
+#        env:
+#          POSTGRES_PASSWORD: postgres
+#          POSTGRES_USER: postgres
+#        options: >-
+#          --health-cmd pg_isready
+#          --health-interval 10s
+#          --health-timeout 5s
+#          --health-retries 5
+#        ports:
+#          - 5432:5432
     steps:
       - uses: actions/checkout@v2
-      - name: Build database
-        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432 
-        env:
-          PGPASSWORD: postgres
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
+#      - name: Build database
+#        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
+#        env:
+#          PGPASSWORD: postgres
+#      - name: Set up Python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: '3.7'
       - name: Install dependecies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install coverage coveralls
-        env: 
-          PIP_USE_MIRRORS: true
-      - name: Run tests
-        run: |
-          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
-          sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
-          cd alyx
-          mv alyx/settings_ci.py alyx/settings.py
-          coverage run manage.py test -n
-          coveralls --service=github
+          pip freeze > req_test.txt
         env:
-          DJANGO_SETTINGS_MODULE: alyx.settings
-          PYTHONPATH: $HOME/builds/cortexlab/alyx
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Flake
+          PIP_USE_MIRRORS: true
+      - name: Commit files
+        id: commit
         run: |
-          cd alyx
-          flake8 .
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions"
+          git add req_test.txt
+          git commit -m "Freeze requirements from GitHub actions"
+#          git add --all
+#          if [-z "$(git status --porcelain)"]; then
+#             echo "::set-output name=push::false"
+#          else
+#             git commit -m "Add changes" -a
+#             echo "::set-output name=push::true"
+#          fi
+        shell: bash
+      - name: Push changes
+        if: steps.commit.outputs.push == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Run tests
+#        run: |
+#          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
+#          sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
+#          cd alyx
+#          mv alyx/settings_ci.py alyx/settings.py
+#          coverage run manage.py test -n
+#          coveralls --service=github
+#        env:
+#          DJANGO_SETTINGS_MODULE: alyx.settings
+#          PYTHONPATH: $HOME/builds/cortexlab/alyx
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Flake
+#        run: |
+#          cd alyx
+#          flake8 .
