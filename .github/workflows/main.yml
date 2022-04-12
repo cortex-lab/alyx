@@ -12,7 +12,7 @@ on:
 
 jobs:
   run_jobs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     services:
       postgres:
         image: postgres:13
@@ -27,17 +27,18 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
-
       - name: Build database
         run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
         env:
           PGPASSWORD: postgres
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
+
+      - name: Checkout branch
+        uses: actions/checkout@v2
+
       - name: Install Python dependecies
         run: |
           python -m pip install --upgrade pip
@@ -64,7 +65,7 @@ jobs:
           cd alyx
           flake8 .
 
-      - name: Generate pip freeze requirements.txt
+      - name: Generate pip freeze requirements_frozen.txt
         run: |
           pip freeze > requirements_frozen.txt
           echo ">>> Contents of requirements_frozen.txt <<<"
