@@ -52,6 +52,7 @@ jobs:
           git config --local user.name "github-actions"
           git add req_test.txt
           git commit -m "Freeze requirements from GitHub actions"
+          echo "::set-output name=push::true"
 #          git add --all
 #          if [-z "$(git status --porcelain)"]; then
 #             echo "::set-output name=push::false"
