@@ -39,10 +39,12 @@ jobs:
 #          python-version: '3.7'
       - name: Install dependecies
         run: |
+          python --version
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install coverage coveralls
           pip freeze > req_test.txt
+          cat req_test.txt
         env:
           PIP_USE_MIRRORS: true
       - name: Commit files
@@ -50,9 +52,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "github-actions"
+          git switch pip_req_txt_test_target
           git add req_test.txt
           git commit -m "Freeze requirements from GitHub actions"
-          echo "::set-output name=push::true"
 #          git add --all
 #          if [-z "$(git status --porcelain)"]; then
 #             echo "::set-output name=push::false"
@@ -62,7 +64,7 @@ jobs:
 #          fi
         shell: bash
       - name: Push changes
-        if: steps.commit.outputs.push == 'true'
+#        if: steps.commit.outputs.push == 'true'
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
