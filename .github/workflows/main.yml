@@ -73,8 +73,9 @@ jobs:
 #          cat requirements_frozen.txt
       - name: Setup git
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "<>"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
       - name: Commit requirements_frozen.txt to repo
         run: |
           echo >>> git status <<<
