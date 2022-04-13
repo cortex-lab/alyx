@@ -1,7 +1,7 @@
 boto3
 colorlog
 coreapi
-django>=4.0.3
+django~=4.0.3
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
@@ -26,5 +26,5 @@ psycopg2-binary
 python-dateutil
 python-magic
 pytz
-structlog>=21.5.0
+structlog~=21.5.0
 webdavclient3
