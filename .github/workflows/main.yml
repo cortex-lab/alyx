@@ -14,8 +14,6 @@ jobs:
 
       - name: Install Python dependecies
         run: |
-          echo ">>> Git Status <<<"
-          git status
           python -m pip install --upgrade pip
           pip install -r requirements.txt
         env:
@@ -34,6 +32,8 @@ jobs:
 
       - name: Commit
         run: |
+          echo ">>> Git Status <<<"
+          git status
           git add requirements_frozen.txt
           git commit -m "GitHub Actions generated requirements_frozen.txt"
           git push
