@@ -13,115 +13,24 @@ on:
 jobs:
   run_jobs:
     runs-on: ubuntu-20.04
-#    services:
-#      postgres:
-#        image: postgres:13
-#        env:
-#          POSTGRES_PASSWORD: postgres
-#          POSTGRES_USER: postgres
-#        options: >-
-#          --health-cmd pg_isready
-#          --health-interval 10s
-#          --health-timeout 5s
-#          --health-retries 5
-#        ports:
-#          - 5432:5432
     steps:
-#      - name: Build database
-#        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
-#        env:
-#          PGPASSWORD: postgres
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-
       - name: Checkout branch
         uses: actions/checkout@v3
-
-#      - name: Install Python dependecies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install -r requirements.txt
-#          pip install coverage coveralls
-#        env:
-#          PIP_USE_MIRRORS: true
-
-#      - name: Run tests
-#        run: |
-#          sudo touch /var/log/alyx.log; sudo chmod 666 /var/log/alyx.log
-#          sudo touch /var/log/alyx_json.log; sudo chmod 666 /var/log/alyx_json.log
-#          cd alyx
-#          mv alyx/settings_ci.py alyx/settings.py
-#          coverage run manage.py test -n
-#          coveralls --service=github
-#        env:
-#          DJANGO_SETTINGS_MODULE: alyx.settings
-#          PYTHONPATH: $HOME/builds/cortexlab/alyx
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      - name: Flake
-#        run: |
-#          cd alyx
-#          flake8 .
-
       - name: Generate pip freeze requirements_frozen.txt
         run: |
           date > date_generated.txt
-#          pip freeze > requirements_frozen.txt
-#          echo ">>> Contents of requirements_frozen.txt <<<"
-#          cat requirements_frozen.txt
       - name: Setup git
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-
       - name: Commit requirements_frozen.txt to repo
         run: |
           echo >>> git status <<<
           git status
           git add date_generated.txt
-#          git add requirements_frozen.txt
           git commit -m "GitHub Actions generated requirements_frozen.txt"
           git push
-#      - name: Copy files to S3
-#        shell: bash
-#        env:
-#          aws_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_ID }}
-#          aws_s3_bucket: ${{ secrets.AWS_S3BUCKET_NAME }}
-#          aws_region: ${{ secrets.AWS_REGION }}
-#        run: |
-#          sudo apt-get update && sudo apt-get -y install awscli
-#          aws configure set aws_access_key_id $aws_key_id
-#          aws configure set aws_secret_access_key $aws_secret_access_key
-#          aws configure set default.region $aws_region
-#          aws s3 cp requirements_frozen.txt s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/000-default-conf-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/000-default-conf-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/000-default-conf-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/apache-conf-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/apache-conf-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/apache-conf-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/cloudwatch_config.json-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/cloudwatch_config.json-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/cloudwatch_config.json-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 cp scripts/deployment_examples/alyx-docker/Dockerfile.ibl s3://$aws_s3_bucket/github_actions/
-#
-#      - name: Configure Docker login
-#        if: ${{ github.ref == 'refs/heads/docker' }}
-#        uses: docker/login-action@v1
-#        with:
-#          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-#          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-#      - name: Set up Docker Buildx
-#        if: ${{ github.ref == 'refs/heads/docker' }}
-#        uses: docker/setup-buildx-action@v1
-#      - name: Build and push Docker base image
-#        if: ${{ github.ref == 'refs/heads/docker' }}
-#        uses: docker/build-push-action@v2
-#        with:
-#          context: .
-#          file: ./scripts/deployment_examples/alyx-docker/Dockerfile.base
-#          push: true
-#          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/alyx:base
