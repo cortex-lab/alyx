@@ -29,7 +29,7 @@ jobs:
           git config user.email github-actions@github.com
       - name: Commit requirements_frozen.txt to repo
         run: |
-          echo >>> git status <<<
+          echo '>>> git status <<<'
           git status
           git add date_generated.txt
           git commit -m "GitHub Actions generated requirements_frozen.txt"
