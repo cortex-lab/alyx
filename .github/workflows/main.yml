@@ -1,7 +1,7 @@
 name: Commit requirement_freeze.txt to pip_req_txt_test
 on: push
 jobs:
-  date:
+  req_test:
     runs-on: ubuntu-20.04
     steps:
       - name: Set up Python
