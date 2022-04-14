@@ -4,14 +4,15 @@ jobs:
   req_test:
     runs-on: ubuntu-20.04
     steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-
-      - name: Checkout branch
-        uses: actions/checkout@v3
-
       - name: Install Python dependecies
         run: |
           python -m pip install --upgrade pip
@@ -25,19 +26,11 @@ jobs:
           echo ">>> Contents of requirements_frozen.txt <<<"
           cat requirements_frozen.txt
 
-      - name: Setup git
+      - name: Setup git, commit
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "<>"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -m "GitHub Actions generated requirements_frozen.txt" -a
 
-      - name: Commit if changes were made
-        shell: bash
-        run: |
-          git add requirements_frozen.txt
-          git status | grep modified
-          if [ $? -eq 0 ]; then
-            git commit -m "GitHub Actions generated requirements_frozen.txt"
-            git push
-          else
-            echo "No changes to requirements_frozen.txt since last run"
-          fi
+      - name: Push changes
+        uses: ad-m/github-push-action@master
