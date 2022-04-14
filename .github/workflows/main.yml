@@ -23,7 +23,7 @@ jobs:
       - name: Generate pip freeze requirements_frozen.txt if needed
         run: |
           pip freeze > requirements_frozen_temp.txt
-          if [[ diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null ]]; then
+          if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
             echo "requirements_frozen.txt unchanged"
             rm requirements_frozen_temp.txt
             echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
