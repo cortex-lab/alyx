@@ -1,7 +1,17 @@
-name: Commit requirement_freeze.txt to pip_req_txt_test
-on: push
+name: CI, approaching CD
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+      - pip_req_txt_test
+
 jobs:
-  req_test:
+  run_jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout branch
@@ -18,7 +28,7 @@ jobs:
         env:
           PIP_USE_MIRRORS: true
 
-      - name: Generate new requirements_frozen.txt if different
+      - name: Generate new requirements_frozen.txt if needed
         run: |
           pip freeze > requirements_frozen_temp.txt
           if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
@@ -30,6 +40,10 @@ jobs:
             mv requirements_frozen_temp.txt requirements_frozen.txt
             echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
           fi
+          echo ">>> Info on GitHub Contexts <<<"
+          echo ${{github.event}}
+          echo ${{github.event_name}}
+          echo ${{github.ref}}
 
       - name: Setup git/commit/push for requirements_frozen.txt, only runs if needed
         if: env.GIT_PUSH_NEEDED == 'true'
