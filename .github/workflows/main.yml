@@ -20,17 +20,26 @@ jobs:
         env:
           PIP_USE_MIRRORS: true
 
-      - name: Generate pip freeze requirements_frozen.txt
+      - name: Generate pip freeze requirements_frozen.txt if needed
         run: |
-          pip freeze > requirements_frozen.txt
-          echo ">>> Contents of requirements_frozen.txt <<<"
-          cat requirements_frozen.txt
+          pip freeze > requirements_frozen_temp.txt
+          if [[ diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null ]]; then
+            echo "requirements_frozen.txt unchanged"
+            rm requirements_frozen_temp.txt
+            echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
+          else 
+            echo "requirements_frozen.txt is different, requires git push"
+            mv requirements_frozen_temp.txt requirements_frozen.txt
+            echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
+          fi
 
-      - name: Setup git, commit
+      - name: Setup git/commit for requirements_frozen.txt, only if needed
+        if: env.GIT_PUSH_NEEDED == 'true'
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git commit -m "GitHub Actions generated requirements_frozen.txt" -a
 
       - name: Push changes
+        if: env.GIT_PUSH_NEEDED == 'true'
         uses: ad-m/github-push-action@master
