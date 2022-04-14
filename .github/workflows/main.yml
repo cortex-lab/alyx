@@ -10,7 +10,7 @@ jobs:
           python-version: '3.8'
 
       - name: Checkout branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Python dependecies
         run: |
@@ -30,12 +30,12 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "<>"
 
-      - name: Commit
+      - name: Commit if changes were made
+        shell: bash
         run: |
           git add requirements_frozen.txt
           git status | grep modified
-          if [ $? -eq 0 ]
-          then
+          if [ $? -eq 0 ]; then
             git commit -m "GitHub Actions generated requirements_frozen.txt"
             git push
           else
