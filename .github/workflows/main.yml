@@ -6,8 +6,6 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -20,7 +18,7 @@ jobs:
         env:
           PIP_USE_MIRRORS: true
 
-      - name: Generate pip freeze requirements_frozen.txt if needed
+      - name: Generate new requirements_frozen.txt if different
         run: |
           pip freeze > requirements_frozen_temp.txt
           if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
@@ -28,18 +26,15 @@ jobs:
             rm requirements_frozen_temp.txt
             echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
           else 
-            echo "requirements_frozen.txt is different, requires git push"
+            echo "requirements_frozen.txt is different, git push needed"
             mv requirements_frozen_temp.txt requirements_frozen.txt
             echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Setup git/commit for requirements_frozen.txt, only if needed
+      - name: Setup git/commit/push for requirements_frozen.txt, only runs if needed
         if: env.GIT_PUSH_NEEDED == 'true'
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git commit -m "GitHub Actions generated requirements_frozen.txt" -a
-
-      - name: Push changes
-        if: env.GIT_PUSH_NEEDED == 'true'
-        uses: ad-m/github-push-action@master
+          git push
