@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - dev
+      - pip_req_txt_test
   pull_request:
     branches:
       - master
@@ -41,7 +42,6 @@ jobs:
             echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
           fi
           echo ">>> Info on GitHub Contexts <<<"
-          echo ${{github.event}}
           echo ${{github.event_name}}
           echo ${{github.ref}}
 
