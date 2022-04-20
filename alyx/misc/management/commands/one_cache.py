@@ -339,7 +339,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'session__id', 'session__start_time__date', 'session__number',
         'session__subject__nickname', 'session__lab__name', 'on_flatiron', 'on_aws'
     )
-    fields_map = {'session_id': 'eid', 'default_dataset': 'default_revision'}
+    fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
     df = pd.DataFrame.from_records(ds.values(*fields)).rename(fields_map, axis=1)
 
     # TODO New version without this nonsense
