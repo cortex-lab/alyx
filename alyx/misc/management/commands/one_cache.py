@@ -18,8 +18,8 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 
 from django.db import connection
+from django.db.models import Q, Exists, OuterRef
 from django.core.management.base import BaseCommand
-from django.core.paginator import Paginator
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
@@ -319,58 +319,42 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'exists'            # bool
     )
     """
-    # Find all online file records
-    batch_size = 50000
-    qs = Dataset.objects.all().order_by('created_datetime')
-    paginator = Paginator(qs, batch_size)
+    # Determine which file records are on AWS and which are on FlatIron
+    fr = FileRecord.objects.select_related('data_repository')
+    on_flatiron = fr.filter(dataset=OuterRef('pk'),
+                            exists=True,
+                            data_repository__name__startswith='flatiron').values('pk')
+    on_aws = fr.filter(dataset=OuterRef('pk'),
+                       exists=True,
+                       data_repository__name__startswith='aws').values('pk')
+    # Fetch datasets and their related tables
+    ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
+    # Filter out datasets that do not exist on either repository
+    ds = ds.annotate(on_flatiron=Exists(on_flatiron), on_aws=Exists(on_aws))
+    ds = ds.filter(Q(on_flatiron=True) | Q(on_aws=True))
 
     # fields to keep from Dataset table
-    dataset_fields = ('id', 'session', 'file_size', 'hash', 'default_dataset')
-    # fields to keep from FileRecord table
-    filerecord_fields = ('dataset_id', 'relative_path', 'exists', 'data_repository__name',
-                         'data_repository__globus_path')
+    fields = (
+        'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
+        'session__id', 'session__start_time__date', 'session__number',
+        'session__subject__nickname', 'session__lab__name', 'on_flatiron', 'on_aws'
+    )
+    fields_map = {'session_id': 'eid', 'default_dataset': 'default_revision'}
+    df = pd.DataFrame.from_records(ds.values(*fields)).rename(fields_map, axis=1)
 
-    all_df = []
-    for i in paginator.page_range:
-        data = paginator.get_page(i)
-        current_qs = data.object_list
-        df = pd.DataFrame.from_records(current_qs.values(*dataset_fields))
-        frs = FileRecord.objects.select_related('data_repository').\
-            filter(dataset_id__in=df['id'].values, exists=True,
-                   data_repository__globus_is_personal=False)
-        fr = pd.DataFrame.from_records(frs.values(*filerecord_fields))
-        df = df.set_index('id').join(fr.set_index('dataset_id'))
-        all_df.append(df)
+    # TODO New version without this nonsense
+    # session_path
+    globus_path = df.pop('session__lab__name') + '/Subjects'
+    subject = df.pop('session__subject__nickname')
+    date = df.pop('session__start_time__date').astype(str)
+    number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
+    df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
 
-    df = pd.concat(all_df, ignore_index=False)
-    del all_df
+    # relative_path
+    revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
+    zipped = zip(df.pop('collection'), revision, df.pop('name'))
+    df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
 
-    df = df.sort_index().sort_values('data_repository__name', kind='mergesort')
-    # Remove datasets where no file records exist
-    df.dropna(subset=('exists', 'relative_path'), inplace=True)
-    df['exists_aws'] = df['data_repository__name'].str.startswith('aws')
-    exists_aws = df.groupby(level=0)['exists_aws'].any()  # Any associated file records are AWS
-    # Sorted by data repository name, this should select the flatiron records
-    df = df.groupby(level=0).last()
-    df.update(exists_aws)
-    del exists_aws
-    # NB: Splitting and re-joining all these strings is slow :(
-    paths = df.pop('relative_path').str.split('/', n=3, expand=True)
-    globus_path = df['data_repository__globus_path']  # /lab/Subjects/
-    session_path = paths[0].str.cat(paths.iloc[:, 1:3], sep='/')  # subject/date/number
-    df['relative_path'] = paths.iloc[:, -1]  # collection/revision/filename
-    df['session_path'] = (globus_path + session_path).str.strip('/')  # full path relative to root
-    del paths, session_path
-    fields_map = {
-        'session': 'eid',
-        'default_dataset': 'default_revision',
-        'relative_path': 'rel_path',
-        'index': 'id'}
-    df = (
-        (df
-            .filter(regex=r'^(?!data_repository).*', axis=1)  # drop file record fields
-            .reset_index()
-            .rename(fields_map, axis=1)))
     if int_id:
         # Convert UUID objects to 2xint64
         df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
