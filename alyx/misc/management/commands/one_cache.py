@@ -330,17 +330,18 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
     # Fetch datasets and their related tables
     ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
     # Filter out datasets that do not exist on either repository
-    ds = ds.annotate(on_flatiron=Exists(on_flatiron), on_aws=Exists(on_aws))
-    ds = ds.filter(Q(on_flatiron=True) | Q(on_aws=True))
+    ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
+    ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True))
 
     # fields to keep from Dataset table
     fields = (
         'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
         'session__id', 'session__start_time__date', 'session__number',
-        'session__subject__nickname', 'session__lab__name', 'on_flatiron', 'on_aws'
+        'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws'
     )
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
     df = pd.DataFrame.from_records(ds.values(*fields)).rename(fields_map, axis=1)
+    df['exists'] = True
 
     # TODO New version without this nonsense
     # session_path
