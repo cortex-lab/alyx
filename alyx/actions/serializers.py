@@ -112,7 +112,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         list_serializer_class = FilterDatasetSerializer
         model = Dataset
         fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
-                  'hash', 'version', 'collection', 'default_revision')
+                  'hash', 'version', 'collection', 'revision', 'default_revision')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):

@@ -332,7 +332,7 @@ class Dataset(BaseExperimentalData):
         # returns preferentially globus non-personal endpoint
         if records:
             order_keys = ('data_repository__globus_is_personal', 'data_repository__name')
-            return records.order_by(*order_keys)[0].data_url()
+            return records.order_by(*order_keys)[0].data_url
 
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
@@ -395,12 +395,6 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
-
-    @property
-    def absolute_path(self):
-        from data.transfers import _add_uuid_to_filename
-        root = self.data_repository.globus_path or ''
         return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
 
     def save(self, *args, **kwargs):
