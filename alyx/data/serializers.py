@@ -13,7 +13,7 @@ from misc.models import LabMember
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DataRepositoryType
-        fields = ('__all__')
+        fields = '__all__'
         extra_kwargs = {'url': {'view_name': 'datarepositorytype-detail', 'lookup_field': 'name'}}
 
 
@@ -36,7 +36,7 @@ class DataRepositorySerializer(serializers.HyperlinkedModelSerializer):
 class DataFormatSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFormat
-        fields = ('__all__')
+        fields = '__all__'
         extra_kwargs = {'url': {'view_name': 'dataformat-detail', 'lookup_field': 'name'}}
 
 
@@ -73,7 +73,7 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class DatasetFileRecordsSerializer(serializers.ModelSerializer):
@@ -103,7 +103,7 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
@@ -238,4 +238,4 @@ class DownloadSerializer(serializers.HyperlinkedModelSerializer):
 class RevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Revision
-        fields = ('__all__')
+        fields = '__all__'
