@@ -82,6 +82,7 @@ class Command(BaseCommand):
         parser.add_argument('dataset', nargs='?', help='Dataset')
         parser.add_argument('--lab', help='Only sync for specific lab')
         parser.add_argument('--dry', action='store_true', help='dry run')
+        parser.add_argument('-y', action='store_true', help='do not prompt', default=False)
         parser.add_argument('--data-repository', help='data repository')
         parser.add_argument('--path', help='path')
         parser.add_argument('--limit', help='limit to a maximum number of datasets')
@@ -97,6 +98,7 @@ class Command(BaseCommand):
         user = options.get('user')
         dry = options.get('dry')
         lab = options.get('lab')
+        prompt = not options.get('y')
         before = options.get('before')
 
         if action == 'removelocal':
@@ -132,7 +134,8 @@ class Command(BaseCommand):
                 self.stdout.write(dset.name + " " + str(dset.session))
                 siz += dset.file_size or 0
             self.stdout.write("Freed space (Go) {:0.3f}".format(float(siz) / (1024 ** 3)))
-            reply = input('Continue ? Y/N [Y]:')
+            if prompt:
+                reply = input('Continue ? Y/N [Y]:')
             if reply not in ["", "Y", "y", "Yes", "YES"]:
                 self.stdout.write("exiting")
                 return
