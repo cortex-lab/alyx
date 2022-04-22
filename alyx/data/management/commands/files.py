@@ -136,9 +136,9 @@ class Command(BaseCommand):
             self.stdout.write("Freed space (Go) {:0.3f}".format(float(siz) / (1024 ** 3)))
             if prompt:
                 reply = input('Continue ? Y/N [Y]:')
-            if reply not in ["", "Y", "y", "Yes", "YES"]:
-                self.stdout.write("exiting")
-                return
+                if reply not in ["", "Y", "y", "Yes", "YES"]:
+                    self.stdout.write("exiting")
+                    return
             logging.getLogger(__name__).setLevel(logging.INFO)
             transfers.globus_delete_local_datasets(dsets, dry=dry)
 
