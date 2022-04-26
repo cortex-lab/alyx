@@ -113,28 +113,3 @@ jobs:
           file: ./scripts/deployment_examples/alyx-docker/Dockerfile.base
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/alyx:base
-
-# Step works well, but this repo is not the ideal location for it
-#      - name: Copy files to S3
-#        shell: bash
-#        env:
-#          aws_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws_secret_access_key: ${{ secrets.AWS_SECRET_KEY_ID }}
-#          aws_s3_bucket: ${{ secrets.AWS_S3BUCKET_NAME }}
-#          aws_region: ${{ secrets.AWS_REGION }}
-#        run: |
-#          sudo apt-get update && sudo apt-get -y install awscli
-#          aws configure set aws_access_key_id $aws_key_id
-#          aws configure set aws_secret_access_key $aws_secret_access_key
-#          aws configure set default.region $aws_region
-#          aws s3 sync requirements_frozen.txt s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/000-default-conf-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/000-default-conf-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/000-default-conf-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/apache-conf-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/apache-conf-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/apache-conf-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/cloudwatch_config.json-alyx-dev s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/cloudwatch_config.json-alyx-prod s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/cloudwatch_config.json-openalyx s3://$aws_s3_bucket/github_actions/
-#          aws s3 sync scripts/deployment_examples/alyx-docker/Dockerfile.ibl s3://$aws_s3_bucket/github_actions/
