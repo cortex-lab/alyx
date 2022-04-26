@@ -391,10 +391,10 @@ class FileRecord(BaseModel):
 
     @property
     def data_url(self):
-        from data.transfers import _add_uuid_to_filename
         root = self.data_repository.data_url
         if not root:
             return None
+        from data.transfers import _add_uuid_to_filename
         return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
 
     def save(self, *args, **kwargs):
