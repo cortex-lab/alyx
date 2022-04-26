@@ -28,7 +28,7 @@ except ImportError:
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
-
+USE_DEPRECATED_PYTZ = True  # Support for using pytz will be removed in Django 5.0
 
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
@@ -239,11 +239,8 @@ USE_TZ = False
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../uploaded/'))
 MEDIA_ROOT = '/backups/uploaded/'
 MEDIA_URL = '/uploaded/'
-
-TABLES_ROOT = os.path.realpath(os.path.join(BASE_DIR, '../tables/'))
 TABLES_ROOT = '/backups/tables/'
 
 UPLOADED_IMAGE_WIDTH = 800
