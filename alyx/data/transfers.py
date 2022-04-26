@@ -416,7 +416,7 @@ def bulk_sync(dry_run=False, lab=None, gc=None, check_mismatch=False):
     # checks all local files by default, and only transfer pending files for the server
     all_files = all_files.filter(
         Q(data_repository__globus_is_personal=True) |
-        Q(json__has_key="transfer_pending") | Q(json__has_key="local_missing"))
+        Q(json__has_key="transfer_pending"))
     if dry_run:
         fvals = all_files.values_list('relative_path', flat=True).distinct()
         for fval in list(fvals):
