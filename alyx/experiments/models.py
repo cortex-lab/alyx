@@ -205,3 +205,39 @@ class Channel(BaseModel):
     def save(self, *args, **kwargs):
         super(Channel, self).save(*args, **kwargs)
         self.trajectory_estimate.save()  # this will bump the datetime auto-update of trajectory
+
+
+class ImagingType(BaseModel):
+    """Imaging field of view model"""
+    objects = BaseManager()
+
+
+class FOV(BaseModel):
+    """Imaging field of view model"""
+    objects = BaseManager()
+    session = models.ForeignKey('actions.ImagingSession', blank=True, null=True,
+                                on_delete=models.CASCADE, related_name='field_of_view')
+    type = models.ForeignKey(ImagingType, blank=True, null=True, on_delete=models.SET_NULL,
+                             related_name='imaging_type')
+    x1 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y1 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z1 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+
+    x2 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y2 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z2 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+
+    x3 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y3 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z3 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+
+    x4 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y4 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z4 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+
+    nx = models.FloatField(blank=True, null=True, help_text='Number of pixels in x-axis')
+    ny = models.FloatField(blank=True, null=True, help_text='Number of pixels in y-axis')
+    nz = models.FloatField(blank=True, null=True, help_text='Number of pixels in z-axis')
+
+    brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
+                                     on_delete=models.SET_NULL, related_name='brain_region')
