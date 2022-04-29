@@ -20,6 +20,7 @@ import pyarrow as pa
 from django.db import connection
 from django.db.models import Q, Exists, OuterRef
 from django.core.management.base import BaseCommand
+from django.core.paginator import Paginator
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
@@ -308,7 +309,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
 
 
 @measure_time
-def generate_datasets_frame(int_id=True) -> pd.DataFrame:
+def generate_datasets_frame(int_id=True, batch_size=None) -> pd.DataFrame:
     """DATASETS_COLUMNS = (
         'id',               # uuid str
         'eid',              # uuid str
@@ -319,6 +320,7 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'exists'            # bool
     )
     """
+    batch_size = batch_size or 10_000
     # Determine which file records are on AWS and which are on FlatIron
     fr = FileRecord.objects.select_related('data_repository')
     on_flatiron = fr.filter(dataset=OuterRef('pk'),
@@ -340,21 +342,32 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
         'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws'
     )
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
-    df = pd.DataFrame.from_records(ds.values(*fields)).rename(fields_map, axis=1)
-    df['exists'] = True
 
-    # TODO New version without this nonsense
-    # session_path
-    globus_path = df.pop('session__lab__name') + '/Subjects'
-    subject = df.pop('session__subject__nickname')
-    date = df.pop('session__start_time__date').astype(str)
-    number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
-    df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
+    paginator = Paginator(ds.order_by('created_datetime'), batch_size)
+    all_df = []
+    for i in paginator.page_range:
+        data = paginator.get_page(i)
+        qs = data.object_list
+        df = pd.DataFrame.from_records(qs.values(*fields)).rename(fields_map, axis=1)
+        df['exists'] = True
 
-    # relative_path
-    revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
-    zipped = zip(df.pop('collection'), revision, df.pop('name'))
-    df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
+        # TODO New version without this nonsense
+        # session_path
+        globus_path = df.pop('session__lab__name') + '/Subjects'
+        subject = df.pop('session__subject__nickname')
+        date = df.pop('session__start_time__date').astype(str)
+        number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
+        df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
+
+        # relative_path
+        revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
+        zipped = zip(df.pop('collection'), revision, df.pop('name'))
+        df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
+
+        all_df.append(df)
+
+    df = pd.concat(all_df, ignore_index=False)
+    del all_df
 
     if int_id:
         # Convert UUID objects to 2xint64
