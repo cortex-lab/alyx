@@ -344,30 +344,27 @@ def generate_datasets_frame(int_id=True, batch_size=None) -> pd.DataFrame:
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
 
     paginator = Paginator(ds.order_by('created_datetime'), batch_size)
-    all_df = []
+    df = pd.DataFrame()
     for i in paginator.page_range:
         data = paginator.get_page(i)
         qs = data.object_list
-        df = pd.DataFrame.from_records(qs.values(*fields)).rename(fields_map, axis=1)
-        df['exists'] = True
+        df_ = pd.DataFrame.from_records(qs.values(*fields)).rename(fields_map, axis=1)
+        df_['exists'] = True
 
         # TODO New version without this nonsense
         # session_path
-        globus_path = df.pop('session__lab__name') + '/Subjects'
-        subject = df.pop('session__subject__nickname')
-        date = df.pop('session__start_time__date').astype(str)
-        number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
-        df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
+        globus_path = df_.pop('session__lab__name') + '/Subjects'
+        subject = df_.pop('session__subject__nickname')
+        date = df_.pop('session__start_time__date').astype(str)
+        number = df_.pop('session__number').apply(lambda x: str(x).zfill(3))
+        df_['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
 
         # relative_path
-        revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
-        zipped = zip(df.pop('collection'), revision, df.pop('name'))
-        df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
+        revision = map(lambda x: None if not x else f'#{x}#', df_.pop('revision__name'))
+        zipped = zip(df_.pop('collection'), revision, df_.pop('name'))
+        df_['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
 
-        all_df.append(df)
-
-    df = pd.concat(all_df, ignore_index=False)
-    del all_df
+        df = pd.concat((df, df_), ignore_index=False)
 
     if int_id:
         # Convert UUID objects to 2xint64
