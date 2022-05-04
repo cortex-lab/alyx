@@ -1,4 +1,4 @@
-name: CI
+name: CI, approaching CD
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
       - dev
 
 jobs:
-  run_tests:
-    runs-on: ubuntu-latest
+  run_jobs:
+    runs-on: ubuntu-20.04
     services:
       postgres:
         image: postgres:13
@@ -27,28 +27,32 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
       - name: Build database
-        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432 
+        run: psql -c "CREATE DATABASE githubactions;" -U postgres -h localhost -p 5432
         env:
           PGPASSWORD: postgres
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
-      - name: Install dependecies
+          python-version: '3.8'
+
+      - name: Checkout branch
+        uses: actions/checkout@v3
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install coverage coveralls
-        env: 
+        env:
           PIP_USE_MIRRORS: true
+
       - name: Run tests
         run: |
-          sudo touch /var/log/alyx.log; sudo chmod 776 /var/log/alyx.log
-          sudo touch /var/log/alyx_json.log; sudo chmod 776 /var/log/alyx_json.log
+          sudo touch /var/log/alyx.log; sudo chmod 666 /var/log/alyx.log
+          sudo touch /var/log/alyx_json.log; sudo chmod 666 /var/log/alyx_json.log
           cd alyx
-          mv alyx/settings_ci.py alyx/settings.py
+          cp alyx/settings_ci.py alyx/settings.py
           coverage run manage.py test -n
           coveralls --service=github
         env:
@@ -59,3 +63,53 @@ jobs:
         run: |
           cd alyx
           flake8 .
+
+      - name: Generate new requirements_frozen.txt if needed
+        # Only runs when branch pushed to directly OR when a PR is merged
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          pip freeze > requirements_frozen_temp.txt
+          if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
+            echo "requirements_frozen.txt unchanged"
+            rm requirements_frozen_temp.txt
+            echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
+          else 
+            echo "requirements_frozen.txt is different, git push needed"
+            mv requirements_frozen_temp.txt requirements_frozen.txt
+            echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Setup git/commit/push for requirements_frozen.txt if needed
+        # Only runs when requirements_frozen.txt is updated
+        if: env.GIT_PUSH_NEEDED == 'true'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -m "GitHub Actions generated requirements_frozen.txt" -a
+          git push
+
+      # Docker steps only run when master branch pushed to directly OR when a PR is merged
+      - name: Set Docker conditional value if needed
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: |
+          echo "DOCKER_PUSH_NEEDED=true" >> "$GITHUB_ENV"
+
+      - name: Configure Docker login if needed
+        if: env.DOCKER_PUSH_NEEDED == 'true'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Set up Docker Buildx if needed
+        if: env.DOCKER_PUSH_NEEDED == 'true'
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push Docker base image if needed
+        if: env.DOCKER_PUSH_NEEDED == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./scripts/deployment_examples/alyx-docker/Dockerfile.base
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/alyx:base

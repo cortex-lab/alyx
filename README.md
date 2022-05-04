@@ -18,6 +18,7 @@ this setup will work on other systems. Assumptions made are that you have sudo p
     sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
     sudo a2enmod wsgi
     sudo adduser www-data syslog
+    sudo adduser ubuntu syslog
     sudo setfacl -d -m u:www-data:rwx /var/log/
     sudo setfacl -d -m u:ubuntu:rwx /var/log/
 
