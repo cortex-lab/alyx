@@ -13,14 +13,6 @@ Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recom
 this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 `ubuntu`.
 
-### Install apache, wsgi module, and set group and acl permissions
-    sudo apt-get update    
-    sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
-    sudo a2enmod wsgi
-    sudo adduser www-data syslog
-    sudo adduser ubuntu syslog
-    sudo setfacl -d -m u:www-data:rwx /var/log/
-    sudo setfacl -d -m u:ubuntu:rwx /var/log/
 
 ### Setup Python/Django and the database
 Go to the directory of your choice (for example: `/var/www/alyx-main`)
@@ -56,6 +48,15 @@ The `setup.py` script sets up postgres (it creates the database and postgres use
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
 ### Apache Site Configuration
+If the database needs to be 
+#### Install apache, wsgi module, and set group and acl permissions
+    sudo apt-get update    
+    sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
+    sudo a2enmod wsgi
+    sudo adduser www-data syslog
+    sudo adduser ubuntu syslog
+    sudo setfacl -d -m u:www-data:rwx /var/log/
+    sudo setfacl -d -m u:ubuntu:rwx /var/log/
 Put the [site configuration](docs/_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
 -   make sure the paths within the file match the alyx installation path.
 -   update ServerName parameter `ServerName  alyx.internationalbrainlab.org`

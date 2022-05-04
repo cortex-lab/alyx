@@ -3,8 +3,6 @@ Alyx
 
 Alyx is a database designed for storage and retrieval of all data in an experimental neuroscience laboratory - from subject management through data acquisition, raw data file tracking and storage of metadata resulting from manual analysis.
 
-A user guide for Alyx's web interface can be found `here <https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing>`_.
-
 Alyx is currently used in production at the `Cortexlab at UCL <https://www.ucl.ac.uk/cortexlab>`_ and at the `International Brain Lab <https://www.internationalbrainlab.org>`_.
 
 Alyx is built using industry-standard tools (PostgreSQL_ and Django_) and designed to be interacted with using online webforms to enter and retrieve data manually, or with a documented REST API programmatically (using built-in functions in MATLAB_, Python_, and most other modern programming languages, or command-line tools such as curl_).
