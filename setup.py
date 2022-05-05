@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 from getpass import getpass
 import os
 import os.path as op
@@ -105,7 +106,12 @@ repl = {
     '%DBPASSWORD%': DBPASSWORD,
 }
 
+
 try:
+    _replace_in_file('alyx/alyx/settings_template.py',
+                     'alyx/alyx/settings.py')
+    _replace_in_file('alyx/alyx/settings_lab_template.py',
+                     'alyx/alyx/settings_lab.py')
     # Set up the settings file.
     _replace_in_file('alyx/alyx/settings_secret_template.py',
                      'alyx/alyx/settings_secret.py',

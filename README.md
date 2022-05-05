@@ -48,7 +48,9 @@ The `setup.py` script sets up postgres (it creates the database and postgres use
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
 
 ### Apache Site Configuration
-If the database needs to be 
+
+If the database needs to be served on the web, one tested solution is to use an apache web server.
+
 #### Install apache, wsgi module, and set group and acl permissions
     sudo apt-get update    
     sudo apt-get install apache2 libapache2-mod-wsgi-py3 acl
