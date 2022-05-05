@@ -320,7 +320,7 @@ def generate_datasets_frame(int_id=True, batch_size=None) -> pd.DataFrame:
         'exists'            # bool
     )
     """
-    batch_size = batch_size or 10_000
+    batch_size = batch_size or 300_000
     # Determine which file records are on AWS and which are on FlatIron
     fr = FileRecord.objects.select_related('data_repository')
     on_flatiron = fr.filter(dataset=OuterRef('pk'),
