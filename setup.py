@@ -33,6 +33,7 @@ def _psql(sql, **kwargs):
 
 def _replace_in_file(source_file, target_file, replacements=None, target_mode='w', chmod=None):
     target_file = op.expanduser(target_file)
+    replacements = {} if replacements is None else replacements
     #copy2(source_file, target_file)
     with open(source_file, 'r') as f:
         contents = f.read()
@@ -104,12 +105,13 @@ repl = {
     '%DBNAME%': DBNAME,
     '%DBUSER%': DBUSER,
     '%DBPASSWORD%': DBPASSWORD,
+    '%ALYX_JSON_LOG_FILE%': str(Path('/var/log/alyx').joinpath(f"alyx_{DBNAME}_json.log")),
+    '%ALYX_LOG_FILE%': str(Path('/var/log/alyx').joinpath(f"alyx_{DBNAME}.log"))
 }
-
 
 try:
     _replace_in_file('alyx/alyx/settings_template.py',
-                     'alyx/alyx/settings.py')
+                     'alyx/alyx/settings.py', replacements=repl)
     _replace_in_file('alyx/alyx/settings_lab_template.py',
                      'alyx/alyx/settings_lab.py')
     # Set up the settings file.

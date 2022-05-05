@@ -8,18 +8,25 @@ Requirements: this tutorial works on Linux as it relies on installing postgres a
 ## Install a local instance of Alyx
 Go to the directory of your choice (for example: `/var/www/alyx-local`)
 
-```
+``` shell
+# install required packages 
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
+# create log folder
+sudo mkdir /var/log/alyx
+
+# create folder for storing uploaded notes, and deal with permissions
 sudo mkdir uploaded
 sudo chmod 775 -fR uploaded
 sudo chown www-data:www-data -fR uploaded
+sudo touch /var/www/alyx-local/
+# clone the repository and cd into it
 git clone https://github.com/cortex-lab/alyx.git
-cd alyx
+
+# create the python virtual environment and install dependencies 
 virtualenv alyxvenv --python=python3
 source ./alyxvenv/bin/activate
 pip install -r requirements.txt
 python setup.py
-
     ...
     $ Enter a database name [alyxlocal]:
     $ Enter a postgres username [alyxlocaluser]:
