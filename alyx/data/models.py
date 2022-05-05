@@ -331,7 +331,7 @@ class Dataset(BaseExperimentalData):
                                            exists=True)
         # returns preferentially globus non-personal endpoint
         if records:
-            order_keys = ('data_repository__globus_is_personal', 'data_repository__name')
+            order_keys = ('data_repository__globus_is_personal', '-data_repository__name')
             return records.order_by(*order_keys)[0].data_url
 
     def __str__(self):
