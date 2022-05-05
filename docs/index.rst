@@ -24,6 +24,7 @@ Table of contents:
    considerations.rst
    api.rst
    models.rst
+   gettingstarted.md
 
 Indices and tables
 ==================
