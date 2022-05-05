@@ -213,7 +213,7 @@ class SessionFilter(BaseFilterSet):
         :param value:
         :return:
         """
-        queryset = queryset.filter(data_dataset_session_related__tags__name__icontains=value)
+        queryset = queryset.filter(data_dataset_session_related__tags__name__icontains=value).distinct()
         return queryset
 
     def atlas(self, queryset, name, value):
