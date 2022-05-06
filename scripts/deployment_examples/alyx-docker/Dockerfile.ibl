@@ -39,3 +39,10 @@ RUN a2enmod rewrite
 RUN a2enmod ssl
 RUN a2enmod wsgi
 CMD ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
+
+# Certbot configuration
+RUN apt-get update && apt-get install -y \
+    certbot \
+    python3-certbot-apache \
+    && apt-get autoremove \
+    && rm -rf /var/lib/apt/lists/*

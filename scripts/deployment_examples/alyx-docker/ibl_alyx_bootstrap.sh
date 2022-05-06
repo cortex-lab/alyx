@@ -8,17 +8,18 @@
 WORKING_DIR=/home/ubuntu/alyx-docker
 LOG_DIR=/home/ubuntu/logs
 CRON_ENTRY="*/5 * * * * docker cp alyx_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1"
+IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
+DATE_TIME=$(date +"%Y-%m-%d %T")
+SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
 
 # check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
-if [ "$(id -u)" != "0" ]
-  then
-    echo "Script needs to be run as root, exiting."
-    exit 1
+if [ "$(id -u)" != "0" ]; then
+  echo "Script needs to be run as root, exiting."
+  exit 1
 fi
 
 # check on arguments passed, at least one is required to pick build env
-if [ -z "$1" ]
-  then
+if [ -z "$1" ]; then
     echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc)"
     exit 1
   else
@@ -37,28 +38,31 @@ hostnamectl set-hostname "$1"
 echo "Setting timezone to Europe\Lisbon..."
 timedatectl set-timezone Europe/Lisbon
 
-echo "Update apt package index, install awscli, and allow apt to use a repository over HTTPS..."
-apt-get -qq update
-apt-get install -y \
-  awscli \
-  ca-certificates \
-  curl \
-  gnupg \
-  lsb-release
-
-echo "Add Docker's official GPG key, setup for the docker stable repo, update, and install packages"
+echo "Add Docker's official GPG key, setup for the docker stable repo"
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get -qq update
-sudo apt-get install -y \
+
+echo "Update apt package index, install awscli docker, and allow apt to use a repository over HTTPS..."
+apt-get -qq update
+apt-get install -y \
+  awscli \
+  ca-certificates \
+  containerd.io \
   docker-ce \
   docker-ce-cli \
-  containerd.io
+  gnupg \
+  lsb-release
 
 echo "Testing docker..."
 docker run hello-world
+
+echo "Determining IP address and add to 'alyx_rds' security group with unique description..."
+aws ec2 authorize-security-group-ingress \
+    --region=eu-west-2 \
+    --group-name alyx_rds \
+    --ip-permissions IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges="[{CidrIp=${IP_ADDRESS}/32,Description='${SG_DESCRIPTION}'}]"
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
 cd $WORKING_DIR || exit 1
@@ -99,7 +103,6 @@ echo "Download and configure cloudwatch logging..."
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i -E ./amazon-cloudwatch-agent.deb
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json-"$1"
-
 
 echo "Adding alias to .bashrc..."
 echo '' >> /home/ubuntu/.bashrc \
