@@ -6,6 +6,6 @@ pip install myst-parser
 pip install sphinx_rtd_theme
 ```
 
-
 # Build documentation locally
-` sphinx-build -b html ./docs ./docs/_build/`
+From the root of the repository.
+`sphinx-build -b html ./docs ./docs/_build/`

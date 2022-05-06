@@ -100,13 +100,15 @@ except Exception as e:
     raise e
 
 
+file_log = Path('/var/log/alyx').joinpath(f"{DBNAME}.log")
+file_log_json = Path('/var/log/alyx').joinpath(f"{DBNAME}_json.log")
 repl = {
     '%SECRET_KEY%': SECRET_KEY,
     '%DBNAME%': DBNAME,
     '%DBUSER%': DBUSER,
     '%DBPASSWORD%': DBPASSWORD,
-    '%ALYX_JSON_LOG_FILE%': str(Path('/var/log/alyx').joinpath(f"alyx_{DBNAME}_json.log")),
-    '%ALYX_LOG_FILE%': str(Path('/var/log/alyx').joinpath(f"alyx_{DBNAME}.log"))
+    '%ALYX_JSON_LOG_FILE%': str(file_log_json),
+    '%ALYX_LOG_FILE%': str(file_log)
 }
 
 try:
@@ -137,6 +139,12 @@ except Exception as e:
 
 # Set up the database.
 try:
+    _system(f'sudo mkdir -p {file_log_json.parent}')
+    _system(f'sudo mkdir -p {file_log.parent}')
+    _system(f'sudo chown {os.getlogin()}:www-data -fR {file_log.parent}')
+    _system(f'sudo chown {os.getlogin()}:www-data -fR {file_log_json.parent}')
+    _system(f'touch {file_log_json}')
+    _system(f'touch {file_log}')
     _system('python3 alyx/manage.py makemigrations')
     _system('python3 alyx/manage.py migrate')
 

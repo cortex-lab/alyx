@@ -126,7 +126,7 @@ if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Production settings:
 if not DEBUG:

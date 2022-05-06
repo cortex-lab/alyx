@@ -21,10 +21,12 @@ Table of contents:
 .. toctree::
    :maxdepth: 2
 
+   gettingstarted.md
+   webserving.md
+   motivation.rst
    considerations.rst
    api.rst
    models.rst
-   gettingstarted.md
 
 Indices and tables
 ==================
