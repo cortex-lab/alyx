@@ -8,6 +8,7 @@
 WORKING_DIR=/home/ubuntu/alyx-docker
 LOG_DIR=/home/ubuntu/logs
 CRON_ENTRY="*/5 * * * * docker cp alyx_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1"
+EC2_REGION="eu-west-2"
 IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
 DATE_TIME=$(date +"%Y-%m-%d %T")
 SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
@@ -60,7 +61,7 @@ docker run hello-world
 
 echo "Determining IP address and add to 'alyx_rds' security group with unique description..."
 aws ec2 authorize-security-group-ingress \
-    --region=eu-west-2 \
+    --region=$EC2_REGION \
     --group-name alyx_rds \
     --ip-permissions IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges="[{CidrIp=${IP_ADDRESS}/32,Description='${SG_DESCRIPTION}'}]"
 
@@ -106,7 +107,7 @@ dpkg -i -E ./amazon-cloudwatch-agent.deb
 
 echo "Adding alias to .bashrc..."
 echo '' >> /home/ubuntu/.bashrc \
-  && echo '# IBL Alias' >> /home/ubuntu/.bashrc \
+  && echo "# IBL Alias" >> /home/ubuntu/.bashrc \
   && echo "alias docker-bash='sudo docker exec --interactive --tty alyx_con /bin/bash'" >> /home/ubuntu/.bashrc
 
 echo "Performing any remaining package upgrades..."
