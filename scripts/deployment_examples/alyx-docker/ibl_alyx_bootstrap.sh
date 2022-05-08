@@ -3,17 +3,9 @@
 # Once this script is in the desired directory of a newly created instance, a sample command to run:
 # sudo sh ibl_alyx_bootstrap.sh alyx-dev
 
+echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
 {
-# Set vars
-WORKING_DIR=/home/ubuntu/alyx-docker
-LOG_DIR=/home/ubuntu/logs
-CRON_ENTRY="*/5 * * * * docker cp alyx_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1"
-EC2_REGION="eu-west-2"
-IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
-DATE_TIME=$(date +"%Y-%m-%d %T")
-SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
-
-# check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
+# check to make sure the script is being run as root (not ideal, Docker needs to run as root for IP logging)
 if [ "$(id -u)" != "0" ]; then
   echo "Script needs to be run as root, exiting."
   exit 1
@@ -27,7 +19,15 @@ if [ -z "$1" ]; then
     echo "Build environment argument supplied: $1"
 fi
 
-echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
+# Set vars
+WORKING_DIR=/home/ubuntu/alyx-docker
+LOG_DIR=/home/ubuntu/logs
+EC2_REGION="eu-west-2"
+IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
+DATE_TIME=$(date +"%Y-%m-%d %T")
+SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
+LOG_CRON="*/5 * * * * docker cp alyx_con:/var/log/alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/access_alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/error_alyx.log ${LOG_DIR} >/dev/null 2>&1"
+CERTBOT_CRON="30 1 1,15 * * docker exec /bin/bash /home/ubuntu/iblalyx/crons/renew_docker_certs.sh > ${LOG_DIR}/cert_renew.log 2>&1"
 
 echo "Creating relevant directories..."
 mkdir -p $WORKING_DIR
@@ -53,13 +53,12 @@ apt-get install -y \
   containerd.io \
   docker-ce \
   docker-ce-cli \
-  gnupg \
-  lsb-release
+  gnupg
 
 echo "Testing docker..."
 docker run hello-world
 
-echo "Determining IP address and add to 'alyx_rds' security group with unique description..."
+echo "Adding IP Address to 'alyx_rds' security group with unique description..."
 aws ec2 authorize-security-group-ingress \
     --region=$EC2_REGION \
     --group-name alyx_rds \
@@ -96,7 +95,7 @@ docker run \
   --name=alyx_con internationalbrainlab/alyx:ibl
 
 echo "Building out crontab entries..."
-echo "${CRON_ENTRY}" >> temp_cron #echo new cron into cron file
+echo -e "${LOG_CRON}\n${CERTBOT_CRON}" >> temp_cron
 crontab temp_cron # install new cron file
 rm temp_cron # remove temp_cron file
 
