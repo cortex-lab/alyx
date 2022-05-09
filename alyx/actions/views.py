@@ -203,6 +203,19 @@ class SessionFilter(BaseFilterSet):
     atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')
     atlas_id = django_filters.NumberFilter(field_name='pk', method='atlas')
     histology = django_filters.BooleanFilter(field_name='histology', method='has_histology')
+    tag = django_filters.CharFilter(field_name='tag', method='filter_tag')
+
+    def filter_tag(self, queryset, name, value):
+        """
+        returns sessions that contain datasets tagged as
+        :param queryset:
+        :param name:
+        :param value:
+        :return:
+        """
+        queryset = queryset.filter(
+            data_dataset_session_related__tags__name__icontains=value).distinct()
+        return queryset
 
     def atlas(self, queryset, name, value):
         """

@@ -325,12 +325,14 @@ class Dataset(BaseExperimentalData):
         else:
             return False
 
+    @property
     def data_url(self):
         records = self.file_records.filter(data_repository__data_url__isnull=False,
                                            exists=True)
         # returns preferentially globus non-personal endpoint
         if records:
-            return records.order_by('data_repository__globus_is_personal')[0].data_url()
+            order_keys = ('data_repository__globus_is_personal', '-data_repository__name')
+            return records.order_by(*order_keys)[0].data_url
 
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
@@ -387,6 +389,7 @@ class FileRecord(BaseModel):
     class Meta:
         unique_together = (('data_repository', 'relative_path'),)
 
+    @property
     def data_url(self):
         root = self.data_repository.data_url
         if not root:
@@ -395,10 +398,10 @@ class FileRecord(BaseModel):
         return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
 
     def save(self, *args, **kwargs):
-        # this is to trigger the update of the auto-date field
+        """this is to trigger the update of the auto-date field"""
         super(FileRecord, self).save(*args, **kwargs)
         # Save the dataset as well to make sure the auto datetime in the dateset is updated when
-        # associated filerecord is saved
+        # associated file record is saved
         self.dataset.save()
 
     def __str__(self):
