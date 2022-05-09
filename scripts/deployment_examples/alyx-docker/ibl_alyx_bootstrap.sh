@@ -27,11 +27,13 @@ IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[
 DATE_TIME=$(date +"%Y-%m-%d %T")
 SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
 LOG_CRON="*/5 * * * * docker cp alyx_con:/var/log/alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/access_alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/error_alyx.log ${LOG_DIR} >/dev/null 2>&1"
-CERTBOT_CRON="30 1 1,15 * * docker exec /bin/bash /home/ubuntu/iblalyx/crons/renew_docker_certs.sh > ${LOG_DIR}/cert_renew.log 2>&1"
+CERTBOT_CRON="30 1 1,15 * * docker exec alyx_con /bin/bash /home/ubuntu/iblalyx/crons/renew_docker_certs.sh ${1} > ${LOG_DIR}/cert_renew.log 2>&1"
 
-echo "Creating relevant directories..."
+echo "Creating relevant directories and log files..."
 mkdir -p $WORKING_DIR
 mkdir -p $LOG_DIR
+touch "${LOG_DIR}/cert_renew.log"
+chmod 666 "${LOG_DIR}/cert_renew.log"
 
 echo "Setting hostname of instance..."
 hostnamectl set-hostname "$1"
