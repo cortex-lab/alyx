@@ -1,6 +1,6 @@
 FROM internationalbrainlab/alyx:base
 
-# Set build environtment, passed from command line --build-arg (alyx-prod, alyx-dev, openalyx, etc)
+# Set build environment, passed from command line --build-arg (alyx-prod, alyx-dev, openalyx, etc)
 ARG BUILD_ENV
 
 # Apache ENVs
@@ -39,3 +39,12 @@ RUN a2enmod rewrite
 RUN a2enmod ssl
 RUN a2enmod wsgi
 CMD ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
+
+# Certbot renewal configuration requirements
+RUN apt-get update && apt-get install -y \
+    awscli \
+    certbot \
+    python3-certbot-apache \
+    wget \
+    && apt-get autoremove \
+    && rm -rf /var/lib/apt/lists/*

@@ -3,33 +3,37 @@
 # Once this script is in the desired directory of a newly created instance, a sample command to run:
 # sudo sh ibl_alyx_bootstrap.sh alyx-dev
 
+echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
 {
-# Set vars
-WORKING_DIR=/home/ubuntu/alyx-docker
-LOG_DIR=/home/ubuntu/logs
-CRON_ENTRY="*/5 * * * * docker cp alyx_con:/var/log/alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/access_alyx.log /home/ubuntu/logs/ && docker cp alyx_con:/var/log/apache2/error_alyx.log /home/ubuntu/logs/ >/dev/null 2>&1"
-
-# check to make sure the script is being run as root (not ideal, Docker needs to run as root if we want IP logging)
-if [ "$(id -u)" != "0" ]
-  then
-    echo "Script needs to be run as root, exiting."
-    exit 1
+# check to make sure the script is being run as root (not ideal, Docker needs to run as root for IP logging)
+if [ "$(id -u)" != "0" ]; then
+  echo "Script needs to be run as root, exiting."
+  exit 1
 fi
 
 # check on arguments passed, at least one is required to pick build env
-if [ -z "$1" ]
-  then
+if [ -z "$1" ]; then
     echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc)"
     exit 1
   else
     echo "Build environment argument supplied: $1"
 fi
 
-echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
+# Set vars
+WORKING_DIR=/home/ubuntu/alyx-docker
+LOG_DIR=/home/ubuntu/logs
+EC2_REGION="eu-west-2"
+IP_ADDRESS=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
+DATE_TIME=$(date +"%Y-%m-%d %T")
+SG_DESCRIPTION="${1}, ec2 instance, created: ${DATE_TIME}"
+LOG_CRON="*/5 * * * * docker cp alyx_con:/var/log/alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/access_alyx.log ${LOG_DIR} && docker cp alyx_con:/var/log/apache2/error_alyx.log ${LOG_DIR} >/dev/null 2>&1"
+CERTBOT_CRON="30 1 1,15 * * docker exec alyx_con /bin/bash /home/ubuntu/iblalyx/crons/renew_docker_certs.sh ${1} > ${LOG_DIR}/cert_renew.log 2>&1"
 
-echo "Creating relevant directories..."
+echo "Creating relevant directories and log files..."
 mkdir -p $WORKING_DIR
 mkdir -p $LOG_DIR
+touch "${LOG_DIR}/cert_renew.log"
+chmod 666 "${LOG_DIR}/cert_renew.log"
 
 echo "Setting hostname of instance..."
 hostnamectl set-hostname "$1"
@@ -37,28 +41,30 @@ hostnamectl set-hostname "$1"
 echo "Setting timezone to Europe\Lisbon..."
 timedatectl set-timezone Europe/Lisbon
 
-echo "Update apt package index, install awscli, and allow apt to use a repository over HTTPS..."
-apt-get -qq update
-apt-get install -y \
-  awscli \
-  ca-certificates \
-  curl \
-  gnupg \
-  lsb-release
-
-echo "Add Docker's official GPG key, setup for the docker stable repo, update, and install packages"
+echo "Add Docker's official GPG key, setup for the docker stable repo"
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get -qq update
-sudo apt-get install -y \
+
+echo "Update apt package index, install awscli docker, and allow apt to use a repository over HTTPS..."
+apt-get -qq update
+apt-get install -y \
+  awscli \
+  ca-certificates \
+  containerd.io \
   docker-ce \
   docker-ce-cli \
-  containerd.io
+  gnupg
 
 echo "Testing docker..."
 docker run hello-world
+
+echo "Adding IP Address to 'alyx_rds' security group with unique description..."
+aws ec2 authorize-security-group-ingress \
+    --region=$EC2_REGION \
+    --group-name alyx_rds \
+    --ip-permissions IpProtocol=tcp,FromPort=5432,ToPort=5432,IpRanges="[{CidrIp=${IP_ADDRESS}/32,Description='${SG_DESCRIPTION}'}]"
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
 cd $WORKING_DIR || exit 1
@@ -91,7 +97,7 @@ docker run \
   --name=alyx_con internationalbrainlab/alyx:ibl
 
 echo "Building out crontab entries..."
-echo "${CRON_ENTRY}" >> temp_cron #echo new cron into cron file
+echo -e "${LOG_CRON}\n${CERTBOT_CRON}" >> temp_cron
 crontab temp_cron # install new cron file
 rm temp_cron # remove temp_cron file
 
@@ -100,10 +106,9 @@ wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-
 dpkg -i -E ./amazon-cloudwatch-agent.deb
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json-"$1"
 
-
 echo "Adding alias to .bashrc..."
 echo '' >> /home/ubuntu/.bashrc \
-  && echo '# IBL Alias' >> /home/ubuntu/.bashrc \
+  && echo "# IBL Alias" >> /home/ubuntu/.bashrc \
   && echo "alias docker-bash='sudo docker exec --interactive --tty alyx_con /bin/bash'" >> /home/ubuntu/.bashrc
 
 echo "Performing any remaining package upgrades..."
