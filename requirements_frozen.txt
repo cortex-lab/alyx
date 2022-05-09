@@ -1,7 +1,7 @@
 asgiref==3.5.1
 backports.zoneinfo==0.2.1
-boto3==1.22.6
-botocore==1.25.6
+boto3==1.22.9
+botocore==1.25.9
 certifi==2021.10.8
 cffi==1.15.0
 charset-normalizer==2.0.12
@@ -33,8 +33,8 @@ docutils==0.18.1
 drfdocs==0.0.11
 flake8==4.0.1
 fonttools==4.33.3
-globus-cli==3.4.0
-globus-sdk==3.5.0
+globus-cli==3.5.0
+globus-sdk==3.8.0
 idna==3.3
 importlib-metadata==4.11.3
 itypes==1.2.0
@@ -42,7 +42,7 @@ Jinja2==3.1.2
 jmespath==0.10.0
 kiwisolver==1.4.2
 lxml==4.8.0
-Markdown==3.3.6
+Markdown==3.3.7
 MarkupSafe==2.1.1
 matplotlib==3.5.2
 mccabe==0.6.1
