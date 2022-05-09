@@ -112,7 +112,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         list_serializer_class = FilterDatasetSerializer
         model = Dataset
         fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
-                  'hash', 'version', 'collection', 'default_revision')
+                  'hash', 'version', 'collection', 'revision', 'default_revision')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
@@ -140,7 +140,8 @@ class SessionListSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'project', 'url', 'task_protocol')
+        fields = ('id', 'subject', 'start_time', 'number', 'lab', 'project', 'url',
+                  'task_protocol')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
@@ -167,7 +168,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
     class Meta:
         model = Session
-        fields = SESSION_FIELDS + ('json',) + ('probe_insertion', 'notes')
+        fields = SESSION_FIELDS + ('id',) + ('json',) + ('probe_insertion', 'notes')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
