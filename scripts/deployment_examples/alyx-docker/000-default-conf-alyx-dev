@@ -26,8 +26,8 @@
         Require all granted
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/error_alyx.log
-    CustomLog ${APACHE_LOG_DIR}/access_alyx.log combined
+    ErrorLog /var/log/apache2/error_alyx.log
+    CustomLog /var/log/apache2/access_alyx.log combined
 
     WSGIApplicationGroup %{GLOBAL}
     WSGIDaemonProcess alyx python-path=/var/www/alyx/alyx python-home=/var/www/alyx/venv socket-user=#33 listen-backlog=50

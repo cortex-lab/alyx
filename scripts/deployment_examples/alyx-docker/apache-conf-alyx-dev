@@ -1,14 +1,14 @@
 ServerName dev.alyx.internationalbrainlab.org
-Mutex file:${APACHE_LOCK_DIR} default
-PidFile ${APACHE_PID_FILE}
+Mutex file:/var/lock/apache2 default
+PidFile /var/run/apache2/apache2.pid
 Timeout 300
 KeepAlive On
 MaxKeepAliveRequests 100
 KeepAliveTimeout 5
-User ${APACHE_RUN_USER}
-Group ${APACHE_RUN_GROUP}
+User www-data
+Group www-data
 HostnameLookups Off
-ErrorLog ${APACHE_LOG_DIR}/error.log
+ErrorLog /var/log/apache2/error.log
 LogLevel warn
 IncludeOptional mods-enabled/*.load
 IncludeOptional mods-enabled/*.conf

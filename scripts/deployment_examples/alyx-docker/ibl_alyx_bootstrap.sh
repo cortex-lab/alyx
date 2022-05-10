@@ -68,15 +68,18 @@ aws ec2 authorize-security-group-ingress \
 
 echo "Copying files from s3 bucket..." # this is dependant on the correct IAM role being applied to the EC2 instance
 cd $WORKING_DIR || exit 1
-aws s3 cp s3://alyx-docker/000-default-conf-"$1" .
-aws s3 cp s3://alyx-docker/apache-conf-"$1" .
-aws s3 cp s3://alyx-docker/Dockerfile.ibl .
 aws s3 cp s3://alyx-docker/fullchain.pem-"$1" .
-aws s3 cp s3://alyx-docker/ip-whitelist-conf .
 aws s3 cp s3://alyx-docker/privkey.pem-"$1" .
 aws s3 cp s3://alyx-docker/settings.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_lab.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_secret.py-"$1" .
+
+# copy the files from the local repo? maybe move files over to iblalyx for a cleaner implementation?
+#cp /var/www/alyx/alyx .
+aws s3 cp s3://alyx-docker/000-default-conf-"$1" .
+aws s3 cp s3://alyx-docker/apache-conf-"$1" .
+aws s3 cp s3://alyx-docker/Dockerfile.ibl .
+aws s3 cp s3://alyx-docker/ip-whitelist-conf .
 aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" .
 
 echo "Building out docker image..."
