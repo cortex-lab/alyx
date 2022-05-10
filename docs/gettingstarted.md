@@ -59,6 +59,8 @@ cd alyx
 
 python manage.py runserver
 ```
+Then go to http://localhost:8000/admin, connect as `admin:admin` and change your password.
+
 
 ### macOS
 
@@ -86,9 +88,120 @@ python manage.py runserver
 * Go to `http://localhost:8000/admin/`
 
 
+ 
+## Interaction with the database
 
-## Accessing the web admin interface
-Then, go to `http://localhost:8000/admin`, and log in with `admin:admin`. You can change your password and create users and user groups.
+There are 3 main ways to interact with the database, listed below:
 
+|   	   | **Where**   	| **Who**  	|  **Notes** 	
+| ---	| ---	| ---	| ---	
+| **Django Shell**	| server only	| admin only	| This hits the database directly. It is a very powerful way to do maintenance at scale, with the risks associated. Run the `./manage.py shell` Django command to access the Ipython shell. 	 
+| **Admin Web Page**  	| web client  	|  anyone 	| Manual way to input data in the database. This is privilegied for users needing to add/amend/correct metadata related to subjects. For the local database, this is accessible here: http://localhost:8000/admin.
+| **REST**  	|  web client 	|  anyone 	|   Programmatical way to input data, typically by acquisition software using a dedicated Alyx client [ONE](https://github.com/int-brain-lab/ONE) (Python) or [ALyx-matlab](https://github.com/cortex-lab/alyx-matlab) (Matlab).
+
+
+
+
+### Create an experiment, register data and access it locally
+Here we'll create the minimal set of fixtures to register some data to an experimental session.
+
+1.  create project
+2.  create repository
+3. assign repository to lab
+4. create a subject
+
+
+
+If your server is not already running, from the root of the cloned repository:
+```shell
+source ./alyxvenv/bin/activate
+python alyx/manage.py runserver
+```
+
+Then in another terminal:
+```shell
+source ./alyxvenv/bin/activate
+pip install ONE-api
+ipython
+```
+At the python prompt, this will create the set of init fixtures to register and recover data
+```python
+from pathlib import Path
+from one.api import ONE
+
+# create the local folder on the machine
+one = ONE(base_url='http://localhost:8000')
+ROOT_EXPERIMENTAL_FOLDER = Path.home().joinpath('alyx_local_data')
+ROOT_EXPERIMENTAL_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# create the project
+project = one.alyx.rest('projects', 'create', data=dict(name='main', users=['admin']))
+# create the repository with name 'local' (NB: an URL is needed here, even if it is rubbish as below)
+repo = one.alyx.rest('data-repository', 'create', data=dict(name='local', data_url='http://anyurl.org'))
+# assign the repository to 'defaultlab'
+one.alyx.rest('labs', 'partial_update', id='defaultlab', data=dict(repositories=['local']))
+# create a subject
+one.alyx.rest('subjects', 'create', data=dict(nickname='Algernon', lab='defaultlab', project='main', sex='M'))
+```
+
+#### Create a session using the REST endpoint and ONE-api
+Activate your environment, install the ONE-api, and run a Python shell.
+From the root of the repository:
+```shell
+source ./alyxvenv/bin/activate
+pip install ONE-api
+ipython
+```
+Then in Python
+```python
+# instantiate the one client
+from pathlib import Path
+import pandas as pd
+import numpy as np
+from one.api import ONE
+from datetime import datetime
+one = ONE(base_url='http://localhost:8000')
+ROOT_EXPERIMENTAL_FOLDER = Path.home().joinpath('alyx_local_data')
+
+# create a session
+session_dict = dict(subject='Algernon', number=1, lab='defaultlab', task_protocol='test registration',
+                    project="main", start_time=str(datetime.now()), users=['admin'])
+session = one.alyx.rest('sessions', 'create', data=session_dict)
+eid = session['url'][-36:]  # this is the experimental id that will be used to retrieve the data later
+
+# create a trials table in the relative folder defaultlab/Subjects/Algernon/yyyy-mm-dd/001
+session_path = ROOT_EXPERIMENTAL_FOLDER.joinpath(
+    session['lab'], 'Subjects', session['subject'], session['start_time'][:10], str(session['number']).zfill(3))
+alf_path = session_path.joinpath('alf') 
+alf_path.mkdir(parents=True, exist_ok=True)
+ntrials = 400
+trials = pd.DataFrame({'choice': np.random.randn(400) > 0.5, 'value': np.random.randn(400)})
+trials.to_parquet(alf_path.joinpath('trials.table.pqt'))
+
+# register the dataset
+r = {'created_by': 'admin',
+     'path': session_path.relative_to((session_path.parents[2])).as_posix(),
+     'filenames': ['alf/trials.table.pqt'],
+     'name': 'local'  # this is the repository name
+     }
+response = one.alyx.rest('register-file', 'create', data=r, no_cache=True)
+```
+
+#### Recover the data by querying the session
+```python
+from pathlib import Path
+from one.api import ONE
+one = ONE(base_url='http://localhost:8000')
+ROOT_EXPERIMENTAL_FOLDER = Path.home().joinpath('alyx_local_data')
+session =  one.alyx.rest('sessions', 'list', subject='Algernon')[-1]
+eid = session['id']
+
+# from the client side, provided with only the eids we reconstruct the full dataset paths
+local_path = ROOT_EXPERIMENTAL_FOLDER.joinpath(*one.eid2path(eid).parts[-5:])
+local_files = [local_path.joinpath(dset) for dset in one.list_datasets(eid)]
+print(local_files)
+```
+
+We went straight to the point here, which was to create a session and register data, to go further consult the [One documentation](https://int-brain-lab.github.io/ONE/), in the section "Using one in Alyx".
 
 
