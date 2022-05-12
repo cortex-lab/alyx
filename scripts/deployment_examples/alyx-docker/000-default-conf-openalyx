@@ -29,6 +29,7 @@
     ErrorLog ${APACHE_LOG_DIR}/error_alyx.log
     CustomLog ${APACHE_LOG_DIR}/access_alyx.log combined
 
+    WSGIApplicationGroup %{GLOBAL}
     WSGIDaemonProcess alyx python-path=/var/www/alyx/alyx python-home=/var/www/alyx/venv socket-user=#33 listen-backlog=50
     WSGIProcessGroup alyx
     WSGIScriptAlias / /var/www/alyx/alyx/alyx/wsgi.py

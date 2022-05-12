@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 from getpass import getpass
 import os
 import os.path as op
@@ -32,6 +33,7 @@ def _psql(sql, **kwargs):
 
 def _replace_in_file(source_file, target_file, replacements=None, target_mode='w', chmod=None):
     target_file = op.expanduser(target_file)
+    replacements = {} if replacements is None else replacements
     #copy2(source_file, target_file)
     with open(source_file, 'r') as f:
         contents = f.read()
@@ -98,14 +100,22 @@ except Exception as e:
     raise e
 
 
+file_log = Path('/var/log/alyx').joinpath(f"{DBNAME}.log")
+file_log_json = Path('/var/log/alyx').joinpath(f"{DBNAME}_json.log")
 repl = {
     '%SECRET_KEY%': SECRET_KEY,
     '%DBNAME%': DBNAME,
     '%DBUSER%': DBUSER,
     '%DBPASSWORD%': DBPASSWORD,
+    '%ALYX_JSON_LOG_FILE%': str(file_log_json),
+    '%ALYX_LOG_FILE%': str(file_log)
 }
 
 try:
+    _replace_in_file('alyx/alyx/settings_template.py',
+                     'alyx/alyx/settings.py', replacements=repl)
+    _replace_in_file('alyx/alyx/settings_lab_template.py',
+                     'alyx/alyx/settings_lab.py')
     # Set up the settings file.
     _replace_in_file('alyx/alyx/settings_secret_template.py',
                      'alyx/alyx/settings_secret.py',
@@ -129,6 +139,12 @@ except Exception as e:
 
 # Set up the database.
 try:
+    _system(f'sudo mkdir -p {file_log_json.parent}')
+    _system(f'sudo mkdir -p {file_log.parent}')
+    _system(f'sudo chown {os.getlogin()}:www-data -fR {file_log.parent}')
+    _system(f'sudo chown {os.getlogin()}:www-data -fR {file_log_json.parent}')
+    _system(f'touch {file_log_json}')
+    _system(f'touch {file_log}')
     _system('python3 alyx/manage.py makemigrations')
     _system('python3 alyx/manage.py migrate')
 
