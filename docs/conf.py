@@ -27,13 +27,13 @@ django.setup()
 
 
 # -- Project information -----------------------------------------------------
-
+from alyx.base import version
 project = 'Alyx'
 copyright = '2018, C Rossant, M Hunter, O Winter, C Burgess, K Harris'
 author = 'C Rossant, M Hunter, O Winter, C Burgess, K Harris'
 
 # The short X.Y version
-version = ''
+version = version
 # The full version, including alpha/beta/rc tags
 release = ''
 
