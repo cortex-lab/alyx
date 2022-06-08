@@ -227,7 +227,7 @@
    "python_loader_function": ""
   }
  },
-   {
+ {
   "model": "data.dataformat",
   "pk": "11aac07c-b434-425c-a394-d0ecdbcbee10",
   "fields": {
@@ -237,6 +237,18 @@
    "file_extension": ".tar",
    "matlab_loader_function": "",
    "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "fbe8dfe2-c311-46c3-992c-d7ec54766ea2",
+  "fields": {
+   "json": "",
+   "name": "htsv",
+   "description": "UTF-8 text file with tab-separated values with the first line being a header",
+   "file_extension": ".htsv",
+   "matlab_loader_function": "readtable",
+   "python_loader_function": "pandas.read_csv"
   }
  }
 ]

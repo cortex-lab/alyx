@@ -1692,5 +1692,27 @@
       "description": "Frame flag value for each LED channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
       "filename_pattern": "*fpData.channels.*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "d48addf1-4092-47a7-a921-004e706a4c10",
+    "fields": {
+      "json": null,
+      "name": "widefield.widefieldLightSource",
+      "created_by": null,
+      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
+      "filename_pattern": "*widefield.widefieldLightSource*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3f5eb1b8-ce9b-4c82-bf32-b7b7c4e5962e",
+    "fields": {
+      "json": null,
+      "name": "widefieldLightSource.properties",
+      "created_by": null,
+      "description": "A map of channels number, colour and wavelength.",
+      "filename_pattern": "*widefieldLightSource.properties*"
+    }
   }
 ]
