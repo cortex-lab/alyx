@@ -1324,10 +1324,10 @@
     "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laserProbability",
+      "name": "trials.laserProbability",
       "created_by": null,
       "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "_ibl_trials.laserProbability.npy"
+      "filename_pattern": "_*_trials.laserProbability.*"
     }
   },
   {
@@ -1592,6 +1592,105 @@
       "created_by": null,
       "description": "average across all frames for each channel of imaging",
       "filename_pattern": "widefieldChannels.frameAverage*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "fa05d8a7-5ce5-42a6-9941-69ffe3acc1c1",
+    "fields": {
+      "json": null,
+      "name": "trials.probabilityRewardLeft",
+      "created_by": null,
+      "description": "probability of a left response (i.e. CW turn) being rewarded. The probability of the right response being rewarded is 1-probabilityRewardLeft. The two probabilities are sampled independently therefore both sides may or may not be rewarded.",
+      "filename_pattern": "*trials.probabilityRewardLeft.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "944889c0-5b5d-4ca3-b4df-740ef441135f",
+    "fields": {
+      "json": null,
+      "name": "widefieldChannels.wiring",
+      "created_by": null,
+      "description": "For each LED channel there is an indentifier (typically an int channel number) and a corresponding wavelength.",
+      "filename_pattern": "*widefieldChannels.wiring*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "bb22b0fb-c380-472e-ac4a-eafe4c676730",
+    "fields": {
+      "json": null,
+      "name": "photometry.photometryLightSource",
+      "created_by": null,
+      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
+      "filename_pattern": "*photometry.photometryLightSource*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "371fa560-c63c-47a6-9efb-126f298c0edf",
+    "fields": {
+      "json": null,
+      "name": "photometry.signal",
+      "created_by": null,
+      "description": "the recorded signal for each frame.",
+      "filename_pattern": "*photometry.signal*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "421d79d3-4a9d-4006-ad45-8b038006a5f2",
+    "fields": {
+      "json": null,
+      "name": "photometryLightSource.properties",
+      "created_by": null,
+      "description": "A map of channels number, colour and wavelength.",
+      "filename_pattern": "*photometryLightSource.properties*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "be388590-ebf0-4663-88ee-1229982bed8c",
+    "fields": {
+      "json": null,
+      "name": "photometry.ROIs",
+      "created_by": null,
+      "description": "ROI integer for associateing with trajectory.",
+      "filename_pattern": "*photometry.ROIs*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "0973b965-de7d-40e5-9340-74a0056d3554",
+    "fields": {
+      "json": null,
+      "name": "photometryFibers.brainLocationAcronyms_ccf_2017",
+      "created_by": null,
+      "description": "Extracted brainlocation after histology per ROI.",
+      "filename_pattern": "*photometryFibers.brainLocationAcronyms_ccf_2017*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "6a396eaa-7358-4df2-a793-b0aa6fe611ba",
+    "fields": {
+      "json": null,
+      "name": "fpData.raw",
+      "created_by": null,
+      "description": "Raw FP data dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
+      "filename_pattern": "fpData.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "9f117025-7dc7-4f9e-883c-c6caee7166cd",
+    "fields": {
+      "json": null,
+      "name": "fpData.channels",
+      "created_by": null,
+      "description": "Frame flag value for each LED channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
+      "filename_pattern": "*fpData.channels.*"
     }
   }
 ]
