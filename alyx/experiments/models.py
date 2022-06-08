@@ -5,6 +5,7 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -219,6 +220,29 @@ class FOV(BaseModel):
                                 on_delete=models.CASCADE, related_name='field_of_view')
     type = models.ForeignKey(ImagingType, blank=True, null=True, on_delete=models.SET_NULL,
                              related_name='imaging_type')
+
+
+class FOVLocation(BaseModel):
+    """Imaging field of view location model"""
+
+    class Provenance(models.TextChoices):
+        ESTIMATE = 'E', _('Estimate')
+        FUNCTIONAL = 'F', _('Functional')
+        VASCULATURE = 'V', _('Vasculature')
+        LANDMARK = 'L', _('Landmark')
+
+    objects = BaseManager()
+    field_of_view = models.ForeignKey(
+        FOV, null=False, on_delete=models.CASCADE, related_name='field_of_view')
+    _phelp = ' / '.join([f'{s[0]}: {s[1]}' for s in Provenance.choices])
+    provenance = models.CharField(
+        max_length=1,
+        choices=Provenance.choices,
+        default=Provenance.ESTIMATE,
+        help_text=_phelp
+    )
+    default_provinance = models.BooleanField(default=False)
+
     x1 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
     y1 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
     z1 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
@@ -241,3 +265,11 @@ class FOV(BaseModel):
 
     brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
                                      on_delete=models.SET_NULL, related_name='brain_region')
+
+    def save(self, *args, **kwargs):
+        """Ensure only one provenance can be set as default"""
+        locations = FOVLocation.objects.filter(
+            field_of_view=self.field_of_view, default_provinance=True)
+        if self.default_provinance and locations.count() > 0:
+            locations.update(default_provinance=False)
+        super().save(*args, **kwargs)
