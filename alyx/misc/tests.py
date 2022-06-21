@@ -131,7 +131,7 @@ class ONECache(TestCase):
         self.assertEqual(expected, url)
 
         url = one_cache._get_s3_virtual_host('my-s3-bucket/', 'eu-east-1')
-        self.assertEqual(expected, url)
+        self.assertEqual(expected[:-1], url)
 
         expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/path/to/file'
         url = one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'eu-east-1')
