@@ -24,9 +24,10 @@ from django_filters import CharFilter
 from django_filters.rest_framework import FilterSet
 from rest_framework.views import exception_handler
 
+from rest_framework import permissions
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
-
+from alyx import __version__ as version
 
 logger = structlog.get_logger(__name__)
 
@@ -316,13 +317,28 @@ class BaseAdmin(VersionAdmin):
                                      for model in category_list[0].models]
         return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
+    def has_add_permission(self, request, *args, **kwargs):
+        if request.user.is_public_user:
+            return False
+        else:
+            return super(BaseAdmin, self).has_add_permission(request, *args, **kwargs)
+
     def has_change_permission(self, request, obj=None):
+        if request.user.is_public_user:
+            return False
         if not obj:
             return True
         if request.user.is_superuser:
             return True
-        # Subject associated to the object.
-        subj = obj if hasattr(obj, 'responsible_user') else getattr(obj, 'subject', None)
+        # Find subject associated to the object.
+        if hasattr(obj, 'responsible_user'):
+            subj = obj
+        elif getattr(obj, 'session', None):
+            subj = obj.session.subject
+        elif getattr(obj, 'subject', None):
+            subj = obj.subject
+        else:
+            return False
         resp_user = getattr(subj, 'responsible_user', None)
         # List of allowed users for the subject.
         allowed = getattr(resp_user, 'allowed_users', None)
@@ -562,11 +578,29 @@ def rest_filters_exception_handler(exc, context):
     return response
 
 
+class BaseRestPublicPermission(permissions.BasePermission):
+    """
+    The purpose is to prevent public users from interfering in any way using writable methods
+    """
+    def has_permission(self, request, view):
+        if request.method == 'GET':
+            return True
+        elif request.user.is_public_user:
+            return False
+        else:
+            return True
+
+
+def rest_permission_classes():
+    permission_classes = (permissions.IsAuthenticated & BaseRestPublicPermission,)
+    return permission_classes
+
+
 mysite = MyAdminSite()
 mysite.site_header = 'Alyx'
 mysite.site_title = 'Alyx'
 mysite.site_url = None
-mysite.index_title = 'Welcome to Alyx'
+mysite.index_title = f'Welcome to Alyx {version}'
 mysite.enable_nav_sidebar = False
 
 admin.site = mysite

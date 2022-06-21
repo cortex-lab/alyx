@@ -12,12 +12,13 @@ from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
 
 import django_filters
-from rest_framework import generics, permissions
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from alyx.base import base_json_filter, BaseFilterSet
+from alyx.base import base_json_filter, BaseFilterSet, rest_permission_classes
 from subjects.models import Subject
+from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
@@ -202,16 +203,26 @@ class SessionFilter(BaseFilterSet):
     atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')
     atlas_id = django_filters.NumberFilter(field_name='pk', method='atlas')
     histology = django_filters.BooleanFilter(field_name='histology', method='has_histology')
+    tag = django_filters.CharFilter(field_name='tag', method='filter_tag')
+
+    def filter_tag(self, queryset, name, value):
+        """
+        returns sessions that contain datasets tagged as
+        :param queryset:
+        :param name:
+        :param value:
+        :return:
+        """
+        queryset = queryset.filter(
+            data_dataset_session_related__tags__name__icontains=value).distinct()
+        return queryset
 
     def atlas(self, queryset, name, value):
         """
         returns sessions containing at least one channel in the given brain region.
         Hierarchical tree search"
         """
-        from experiments.models import BrainRegion
-        brs = BrainRegion.objects.filter(**{name: value}).get_descendants(include_self=True)
-        return queryset.filter(
-            probe_insertion__trajectory_estimate__channels__brain_region__in=brs).distinct()
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
 
     def has_histology(self, queryset, name, value):
         """returns sessions whose subjects have an histology session available"""
@@ -314,7 +325,7 @@ class SessionAPIList(generics.ListCreateAPIView):
         -   chained lookups: `/sessions/?extended_qc=qc_pct__gte;0.5;qc_bool;True`,
     -   **performance_gte**, **performance_lte**: percentage of successful trials gte/lte
     -   **brain_region**: returns a session if any channel name icontains the value:
-        `/sessions?brain_region=vis`
+        `/sessions?brain_region=visual cortex`
     -   **atlas_acronym**: returns a session if any of its channels name exactly matches the value
         `/sessions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
     -   **atlas_id**: returns a session if any of its channels id matches the provided value:
@@ -334,7 +345,8 @@ class SessionAPIList(generics.ListCreateAPIView):
     """
     queryset = Session.objects.all()
     queryset = SessionListSerializer.setup_eager_loading(queryset)
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
+
     filter_class = SessionFilter
 
     def get_serializer_class(self):
@@ -353,14 +365,14 @@ class SessionAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Session.objects.all().order_by('-start_time')
     queryset = SessionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = SessionDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class WeighingAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new weighing.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
     queryset = WeighingDetailSerializer.setup_eager_loading(queryset)
@@ -371,7 +383,7 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
     """
     Allows viewing of full detail and deleting a weighing.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
 
@@ -379,7 +391,7 @@ class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
 class WaterTypeList(generics.ListCreateAPIView):
     queryset = WaterType.objects.all()
     serializer_class = WaterTypeDetailSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
 
@@ -387,7 +399,7 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     """
     Lists or creates a new water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
     queryset = WaterAdministrationDetailSerializer.setup_eager_loading(queryset)
@@ -398,7 +410,7 @@ class WaterAdministrationAPIDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
 
@@ -415,7 +427,7 @@ def _merge_lists_dicts(la, lb, key):
 
 
 class WaterRequirement(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
     def get(self, request, format=None, nickname=None):
         assert nickname
@@ -441,7 +453,7 @@ class WaterRestrictionList(generics.ListAPIView):
     """
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
     serializer_class = WaterRestrictionListSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     filter_class = WaterRestrictionFilter
 
 
@@ -451,14 +463,14 @@ class LabLocationList(generics.ListAPIView):
     """
     queryset = LabLocation.objects.all()
     serializer_class = LabLocationSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
 
 
 class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'
@@ -470,4 +482,4 @@ class SurgeriesList(generics.ListAPIView):
     """
     queryset = Surgery.objects.all()
     serializer_class = SurgerySerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = rest_permission_classes()

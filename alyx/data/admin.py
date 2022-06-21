@@ -99,9 +99,9 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     ordering = ('-created_datetime',)
 
     def get_queryset(self, request):
-        qs = super(DatasetAdmin, self).get_queryset(request)
-        qs = qs.select_related('dataset_type', 'session', 'session__subject', 'created_by')
-        return qs
+        queryset = super(DatasetAdmin, self).get_queryset(request)
+        queryset = queryset.select_related('session', 'session__subject', 'created_by')
+        return queryset
 
     def dataset_type_(self, obj):
         return obj.dataset_type.name
@@ -121,17 +121,17 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return obj.session.subject.nickname
 
     def _online(self, obj):
-        return obj.online
+        return obj.is_online
     _online.short_description = 'On server'
     _online.boolean = True
 
     def _protected(self, obj):
-        return obj.protected
+        return obj.is_protected
     _protected.short_description = 'Protected'
     _protected.boolean = True
 
     def _public(self, obj):
-        return obj.public
+        return obj.is_public
     _public.short_description = 'Public'
     _public.boolean = True
 

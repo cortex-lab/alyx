@@ -774,26 +774,42 @@ def _bp_subjects(line, sex):
     return qs
 
 
+def _bp_cage(bp):
+    """Return the cage of a breeding pair, defined as the cage of the father or mother."""
+    for w in ('father', 'mother1', 'mother2'):
+        subject = getattr(bp, w, None)
+        if subject and subject.cage:
+            return subject.cage
+
+
 class BreedingPairAdminForm(forms.ModelForm):
     cage = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
+
+        # The current breeding pair.
+        bp = self.instance
+
+        # If updating an existing breeding pair, set the breeding pair cage.
+        if bp and bp.pk is not None:
+            self.fields['cage'].initial = _bp_cage(bp)
+        # Otherwise, if creating a new breeding pair, do not prefill the cage.
+
+        # Prefill the list of possible subjects in the father and mother fields.
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
-            p = getattr(self.instance, w, None)
-            if p and p.cage:
-                self.fields['cage'].initial = p.cage
             if w in self.fields:
                 self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
     def save(self, commit=True):
         cage = self.cleaned_data.get('cage')
+        # When setting a cage, assign it to the subjects.
         if cage:
             for w in ('father', 'mother1', 'mother2'):
                 p = getattr(self.instance, w, None)
                 if p:
-                    p.cage = int(cage)
+                    p.cage = str(cage)
                     p.save()
         return super(BreedingPairAdminForm, self).save(commit=commit)
 
@@ -1287,7 +1303,8 @@ class LabMemberAdmin(UserAdmin):
     form = LabMemberAdminForm
 
     fieldsets = UserAdmin.fieldsets + (
-        ('Extra fields', {'fields': ('allowed_users',)}),
+        ('Extra fields', {'fields': ('allowed_users',)},),
+        ('Permissions', {'fields': ('is_stock_manager', 'is_public_user')})
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Extra fields', {'fields': ('allowed_users',)}),
@@ -1297,8 +1314,9 @@ class LabMemberAdmin(UserAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l', 'allowed_users_',
                     'is_staff', 'is_superuser', 'is_stock_manager',
+                    'is_public_user'
                     ]
-    list_editable = ['is_stock_manager']
+    list_editable = ['is_stock_manager', 'is_public_user']
     save_on_top = True
 
     def get_form(self, request, obj=None, **kwargs):

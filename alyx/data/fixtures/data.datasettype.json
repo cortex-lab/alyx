@@ -1470,7 +1470,7 @@
       "name": "electrodeSites.localCoordinates",
       "created_by": null,
       "description": "Location of each channel relative to probe coordinate system (µm): (first) dimension is on the width of the shank; Second is the depth where 0 is the deepest site, and positive above this. Straight mapping to the raw electrophysiology binary files",
-      "filename_pattern": "*electrode_sites.localCoordinates*.npy"
+      "filename_pattern": "electrodeSites.localCoordinates*.npy"
     }
   },
   {
@@ -1481,7 +1481,7 @@
       "name": "electrodeSites.mlapdv",
       "created_by": null,
       "description": "3d location of the channels relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um) straight mapping to the raw electrophysiology binary file channels",
-      "filename_pattern": "electrode_sites.mlapdv*.npy"
+      "filename_pattern": "electrodeSites.mlapdv*.npy"
     }
   },
   {
@@ -1492,7 +1492,7 @@
       "name": "electrodeSites.brainLocationIds_ccf_2017",
       "created_by": null,
       "description": "Brain location id of channels following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework - straight mapping to the raw electrophysiology binary file channels.",
-      "filename_pattern": "electrode_sites.brainLocationIds_ccf_2017*.npy"
+      "filename_pattern": "electrodeSites.brainLocationIds_ccf_2017*.npy"
     }
   },
   {
@@ -1592,6 +1592,17 @@
       "created_by": null,
       "description": "average across all frames for each channel of imaging",
       "filename_pattern": "widefieldChannels.frameAverage*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "c634bb4d-a152-4e6f-930d-516957b433e6",
+    "fields": {
+      "json": null,
+      "name": "trials.table",
+      "created_by": null,
+      "description": "A table of trial events, one per trial. Events include: intervals, goCue_times, response_times, choice, stimOn_times, contrastLeft, contrastRight, feedback_times, feedbackType, rewardVolume, probabilityLeft, firstMovement_times",
+      "filename_pattern": "*trials.table*"
     }
   },
   {

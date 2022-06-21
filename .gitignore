@@ -29,3 +29,9 @@ alyx/templates/ibl_reports
 alyx/alyx/settings_secret.py
 alyx/alyx/settings_lab.py
 alyx/alyx/settings.py
+
+scripts/deployment_examples/docker-apache/settings*
+
+alyx/.idea/
+
+alyx.log

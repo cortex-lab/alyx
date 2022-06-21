@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from django.db.models import Count, Q, BooleanField
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, Download, FileRecord, Revision, Tag)
@@ -12,7 +13,7 @@ from misc.models import LabMember
 class DataRepositoryTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DataRepositoryType
-        fields = ('__all__')
+        fields = '__all__'
         extra_kwargs = {'url': {'view_name': 'datarepositorytype-detail', 'lookup_field': 'name'}}
 
 
@@ -35,7 +36,7 @@ class DataRepositorySerializer(serializers.HyperlinkedModelSerializer):
 class DataFormatSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFormat
-        fields = ('__all__')
+        fields = '__all__'
         extra_kwargs = {'url': {'view_name': 'dataformat-detail', 'lookup_field': 'name'}}
 
 
@@ -72,7 +73,7 @@ class FileRecordSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FileRecord
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class DatasetFileRecordsSerializer(serializers.ModelSerializer):
@@ -91,12 +92,18 @@ class DatasetFileRecordsSerializer(serializers.ModelSerializer):
         fields = ('id', 'data_repository', 'data_repository_path', 'relative_path', 'data_url',
                   'exists')
 
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('data_repository', 'data_repository__globus_path')
+        return queryset
+
 
 class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('__all__')
+        fields = '__all__'
 
 
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
@@ -153,9 +160,12 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related(
             'created_by', 'dataset_type', 'data_format', 'session',
-            'session__subject')
+            'session__subject', 'revision')
         queryset = queryset.prefetch_related(
-            'file_records', 'file_records__data_repository')
+            'file_records', 'file_records__data_repository', 'tags')
+        public = Count('tags', filter=Q(tags__public=True), output_field=BooleanField())
+        protected = Count('tags', filter=Q(tags__protected=True), output_field=BooleanField())
+        queryset = queryset.annotate(public=public, protected=protected)
         return queryset
 
     def get_experiment_number(self, obj):
@@ -228,4 +238,4 @@ class DownloadSerializer(serializers.HyperlinkedModelSerializer):
 class RevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Revision
-        fields = ('__all__')
+        fields = '__all__'

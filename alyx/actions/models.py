@@ -209,16 +209,20 @@ class Surgery(BaseAction):
 
     def save(self, *args, **kwargs):
         # Issue #422.
-        if self.subject.protocol_number == '1':
-            self.subject.protocol_number = '3'
-        # Change from mild to moderate.
+        output = super(Surgery, self).save(*args, **kwargs)
+        self.subject.set_protocol_number()
         if self.subject.actual_severity == 2:
             self.subject.actual_severity = 3
-
         if self.outcome_type == 'a' and self.start_time:
             self.subject.death_date = self.start_time
         self.subject.save()
-        return super(Surgery, self).save(*args, **kwargs)
+        return output
+
+    def delete(self, *args, **kwargs):
+        output = super(Surgery, self).delete(*args, **kwargs)
+        self.subject.set_protocol_number()
+        self.subject.save()
+        return output
 
 
 class Session(BaseAction):
@@ -314,6 +318,13 @@ class WaterRestriction(BaseAction):
     def is_active(self):
         return self.start_time is not None and self.end_time is None
 
+    def delete(self, *args, **kwargs):
+        output = super(WaterRestriction, self).delete(*args, **kwargs)
+        self.subject.reinit_water_control()
+        self.subject.set_protocol_number()
+        self.subject.save()
+        return output
+
     def save(self, *args, **kwargs):
         if not self.reference_weight and self.subject:
             w = self.subject.water_control.last_weighing_before(self.start_time)
@@ -321,7 +332,14 @@ class WaterRestriction(BaseAction):
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
                 assert(abs(w[0] - self.start_time) < timedelta(days=7))
-        return super(WaterRestriction, self).save(*args, **kwargs)
+        output = super(WaterRestriction, self).save(*args, **kwargs)
+        # When creating a water restriction, the subject's protocol number should be changed to 3
+        # (request by Charu in 03/2022)
+        if self.subject:
+            self.subject.reinit_water_control()
+            self.subject.set_protocol_number()
+            self.subject.save()
+        return output
 
 
 class OtherAction(BaseAction):
@@ -543,13 +561,13 @@ class Cull(BaseModel):
             self.subject.cull_method = str(self.cull_method)
             subject_change = True
         if subject_change:
-            self.subject.save()
             # End all open water restrictions.
             for wr in WaterRestriction.objects.filter(
                     subject=self.subject, start_time__isnull=False, end_time__isnull=True):
                 wr.end_time = self.date
                 logger.debug("Ending water restriction %s.", wr)
                 wr.save()
+            self.subject.save()
         return super(Cull, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
