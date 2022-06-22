@@ -136,7 +136,7 @@ class DatasetType(BaseModel):
     objects = NameManager()
 
     name = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, unique=True, blank=True, null=False,
         help_text="Short identifying nickname, e.g. 'spikes'")
 
     created_by = models.ForeignKey(
@@ -153,7 +153,7 @@ class DatasetType(BaseModel):
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
     filename_pattern = models.CharField(
-        max_length=255, unique=True,
+        max_length=255, unique=False,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
         "would include all files starting with the word 'spikes'.")
