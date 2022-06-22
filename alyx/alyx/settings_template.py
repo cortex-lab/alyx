@@ -29,6 +29,7 @@ except ImportError:
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
+USE_DEPRECATED_PYTZ = True  # Support for using pytz will be removed in Django 5.0
 
 if 'GITHUB_ACTIONS' in os.environ:
     DATABASES = {
@@ -76,7 +77,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/alyx.log',
+            'filename': '%ALYX_LOG_FILE%',
             'maxBytes': 16777216,
             'backupCount': 5,
             'formatter': 'simple'
@@ -89,7 +90,7 @@ LOGGING = {
         'json_file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/alyx_json.log',
+            'filename': '%ALYX_JSON_LOG_FILE%',
             'maxBytes': 16777216,
             'backupCount': 5,
             'formatter': 'json_formatter',
@@ -125,7 +126,7 @@ if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # Production settings:
 if not DEBUG:

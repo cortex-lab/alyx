@@ -8,6 +8,7 @@ import pytz
 import uuid
 from collections import OrderedDict
 from rest_framework import serializers
+from datetime import datetime
 
 from django import forms
 from django.db import models
@@ -305,7 +306,7 @@ class BaseAdmin(VersionAdmin):
         tz = pytz.timezone(Lab.objects.get(name=request.user.lab[0]).timezone)
         assert settings.USE_TZ is False  # timezone.now() is expected to be a naive datetime
         server_tz = pytz.timezone(settings.TIME_ZONE)  # server timezone
-        now = server_tz.localize(timezone.now())  # convert datetime from naive to server timezone
+        now = datetime.now(tz=server_tz)  # convert datetime from naive to server timezone
         now = now.astimezone(tz)  # convert to the lab timezone
         return {'start_time': now, 'created_at': now, 'date_time': now}
 
