@@ -1629,17 +1629,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "bb22b0fb-c380-472e-ac4a-eafe4c676730",
-    "fields": {
-      "json": null,
-      "name": "photometry.photometryLightSource",
-      "created_by": null,
-      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
-      "filename_pattern": "*photometry.photometryLightSource*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "371fa560-c63c-47a6-9efb-126f298c0edf",
     "fields": {
       "json": null,
@@ -1647,17 +1636,6 @@
       "created_by": null,
       "description": "the recorded signal for each frame.",
       "filename_pattern": "*photometry.signal*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "421d79d3-4a9d-4006-ad45-8b038006a5f2",
-    "fields": {
-      "json": null,
-      "name": "photometryLightSource.properties",
-      "created_by": null,
-      "description": "A map of channels number, colour and wavelength.",
-      "filename_pattern": "*photometryLightSource.properties*"
     }
   },
   {
@@ -1706,24 +1684,68 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "d48addf1-4092-47a7-a921-004e706a4c10",
+    "pk": "3d615670-2a50-4749-9fb8-b4777ee568c5",
     "fields": {
       "json": null,
-      "name": "widefield.widefieldLightSource",
+      "name": "imaging.frames",
       "created_by": null,
-      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
-      "filename_pattern": "*widefield.widefieldLightSource*"
+      "description": "Frame images with the dimensions [nframes, nx, ny(, nchannels)].",
+      "filename_pattern": "imaging.frames*"
     }
   },
   {
     "model": "data.datasettype",
-    "pk": "3f5eb1b8-ce9b-4c82-bf32-b7b7c4e5962e",
+    "pk": "ab21cb39-540a-4686-988f-86a8d16d0d83",
     "fields": {
       "json": null,
-      "name": "widefieldLightSource.properties",
+      "name": "imaging.times",
       "created_by": null,
-      "description": "A map of channels number, colour and wavelength.",
-      "filename_pattern": "*widefieldLightSource.properties*"
+      "description": "The times of frame acquisition.",
+      "filename_pattern": "imaging.times*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "9300f7a1-e438-477f-963f-1c31b77cd4b9",
+    "fields": {
+      "json": null,
+      "name": "imaging.imagingLightSource",
+      "created_by": null,
+      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
+      "filename_pattern": "imaging.imagingLightSource*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3356a302-2141-4ad3-a3a3-0388519e61bb",
+    "fields": {
+      "json": null,
+      "name": "imagingLightSource.properties",
+      "created_by": null,
+      "description": "A map of channels number, colour and wavelength.  NB: This is the light source wavelength, not the photosensor channel / emitted wavelength.",
+      "filename_pattern": "*imagingLightSource.properties*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3f075b50-df21-4eac-9ddd-4b750663e47c",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.raw",
+      "created_by": null,
+      "description": "The output of the DAQ software for a given device.  The namespace should identify the DAQ model, e.g. 'mcc', 'ni' or 'ni-usb-6211'.",
+      "filename_pattern": "_*_DAQdata.raw*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "24269ec5-687d-4b1d-ad12-3d7a6c474eb5",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.wiring",
+      "created_by": null,
+      "description": "A map of the channel IDs and their corresponding device label, e.g. {ai1: bpod}.",
+      "filename_pattern": "_*_DAQdata.wiring*"
     }
   }
 ]
