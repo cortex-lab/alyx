@@ -9,7 +9,8 @@ SKIP_ONE_CACHE = False
 try:
     import pyarrow as pa
     from misc.management.commands import one_cache
-except ImportError:
+except ImportError as ex:
+    print(f'Failed to import one_cache: {ex}')
     SKIP_ONE_CACHE = True
 
 
@@ -130,9 +131,9 @@ class ONECache(TestCase):
         url = one_cache._get_s3_virtual_host('s3://my-s3-bucket', 'eu-east-1')
         self.assertEqual(expected, url)
 
+        # NB slight diff in behaviour: with no scheme provided output URL has no trailing slash.
         url = one_cache._get_s3_virtual_host('my-s3-bucket/', 'eu-east-1')
-        self.assertEqual(expected[:-1], url)
-
+        self.assertEqual(expected.strip('/'), url)
         expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/path/to/file'
         url = one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'eu-east-1')
         self.assertEqual(expected, url)
