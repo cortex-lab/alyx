@@ -145,7 +145,7 @@ Trajectory Estimates objects REST filters and views
 class TrajectoryEstimateFilter(BaseFilterSet):
     provenance = CharFilter(method='enum_field_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
-    project = CharFilter('probe_insertion__session__project__name')
+    project = CharFilter('probe_insertion__session__projects__name')
     date = CharFilter('probe_insertion__session__start_time__date')
     experiment_number = CharFilter('probe_insertion__session__number')
     session = UUIDFilter('probe_insertion__session__id')
