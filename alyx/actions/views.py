@@ -197,7 +197,9 @@ class SessionFilter(BaseFilterSet):
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
-    project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
+    projects = django_filters.CharFilter(field_name='projects__name', lookup_expr=('icontains'))
+    # below is an alias to keep compatibility after moving project FK field to projects M2M
+    project = django_filters.CharFilter(field_name='projects__name', lookup_expr=('icontains'))
     # brain region filters
     atlas_name = django_filters.CharFilter(field_name='name__icontains', method='atlas')
     atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')

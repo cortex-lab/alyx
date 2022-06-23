@@ -13,7 +13,7 @@ from experiments.serializers import ProbeInsertionListSerializer
 from misc.serializers import NoteSerializer
 
 
-SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
+SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'projects', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
                   'parent_session', 'n_correct_trials', 'n_trials', 'url', 'extended_qc', 'qc',
                   'wateradmin_session_related', 'data_dataset_session_related',
@@ -128,19 +128,21 @@ class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
 
 class SessionListSerializer(BaseActionSerializer):
-    project = serializers.SlugRelatedField(read_only=False,
-                                           slug_field='name',
-                                           queryset=Project.objects.all())
+    projects = serializers.SlugRelatedField(read_only=False,
+                                            slug_field='name',
+                                            queryset=Project.objects.all(),
+                                            many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'lab', 'project')
+        queryset = queryset.select_related('subject', 'lab')
+        queryset = queryset.prefetch_related('projects')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = ('id', 'subject', 'start_time', 'number', 'lab', 'project', 'url',
+        fields = ('id', 'subject', 'start_time', 'number', 'lab', 'projects', 'url',
                   'task_protocol')
 
 
@@ -149,8 +151,8 @@ class SessionDetailSerializer(BaseActionSerializer):
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
     probe_insertion = ProbeInsertionListSerializer(read_only=True, many=True)
-    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
-                                           queryset=Project.objects.all(), required=False)
+    projects = serializers.SlugRelatedField(read_only=False, slug_field='name', many=True,
+                                            queryset=Project.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
     qc = BaseSerializerEnumField(required=False)
 
