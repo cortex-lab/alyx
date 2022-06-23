@@ -20,6 +20,7 @@ import pyarrow as pa
 from django.db import connection
 from django.db.models import Q, Exists, OuterRef
 from django.core.management.base import BaseCommand
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
@@ -270,18 +271,21 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     )
     """
     fields = ('id', 'lab__name', 'subject__nickname', 'start_time__date',
-              'number', 'task_protocol', 'project__name')
+              'number', 'task_protocol', 'all_projects')
     query = (Session
              .objects
-             .select_related('subject', 'lab', 'project')
+             .select_related('subject', 'lab')
+             .prefetch_related('projects')
+             .annotate(all_projects=ArrayAgg('projects__name'))
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
-    df = pd.DataFrame.from_records(query.values(*fields))
+    df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
+    df['all_projects'] = df['all_projects'].map(lambda x: '' if x == [None] else ','.join(x))
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
-            .rename({'start_time': 'date'}, axis=1)
+            .rename({'start_time': 'date', 'all_projects': 'project'}, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
             .sort_values(['date', 'subject', 'number'], ascending=False))
     )
