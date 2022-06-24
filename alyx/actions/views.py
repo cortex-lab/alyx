@@ -22,8 +22,9 @@ from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation, Surgery)
+    Weighing, WaterType, LabLocation, Surgery, ProcedureType)
 from .serializers import (LabLocationSerializer,
+                          ProcedureTypeSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
                           SurgerySerializer,
@@ -176,6 +177,13 @@ def weighing_plot(request, subject_id=None):
         return HttpResponse('')
     wc = water_control(Subject.objects.get(pk=subject_id))
     return wc.plot()
+
+
+class ProcedureTypeList(generics.ListCreateAPIView):
+    queryset = ProcedureType.objects.all()
+    permission_classes = rest_permission_classes()
+    serializer_class = ProcedureTypeSerializer
+    lookup_field = 'name'
 
 
 class SessionFilter(BaseFilterSet):

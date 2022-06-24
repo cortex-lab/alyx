@@ -149,6 +149,9 @@ class APIActionsTests(BaseTests):
                    Session.objects.filter(extended_qc__tata_pct__lt=0.5,
                                           extended_qc__tutu_bool=True))
 
+    def test_procedures(self):
+        self.ar(self.client.get(reverse('procedures-list')), 200)
+
     def test_sessions_projects(self):
         ses1dict = {'subject': self.subject.nickname,
                     'users': [self.superuser.username],

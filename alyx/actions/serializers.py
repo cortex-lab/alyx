@@ -205,6 +205,12 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
                   'user', 'url')
 
 
+class ProcedureTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProcedureType
+        fields = ('__all__')
+
+
 class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = WaterType
