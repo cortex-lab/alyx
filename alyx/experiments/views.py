@@ -107,7 +107,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **subject**: subject nickname: `/insertions?subject=Algernon`
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
-    -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **session**: session UUID`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **task_protocol** (icontains)
     -   **location**: location name (icontains)
     -   **project**: project name (icontains)
