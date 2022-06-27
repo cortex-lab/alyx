@@ -1,7 +1,7 @@
 asgiref==3.5.2
 backports.zoneinfo==0.2.1
-boto3==1.24.14
-botocore==1.27.14
+boto3==1.24.17
+botocore==1.27.17
 certifi==2022.6.15
 cffi==1.15.0
 charset-normalizer==2.0.12
@@ -36,7 +36,7 @@ fonttools==4.33.3
 globus-cli==3.6.0
 globus-sdk==3.9.0
 idna==3.3
-importlib-metadata==4.11.4
+importlib-metadata==4.12.0
 itypes==1.2.0
 Jinja2==3.1.2
 jmespath==0.10.0
@@ -46,9 +46,9 @@ Markdown==3.3.7
 MarkupSafe==2.1.1
 matplotlib==3.5.2
 mccabe==0.6.1
-numpy==1.22.4
+numpy==1.23.0
 packaging==21.3
-pandas==1.4.2
+pandas==1.4.3
 Pillow==9.1.1
 psycopg2-binary==2.9.3
 pyarrow==8.0.0
