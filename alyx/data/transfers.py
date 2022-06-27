@@ -5,10 +5,13 @@ import os.path as op
 import re
 import time
 from pathlib import Path
+from fnmatch import fnmatch
 
 from django.db.models import Case, When, Count, Q
 import globus_sdk
 import numpy as np
+from one.alf.files import filename_parts
+from one.alf.files import add_uuid_string
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
@@ -103,13 +106,6 @@ def _incomplete_dataset_ids():
 #    return FileRecord.objects.filter(exists=False).values_list('dataset', flat=True).distinct()
 
 
-def _add_uuid_to_filename(fn, uuid):
-    if str(uuid) in fn:
-        return fn
-    dpath, ext = op.splitext(fn)
-    return dpath + '.' + str(uuid) + ext
-
-
 def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     """Start a globus file transfer between two file record UUIDs."""
     source_fr = FileRecord.objects.get(pk=source_file_id)
@@ -125,7 +121,7 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     destination_path = _get_absolute_path(destination_fr)
 
     # Add dataset UUID.
-    destination_path = _add_uuid_to_filename(destination_path, source_fr.dataset.pk)
+    destination_path = add_uuid_string(destination_path, source_fr.dataset.pk).as_posix()
 
     label = 'Transfer %s from %s to %s' % (
         _escape_label(op.basename(destination_path)),
@@ -162,7 +158,7 @@ def globus_file_exists(file_record):
     path = _get_absolute_path(file_record)
     dir_path = op.dirname(path)
     name = op.basename(path)
-    name_uuid = _add_uuid_to_filename(name, file_record.dataset.pk)
+    name_uuid = add_uuid_string(name, file_record.dataset.pk).as_posix()
     try:
         existing = tc.operation_ls(file_record.data_repository.globus_endpoint_id, path=dir_path)
     except globus_sdk.TransferAPIError as e:
@@ -174,19 +170,19 @@ def globus_file_exists(file_record):
     return False
 
 
-def _filename_matches_pattern(filename, pattern):
-    filename = op.basename(filename)
-    reg = pattern.replace('.', r'\.').replace('_', r'\_').replace('*', r'.*')
-    return re.match(reg, filename, re.IGNORECASE)
-
-
 def get_dataset_type(filename, qs=None):
+    """Get the dataset type from a given filename"""
     dataset_types = []
-    qs = qs or DatasetType.objects.filter(filename_pattern__isnull=False)
-    for dt in qs:
+    for dt in qs or DatasetType.objects.all():
         if not dt.filename_pattern.strip():
-            continue
-        if _filename_matches_pattern(filename, dt.filename_pattern):
+            # If the filename pattern is null, check whether the filename object.attribute matches
+            # the dataset type name.
+            # NB: This will raise a ValueError if filename is not a valid ALF
+            obj_attr = '.'.join(filename_parts(filename)[1:3])
+            if dt.name == obj_attr:
+                dataset_types.append(dt)
+        # Check whether pattern matches filename
+        elif fnmatch(op.basename(filename), dt.filename_pattern):
             dataset_types.append(dt)
     n = len(dataset_types)
     if n == 0:
@@ -444,7 +440,7 @@ def bulk_sync(dry_run=False, lab=None, gc=None, check_mismatch=False):
             continue
         # if we already listed the current path of the endpoint, do not repeat the rest ls command
         cpath, fil = os.path.split(qf.relative_path)
-        fil_uuid = _add_uuid_to_filename(fil, qf.dataset_id)
+        fil_uuid = add_uuid_string(fil, qf.dataset_id).as_posix()
         cpath = qf.data_repository.globus_path + cpath
         if _last_path != cpath:
             _last_path = cpath
@@ -476,7 +472,7 @@ def bulk_sync(dry_run=False, lab=None, gc=None, check_mismatch=False):
 def _filename_from_file_record(fr, add_uuid=False):
     fn = fr.data_repository.globus_path + fr.relative_path
     if add_uuid:
-        fn = _add_uuid_to_filename(fn, fr.dataset.pk)
+        fn = add_uuid_string(fn, fr.dataset.pk).as_posix()
     return fn
 
 

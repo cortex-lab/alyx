@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields, BaseManager
+from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField
 
 
 def _related_string(field):
@@ -136,7 +136,7 @@ class DatasetType(BaseModel):
     objects = NameManager()
 
     name = models.CharField(
-        max_length=255, unique=True, blank=True,
+        max_length=255, unique=True, blank=True, null=False,
         help_text="Short identifying nickname, e.g. 'spikes'")
 
     created_by = models.ForeignKey(
@@ -152,8 +152,8 @@ class DatasetType(BaseModel):
         "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
-    filename_pattern = models.CharField(
-        max_length=255, unique=True,
+    filename_pattern = CharNullField(
+        max_length=255, unique=True, null=True, blank=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
         "would include all files starting with the word 'spikes'.")

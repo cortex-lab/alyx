@@ -1,19 +1,7 @@
-from uuid import uuid4
-
 from django.test import TestCase
-from data.models import Dataset
-
-from . import transfers
-
-
-class TransferUtilTests(TestCase):
-    def test_add_uuid_to_filename(self):
-        uuid = uuid4()
-        expected = f'spikes.times.{uuid}.npy'
-        testable = transfers._add_uuid_to_filename('spikes.times.npy', uuid)
-        self.assertEqual(expected, testable)
-        # Check leaves UUID if already added
-        self.assertEqual(expected, transfers._add_uuid_to_filename(testable, uuid))
+from django.db.utils import IntegrityError
+from data.models import Dataset, DatasetType
+from data.transfers import get_dataset_type
 
 
 class TestModel(TestCase):
@@ -22,3 +10,26 @@ class TestModel(TestCase):
         assert dset.is_online is False
         assert dset.is_public is False
         assert dset.is_protected is False
+
+
+class TestDatasetTypeModel(TestCase):
+    def test_model_methods(self):
+        dtype, _ = DatasetType.objects.get_or_create(
+            name='obj.attr', description='thing', filename_pattern=None)
+        dtype2, _ = DatasetType.objects.get_or_create(
+            name='foo.bar', description='foo bar', filename_pattern='*foo.b?r*')
+        dtype3, _ = DatasetType.objects.get_or_create(
+            name='bar.baz', description='.', filename_pattern=None)
+        with self.assertRaises(IntegrityError):
+            DatasetType.objects.get_or_create(name='objFoo.bar', filename_pattern='*foo.b?r*')
+        with self.assertRaises(IntegrityError):
+            DatasetType.objects.get_or_create(name='obj.attr', filename_pattern='-')
+        filename_typename = (
+            ('foo.bar.npy', 'foo.bar'),
+            ('foo.bir.npy', 'foo.bar'),
+            ('_ns_foo.bar_clock.extra.npy', 'foo.bar'),
+            ('bar.baz.ext', 'bar.baz')
+        )
+        for filename, dataname in filename_typename:
+            with self.subTest(filename=filename):
+                self.assertEqual(get_dataset_type(filename).name, dataname)

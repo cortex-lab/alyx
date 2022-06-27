@@ -36,6 +36,50 @@ DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 DISABLE_MAIL = False  # used for testing
 
 
+class CharNullField(models.CharField):
+    """
+    Subclass of the CharField that allows empty strings to be stored as NULL.
+
+    This allows for unique assertions on non-empty string fields only.
+
+    See this URL:
+    https://stackoverflow.com/questions/454436/unique-fields-that-allow-nulls-in-django/1934764
+    """
+
+    description = "CharField that stores NULL but returns ''."
+
+    def from_db_value(self, value, *_):
+        """
+        Gets value right out of the db and changes it if it's None.
+        """
+        return value or ''
+
+    def to_python(self, value):
+        """
+        Gets value right out of the db or an instance, and changes it if its ``None``.
+        """
+        if isinstance(value, models.CharField):
+            # If an instance, just return the instance.
+            return value
+        if value is None:
+            # If db has NULL, convert it to ''.
+            return ''
+
+        # Otherwise, just return the value.
+        return value
+
+    def get_prep_value(self, value):
+        """
+        Catches value right before sending to db.
+        """
+        if value == '':
+            # If Django tries to save an empty string, send the db None (NULL).
+            return None
+        else:
+            # Otherwise, just pass the value.
+            return value
+
+
 class QueryPrintingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
