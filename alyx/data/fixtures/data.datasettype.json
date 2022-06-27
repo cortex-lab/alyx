@@ -1324,10 +1324,10 @@
     "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
     "fields": {
       "json": null,
-      "name": "_ibl_trials.laserProbability",
+      "name": "trials.laserProbability",
       "created_by": null,
       "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "*trials.laserProbability.npy"
+      "filename_pattern": "_*_trials.laserProbability.*"
     }
   },
   {
@@ -1497,6 +1497,105 @@
   },
   {
     "model": "data.datasettype",
+    "pk": "fa077e46-c7b1-4f95-afb6-7bc1faa6adba",
+    "fields": {
+      "json": null,
+      "name": "widefieldU.images",
+      "created_by": null,
+      "description": "Projected SVD spatial components (denoised/decomposed) with the shape [H, W, nComponents] where H and W are the dimensions of a single frame.",
+      "filename_pattern": "widefieldU.images*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "f5e48503-c71a-4aca-beec-86b32837f8bb",
+    "fields": {
+      "json": null,
+      "name": "widefieldSVT.uncorrected",
+      "created_by": null,
+      "description": "temporal SVD components (denoised/decomposed), s·Vᵀ with dimensions [nComponents, nFrames]",
+      "filename_pattern": "widefieldSVT.uncorrected.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "0fd7283b-4729-4350-ab8d-74d532fcb31a",
+    "fields": {
+      "json": null,
+      "name": "widefieldSVT.haemoCorrected",
+      "created_by": null,
+      "description": "hemodynamic corrected temporal SVD components with dimensions [nComponents, nFrames]",
+      "filename_pattern": "widefieldSVT.haemoCorrected.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "12636b73-cda0-4637-8c6a-0440386b3f3c",
+    "fields": {
+      "json": null,
+      "name": "widefield.times",
+      "created_by": null,
+      "description": "the time of each frame in seconds from experiment start",
+      "filename_pattern": "widefield.times*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "525e8cc8-17e2-4946-8d7d-c554ff00928c",
+    "fields": {
+      "json": null,
+      "name": "widefield.raw.meta",
+      "created_by": null,
+      "description": "information about the dataset such as frame rate and number of channels",
+      "filename_pattern": "widefield.raw.meta.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "8eed6442-7923-4437-b288-f66adb08df09",
+    "fields": {
+      "json": null,
+      "name": "widefieldLandmarks.dorsalCortex",
+      "created_by": null,
+      "description": "Manually identified dorsal cortex landmark coordinates for alignment",
+      "filename_pattern": "widefieldLandmarks.dorsalCortex.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "9f5ec125-b5e2-4d6b-b656-c7319c5ed5f7",
+    "fields": {
+      "json": null,
+      "name": "widefieldEvents.raw",
+      "created_by": null,
+      "description": "Widefield frame information and IO states; 2 columns are (frame#, timestamp)",
+      "filename_pattern": "widefieldEvents.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "bc4edc9c-a105-43a4-b830-2192fee07bfa",
+    "fields": {
+      "json": null,
+      "name": "widefield.raw",
+      "created_by": null,
+      "description": "Compressed raw video data with dimensions [nFrames, H, W]",
+      "filename_pattern": "widefield.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "b23b5e73-0278-49e9-ab22-08663aa48555",
+    "fields": {
+      "json": null,
+      "name": "widefieldChannels.frameAverage",
+      "created_by": null,
+      "description": "average across all frames for each channel of imaging",
+      "filename_pattern": "widefieldChannels.frameAverage*"
+    }
+  },
+  {
+    "model": "data.datasettype",
     "pk": "c634bb4d-a152-4e6f-930d-516957b433e6",
     "fields": {
       "json": null,
@@ -1513,8 +1612,140 @@
       "json": null,
       "name": "trials.probabilityRewardLeft",
       "created_by": null,
-      "description": "Probability of a left response (i.e. CW turn) being rewarded.  The probability of the right response being rewarded is 1-probabilityRewardLeft. The two probabilities are sampled independently therefore both sides may or may not be rewarded.",
+      "description": "probability of a left response (i.e. CW turn) being rewarded. The probability of the right response being rewarded is 1-probabilityRewardLeft. The two probabilities are sampled independently therefore both sides may or may not be rewarded.",
       "filename_pattern": "*trials.probabilityRewardLeft.npy"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "944889c0-5b5d-4ca3-b4df-740ef441135f",
+    "fields": {
+      "json": null,
+      "name": "widefieldChannels.wiring",
+      "created_by": null,
+      "description": "For each LED channel there is an indentifier (typically an int channel number) and a corresponding wavelength.",
+      "filename_pattern": "*widefieldChannels.wiring*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "371fa560-c63c-47a6-9efb-126f298c0edf",
+    "fields": {
+      "json": null,
+      "name": "photometry.signal",
+      "created_by": null,
+      "description": "the recorded signal for each frame.",
+      "filename_pattern": "*photometry.signal*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "be388590-ebf0-4663-88ee-1229982bed8c",
+    "fields": {
+      "json": null,
+      "name": "photometry.ROIs",
+      "created_by": null,
+      "description": "ROI integer for associateing with trajectory.",
+      "filename_pattern": "*photometry.ROIs*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "0973b965-de7d-40e5-9340-74a0056d3554",
+    "fields": {
+      "json": null,
+      "name": "photometryFibers.brainLocationAcronyms_ccf_2017",
+      "created_by": null,
+      "description": "Extracted brainlocation after histology per ROI.",
+      "filename_pattern": "*photometryFibers.brainLocationAcronyms_ccf_2017*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "6a396eaa-7358-4df2-a793-b0aa6fe611ba",
+    "fields": {
+      "json": null,
+      "name": "fpData.raw",
+      "created_by": null,
+      "description": "Raw FP data dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
+      "filename_pattern": "fpData.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "9f117025-7dc7-4f9e-883c-c6caee7166cd",
+    "fields": {
+      "json": null,
+      "name": "fpData.channels",
+      "created_by": null,
+      "description": "Frame flag value for each LED channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
+      "filename_pattern": "*fpData.channels.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3d615670-2a50-4749-9fb8-b4777ee568c5",
+    "fields": {
+      "json": null,
+      "name": "imaging.frames",
+      "created_by": null,
+      "description": "Frame images with the dimensions [nframes, nx, ny(, nchannels)].",
+      "filename_pattern": "imaging.frames*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "ab21cb39-540a-4686-988f-86a8d16d0d83",
+    "fields": {
+      "json": null,
+      "name": "imaging.times",
+      "created_by": null,
+      "description": "The times of frame acquisition.",
+      "filename_pattern": "imaging.times*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "9300f7a1-e438-477f-963f-1c31b77cd4b9",
+    "fields": {
+      "json": null,
+      "name": "imaging.imagingLightSource",
+      "created_by": null,
+      "description": "int representing which channel was acquired for each frame. 0 channel indicates no light.",
+      "filename_pattern": "imaging.imagingLightSource*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3356a302-2141-4ad3-a3a3-0388519e61bb",
+    "fields": {
+      "json": null,
+      "name": "imagingLightSource.properties",
+      "created_by": null,
+      "description": "A map of channels number, colour and wavelength.  NB: This is the light source wavelength, not the photosensor channel / emitted wavelength.",
+      "filename_pattern": "*imagingLightSource.properties*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3f075b50-df21-4eac-9ddd-4b750663e47c",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.raw",
+      "created_by": null,
+      "description": "The output of the DAQ software for a given device.  The namespace should identify the DAQ model, e.g. 'mcc', 'ni' or 'ni-usb-6211'.",
+      "filename_pattern": "_*_DAQdata.raw*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "24269ec5-687d-4b1d-ad12-3d7a6c474eb5",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.wiring",
+      "created_by": null,
+      "description": "A map of the channel IDs and their corresponding device label, e.g. {ai1: bpod}.",
+      "filename_pattern": "_*_DAQdata.wiring*"
     }
   }
 ]
