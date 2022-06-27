@@ -21,7 +21,7 @@ class TestDatasetTypeModel(TestCase):
         dtype3, _ = DatasetType.objects.get_or_create(
             name='bar.baz', description='.', filename_pattern=None)
         with self.assertRaises(IntegrityError):
-            DatasetType.objects.get_or_create(name='objFoo.bar', filename_pattern='*foo.bar*')
+            DatasetType.objects.get_or_create(name='objFoo.bar', filename_pattern='*foo.b?r*')
         with self.assertRaises(IntegrityError):
             DatasetType.objects.get_or_create(name='obj.attr', filename_pattern='-')
         filename_typename = (
