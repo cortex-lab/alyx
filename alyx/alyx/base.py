@@ -443,6 +443,15 @@ class BaseFilterSet(FilterSet):
                              ', '.join([ch[1] for ch in choices]))
         return queryset.filter(**{name: value})
 
+    @classmethod
+    def filter_for_lookup(cls, f, lookup_type):
+        # override date range lookups
+        if isinstance(f, models.JSONField) and lookup_type == 'exact':
+            return CharFilter, {}
+
+        # use default behavior otherwise
+        return super().filter_for_lookup(f, lookup_type)
+
     class Meta:
         abstract = True
 
