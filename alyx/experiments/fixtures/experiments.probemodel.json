@@ -30,6 +30,7 @@
   "probe_manufacturer": "Imec",
   "probe_model": "NP2.1",
   "description": null
+  }
  },
  {
  "model": "experiments.probemodel",
