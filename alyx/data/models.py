@@ -394,8 +394,8 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        from data.transfers import _add_uuid_to_filename
-        return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
+        from one.alf.files import add_uuid_string
+        return str(add_uuid_string(root + self.relative_path, self.dataset.pk).as_posix())
 
     def save(self, *args, **kwargs):
         """this is to trigger the update of the auto-date field"""
