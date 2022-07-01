@@ -502,7 +502,7 @@ class SessionAdmin(BaseActionAdmin):
             # the projects edit box is limited to projects with no user or containing current user
             current_proj = obj.projects.all() if obj else None
             form.base_fields['projects'].queryset = Project.objects.filter(
-                Q(users=request.user.pk) | Q(users=None) | Q(pk=current_proj)
+                Q(users=request.user.pk) | Q(users=None) | Q(pk__in=current_proj)
             ).distinct()
         return form
 
