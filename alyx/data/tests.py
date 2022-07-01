@@ -27,7 +27,7 @@ class TestDatasetTypeModel(TestCase):
         filename_typename = (
             ('foo.bar.npy', 'foo.bar'),
             ('foo.bir.npy', 'foo.bar'),
-            ('_ns_foo.bar_clock.extra.npy', 'foo.bar'),
+            ('_ns_obj.attr_clock.extra.npy', 'obj.attr'),
             ('bar.baz.ext', 'bar.baz')
         )
         for filename, dataname in filename_typename:

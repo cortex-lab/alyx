@@ -395,7 +395,7 @@ class FileRecord(BaseModel):
         if not root:
             return None
         from one.alf.files import add_uuid_string
-        return str(add_uuid_string(root + self.relative_path, self.dataset.pk).as_posix())
+        return root + add_uuid_string(self.relative_path, self.dataset.pk).as_posix()
 
     def save(self, *args, **kwargs):
         """this is to trigger the update of the auto-date field"""
