@@ -22,8 +22,9 @@ from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation, Surgery)
+    Weighing, WaterType, LabLocation, Surgery, ProcedureType)
 from .serializers import (LabLocationSerializer,
+                          ProcedureTypeSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
                           SurgerySerializer,
@@ -178,6 +179,13 @@ def weighing_plot(request, subject_id=None):
     return wc.plot()
 
 
+class ProcedureTypeList(generics.ListCreateAPIView):
+    queryset = ProcedureType.objects.all()
+    permission_classes = rest_permission_classes()
+    serializer_class = ProcedureTypeSerializer
+    lookup_field = 'name'
+
+
 class SessionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
@@ -197,7 +205,9 @@ class SessionFilter(BaseFilterSet):
     location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
-    project = django_filters.CharFilter(field_name='project__name', lookup_expr=('icontains'))
+    projects = django_filters.CharFilter(field_name='projects__name', lookup_expr=('icontains'))
+    # below is an alias to keep compatibility after moving project FK field to projects M2M
+    project = django_filters.CharFilter(field_name='projects__name', lookup_expr=('icontains'))
     # brain region filters
     atlas_name = django_filters.CharFilter(field_name='name__icontains', method='atlas')
     atlas_acronym = django_filters.CharFilter(field_name='acronym__iexact', method='atlas')

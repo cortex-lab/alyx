@@ -71,7 +71,7 @@ class ProjectFilter(django_filters.FilterSet):
     """
     class Meta:
         model = Session
-        fields = ['project']
+        fields = ['projects']
         exclude = ['json']
 
     def __init__(self, *args, **kwargs):

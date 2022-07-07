@@ -83,7 +83,7 @@ class Migration(migrations.Migration):
                 ('json', django.contrib.postgres.fields.jsonb.JSONField(blank=True, help_text='Structured data, formatted in a user-defined way', null=True)),
                 ('name', models.CharField(blank=True, help_text="Short identifying nickname, e.g. 'spikes'", max_length=255, unique=True)),
                 ('description', models.CharField(blank=True, help_text="Human-readable description of data type. Should say what is in the file, and how to read it. For DataCollections, it should list what Datasets are expected in the the collection. E.g. 'Files related to spike events, including spikes.times.npy, spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy", max_length=1023)),
-                ('filename_pattern', models.CharField(help_text="File name pattern (with wildcards) for this file in ALF naming convention. E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which would include all files starting with the word 'spikes'.", max_length=255, unique=True)),
+                ('filename_pattern', models.CharField(help_text="File name pattern (with wildcards) for this file in ALF naming convention. E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which would include all files starting with the word 'spikes'.", max_length=255, unique=True, null=True)),
             ],
             options={
                 'ordering': ('name',),

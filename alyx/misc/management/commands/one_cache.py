@@ -5,21 +5,22 @@ import json
 import logging
 from pathlib import Path
 import urllib.parse
-from datetime import datetime
 from functools import wraps
 from sys import getsizeof
 import zipfile
 import tempfile
 import re
 
-import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
+from iblutil.io.parquet import uuid2np
+from one.alf.cache import _metadata
 
 from django.db import connection
 from django.db.models import Q, Exists, OuterRef
 from django.core.management.base import BaseCommand
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
@@ -112,11 +113,6 @@ def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> 
         else:
             raise ValueError(f'Unsupported URI scheme "{parsed.scheme}"')
     return table
-
-
-def _uuid2np(eids_uuid):
-    return np.asfortranarray(
-        np.array([np.frombuffer(eid.bytes, dtype=np.int64) for eid in eids_uuid]))
 
 
 class Command(BaseCommand):
@@ -270,18 +266,21 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
     )
     """
     fields = ('id', 'lab__name', 'subject__nickname', 'start_time__date',
-              'number', 'task_protocol', 'project__name')
+              'number', 'task_protocol', 'all_projects')
     query = (Session
              .objects
-             .select_related('subject', 'lab', 'project')
+             .select_related('subject', 'lab')
+             .prefetch_related('projects')
+             .annotate(all_projects=ArrayAgg('projects__name'))
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
-    df = pd.DataFrame.from_records(query.values(*fields))
+    df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
+    df['all_projects'] = df['all_projects'].map(lambda x: '' if x == [None] else ','.join(x))
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
-            .rename({'start_time': 'date'}, axis=1)
+            .rename({'start_time': 'date', 'all_projects': 'project'}, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
             .sort_values(['date', 'subject', 'number'], ascending=False))
     )
@@ -292,7 +291,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
 
     if int_id:
         # Convert UUID objects to 2xint64
-        df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
+        df[['id_0', 'id_1']] = uuid2np(df['id'].values)
         df = (
             (df
                 .drop('id', axis=1)
@@ -358,8 +357,8 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
 
     if int_id:
         # Convert UUID objects to 2xint64
-        df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
-        df[['eid_0', 'eid_1']] = _uuid2np(df['eid'].values)
+        df[['id_0', 'id_1']] = uuid2np(df['id'].values)
+        df[['eid_0', 'eid_1']] = uuid2np(df['eid'].values)
         df = (
             (df
                 .drop(['id', 'eid'], axis=1)
@@ -377,11 +376,9 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
 
 def create_metadata() -> dict:
     """Create ONE metadata dictionary"""
-    return {
-        'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
-        'origin': connection.settings_dict['NAME'] or socket.gethostname(),
-        'min_api_version': ONE_API_VERSION
-    }
+    meta = _metadata(connection.settings_dict['NAME'] or socket.gethostname())
+    meta['min_api_version'] = ONE_API_VERSION
+    return meta
 
 
 def update_table_metadata(table: pa.Table, metadata: dict) -> pa.Table:

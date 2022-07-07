@@ -20,6 +20,7 @@ class APIActionsTests(BaseTests):
         self.lab01 = Lab.objects.create(name='superlab')
         self.lab02 = Lab.objects.create(name='awesomelab')
         self.projectX = Project.objects.create(name='projectX')
+        self.projectY = Project.objects.create(name='projectY')
         # Set an implant weight.
         self.subject.implant_weight = 4.56
         self.subject.save()
@@ -148,11 +149,49 @@ class APIActionsTests(BaseTests):
                    Session.objects.filter(extended_qc__tata_pct__lt=0.5,
                                           extended_qc__tutu_bool=True))
 
+    def test_procedures(self):
+        self.ar(self.client.get(reverse('procedures-list')), 200)
+
+    def test_sessions_projects(self):
+        ses1dict = {'subject': self.subject.nickname,
+                    'users': [self.superuser.username],
+                    'projects': [self.projectX.name, self.projectY.name],
+                    'start_time': '2020-07-09T12:34:56',
+                    'end_time': '2020-07-09T12:34:57',
+                    'type': 'Base',
+                    'number': '1',
+                    'lab': self.lab01.name,
+                    'task_protocol': self.test_protocol
+                    }
+        ses2dict = {'subject': self.subject.nickname,
+                    'users': [self.superuser.username, self.superuser2.username],
+                    'projects': [self.projectX.name],
+                    'start_time': '2020-07-09T12:34:56',
+                    'end_time': '2020-07-09T12:34:57',
+                    'type': 'Base',
+                    'number': '2',
+                    'lab': self.lab01.name,
+                    'task_protocol': self.test_protocol
+                    }
+        self.ar(self.post(reverse('session-list'), data=ses1dict), 201)
+        self.ar(self.post(reverse('session-list'), data=ses2dict), 201)
+        # Test the user filter, this should return 2 sessions
+        d = self.ar(self.client.get(reverse('session-list') + f'?projects={self.projectX.name}'))
+        self.assertEqual(len(d), 2)
+        # This should return only one session
+        d = self.ar(self.client.get(reverse('session-list') + f'?projects={self.projectY.name}'))
+        self.assertEqual(len(d), 1)
+        # test the legacy filter that should act in the same way
+        d = self.ar(self.client.get(reverse('session-list') + f'?project={self.projectX.name}'))
+        self.assertEqual(len(d), 2)
+        d = self.ar(self.client.get(reverse('session-list') + f'?projects={self.projectY.name}'))
+        self.assertEqual(len(d), 1)
+
     def test_sessions(self):
         a_dict4json = {'String': 'this is not a JSON', 'Integer': 4, 'List': ['titi', 4]}
         ses_dict = {'subject': self.subject.nickname,
                     'users': [self.superuser.username],
-                    'project': self.projectX.name,
+                    'projects': [self.projectX.name, self.projectY.name],
                     'narrative': 'auto-generated-session, test',
                     'start_time': '2018-07-09T12:34:56',
                     'end_time': '2018-07-09T12:34:57',
@@ -192,13 +231,17 @@ class APIActionsTests(BaseTests):
         self.assertEqual(rdata[0], s1)
         # Test the user filter, this should return 2 sessions
         d = self.ar(self.client.get(reverse('session-list') + '?users=test'))
-        self.assertTrue(len(d) == 2)
+        self.assertEqual(len(d), 2)
         # This should return only one session
         d = self.ar(self.client.get(reverse('session-list') + '?users=test2'))
-        self.assertTrue(all([d[0][k] == s2[k] for k in d[0]]))
+        self.assertEqual(len(d), 1)
+        for k in d[0]:
+            self.assertEqual(d[0][k], s2[k])
         # This should return only one session
         d = self.ar(self.client.get(reverse('session-list') + '?lab=awesomelab'))
-        self.assertTrue(all([d[0][k] == s2[k] for k in d[0]]))
+        self.assertEqual(len(d), 1)
+        for k in d[0]:
+            self.assertEqual(d[0][k], s2[k])
         # Test performance: gte, lte and ensures null performances not included
         d = self.ar(self.client.get(reverse('session-list') + '?performance_gte=50'))
         self.assertEqual(d[0]['url'], s1['url'])
@@ -208,7 +251,7 @@ class APIActionsTests(BaseTests):
         self.assertTrue(len(d) == 1)
         # test the Session serializer water admin related field
         ses = Session.objects.get(subject=self.subject, users=self.superuser,
-                                  project=self.projectX, start_time__date='2018-07-09')
+                                  lab__name='superlab', start_time__date='2018-07-09')
         WaterAdministration.objects.create(subject=self.subject, session=ses, water_administered=1)
         d = self.ar(self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09'))
         d = self.ar(self.client.get(d[0]['url']))

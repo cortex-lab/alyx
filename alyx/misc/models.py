@@ -239,7 +239,7 @@ class Housing(BaseModel):
         if not subs:
             return
         # 1) update of the old model(s), setting the end time
-        now = timezone.get_current_timezone().localize(datetime.now())
+        now = datetime.now(tz=timezone.get_current_timezone())
         if subs.first().lab:
             now = now.astimezone(pytz.timezone(subs.first().lab.timezone))
         old.housing_subjects.all().update(end_datetime=now)

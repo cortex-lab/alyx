@@ -8,6 +8,7 @@ import pytz
 import uuid
 from collections import OrderedDict
 from rest_framework import serializers
+from datetime import datetime
 
 from django import forms
 from django.db import models
@@ -33,6 +34,50 @@ logger = structlog.get_logger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 DISABLE_MAIL = False  # used for testing
+
+
+class CharNullField(models.CharField):
+    """
+    Subclass of the CharField that allows empty strings to be stored as NULL.
+
+    This allows for unique assertions on non-empty string fields only.
+
+    See this URL:
+    https://stackoverflow.com/questions/454436/unique-fields-that-allow-nulls-in-django/1934764
+    """
+
+    description = "CharField that stores NULL but returns ''."
+
+    def from_db_value(self, value, *_):
+        """
+        Gets value right out of the db and changes it if it's None.
+        """
+        return value or ''
+
+    def to_python(self, value):
+        """
+        Gets value right out of the db or an instance, and changes it if its ``None``.
+        """
+        if isinstance(value, models.CharField):
+            # If an instance, just return the instance.
+            return value
+        if value is None:
+            # If db has NULL, convert it to ''.
+            return ''
+
+        # Otherwise, just return the value.
+        return value
+
+    def get_prep_value(self, value):
+        """
+        Catches value right before sending to db.
+        """
+        if value == '':
+            # If Django tries to save an empty string, send the db None (NULL).
+            return None
+        else:
+            # Otherwise, just pass the value.
+            return value
 
 
 class QueryPrintingMiddleware:
@@ -305,7 +350,7 @@ class BaseAdmin(VersionAdmin):
         tz = pytz.timezone(Lab.objects.get(name=request.user.lab[0]).timezone)
         assert settings.USE_TZ is False  # timezone.now() is expected to be a naive datetime
         server_tz = pytz.timezone(settings.TIME_ZONE)  # server timezone
-        now = server_tz.localize(timezone.now())  # convert datetime from naive to server timezone
+        now = datetime.now(tz=server_tz)  # convert datetime from naive to server timezone
         now = now.astimezone(tz)  # convert to the lab timezone
         return {'start_time': now, 'created_at': now, 'date_time': now}
 
@@ -441,6 +486,15 @@ class BaseFilterSet(FilterSet):
             raise ValueError("Invalid" + name + ", choices are: " +
                              ', '.join([ch[1] for ch in choices]))
         return queryset.filter(**{name: value})
+
+    @classmethod
+    def filter_for_lookup(cls, f, lookup_type):
+        # override date range lookups
+        if isinstance(f, models.JSONField) and lookup_type == 'exact':
+            return CharFilter, {}
+
+        # use default behavior otherwise
+        return super().filter_for_lookup(f, lookup_type)
 
     class Meta:
         abstract = True

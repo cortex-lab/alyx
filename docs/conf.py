@@ -18,16 +18,16 @@
 
 import os
 import sys
-import django
+# import django
 
 # so sphinx can find modules, and also to allow django to set up
 sys.path.insert(0, os.path.abspath('../alyx/'))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "alyx.settings")
-django.setup()
+# django.setup()
 
 
 # -- Project information -----------------------------------------------------
-
+# from alyx.base import version
 project = 'Alyx'
 copyright = '2018, C Rossant, M Hunter, O Winter, C Burgess, K Harris'
 author = 'C Rossant, M Hunter, O Winter, C Burgess, K Harris'
@@ -49,6 +49,7 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'myst_parser',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -11,9 +11,9 @@ class TaskAdmin(BaseAdmin):
     exclude = ['json']
     readonly_fields = ['session', 'log', 'parents']
     list_display = ['name', 'graph', 'status', 'version_str', 'level', 'datetime',
-                    'session_str', 'session_task_protocol', 'session_project']
+                    'session_str', 'session_task_protocol', 'session_projects']
     search_fields = ('session__id', 'session__lab__name', 'session__subject__nickname',
-                     'log', 'version', 'session__task_protocol', 'session__project__name')
+                     'log', 'version', 'session__task_protocol', 'session__projects__name')
     ordering = ('-session__start_time', 'level')
     list_editable = ('status', )
     list_filter = [('name', DropdownFilter),
@@ -27,10 +27,10 @@ class TaskAdmin(BaseAdmin):
         if obj:
             return obj.session.lab.name in request.user.lab
 
-    def session_project(self, obj):
-        if obj.session.project is not None:
-            return obj.session.project.name
-    session_project.short_description = 'project'
+    def session_projects(self, obj):
+        if obj.session.projects is not None:
+            return obj.session.projects.name
+    session_projects.short_description = 'projects'
 
     def session_task_protocol(self, obj):
         return obj.session.task_protocol
