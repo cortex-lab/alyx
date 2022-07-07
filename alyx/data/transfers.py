@@ -182,7 +182,7 @@ def get_dataset_type(filename, qs=None):
             if dt.name == obj_attr:
                 dataset_types.append(dt)
         # Check whether pattern matches filename
-        elif fnmatch(op.basename(filename), dt.filename_pattern):
+        elif fnmatch(op.basename(filename).lower(), dt.filename_pattern):
             dataset_types.append(dt)
     n = len(dataset_types)
     if n == 0:
