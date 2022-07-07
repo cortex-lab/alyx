@@ -137,7 +137,7 @@ class DatasetType(BaseModel):
 
     name = models.CharField(
         max_length=255, unique=True, blank=True, null=False,
-        help_text="Short identifying nickname, e.g. 'spikes'")
+        help_text="Short identifying nickname, e.g. 'spikes.times'")
 
     created_by = models.ForeignKey(
         AUTH_USER_MODEL, blank=True, null=True,
@@ -156,13 +156,21 @@ class DatasetType(BaseModel):
         max_length=255, unique=True, null=True, blank=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
-        "would include all files starting with the word 'spikes'.")
+        "would include all files starting with the word 'spikes'. NB: Case-insensitive matching."
+        "If null, the name field must match the object.attribute part of the filename."
+    )
 
     class Meta:
         ordering = ('name',)
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
+
+    def save(self, *args, **kwargs):
+        """Ensure filename_pattern is lower case."""
+        if self.filename_pattern:
+            self.filename_pattern = self.filename_pattern.lower()
+        return super().save(*args, **kwargs)
 
 
 class BaseExperimentalData(BaseModel):

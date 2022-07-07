@@ -17,7 +17,7 @@ class TestDatasetTypeModel(TestCase):
         dtype, _ = DatasetType.objects.get_or_create(
             name='obj.attr', description='thing', filename_pattern=None)
         dtype2, _ = DatasetType.objects.get_or_create(
-            name='foo.bar', description='foo bar', filename_pattern='*foo.b?r*')
+            name='foo.bar', description='foo bar', filename_pattern='*FOO.b?r*')
         dtype3, _ = DatasetType.objects.get_or_create(
             name='bar.baz', description='.', filename_pattern=None)
         with self.assertRaises(IntegrityError):
