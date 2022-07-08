@@ -153,6 +153,7 @@ class SessionDetailSerializer(BaseActionSerializer):
     probe_insertion = ProbeInsertionListSerializer(read_only=True, many=True)
     projects = serializers.SlugRelatedField(read_only=False, slug_field='name', many=True,
                                             queryset=Project.objects.all(), required=False)
+    project = serializers.SerializerMethodField()
     notes = NoteSerializer(read_only=True, many=True)
     qc = BaseSerializerEnumField(required=False)
 
@@ -168,9 +169,12 @@ class SessionDetailSerializer(BaseActionSerializer):
         )
         return queryset.order_by('-start_time')
 
+    def get_project(self, obj):
+        return '_'.join(list(obj.projects.all().values_list('name', flat=True)))
+
     class Meta:
         model = Session
-        fields = SESSION_FIELDS + ('id',) + ('json',) + ('probe_insertion', 'notes')
+        fields = SESSION_FIELDS + ('id',) + ('json',) + ('probe_insertion', 'notes', 'project')
 
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
