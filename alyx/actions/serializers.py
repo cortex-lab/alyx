@@ -7,7 +7,7 @@ from alyx.base import BaseSerializerEnumField
 from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
-from data.models import Dataset, DatasetType, FileRecord, DataRepository
+from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
 from experiments.serializers import ProbeInsertionListSerializer, FilterDatasetSerializer
 from misc.serializers import NoteSerializer
