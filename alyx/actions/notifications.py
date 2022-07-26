@@ -39,8 +39,10 @@ def check_water_administration(subject, date=None):
     wa = wc.last_water_administration_at(date=date, within_water_restriction=True)
     if not wa:
         delay = wr_delta
+        wtr_date_amt = 'NaN'
     else:
         delay = date - wa[0]
+        wtr_date_amt = '%s, %.2f mL' % (wa[0].strftime('%Y-%m-%d %H:%M:%S'), wa[1])
     # Notification if water needs to be given more than 23h after the last
     # water administration.
     if remaining > 0 and delay.total_seconds() >= 23 * 3600 - 10:
@@ -49,13 +51,13 @@ def check_water_administration(subject, date=None):
         Mouse: %s
         User: %s
         Date: %s
-        Last water administration: %s, %.2f mL
+        Last water administration: %s
         Remaining water: %.1f mL
         Delay: %.1f hours
         ''' % (
             subject.nickname,
             subject.responsible_user.username,
             date.strftime('%Y-%m-%d %H:%M:%S'),
-            wa[0].strftime('%Y-%m-%d %H:%M:%S'), wa[1],
+            wtr_date_amt,
             remaining, (delay.total_seconds() / 3600)))
         create_notification('mouse_water', msg, subject, details=details)

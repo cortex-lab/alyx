@@ -166,6 +166,29 @@ class NotificationTests(TestCase):
             check_water_administration(self.subject, date=date)
             notif = Notification.objects.last()
             self.assertTrue((notif is not None) is r)
+            if notif:
+                self.assertRegex(notif.message, 'Last water administration: 10')
+
+    def test_notif_water_2a(self):
+        """
+        This checks that
+            1. users are not notified about missing water within 23 hours of putting a mouse on
+            water restriction;
+            2. water administrations before the current water restrictions are ignored
+        """
+        # Change the date of this water administration to be before the last restriction
+        self.water_administration.date_time = \
+            self.water_restriction.start_time - datetime.timedelta(days=1)
+        self.water_administration.save()
+        # If the water restriction started on June 2 at 12pm, the notification
+        # should be created after June 3 at 11am.
+        l = ((9, False), (10, False), (11, True))
+        for (h, r) in l:
+            date = timezone.datetime(2018, 6, 3, h, 0, 0)
+            check_water_administration(self.subject, date=date)
+            notif = Notification.objects.last()
+            self.assertTrue((notif is not None) is r)
+            self.assertRegex(notif.message, 'Last water administration: NaN')
 
     def test_notif_user_change_1(self):
         self.subject.responsible_user = self.user2
