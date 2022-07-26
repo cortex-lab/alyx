@@ -365,12 +365,17 @@ class WaterControl(object):
     def min_percentage(self, date=None):
         return self.thresholds[-1][0] * 100
 
-    def last_water_administration_at(self, date=None):
+    def last_water_administration_at(self, date=None, within_water_restriction=False):
         """Return the last known water administration of the subject before the specified date."""
         date = date or self.today()
         # Sort the water administrations.
         self.water_administrations[:] = sorted(self.water_administrations, key=itemgetter(0))
-        wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d <= date]
+        if not within_water_restriction:
+            wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d <= date]
+        else:
+            start = self.water_restriction_at(date)
+            wa_before = [(d, w, h) for (d, w, h) in self.water_administrations
+                         if date >= d > start]
         if wa_before:
             return wa_before[-1]
 
