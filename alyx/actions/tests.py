@@ -167,7 +167,8 @@ class NotificationTests(TestCase):
             notif = Notification.objects.last()
             self.assertTrue((notif is not None) is r)
             if notif:
-                self.assertRegex(notif.message, 'Last water administration: 10')
+                expected = 'Last water administration: 2018-06-03 12:00:00, 10.00 mL'
+                self.assertRegex(notif.message, expected)
 
     def test_notif_water_2a(self):
         """
