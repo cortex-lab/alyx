@@ -24,7 +24,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
-from data.models import Dataset, FileRecord, Tag
+from data.models import Dataset, FileRecord
 
 logger = logging.getLogger(__name__)
 ONE_API_VERSION = '1.13.0'  # Minimum compatible ONE api version
