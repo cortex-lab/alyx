@@ -258,19 +258,14 @@ def generate_sessions_frame(int_id=True, tags=None) -> pd.DataFrame:
              .annotate(all_projects=ArrayAgg('projects__name'))
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
     if tags:
-        # TODO Filter before annotation and ordering?
-        query = query.filter(
-            (Tag
-             .objects
-             .select_related('datasets')
-             .filter(name__in=tags)
-             .values('datasets__session')
-             .distinct())
-        )
+        if not isinstance(tags, str):
+            query = query.filter(data_dataset_session_related__tags__name__in=tags)
+        else:
+            query = query.filter(data_dataset_session_related__tags__name=tags)
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
-    df['all_projects'] = df['all_projects'].map(lambda x: '' if x == [None] else ','.join(x))
+    df['all_projects'] = df['all_projects'].map(lambda x: ','.join(filter(None, set(x))))
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
@@ -323,7 +318,8 @@ def generate_datasets_frame(int_id=True, tags=None) -> pd.DataFrame:
     # Fetch datasets and their related tables
     ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
     if tags:
-        ds = ds.prefetch_related('tag').filter(tag__name__in=tags)
+        kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
+        ds = ds.prefetch_related('tag').filter(**kw)
     # Filter out datasets that do not exist on either repository
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
     ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True))
