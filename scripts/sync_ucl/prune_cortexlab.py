@@ -12,6 +12,7 @@ from jobs.models import Task
 
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
+
 # remove all subjects that never had anything to do with IBL
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
 sub_ibl = list(ses.values_list('subject', flat=True))
@@ -112,8 +113,6 @@ for sp in session_pname:
             TrajectoryEstimate.objects.create(**t)
     pi_cortexlab.delete()
 
-
-
 """
 Sync the datasets 1/3. Compute primary keys
 """
@@ -189,21 +188,29 @@ FileRecord.objects.filter(dataset__in=pk2import).update(exists=False, json=None)
 
 """
 Sync the tasks 1/2: For DLC tasks there might be duplicates, as we sometimes run them as batch on remote servers.
-Import the cortexlab tasks unless there is a NEWER version in the ibl database
+For those import the cortexlab tasks unless there is a NEWER version in the ibl database  
 """
 task_names_to_check = ['TrainingDLC', 'EphysDLC']
-# Get the session_id of the DLC tasks from both the cortexlab db and ibl db with cortexlab as lab name
-cortex_dlc_eid = set(Task.objects.using('cortexlab').filter(name__in=task_names_to_check
-                                                            ).values_list('session_id', flat=True))
-ibl_dlc_eid = set(Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check
-                                                                             ).values_list('session_id', flat=True))
-# Get the intersection and the respective tasks from each DB
-duplicate_eid = cortex_dlc_eid.intersection(ibl_dlc_eid)
-dlc_cortex = Task.objects.using('cortexlab').filter(session_id__in=duplicate_eid, name__in=task_names_to_check
-                                                    ).order_by('session_id')
-dlc_ibl = Task.objects.filter(session__lab__name='cortexlab', name__in=task_names_to_check
-                              ).filter(session_id__in=duplicate_eid).order_by('session_id')
-# Get time stamps from those tasks
+dfields = ('session_id', 'name', 'arguments')
+
+from django.db.models import CharField, Value
+from django.db.models.functions import Concat
+# remove duplicates from cortexlab if any
+qs_cortex = Task.objects.using('cortexlab').filter(name__in=task_names_to_check)
+qs_cortex = qs_cortex.distinct(*dfields)
+# this line is needed to allow sorting down the line and avoid SQL distinct on sorting error
+qs_cortex = Task.objects.using('cortexlab').filter(id__in=qs_cortex.values_list('id', flat=True))
+
+# annotate the querysets with compound fields to run bulk queries
+qs_ibl = Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check)
+qs_ibl = qs_ibl.annotate(eid_name_args=Concat(*dfields, output_field=CharField()))
+qs_cortex = qs_cortex.annotate(eid_name_args=Concat(*dfields, output_field=CharField()))
+eid_name_args = set(qs_cortex.values_list('eid_name_args')).intersection(qs_cortex.values_list('eid_name_args'))
+
+dlc_cortex = qs_cortex.filter(eid_name_args__in=eid_name_args).order_by('eid_name_args')
+dlc_ibl = qs_ibl.filter(name__in=task_names_to_check, eid_name_args__in=eid_name_args).order_by('eid_name_args')
+
+
 times_cortex = np.array(dlc_cortex.values_list('datetime', flat=True)).astype(np.datetime64)
 times_ibl = np.array(dlc_ibl.values_list('datetime', flat=True)).astype(np.datetime64)
 # Indices where datetime from IBL is newer than cortexlab -- do not import by deleting the datasets from cortexlab db
@@ -226,7 +233,7 @@ ibl_eids = Task.objects.all().filter(session__lab__name='cortexlab').exclude(
 # finds eids that have tasks on both ibl and cortex lab database
 overlap_eids = set(cortex_eids).intersection(ibl_eids)
 
-dfields = ('id', 'name', 'session')
+dfields = ('id', 'name', 'session', 'arguments')
 task_cortex = Task.objects.using('cortexlab').filter(session__in=overlap_eids).exclude(name__in=task_names_to_exclude)
 cids = task_cortex.values_list(*dfields)
 
