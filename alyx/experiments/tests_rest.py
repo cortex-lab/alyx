@@ -152,9 +152,9 @@ class APISubjectsTests(BaseTests):
 
         # check that when a probe is created post-hoc, datasets get assigned in the m2m
         p2 = ProbeInsertion.objects.create(session=self.session, name='probe02')
-        assert(set(p2.datasets.all().values_list('pk', flat=True)) ==
-               set(Dataset.objects.filter(
-                   collection__endswith=p2.name).values_list('pk', flat=True)))
+        assert (set(p2.datasets.all().values_list('pk', flat=True)) ==
+                set(Dataset.objects.filter(
+                    collection__endswith=p2.name).values_list('pk', flat=True)))
         p2.delete()
 
         # Test that probeinsertion details serializer returns datasets associated with probe

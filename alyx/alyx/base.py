@@ -562,7 +562,7 @@ def _custom_filter_parser(value, arg_prefix=''):
         elif val.startswith(('(', '[')) and val.endswith((')', ']')):
             val = eval(val)
         if arg_prefix + field in out_dict:
-            raise(ValueError('Duplicated fields in "' + str(value) + '"'))
+            raise ValueError('Duplicated fields in "' + str(value) + '"')
         out_dict[arg_prefix + field] = val
     return out_dict
 

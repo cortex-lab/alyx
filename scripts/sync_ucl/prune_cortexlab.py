@@ -188,7 +188,7 @@ FileRecord.objects.filter(dataset__in=pk2import).update(exists=False, json=None)
 
 """
 Sync the tasks 1/2: For DLC tasks there might be duplicates, as we sometimes run them as batch on remote servers.
-For those import the cortexlab tasks unless there is a NEWER version in the ibl database  
+For those import the cortexlab tasks unless there is a NEWER version in the ibl database
 """
 task_names_to_check = ['TrainingDLC', 'EphysDLC']
 dfields = ('session_id', 'name', 'arguments')

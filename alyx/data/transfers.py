@@ -268,7 +268,7 @@ def _create_dataset_file_records(
     is_patched = True
     if hash is not None:
         if dataset.hash is not None:
-            is_patched = not(dataset.hash == hash)
+            is_patched = not dataset.hash == hash
         dataset.hash = hash
     if file_size is not None:
         dataset.file_size = file_size
