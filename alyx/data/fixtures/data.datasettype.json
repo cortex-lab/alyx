@@ -1747,5 +1747,16 @@
       "description": "A map of the channel IDs and their corresponding device label, e.g. {ai1: bpod}.",
       "filename_pattern": "_*_DAQdata.wiring*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "57316c04-1a39-425e-908c-5c5897475fcb",
+    "fields": {
+      "json": null,
+      "name": "_ibl_experiment.description",
+      "created_by": null,
+      "description": "A list of acquisition devices and behaviour protocols, along with the data and sync file location.  The root keys are (devices, sync, task, procedures).",
+      "filename_pattern": "_*_experiment.description.*"
+    }
   }
 ]

@@ -20,6 +20,8 @@ class TestDatasetTypeModel(TestCase):
             name='foo.bar', description='foo bar', filename_pattern='*FOO.b?r*')
         dtype3, _ = DatasetType.objects.get_or_create(
             name='bar.baz', description='.', filename_pattern=None)
+        dtype4, _ = DatasetType.objects.get_or_create(
+            name='some_file', description='.', filename_pattern="some_file.*")
         with self.assertRaises(IntegrityError):
             DatasetType.objects.get_or_create(name='objFoo.bar', filename_pattern='*foo.b?r*')
         with self.assertRaises(IntegrityError):
@@ -28,7 +30,8 @@ class TestDatasetTypeModel(TestCase):
             ('foo.bar.npy', 'foo.bar'),
             ('foo.bir.npy', 'foo.bar'),
             ('_ns_obj.attr_clock.extra.npy', 'obj.attr'),
-            ('bar.baz.ext', 'bar.baz')
+            ('bar.baz.ext', 'bar.baz'),
+            ('some_file.ext', 'some_file')
         )
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):

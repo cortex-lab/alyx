@@ -10,8 +10,8 @@ from fnmatch import fnmatch
 from django.db.models import Case, When, Count, Q
 import globus_sdk
 import numpy as np
-from one.alf.files import filename_parts
-from one.alf.files import add_uuid_string
+from one.alf.files import filename_parts, add_uuid_string
+from one.alf.spec import is_valid
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
@@ -177,8 +177,10 @@ def get_dataset_type(filename, qs=None):
         if not dt.filename_pattern.strip():
             # If the filename pattern is null, check whether the filename object.attribute matches
             # the dataset type name.
-            # NB: This will raise a ValueError if filename is not a valid ALF
-            obj_attr = '.'.join(filename_parts(filename)[1:3])
+            if is_valid(filename):
+                obj_attr = '.'.join(filename_parts(filename)[1:3])
+            else:  # will match name against filename sans extension
+                obj_attr = op.splitext(filename)[0]
             if dt.name == obj_attr:
                 dataset_types.append(dt)
         # Check whether pattern matches filename
@@ -266,7 +268,7 @@ def _create_dataset_file_records(
     is_patched = True
     if hash is not None:
         if dataset.hash is not None:
-            is_patched = not(dataset.hash == hash)
+            is_patched = not dataset.hash == hash
         dataset.hash = hash
     if file_size is not None:
         dataset.file_size = file_size

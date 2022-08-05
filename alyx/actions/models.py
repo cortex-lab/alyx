@@ -334,7 +334,7 @@ class WaterRestriction(BaseAction):
             if w:
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
-                assert(abs(w[0] - self.start_time) < timedelta(days=7))
+                assert abs(w[0] - self.start_time) < timedelta(days=7)
         output = super(WaterRestriction, self).save(*args, **kwargs)
         # When creating a water restriction, the subject's protocol number should be changed to 3
         # (request by Charu in 03/2022)
