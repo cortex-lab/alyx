@@ -117,7 +117,7 @@ for sp in session_pname:
 Sync the datasets 1/3. Compute primary keys
 """
 
-dfields = ('session', 'collection', 'name')
+dfields = ('session', 'collection', 'name', 'revision')
 # Primary keys of all datasets in cortexlab database
 cds_pk = set(Dataset.objects.using('cortexlab').values_list('pk', flat=True))
 # Primary keys of all datasets with lab name cortexlab in ibl database
@@ -130,7 +130,7 @@ on the IBL database and cortexlab (new dataset patch), there will be a consisten
 In this case we remove the offending datasets from IBL: the UCL version always has priority
 (at some point using pandas might be much easier and legible)
 """
-# Here we are looking for duplicated that DO NOT have the same primary key, but the same session, collection and name
+# Here we are looking for duplicated that DO NOT have the same primary key, but the same session, collection, name and revision
 # Find the datasets that only exist in the IBL database, load session, collection and name
 pk2check = ids_pk.difference(cds_pk)
 ibl_datasets = Dataset.objects.filter(pk__in=pk2check)
