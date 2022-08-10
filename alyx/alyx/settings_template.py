@@ -75,7 +75,7 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '%ALYX_LOG_FILE%',
             'maxBytes': 16777216,
@@ -83,7 +83,7 @@ LOGGING = {
             'formatter': 'simple'
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
@@ -99,7 +99,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'WARNING',
             'propagate': True,
         },
         'django_structlog': {
@@ -108,10 +108,7 @@ LOGGING = {
         },
     },
     'root': {
-        'handlers': [
-            'file',
-            'console',
-        ],
+        'handlers': ['file', 'console'],
         'level': 'WARNING',
         'propagate': True,
     }
@@ -126,7 +123,7 @@ if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # Production settings:
 if not DEBUG:
