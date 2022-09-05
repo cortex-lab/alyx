@@ -5,11 +5,12 @@ from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery, NotificationRule, Notification
-from misc.models import Lab, LabMember, LabLocation
+from misc.models import Lab, LabMember, LabLocation, Note
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 from experiments.models import ProbeInsertion, TrajectoryEstimate
 from jobs.models import Task
 
+CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
@@ -40,7 +41,7 @@ ses_loc2remove.delete()
 
 # the sessions should also have the cortexlab lab field properly labeled before import
 if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
-    lab_dict = {'pk': '4027da48-7be3-43ec-a222-f75dffe36872',
+    lab_dict = {'pk': CORTEX_LAB_PK,
                 'name': 'cortexlab'}
     lab = Lab.objects.using('cortexlab').create(**lab_dict)
     lab.save()
@@ -251,6 +252,14 @@ for dup in duplicates:
     ts = task_ibl.get(id=dup[0], name=dup[1], session=dup[2])
     ts.delete()
 
+"""
+Sync the notes. When a note is updated (in the behaviour criteria tracking) it is deleted and created anew.
+The problem is this will create many duplicates on the IBL side after import. 
+Here we look for all of the notes that are present on IBL and remove those that are not in UCL
+"""
+ibl_notes = Note.objects.filter(object_id__in=Subject.objects.filter(lab=CORTEX_LAB_PK))
+ucl_notes = Note.objects.using('cortexlab').filter(object_id__in=Subject.objects.filter(lab=CORTEX_LAB_PK))
+ibl_notes.exclude(pk__in=list(ucl_notes.values_list('pk', flat=True))).count()
 
 """
 Export all the pruned cortexlab database as Json so it can be loaded back into the IBL one
