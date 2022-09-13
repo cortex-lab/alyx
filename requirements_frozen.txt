@@ -1,8 +1,8 @@
 asgiref==3.5.2
 backports.zoneinfo==0.2.1
-boto3==1.24.66
-botocore==1.27.66
-certifi==2022.6.15
+boto3==1.24.71
+botocore==1.27.71
+certifi==2022.6.15.1
 cffi==1.15.1
 charset-normalizer==2.1.1
 click==8.1.3
@@ -49,7 +49,7 @@ MarkupSafe==2.1.1
 matplotlib==3.5.3
 mccabe==0.7.0
 numba==0.56.2
-numpy==1.23.2
+numpy==1.23.3
 ONE-api==1.14.0
 packaging==21.3
 pandas==1.4.4
