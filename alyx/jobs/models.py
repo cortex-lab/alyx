@@ -48,6 +48,8 @@ class Task(models.Model):
                                      symmetrical=False)
     datetime = models.DateTimeField(auto_now=True)
     arguments = models.JSONField(blank=True, null=True, help_text="dictionary of input arguments")
+    data_repository = models.ForeignKey('data.DataRepository', null=True, blank=True,
+                                        related_name='tasks', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name + '  ' + str(self.session) + '  ' + self.get_status_display()
