@@ -234,7 +234,7 @@ ibl_eids = Task.objects.all().filter(session__lab__name='cortexlab').exclude(
 # finds eids that have tasks on both ibl and cortex lab database
 overlap_eids = set(cortex_eids).intersection(ibl_eids)
 
-dfields = ('id', 'name', 'session', 'arguments')
+dfields = ('id', 'name', 'session')
 task_cortex = Task.objects.using('cortexlab').filter(session__in=overlap_eids).exclude(name__in=task_names_to_exclude)
 cids = task_cortex.values_list(*dfields)
 
