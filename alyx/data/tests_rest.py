@@ -392,7 +392,7 @@ class APIDataTests(BaseTests):
         frs = r['file_records']
         self.assertTrue(len(frs) == 3)
         for fr in frs:
-            self.assertTrue(fr['exists'] == False)
+            self.assertEqual(fr['exists'], False)
 
         # Case 2, server_only = True, no repo name specified
         # Expect: 1 file record for data repo with globus is personal == True,
@@ -408,8 +408,8 @@ class APIDataTests(BaseTests):
         r = self.ar(r, 201)[0]
         frs = r['file_records']
         self.assertTrue(len(frs) == 1)
-        self.assertTrue(frs[0]['exists'] == True)
-        self.assertTrue(frs[0]['data_repository'], 'ibl3')
+        self.assertEqual(frs[0]['exists'], True)
+        self.assertEqual(frs[0]['data_repository'], 'ibl3')
 
         # Case 3, server_only = False, repo name specified
         # Expect: 3 file records, specified repo with exists = True,
@@ -426,7 +426,7 @@ class APIDataTests(BaseTests):
         frs = r['file_records']
         self.assertTrue(len(frs) == 3)
         for fr in frs:
-            self.assertTrue(fr['exists'] == (fr['data_repository'] == 'ibl1'))
+            self.assertEqual(fr['exists'], fr['data_repository'] == 'ibl1')
 
         # # Case 4, server_only = False, repo name specified, exists = False
         # # Expect: 3 file records, all with exists = False
@@ -443,7 +443,7 @@ class APIDataTests(BaseTests):
         frs = r['file_records']
         self.assertTrue(len(frs) == 3)
         for fr in frs:
-            self.assertTrue(fr['exists'] == False)
+            self.assertEqual(fr['exists'], False)
 
         # Case 5, server_only = True, repo name specified
         # Expect: 2 file records, 1 for specified repo and 1 for server repo,
@@ -460,7 +460,7 @@ class APIDataTests(BaseTests):
         frs = r['file_records']
         self.assertTrue(len(frs) == 2)
         for fr in frs:
-            self.assertTrue(fr['exists'] == True)
+            self.assertEqual(fr['exists'], True)
 
         # # Case 5, server_only = True, repo name specified, exists = False
         # # Expect: 2 file records, 1 for specified repo and 1 for server repo,
@@ -478,7 +478,7 @@ class APIDataTests(BaseTests):
         frs = r['file_records']
         self.assertTrue(len(frs) == 2)
         for fr in frs:
-            self.assertTrue(fr['exists'] == False)
+            self.assertEqual(fr['exists'], False)
 
     def test_register_with_revision(self):
         self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
