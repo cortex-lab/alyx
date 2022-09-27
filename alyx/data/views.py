@@ -416,6 +416,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
+        if isinstance(server_only, str):
+            server_only = server_only == 'True'
 
         default = request.data.get('default', True)
         # Need to explicitly cast string to a bool
@@ -431,6 +433,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             repositories += [repo]
         if server_only:
             exists_in = repositories
+
+        # # If exists is specified to be false then we set the exists_in back to None
+        exists = request.data.get('exists', True)
+        # Need to explicitly cast string to a bool
+        if isinstance(exists, str):
+            exists = exists == 'True'
+        if not exists:
+            exists_in = (None,)
 
         session = _get_session(
             subject=subject, date=date, number=session_number, user=user)
