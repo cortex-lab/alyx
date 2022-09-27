@@ -365,6 +365,121 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['file_records'][0]['relative_path'],
                          op.join(data['path'], 'a.c.e2'))
 
+    def test_register_existence_options(self):
+
+        self.post(reverse('datarepository-list'), {'name': 'ibl1', 'hostname': 'iblhost1',
+                                                   'globus_is_personal': 'True'})
+        self.post(reverse('datarepository-list'), {'name': 'ibl2', 'hostname': 'iblhost2',
+                                                   'globus_is_personal': 'True'})
+        # server repo
+        self.post(reverse('datarepository-list'), {'name': 'ibl3', 'hostname': 'iblhost3',
+                                                   'globus_is_personal': 'False'})
+
+        self.post(reverse('lab-list'), {'name': 'ibl',
+                                        'repositories': ['ibl1', 'ibl2', 'ibl3']})
+
+        # Case 1, server_only = False, no repo name specified
+        # Expect: 3 file records (one for each repo),
+        # all with exists = False (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.a.e1',  # this is the repository name
+                'server_only': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertTrue(fr['exists'] == False)
+
+        # Case 2, server_only = True, no repo name specified
+        # Expect: 1 file record for data repo with globus is personal == True,
+        # with exists = True (preserves old behavior)
+
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.a.e2',  # this is the repository name
+                'server_only': True,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 1)
+        self.assertTrue(frs[0]['exists'] == True)
+        self.assertTrue(frs[0]['data_repository'], 'ibl3')
+
+        # Case 3, server_only = False, repo name specified
+        # Expect: 3 file records, specified repo with exists = True,
+        # the others False (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.b.e1',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertTrue(fr['exists'] == (fr['data_repository'] == 'ibl1'))
+
+        # # Case 4, server_only = False, repo name specified, exists = False
+        # # Expect: 3 file records, all with exists = False
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.b.e2',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': False,
+                'exists': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertTrue(fr['exists'] == False)
+
+        # Case 5, server_only = True, repo name specified
+        # Expect: 2 file records, 1 for specified repo and 1 for server repo,
+        # all with exists = True (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.c.e1',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': True,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 2)
+        for fr in frs:
+            self.assertTrue(fr['exists'] == True)
+
+        # # Case 5, server_only = True, repo name specified, exists = False
+        # # Expect: 2 file records, 1 for specified repo and 1 for server repo,
+        # all with exists = False
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.c.e2',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': True,
+                'exists': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 2)
+        for fr in frs:
+            self.assertTrue(fr['exists'] == False)
+
     def test_register_with_revision(self):
         self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
         self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb2']})
