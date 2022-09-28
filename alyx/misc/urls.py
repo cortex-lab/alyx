@@ -17,7 +17,7 @@ urlpatterns = [
     path('users', user_list, name='user-list'),
     re_path('^uploaded/(?P<img_url>.*)', mv.UploadedView.as_view(), name='uploaded'),
     path('cache.zip', mv.CacheDownloadView.as_view(), name='cache-download'),
-    path('cache/info', mv.CacheVersionView.as_view(), name='cache-info'),
+    re_path(r'^cache/info(?:/(?P<tag>\w+))?/$', mv.CacheVersionView.as_view(), name='cache-info'),
 ]
 
 try:

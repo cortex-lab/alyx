@@ -5,7 +5,9 @@ import json
 import urllib.parse
 import requests
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect
+from django.http import (
+    HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
+)
 
 from rest_framework import viewsets, views
 from rest_framework.response import Response
@@ -14,6 +16,7 @@ from rest_framework.reverse import reverse
 from rest_framework import generics
 
 from alyx.base import BaseFilterSet, rest_permission_classes
+from data.models import Tag
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
@@ -131,37 +134,52 @@ class UploadedView(views.APIView):
         return HttpResponse(path)
 
 
-def _get_cache_info():
+def _get_cache_info(tag=None):
     """
     Load and return the cache info JSON file. Contains information such as cache table timestamp,
     size and API version.
 
+    Assumes the following folder structure:
+    <TABLES_ROOT>/
+    ├─ cache_info.json
+    ├─ cache.zip
+    ├─ <DATASET_TAG_1>/
+    │  ├─ cache_info.json
+    │  ├─ cache.zip
+
+    :param: optional tag name for fetching a specific cache
     :return: dict of cache table information
     """
     META_NAME = 'cache_info.json'
     parsed = urllib.parse.urlparse(TABLES_ROOT)
-    scheme = parsed.scheme or 'file'
+
+    if tag:  # Validate
+        Tag.objects.get(name=tag)
+
+    scheme = parsed.scheme or 'file'  # NB: 'file' only supported on POSIX filesystems
     if scheme == 'file':
         # Cache table is local
-        file_json_cache = Path(TABLES_ROOT).joinpath(META_NAME)
+        file_json_cache = Path(TABLES_ROOT).joinpath(tag or '', META_NAME)
         with open(file_json_cache) as fid:
             cache_info = json.load(fid)
     elif scheme.startswith('http'):
-        file_json_cache = TABLES_ROOT.strip('/') + f'/{META_NAME}'
+        cache_root = TABLES_ROOT.strip('/') + (f'/{tag}' if tag else '')
+        file_json_cache = f'{cache_root}/{META_NAME}'
         resp = requests.get(file_json_cache)
         resp.raise_for_status()
         cache_info = resp.json()
         if 'location' not in cache_info:
-            cache_info['location'] = TABLES_ROOT.strip('/') + '/cache.zip'
+            cache_info['location'] = cache_root + '/cache.zip'
     elif scheme == 's3':
         # Use PyArrow to read file from s3
         from misc.management.commands.one_cache import _s3_filesystem
         s3 = _s3_filesystem()
-        file_json_cache = parsed.netloc + '/' + parsed.path.strip('/') + '/' + META_NAME
+        cache_root = parsed.netloc + '/' + parsed.path.strip('/') + (f'/{tag}' if tag else '')
+        file_json_cache = f'{cache_root}/{META_NAME}'
         with s3.open_input_stream(file_json_cache) as stream:
             cache_info = json.load(stream)
         if 'location' not in cache_info:
-            cache_info['location'] = TABLES_ROOT.strip('/') + '/' + META_NAME
+            cache_info['location'] = f'{cache_root}/cache.zip'
     else:
         raise ValueError(f'Unsupported URI scheme "{scheme}"')
 
@@ -171,8 +189,11 @@ def _get_cache_info():
 class CacheVersionView(views.APIView):
     permission_classes = rest_permission_classes()
 
-    def get(self, request=None, **kwargs):
-        return JsonResponse(_get_cache_info())
+    def get(self, request=None, tag=None, **kwargs):
+        try:
+            return JsonResponse(_get_cache_info(tag))
+        except Tag.DoesNotExist as ex:
+            return HttpResponseNotFound(str(ex))
 
 
 class CacheDownloadView(views.APIView):
