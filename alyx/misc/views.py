@@ -156,7 +156,7 @@ def _get_cache_info(tag=None):
     if tag:  # Validate
         Tag.objects.get(name=tag)
 
-    scheme = parsed.scheme or 'file'
+    scheme = parsed.scheme or 'file'  # NB: 'file' only supported on POSIX filesystems
     if scheme == 'file':
         # Cache table is local
         file_json_cache = Path(TABLES_ROOT).joinpath(tag or '', META_NAME)
@@ -189,11 +189,11 @@ def _get_cache_info(tag=None):
 class CacheVersionView(views.APIView):
     permission_classes = rest_permission_classes()
 
-    def get(self, request=None, **kwargs):
+    def get(self, request=None, tag=None, **kwargs):
         try:
-            JsonResponse(_get_cache_info(tag=request.query_params.get('tag')))
+            return JsonResponse(_get_cache_info(tag))
         except Tag.DoesNotExist as ex:
-            HttpResponseNotFound(str(ex))
+            return HttpResponseNotFound(str(ex))
 
 
 class CacheDownloadView(views.APIView):
