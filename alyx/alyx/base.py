@@ -56,7 +56,7 @@ class CharNullField(models.CharField):
 
     def to_python(self, value):
         """
-        Gets value right out of the db or an instance, and changes it if its ``None``.
+        Gets value right out of the db or an instance, and changes it if it's `None`.
         """
         if isinstance(value, models.CharField):
             # If an instance, just return the instance.
@@ -440,7 +440,7 @@ class BaseTests(TestCase):
         :return: data: the data structure without pagination info if paginate activated
         """
         self.assertTrue(r.status_code == code, r.data)
-        pkeys = set(['count', 'next', 'previous', 'results'])
+        pkeys = {'count', 'next', 'previous', 'results'}
         if isinstance(r.data, OrderedDict) and set(r.data.keys()) == pkeys:
             return r.data['results']
         else:
@@ -502,7 +502,7 @@ class BaseFilterSet(FilterSet):
 
 def base_json_filter(fieldname, queryset, _, value):
     """
-    function that filters the queryset from a cutom REST query. To be used directly as
+    function that filters the queryset from a custom REST query. To be used directly as
     a method for a FilterSet object. For example:
     # exact/equal lookup: "?extended_qc=qc_bool,True"
     # gte lookup: "?extended_qc=qc_pct__gte,0.5"
@@ -514,7 +514,7 @@ def base_json_filter(fieldname, queryset, _, value):
 
 
 def split_comma_outside_brackets(value):
-    """ For custom filters splits by comma if they are not whithin brackets. See
+    """ For custom filters splits by comma if they are not within brackets. See
     test_base.py for examples"""
     fv = []
     word = ''
