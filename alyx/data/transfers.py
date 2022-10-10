@@ -220,6 +220,14 @@ def _change_default_dataset(session, collection, filename):
         dataset.update(default_dataset=False)
 
 
+def _check_dataset_protected(session, collection, filename):
+    dataset = Dataset.objects.filter(session=session, collection=collection, name=filename)
+    if dataset.count() == 0:
+        return False
+    else:
+        return any([d.is_protected for d in dataset])
+
+
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,

@@ -5,6 +5,11 @@ import data.views as dv
 register_file = dv.RegisterFileViewSet.as_view({
     'post': 'create'
 })
+
+protected_file = dv.ProtectedFileViewSet.as_view({
+    'post': 'create'
+})
+
 sync_file_status = dv.SyncViewSet.as_view({
     'post': 'sync',
     'get': 'sync_status'
@@ -76,4 +81,9 @@ urlpatterns = [
 
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
+
+    path('protected-file', protected_file,
+         name="protected-file"),
+
+
 ]

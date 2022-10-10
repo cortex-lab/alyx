@@ -33,7 +33,7 @@ from .serializers import (DataRepositoryTypeSerializer,
                           TagSerializer
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
-                        _create_dataset_file_records, bulk_sync)
+                        _create_dataset_file_records, bulk_sync, _check_dataset_protected)
 
 logger = structlog.get_logger(__name__)
 
@@ -318,6 +318,55 @@ def _parse_path(path):
     # An error is raised if the subject or data repository do not exist.
     subject = Subject.objects.get(nickname=nickname)
     return subject, date, session_number
+
+
+# find the filename see if it exist, if protected, return datasets the path of the datasets that exist and then put them in
+# a new folder with revision
+class ProtectedFileViewSet(mixins.CreateModelMixin,
+                           viewsets.GenericViewSet):
+    serializer_class = serializers.Serializer
+
+    def create(self, request):
+
+        user = request.data.get('created_by', None)
+        if user:
+            user = get_user_model().objects.get(username=user)
+        else:
+            user = request.user
+
+        rel_dir_path = request.data.get('path', '')
+        if not rel_dir_path:
+            raise ValueError("The path argument is required.")
+
+        # Extract the data repository from the hostname, the subject, the directory path.
+        rel_dir_path = rel_dir_path.replace('\\', '/')
+        rel_dir_path = rel_dir_path.replace('//', '/')
+        subject, date, session_number = _parse_path(rel_dir_path)
+
+        filenames = request.data.get('filenames', ())
+        if isinstance(filenames, str):
+            filenames = filenames.split(',')
+
+        session = _get_session(
+            subject=subject, date=date, number=session_number, user=user)
+        assert session
+
+        response = []
+        for file in filenames:
+
+            fullpath = Path(rel_dir_path).joinpath(file).as_posix()
+            # Index of relative path (stuff after session path)
+            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
+            subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+
+            filename = Path(file).name
+            collection = '/'.join(subdirs)
+            protected = _check_dataset_protected(session, collection, filename)
+
+            response.append({'file_name': file,
+                             'protected': protected})
+
+        return Response(response, status=201)
 
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
