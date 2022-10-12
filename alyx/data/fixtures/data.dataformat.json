@@ -265,6 +265,18 @@
  },
  {
   "model": "data.dataformat",
+  "pk": "47bcdd69-8754-4045-ba05-0b59c9dba75b",
+  "fields": {
+   "json": "",
+   "name": "tdms",
+   "description": "TDMS is a National Instruments proprietary format to store DAQ data. TDMS stands for Technical Data Management Streaming",
+   "file_extension": ".tdms",
+   "matlab_loader_function": "tdmsread",
+   "python_loader_function": "pyTDMS"
+  }
+ },
+ {
+  "model": "data.dataformat",
   "pk": "8c0428b0-9344-43f4-ba7e-17b61b0d7ba9",
   "fields": {
    "json": "",
