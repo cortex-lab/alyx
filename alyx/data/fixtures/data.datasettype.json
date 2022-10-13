@@ -1744,7 +1744,7 @@
       "json": null,
       "name": "fpData.raw",
       "created_by": null,
-      "description": "The output of fiberphotometry for a given device.  The namespace should identify the FP appratus, e.g. '_neurophotometrics_.",
+      "description": "The output of fiberphotometry for a given device.  The namespace should identify the FP apparatus, e.g. '_neurophotometrics_.",
       "filename_pattern": "_*_fpData.raw*"
     }
   },
