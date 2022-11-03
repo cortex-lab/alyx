@@ -13,10 +13,16 @@ fi
 
 # check on arguments passed, at least one is required to pick build env
 if [ -z "$1" ]; then
-    echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx, etc)"
+    echo "Error: No argument supplied, script requires first argument for build env (alyx-prod, alyx-dev, openalyx)"
     exit 1
-  else
-    echo "Build environment argument supplied: $1"
+else
+    case "$1" in
+    alyx-prod|alyx-dev|openalyx)
+        echo "Build environment argument supplied: $1" ;;
+    *)
+        echo "Error: unrecognized build env; must be one of 'alyx-prod', 'alyx-dev', 'openalyx'"
+        exit 1
+    esac
 fi
 
 # Set vars

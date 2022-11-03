@@ -144,7 +144,7 @@ duplicates = set(cds).intersection(ids)
 # there should not be a whole lot of them so loop
 for dup in duplicates:
     # Get the full dataset entry from the ibl database and delete
-    dset = ibl_datasets.get(session=dup[0], collection=dup[1], name=dup[2])
+    dset = ibl_datasets.get(session=dup[0], collection=dup[1], name=dup[2], revision=dup[3])
     dset.delete()
 
 """
