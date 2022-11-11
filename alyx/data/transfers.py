@@ -221,11 +221,12 @@ def _change_default_dataset(session, collection, filename):
 
 
 def _check_dataset_protected(session, collection, filename):
-    dataset = Dataset.objects.filter(session=session, collection=collection, name=filename)
+    dataset = Dataset.objects.filter(session=session, collection=collection,
+                                     name=filename).order_by('revision__created_datetime')
     if dataset.count() == 0:
-        return False
+        return [{'': False}]
     else:
-        return any([d.is_protected for d in dataset])
+        return [{d.revision.name if d.revision else '': d.is_protected} for d in dataset]
 
 
 def _create_dataset_file_records(

@@ -363,8 +363,7 @@ class ProtectedFileViewSet(mixins.CreateModelMixin,
             collection = '/'.join(subdirs)
             protected = _check_dataset_protected(session, collection, filename)
 
-            response.append({'file_name': file,
-                             'protected': protected})
+            response.append({file: protected})
 
         return Response(response, status=201)
 

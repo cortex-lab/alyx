@@ -705,12 +705,15 @@ class APIDataTests(BaseTests):
         r = self.client.post(reverse('protected-file'), data)
         r = self.ar(r, 201)
 
-        self.assertEqual(r[0]['file_name'], 'test_prot/a.d.e2')
-        self.assertEqual(r[0]['protected'], True)
-        self.assertEqual(r[1]['file_name'], 'test_prot/a.d.e1')
-        self.assertEqual(r[1]['protected'], False)
-        self.assertEqual(r[2]['file_name'], 'test_prot/a.b.e1')
-        self.assertEqual(r[2]['protected'], False)
+        (name, prot_info), = r[0].items()
+        self.assertEqual(name, 'test_prot/a.d.e2')
+        self.assertEqual(prot_info, [{'': True}])
+        (name, prot_info), = r[1].items()
+        self.assertEqual(name, 'test_prot/a.d.e1')
+        self.assertEqual(prot_info, [{'': False}])
+        (name, prot_info), = r[2].items()
+        self.assertEqual(name, 'test_prot/a.b.e1')
+        self.assertEqual(prot_info, [{'': False}])
 
     def test_revisions(self):
         # Check revision lookup with name
