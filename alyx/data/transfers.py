@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from fnmatch import fnmatch
 
-from django.db.models import Case, When, Count, Q
+from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
 from one.alf.files import filename_parts, add_uuid_string
@@ -221,12 +221,17 @@ def _change_default_dataset(session, collection, filename):
 
 
 def _check_dataset_protected(session, collection, filename):
+    # Order datasets by the latest revision with the original one last
     dataset = Dataset.objects.filter(session=session, collection=collection,
-                                     name=filename).order_by('revision__created_datetime')
+                                     name=filename).order_by(
+        F('revision__created_datetime').desc(nulls_last=True))
     if dataset.count() == 0:
-        return [{'': False}]
+        return False, []
     else:
-        return [{d.revision.name if d.revision else '': d.is_protected} for d in dataset]
+        protected = any([d.is_protected for d in dataset])
+        protected_info = [{d.revision.name if d.revision else '': d.is_protected}
+                          for d in dataset]
+        return protected, protected_info
 
 
 def _create_dataset_file_records(

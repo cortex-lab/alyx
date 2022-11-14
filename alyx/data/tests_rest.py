@@ -700,11 +700,15 @@ class APIDataTests(BaseTests):
         # 3. not yet created --> expect protected=False
         data = {'path': '%s/2018-01-01/002/' % self.subject,
                 'filenames': 'test_prot/a.d.e2,test_prot/a.d.e1,test_prot/a.b.e1',
+                'name': 'drb1',
+                'check_protected': True
                 }
 
-        r = self.client.post(reverse('protected-file'), data)
-        r = self.ar(r, 201)
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 403)
+        self.assertEqual(r['error'], 'One or more datasets is protected')
 
+        r = r['details']
         (name, prot_info), = r[0].items()
         self.assertEqual(name, 'test_prot/a.d.e2')
         self.assertEqual(prot_info, [{'': True}])
@@ -713,7 +717,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(prot_info, [{'': False}])
         (name, prot_info), = r[2].items()
         self.assertEqual(name, 'test_prot/a.b.e1')
-        self.assertEqual(prot_info, [{'': False}])
+        self.assertEqual(prot_info, [])
 
     def test_revisions(self):
         # Check revision lookup with name

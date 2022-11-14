@@ -320,54 +320,6 @@ def _parse_path(path):
     return subject, date, session_number
 
 
-# find the filename see if it exist, if protected, return datasets the path of the datasets that exist and then put them in
-# a new folder with revision
-class ProtectedFileViewSet(mixins.CreateModelMixin,
-                           viewsets.GenericViewSet):
-    serializer_class = serializers.Serializer
-
-    def create(self, request):
-
-        user = request.data.get('created_by', None)
-        if user:
-            user = get_user_model().objects.get(username=user)
-        else:
-            user = request.user
-
-        rel_dir_path = request.data.get('path', '')
-        if not rel_dir_path:
-            raise ValueError("The path argument is required.")
-
-        # Extract the data repository from the hostname, the subject, the directory path.
-        rel_dir_path = rel_dir_path.replace('\\', '/')
-        rel_dir_path = rel_dir_path.replace('//', '/')
-        subject, date, session_number = _parse_path(rel_dir_path)
-
-        filenames = request.data.get('filenames', ())
-        if isinstance(filenames, str):
-            filenames = filenames.split(',')
-
-        session = _get_session(
-            subject=subject, date=date, number=session_number, user=user)
-        assert session
-
-        response = []
-        for file in filenames:
-
-            fullpath = Path(rel_dir_path).joinpath(file).as_posix()
-            # Index of relative path (stuff after session path)
-            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
-            subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
-
-            filename = Path(file).name
-            collection = '/'.join(subdirs)
-            protected = _check_dataset_protected(session, collection, filename)
-
-            response.append({file: protected})
-
-        return Response(response, status=201)
-
-
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
@@ -403,6 +355,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               # used to generate the file
               'default': False #optional , defaults to True, if more than one revision of dataset,
               whether to set current one as the default
+              'check_protected: False # optional, defaults to False, before attempting to register
+              datasets checks if any are protected
               }
         ```
 
@@ -472,6 +426,11 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if isinstance(default, str):
             default = default == 'True'
 
+        check_protected = request.data.get('check_protected', False)
+        # Need to explicitly cast string to a bool
+        if isinstance(check_protected, str):
+            check_protected = check_protected == 'True'
+
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
         labs = labs.split(',')
@@ -493,6 +452,30 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         session = _get_session(
             subject=subject, date=date, number=session_number, user=user)
         assert session
+
+        # If the check protected flag is True, loop through the files to see if any are protected
+        if check_protected:
+            prot_response = []
+            protected = []
+            for file in filenames:
+
+                fullpath = Path(rel_dir_path).joinpath(file).as_posix()
+                # Index of relative path (stuff after session path)
+                i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
+                subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+
+                filename = Path(file).name
+                collection = '/'.join(subdirs)
+
+                prot, prot_info = _check_dataset_protected(session, collection, filename)
+                protected.append(prot)
+                prot_response.append({file: prot_info})
+
+            if any(protected):
+                data = {'status_code': 403,
+                        'error': 'One or more datasets is protected',
+                        'details': prot_response}
+                return Response(data=data, status=403)
 
         response = []
         for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
