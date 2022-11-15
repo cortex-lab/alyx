@@ -213,6 +213,39 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
+def _get_name_collection_revision(file, rel_dir_path, subject, date):
+
+
+    # Get collections/revisions for each file
+    fullpath = Path(rel_dir_path).joinpath(file).as_posix()
+    # Index of relative path (stuff after session path)
+    i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
+    subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+    # Check for revisions (folders beginning and ending with '#')
+    # Fringe cases:
+    #   '#' is a collection
+    #   '##' is an empty revision
+    #   '##blah#5#' is a revision named '#blah#5'
+    is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
+    if any(is_rev):
+        # There may be only 1 revision and it cannot contain sub folders
+        if is_rev.index(True) != len(is_rev) - 1:
+            data = {'status_code': 400,
+                    'detail': 'Revision folders cannot contain sub folders'}
+            return None, Response(data=data, status=400)
+        revision = subdirs.pop()[1:-1]
+    else:
+        revision = None
+
+    info = {}
+    info['full_path'] = fullpath
+    info['filename'] = Path(file).name
+    info['collection'] = '/'.join(subdirs)
+    info['revision'] = revision
+    info['rel_dir_path'] = fullpath[:i]
+
+    return info, None
+
 def _change_default_dataset(session, collection, filename):
     dataset = Dataset.objects.filter(session=session, collection=collection, name=filename,
                                      default_dataset=True)

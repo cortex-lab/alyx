@@ -33,7 +33,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           TagSerializer
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
-                        _create_dataset_file_records, bulk_sync, _check_dataset_protected)
+                        _create_dataset_file_records, bulk_sync, _check_dataset_protected,
+                        _get_name_collection_revision)
 
 logger = structlog.get_logger(__name__)
 
@@ -459,15 +460,12 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             protected = []
             for file in filenames:
 
-                fullpath = Path(rel_dir_path).joinpath(file).as_posix()
-                # Index of relative path (stuff after session path)
-                i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
-                subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+                info, resp = _get_name_collection_revision(file, rel_dir_path, subject, date)
 
-                filename = Path(file).name
-                collection = '/'.join(subdirs)
+                if resp:
+                    return resp
 
-                prot, prot_info = _check_dataset_protected(session, collection, filename)
+                prot, prot_info = _check_dataset_protected(session, info['collection'], info['filename'])
                 protected.append(prot)
                 prot_response.append({file: prot_info})
 
@@ -481,32 +479,21 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
-            # Get collections/revisions for each file
-            fullpath = Path(rel_dir_path).joinpath(filename).as_posix()
-            # Index of relative path (stuff after session path)
-            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
-            subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
-            # Check for revisions (folders beginning and ending with '#')
-            # Fringe cases:
-            #   '#' is a collection
-            #   '##' is an empty revision
-            #   '##blah#5#' is a revision named '#blah#5'
-            is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
-            if any(is_rev):
-                # There may be only 1 revision and it cannot contain sub folders
-                if is_rev.index(True) != len(is_rev) - 1:
-                    data = {'status_code': 400,
-                            'detail': 'Revision folders cannot contain sub folders'}
-                    return Response(data=data, status=400)
-                revision, _ = Revision.objects.get_or_create(name=subdirs.pop()[1:-1])
+            info, resp = _get_name_collection_revision(filename, rel_dir_path, subject, date)
+
+            if resp:
+                return resp
+
+            if info['revision'] is not None:
+                revision, _ = Revision.objects.get_or_create(name=info['revision'])
             else:
                 revision = None
 
-            filename = Path(filename).name
             dataset, resp = _create_dataset_file_records(
-                collection='/'.join(subdirs), rel_dir_path=fullpath[:i], filename=filename,
-                session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize, version=version, revision=revision, default=default)
+                collection=info['collection'], rel_dir_path=info['rel_dir_path'],
+                filename=info['filename'], session=session, user=user, repositories=repositories,
+                exists_in=exists_in, hash=hash, file_size=fsize, version=version, revision=revision,
+                default=default)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)
