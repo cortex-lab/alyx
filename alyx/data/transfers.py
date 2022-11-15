@@ -215,7 +215,6 @@ def _get_repositories_for_labs(labs, server_only=False):
 
 def _get_name_collection_revision(file, rel_dir_path, subject, date):
 
-
     # Get collections/revisions for each file
     fullpath = Path(rel_dir_path).joinpath(file).as_posix()
     # Index of relative path (stuff after session path)
@@ -237,7 +236,7 @@ def _get_name_collection_revision(file, rel_dir_path, subject, date):
     else:
         revision = None
 
-    info = {}
+    info = dict()
     info['full_path'] = fullpath
     info['filename'] = Path(file).name
     info['collection'] = '/'.join(subdirs)
@@ -245,6 +244,7 @@ def _get_name_collection_revision(file, rel_dir_path, subject, date):
     info['rel_dir_path'] = fullpath[:i]
 
     return info, None
+
 
 def _change_default_dataset(session, collection, filename):
     dataset = Dataset.objects.filter(session=session, collection=collection, name=filename,
