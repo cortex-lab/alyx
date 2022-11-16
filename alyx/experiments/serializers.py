@@ -2,8 +2,10 @@ from rest_framework import serializers
 from alyx.base import BaseSerializerEnumField
 from actions.models import EphysSession, Session
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
-                                Channel, BrainRegion)
+                                Channel, BrainRegion, ChronicInsertion)
 from data.models import DatasetType, Dataset, DataRepository, FileRecord
+from subjects.models import Subject
+from misc.models import Lab
 
 
 class SessionListSerializer(serializers.ModelSerializer):
@@ -98,7 +100,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
-        queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
+        queryset=Session.objects.filter(procedures__name__icontains='ephys'),
     )
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
@@ -114,7 +116,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
-        queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
+        queryset=Session.objects.filter(procedures__name__icontains='ephys'),
     )
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
@@ -134,6 +136,57 @@ class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProbeInsertion
         fields = '__all__'
+
+
+class ChronicInsertionListSerializer(serializers.ModelSerializer):
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('model', 'subject', 'lab')
+        queryset = queryset.prefetch_related('probe_insertion')
+        return queryset
+
+    subject = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='nickname',
+        queryset=Subject.objects.all(),
+    )
+    model = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='probe_model',
+        queryset=ProbeModel.objects.all(),
+    )
+
+    lab = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name',
+        queryset=Lab.objects.all(),
+    )
+
+    class Meta:
+        model = ChronicInsertion
+        fields = ('id', 'name', 'subject', 'lab', 'model', 'start_time',
+                  'serial', 'json', 'probe_insertion')
+
+
+class ChronicInsertionDetailSerializer(serializers.ModelSerializer):
+
+    subject = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='nickname',
+        queryset=Subject.objects.all(),
+    )
+    model = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='probe_model',
+        queryset=ProbeModel.objects.all(),
+    )
+
+    lab = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name',
+        queryset=Lab.objects.all(),
+    )
+
+    class Meta:
+        model = ChronicInsertion
+        fields = ('id', 'name', 'subject', 'lab', 'model', 'start_time',
+                  'serial', 'json', 'probe_insertion')
 
 
 class BrainRegionSerializer(serializers.ModelSerializer):

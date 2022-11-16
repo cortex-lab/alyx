@@ -11,4 +11,6 @@ urlpatterns = [
     path('channels/<uuid:pk>', ev.ChannelDetail.as_view(), name="channel-detail"),
     path('brain-regions', ev.BrainRegionList.as_view(), name="brainregion-list"),
     path('brain-regions/<int:pk>', ev.BrainRegionDetail.as_view(), name="brainregion-detail"),
+    path('chronic-insertions', ev.ChronicInsertionList.as_view(), name="chronicinsertion-list"),
+    path('chronic-insertions/<uuid:pk>', ev.ChronicInsertionDetail.as_view(), name="chronicinsertion-detail"),
 ]
