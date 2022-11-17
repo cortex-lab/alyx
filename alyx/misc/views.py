@@ -4,6 +4,7 @@ import json
 
 import urllib.parse
 import requests
+from one.remote.aws import get_s3_virtual_host
 from django.contrib.auth import get_user_model
 from django.http import (
     HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
@@ -179,7 +180,8 @@ def _get_cache_info(tag=None):
         with s3.open_input_stream(file_json_cache) as stream:
             cache_info = json.load(stream)
         if 'location' not in cache_info:
-            cache_info['location'] = f'{cache_root}/cache.zip'
+            cache_info['location'] = \
+                get_s3_virtual_host(f'{cache_root}/cache.zip', region=s3.region)
     else:
         raise ValueError(f'Unsupported URI scheme "{scheme}"')
 
