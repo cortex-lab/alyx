@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from fnmatch import fnmatch
 
-from django.db.models import Case, When, Count, Q
+from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
 from one.alf.files import filename_parts, add_uuid_string
@@ -213,11 +213,58 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
+def _get_name_collection_revision(file, rel_dir_path, subject, date):
+
+    # Get collections/revisions for each file
+    fullpath = Path(rel_dir_path).joinpath(file).as_posix()
+    # Index of relative path (stuff after session path)
+    i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
+    subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
+    # Check for revisions (folders beginning and ending with '#')
+    # Fringe cases:
+    #   '#' is a collection
+    #   '##' is an empty revision
+    #   '##blah#5#' is a revision named '#blah#5'
+    is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
+    if any(is_rev):
+        # There may be only 1 revision and it cannot contain sub folders
+        if is_rev.index(True) != len(is_rev) - 1:
+            data = {'status_code': 400,
+                    'detail': 'Revision folders cannot contain sub folders'}
+            return None, Response(data=data, status=400)
+        revision = subdirs.pop()[1:-1]
+    else:
+        revision = None
+
+    info = dict()
+    info['full_path'] = fullpath
+    info['filename'] = Path(file).name
+    info['collection'] = '/'.join(subdirs)
+    info['revision'] = revision
+    info['rel_dir_path'] = fullpath[:i]
+
+    return info, None
+
+
 def _change_default_dataset(session, collection, filename):
     dataset = Dataset.objects.filter(session=session, collection=collection, name=filename,
                                      default_dataset=True)
     if dataset.count() > 0:
         dataset.update(default_dataset=False)
+
+
+def _check_dataset_protected(session, collection, filename):
+    # Order datasets by the latest revision with the original one last
+    dataset = Dataset.objects.filter(session=session, collection=collection,
+                                     name=filename).order_by(
+        F('revision__created_datetime').desc(nulls_last=True))
+    if dataset.count() == 0:
+        return False, []
+    else:
+        protected = any([d.is_protected for d in dataset])
+        protected_info = [{d.revision.name if d.revision else '': d.is_protected}
+                          for d in dataset]
+        return protected, protected_info
 
 
 def _create_dataset_file_records(
