@@ -1,6 +1,5 @@
 import structlog
 import re
-from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from rest_framework import generics, viewsets, mixins, serializers
@@ -465,7 +464,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 if resp:
                     return resp
 
-                prot, prot_info = _check_dataset_protected(session, info['collection'], info['filename'])
+                prot, prot_info = _check_dataset_protected(
+                    session, info['collection'], info['filename'])
                 protected.append(prot)
                 prot_response.append({file: prot_info})
 
@@ -492,8 +492,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset, resp = _create_dataset_file_records(
                 collection=info['collection'], rel_dir_path=info['rel_dir_path'],
                 filename=info['filename'], session=session, user=user, repositories=repositories,
-                exists_in=exists_in, hash=hash, file_size=fsize, version=version, revision=revision,
-                default=default)
+                exists_in=exists_in, hash=hash, file_size=fsize, version=version,
+                revision=revision, default=default)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)
