@@ -90,9 +90,9 @@ class TestCacheView(BaseTests):
     def test_get_cache_info(self):
         # First test with local file path
         # NB: This test will fail on Windows
+        cache_info = {'date_created': '2022-08-10 13:33', 'min_api_version': '1.13.0'}
         with tempfile.TemporaryDirectory() as URI, mock.patch('misc.views.TABLES_ROOT', URI):
             # Test without tag
-            cache_info = {'date_created': '2022-08-10 13:33', 'min_api_version': '1.13.0'}
             with open(URI + '/cache_info.json', 'w') as fp:
                 json.dump(cache_info, fp)
             self.assertEqual(_get_cache_info(), cache_info)
@@ -125,17 +125,20 @@ class TestCacheView(BaseTests):
         with mock.patch('misc.views.TABLES_ROOT', URL), \
                 mock.patch('pyarrow.fs.S3FileSystem') as s3, \
                 mock.patch('misc.views.json.load') as json_mock:
+            s3().region = 'eu-west-2'
             # Without tag
             json_mock.return_value = cache_info.copy()
             returned = _get_cache_info()
             s3().open_input_stream.assert_called_with(f'{path}/cache_info.json')
-            self.assertEqual(returned.pop('location', None), f'{path}/cache.zip')
+            expected = 'https://example-bucket.s3.eu-west-2.amazonaws.com/cache/cache.zip'
+            self.assertEqual(expected, returned.pop('location', None))
             self.assertEqual(returned, cache_info)
             # With tag
             returned = _get_cache_info(self.tag.name)
             path += f'/{self.tag.name}'
             s3().open_input_stream.assert_called_with(f'{path}/cache_info.json')
-            self.assertEqual(returned.pop('location', None), f'{path}/cache.zip')
+            expected = expected.rsplit('/', 2)[0] + f'/cache/{self.tag.name}/cache.zip'
+            self.assertEqual(expected, returned.pop('location', None))
             self.assertEqual(returned, cache_info)
 
         # Test URI validation
