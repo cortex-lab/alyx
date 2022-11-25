@@ -114,7 +114,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
-        queryset=EphysSession.objects.filter(task_protocol__icontains='ephys'),
+        queryset=EphysSession.objects.all(),
     )
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
