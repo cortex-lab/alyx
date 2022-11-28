@@ -1657,7 +1657,7 @@
       "name": "fpData.raw",
       "created_by": null,
       "description": "Raw FP data dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
-      "filename_pattern": "fpData.raw.*"
+      "filename_pattern": "_*_fpData.raw*"
     }
   },
   {
@@ -1735,17 +1735,6 @@
       "created_by": null,
       "description": "A map of the channel IDs and their corresponding device label, e.g. {ai1: bpod}.",
       "filename_pattern": "_*_DAQdata.wiring*"
-    }
-  },
-    {
-    "model": "data.datasettype",
-    "pk": "a16beb74-1008-4a2b-916e-179a50cd7548",
-    "fields": {
-      "json": null,
-      "name": "fpData.raw",
-      "created_by": null,
-      "description": "The output of fiberphotometry for a given device.  The namespace should identify the FP apparatus, e.g. '_neurophotometrics_.",
-      "filename_pattern": "_*_fpData.raw*"
     }
   },
   {
