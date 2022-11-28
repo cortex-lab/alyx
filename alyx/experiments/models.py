@@ -189,8 +189,8 @@ class TrajectoryEstimate(models.Model):
                    (self.get_provenance_display(), str(self.session), self.probe_insertion.name)
         elif self.chronic_insertion:
             return "%s  %s/%s" % \
-                   (self.get_provenance_display(), self.chronic_insertion.subject.nickname, self.chronic_insertion.name)
-
+                   (self.get_provenance_display(), self.chronic_insertion.subject.nickname,
+                    self.chronic_insertion.name)
 
     @property
     def probe_name(self):

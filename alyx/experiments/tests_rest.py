@@ -4,7 +4,7 @@ from django.core.management import call_command
 
 from alyx.base import BaseTests
 from actions.models import Session
-from experiments.models import ProbeInsertion, ChronicInsertion
+from experiments.models import ProbeInsertion
 from data.models import Dataset
 
 

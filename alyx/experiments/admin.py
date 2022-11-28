@@ -79,13 +79,16 @@ class ChannelAdmin(BaseAdmin):
 
 class TrajectoryEstimateAdmin(BaseAdmin):
     exclude = ['probe_insertion']
-    readonly_fields = ['datetime', '_probe_insertion', '_chronic_insertion', 'session', '_channel_count']
-    list_display = ['datetime', 'subject', '_probe_insertion', '_chronic_insertion', 'provenance', '_channel_count',
+    readonly_fields = ['datetime', '_probe_insertion', '_chronic_insertion', 'session',
+                       '_channel_count']
+    list_display = ['datetime', 'subject', '_probe_insertion', '_chronic_insertion',
+                    'provenance', '_channel_count',
                     'x', 'y', 'z', 'depth', 'theta', 'phi', 'session']
     list_editable = ['x', 'y', 'z', 'depth', 'theta', 'phi']
     list_display_links = ('datetime', 'subject', 'session',)
     ordering = ['-provenance', '-probe_insertion__session__start_time']
-    search_fields = ('probe_insertion__session__subject__nickname', 'chronic_insertion__subject__nickname',)
+    search_fields = ('probe_insertion__session__subject__nickname',
+                     'chronic_insertion__subject__nickname',)
 
     def _chronic_insertion(self, obj):
         if obj.chronic_insertion:
@@ -93,7 +96,8 @@ class TrajectoryEstimateAdmin(BaseAdmin):
             url = reverse('admin:%s_%s_change' % (obj.chronic_insertion._meta.app_label,
                                                   obj.chronic_insertion._meta.model_name),
                           args=[obj.chronic_insertion.id])
-            return format_html('<b><a href="{url}" ">{}</a></b>', obj.chronic_insertion.name, url=url)
+            return format_html('<b><a href="{url}" ">{}</a></b>',
+                               obj.chronic_insertion.name, url=url)
 
     def _probe_insertion(self, obj):
         if obj.probe_insertion:
@@ -101,7 +105,8 @@ class TrajectoryEstimateAdmin(BaseAdmin):
             url = reverse('admin:%s_%s_change' % (obj.probe_insertion._meta.app_label,
                                                   obj.probe_insertion._meta.model_name),
                           args=[obj.probe_insertion.id])
-            return format_html('<b><a href="{url}" ">{}</a></b>', obj.probe_insertion.name, url=url)
+            return format_html('<b><a href="{url}" ">{}</a></b>',
+                               obj.probe_insertion.name, url=url)
     _probe_insertion.short_description = 'probe'
 
     def _channel_count(self, obj):
@@ -109,7 +114,8 @@ class TrajectoryEstimateAdmin(BaseAdmin):
         if count:
             info = (Channel._meta.app_label, Channel._meta.model_name)
             url = reverse('admin:%s_%s_changelist' % info)
-            return format_html('<b><a href="{url}?q={pk}" ">{}</a></b>', count, pk=obj.id, url=url)
+            return format_html('<b><a href="{url}?q={pk}" ">{}</a></b>', count,
+                               pk=obj.id, url=url)
         else:
             return count
     _channel_count.short_description = 'channel count'

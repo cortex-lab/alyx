@@ -8,7 +8,7 @@ from data.models import Dataset
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
                                 ChronicInsertion)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
-                                     TrajectoryEstimateSerializer,ChannelSerializer,
+                                     TrajectoryEstimateSerializer, ChannelSerializer,
                                      BrainRegionSerializer, ChronicInsertionDetailSerializer,
                                      ChronicInsertionListSerializer)
 

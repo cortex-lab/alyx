@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from alyx.base import BaseSerializerEnumField
-from actions.models import EphysSession, Session
+from actions.models import Session
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
                                 Channel, BrainRegion, ChronicInsertion)
 from data.models import DatasetType, Dataset, DataRepository, FileRecord
