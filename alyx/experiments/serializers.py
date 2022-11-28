@@ -24,21 +24,6 @@ class SessionListSerializer(serializers.ModelSerializer):
         fields = ('subject', 'start_time', 'number', 'lab', 'id', 'task_protocol')
 
 
-class ProbeListSerializer(serializers.ModelSerializer):
-
-    @staticmethod
-    def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('session__subject__nickname')
-        return queryset
-
-    #model = serializers.SlugRelatedField(read_only=True, slug_field='model__name')
-
-    class Meta:
-        model = ProbeInsertion
-        fields = ('id', 'name', 'serial')
-
-
 class TrajectoryEstimateSerializer(serializers.ModelSerializer):
     probe_insertion = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id', many=False,
