@@ -24,6 +24,21 @@ class SessionListSerializer(serializers.ModelSerializer):
         fields = ('subject', 'start_time', 'number', 'lab', 'id', 'task_protocol')
 
 
+class ProbeListSerializer(serializers.ModelSerializer):
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('session__subject__nickname')
+        return queryset
+
+    #model = serializers.SlugRelatedField(read_only=True, slug_field='model__name')
+
+    class Meta:
+        model = ProbeInsertion
+        fields = ('id', 'name', 'serial')
+
+
 class TrajectoryEstimateSerializer(serializers.ModelSerializer):
     probe_insertion = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id', many=False,
@@ -89,6 +104,22 @@ class ProbeInsertionDatasetsSerializer(serializers.ModelSerializer):
                   'hash', 'version', 'collection')
 
 
+class ChronicProbeInsertionListSerializer(serializers.ModelSerializer):
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('session__subject__nickname')
+        return queryset
+
+    model = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    session_info = SessionListSerializer(read_only=True, source='session')
+
+    class Meta:
+        model = ProbeInsertion
+        fields = ('id', 'name', 'model', 'serial', 'session_info')
+
+
 class ProbeInsertionListSerializer(serializers.ModelSerializer):
 
     @staticmethod
@@ -100,7 +131,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
-        queryset=Session.objects.filter(procedures__name__icontains='ephys'),
+        queryset=Session.objects.all(),
     )
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
@@ -116,7 +147,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
-        queryset=Session.objects.filter(procedures__name__icontains='ephys'),
+        queryset=Session.objects.all(),
     )
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
@@ -161,6 +192,14 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
         queryset=Lab.objects.all(),
     )
 
+    probe_insertion = serializers.SerializerMethodField()
+
+    def get_probe_insertion(self, obj):
+        qs = obj.probe_insertion.all()
+        request = self.context.get('request', None)
+        dsets = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
+        return dsets.data
+
     class Meta:
         model = ChronicInsertion
         fields = ('id', 'name', 'subject', 'lab', 'model', 'start_time',
@@ -182,6 +221,14 @@ class ChronicInsertionDetailSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='name',
         queryset=Lab.objects.all(),
     )
+
+    probe_insertion = serializers.SerializerMethodField()
+
+    def get_probe_insertion(self, obj):
+        qs = obj.probe_insertion.all()
+        request = self.context.get('request', None)
+        dsets = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
+        return dsets.data
 
     class Meta:
         model = ChronicInsertion

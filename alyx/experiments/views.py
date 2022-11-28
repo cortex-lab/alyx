@@ -153,6 +153,15 @@ class ChronicInsertionFilter(BaseFilterSet):
     atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
     atlas_id = NumberFilter(field_name='pk', method='atlas')
 
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        print('here')
+        print(queryset)
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
+
     class Meta:
         model = ChronicInsertion
         exclude = ['json']
