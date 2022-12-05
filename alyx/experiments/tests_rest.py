@@ -267,7 +267,8 @@ class APISubjectsTests(BaseTests):
 
         ci = self.ar(self.post(reverse('chronicinsertion-list'), chronic_dict), 201)
 
-        # create the probe insertion with a related chronic insertion, first wihtout the serial number and make sure it errors
+        # create the probe insertion with a related chronic insertion, 
+        # first without the serial number and make sure it errors
         probe_dict = {'session': str(self.session.id),
                       'name': 'probe00',
                       'model': '3B2',
