@@ -191,6 +191,8 @@ class TrajectoryEstimate(models.Model):
             return "%s  %s/%s" % \
                    (self.get_provenance_display(), self.chronic_insertion.subject.nickname,
                     self.chronic_insertion.name)
+        else:
+            return super().__str__()
 
     @property
     def probe_name(self):

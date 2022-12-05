@@ -58,7 +58,6 @@ class ChronicInsertionAdmin(BaseAdmin):
         # this is to provide a link back to the session page
         html = ""
         for pr in obj.probe_insertion.all().order_by('session__start_time'):
-            print(pr)
             url = reverse('admin:%s_%s_change' % (pr._meta.app_label,
                                                   pr._meta.model_name), args=[pr.id])
             html += format_html('<a href="{url}" ">{} {}</a><br></br>',

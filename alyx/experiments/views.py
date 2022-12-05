@@ -158,8 +158,6 @@ class ChronicInsertionFilter(BaseFilterSet):
         returns sessions containing at least one channel in the given brain region.
         Hierarchical tree search"
         """
-        print('here')
-        print(queryset)
         return _filter_qs_with_brain_regions(self, queryset, name, value)
 
     class Meta:

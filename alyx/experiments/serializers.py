@@ -124,6 +124,17 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
     )
     session_info = SessionListSerializer(read_only=True, source='session')
 
+    def validate(self, data):
+        chronic_insertion = data.get('chronic_insertion', None)
+        serial = data.get('serial', None)
+        if chronic_insertion:
+            cr = ChronicInsertion.objects.get(id=chronic_insertion.id)
+            if cr.serial != serial:
+                raise serializers.ValidationError("serial number of chronic insertion "
+                                                  "and probe insertion do not match")
+
+        return data
+
     class Meta:
         model = ProbeInsertion
         fields = '__all__'

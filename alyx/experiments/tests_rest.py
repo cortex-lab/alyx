@@ -258,20 +258,27 @@ class APISubjectsTests(BaseTests):
 
     def test_chronic_insertion(self):
 
+        serial = '19019101'
         chronic_dict = {'subject': self.session.subject.nickname,
-                        'serial': 19019101,
+                        'serial': serial,
                         'model': '3B2',
                         'name': 'probe00'
                         }
 
         ci = self.ar(self.post(reverse('chronicinsertion-list'), chronic_dict), 201)
 
-        # create the probe insertion with a related chronic insertion
+        # create the probe insertion with a related chronic insertion, first wihtout the serial number and make sure it errors
         probe_dict = {'session': str(self.session.id),
                       'name': 'probe00',
                       'model': '3B2',
                       'chronic_insertion': ci['id']}
+        self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 400)
 
+        # with wrong serial number make sure it also errors
+        probe_dict['serial'] = serial + 'abc'
+        self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 400)
+
+        probe_dict['serial'] = serial
         pi = self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 201)
 
         # create a trajectory and attach it to the chronic insertion
