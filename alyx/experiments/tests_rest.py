@@ -16,6 +16,7 @@ class APISubjectsTests(BaseTests):
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.session = Session.objects.first()
+        # need to add ephys procedure
         self.session.task_protocol = 'ephys'
         self.session.save()
         self.dict_insertion = {'session': str(self.session.id),
@@ -254,3 +255,89 @@ class APISubjectsTests(BaseTests):
         response = self.post(reverse('channel-list'), chs)
         data = self.ar(response, 201)
         self.assertEqual(len(data), 2)
+
+    def test_chronic_insertion(self):
+
+        serial = '19019101'
+        chronic_dict = {'subject': self.session.subject.nickname,
+                        'serial': serial,
+                        'model': '3B2',
+                        'name': 'probe00'
+                        }
+
+        ci = self.ar(self.post(reverse('chronicinsertion-list'), chronic_dict), 201)
+
+        # create the probe insertion with a related chronic insertion,
+        # first without the serial number and make sure it errors
+        probe_dict = {'session': str(self.session.id),
+                      'name': 'probe00',
+                      'model': '3B2',
+                      'chronic_insertion': ci['id']}
+        self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 400)
+
+        # with wrong serial number make sure it also errors
+        probe_dict['serial'] = serial + 'abc'
+        self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 400)
+
+        probe_dict['serial'] = serial
+        pi = self.ar(self.post(reverse('probeinsertion-list'), probe_dict), 201)
+
+        # create a trajectory and attach it to the chronic insertion
+        traj_dict = {'chronic_insertion': ci['id'],
+                     'x': -4521.2,
+                     'y': 2415.0,
+                     'z': 0,
+                     'phi': 80,
+                     'theta': 10,
+                     'depth': 5000,
+                     'roll': 0,
+                     'provenance': 'Ephys aligned histology track',
+                     }
+
+        traj = self.ar(self.post(reverse('trajectoryestimate-list'), traj_dict), 201)
+
+        # Add a channel to the trajectory
+        channel_dict = {
+            'x': 111.1,
+            'y': -222.2,
+            'z': 333.3,
+            'axial': 20,
+            'lateral': 40,
+            'brain_region': 1133,
+            'trajectory_estimate': traj['id']
+        }
+        self.ar(self.post(reverse('channel-list'), channel_dict), 201)
+
+        urlf = (reverse('chronicinsertion-detail', args=[ci['id']]))
+        chronic_ins = self.ar(self.client.get(urlf))
+
+        # make sure the probe insertion associated with the chronic is the one we expect
+        self.assertTrue(chronic_ins['probe_insertion'][0]['id'] == pi['id'])
+
+        # check there is a trajectory estimate associated with the chronic insertion
+        url = reverse('trajectoryestimate-list')
+        urlf = (url + '?&chronic_insertion=' + ci['id'])
+        traj = self.ar(self.client.get(urlf))
+        self.assertTrue(len(traj) == 1)
+        self.assertTrue(traj[0]['provenance'] == 'Ephys aligned histology track')
+
+        # test the chronic insertion filters
+        url = reverse('chronicinsertion-list')
+        urlf = (url + '?&atlas_id=1133')
+        chron = self.ar(self.client.get(urlf))
+        self.assertTrue(len(chron) == 1)
+
+        url = reverse('chronicinsertion-list')
+        urlf = (url + '?&atlas_id=150')
+        chron = self.ar(self.client.get(urlf))
+        self.assertTrue(len(chron) == 0)
+
+        url = reverse('chronicinsertion-list')
+        urlf = (url + '?probe=' + pi['id'])
+        chron = self.ar(self.client.get(urlf))
+        self.assertTrue(len(chron) == 1)
+
+        url = reverse('chronicinsertion-list')
+        urlf = (url + '?session=' + str(self.session.id))
+        chron = self.ar(self.client.get(urlf))
+        self.assertTrue(len(chron) == 1)

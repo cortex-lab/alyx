@@ -5,10 +5,12 @@ from django.db.models import F, Func, Value, CharField, functions, Q
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from data.models import Dataset
-from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
+from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
+                                ChronicInsertion)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
-                                     TrajectoryEstimateSerializer,
-                                     ChannelSerializer, BrainRegionSerializer)
+                                     TrajectoryEstimateSerializer, ChannelSerializer,
+                                     BrainRegionSerializer, ChronicInsertionDetailSerializer,
+                                     ChronicInsertionListSerializer)
 
 """
 Probe insertion objects REST filters and views
@@ -24,7 +26,8 @@ def _filter_qs_with_brain_regions(self, queryset, region_field, region_value):
     if queryset.model.__name__ == 'Session':
         qs = queryset.prefetch_related('probe_insertion__trajectory_estimate').filter(
             probe_insertion__trajectory_estimate__in=qs_trajs)
-    elif queryset.model.__name__ == 'ProbeInsertion':
+    elif (queryset.model.__name__ == 'ProbeInsertion' or
+          queryset.model.__name__ == 'ChronicInsertion'):
         qs = queryset.prefetch_related('trajectory_estimate').filter(
             trajectory_estimate__in=qs_trajs)
     return qs
@@ -134,6 +137,66 @@ class ProbeInsertionList(generics.ListCreateAPIView):
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProbeInsertion.objects.all()
     serializer_class = ProbeInsertionDetailSerializer
+    permission_classes = rest_permission_classes()
+
+
+class ChronicInsertionFilter(BaseFilterSet):
+    subject = CharFilter('subject__nickname')
+    lab = CharFilter('lab__name')
+    model = CharFilter('model__name')
+    probe = UUIDFilter('probe_insertion__id')
+    session = UUIDFilter('probe_insertion__session__id')
+    serial = CharFilter('serial')
+
+    # brain region filters
+    atlas_name = CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
+
+    class Meta:
+        model = ChronicInsertion
+        exclude = ['json']
+
+
+class ChronicInsertionList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **name**: chronic insertion name `/chronic-insertions?name=probe00`
+    -   **subject**: subject nickname: `/chronic-insertions?subject=Algernon`
+    -   **lab**: lab name `/chronic-insertions?lab=UCLA`
+    -   **model**: probe model name `/insertions?model=3A`
+    -   **probe**: probe UUID
+    `/chronic-insertions?probe=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **session**: session UUID
+    `/chronic-insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **serial**: serial no. of probe `/chronic-insertions?serial=101010`
+    -   **atlas_name**: returns a session if any channel name icontains
+     the value: `/chronic-insertions?brain_region=visual cortex`
+    -   **atlas_acronym**: returns a session if any of its channels name exactly
+     matches the value `/chronic-insertions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
+    -   **atlas_id**: returns a session if any of its channels id matches the
+     provided value: `/chronic-insertions?atlas_id=950`, cf Allen CCFv2017
+
+    [===> chronic insertion model reference](/admin/doc/models/experiments.chronicinsertion)
+    """
+    queryset = ChronicInsertion.objects.all()
+    queryset = ChronicInsertionListSerializer.setup_eager_loading(queryset)
+    serializer_class = ChronicInsertionListSerializer
+    permission_classes = rest_permission_classes()
+    filter_class = ChronicInsertionFilter
+
+
+class ChronicInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ChronicInsertion.objects.all()
+    serializer_class = ChronicInsertionDetailSerializer
     permission_classes = rest_permission_classes()
 
 
