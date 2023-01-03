@@ -381,9 +381,9 @@ def generate_datasets_frame(int_id=True, tags=None) -> pd.DataFrame:
     if tags:
         kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
         ds = ds.prefetch_related('tag').filter(**kw)
-    # Filter out datasets that do not exist on either repository
+    # Filter out datasets that do not exist on either repository or have no associated session
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
-    ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True))
+    ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True), session__isnull=False)
 
     # fields to keep from Dataset table
     fields = (
