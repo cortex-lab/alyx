@@ -2,6 +2,7 @@ import structlog
 import re
 
 from django.contrib.auth import get_user_model
+from django.db import models
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
@@ -225,6 +226,17 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = rest_permission_classes()
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super().delete(request, *args, **kwargs)
+        except models.ProtectedError as e:
+            # Return Forbidden response with dataset name and list of protected tags associated
+            tags = e.protected_objects.tags.filter(protected=True).values_list('name', flat=True)
+            tags_str = '"' + '", "'.join(tags) + '"'
+            return Response(
+                f'Dataset {e.protected_objects.name} is protected by the tag(s) {tags_str}', 403
+            )
 
 
 # FileRecord

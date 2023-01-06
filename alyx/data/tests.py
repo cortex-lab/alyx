@@ -1,15 +1,36 @@
 from django.test import TestCase
+from django.db import transaction
 from django.db.utils import IntegrityError
-from data.models import Dataset, DatasetType
+from django.db.models import ProtectedError
+
+from data.models import Dataset, DatasetType, Tag
 from data.transfers import get_dataset_type
 
 
 class TestModel(TestCase):
     def test_model_methods(self):
         (dset, _) = Dataset.objects.get_or_create(name='toto.npy')
+
         assert dset.is_online is False
         assert dset.is_public is False
         assert dset.is_protected is False
+
+    def test_delete(self):
+        (dset, _) = Dataset.objects.get_or_create(name='foo.npy')
+        (tag, _) = Tag.objects.get_or_create(name='protected_tag', protected=True)
+        dset.tags.set([tag])
+        assert dset.is_protected is True
+
+        # Individual object delete
+        with transaction.atomic():
+            self.assertRaises(ProtectedError, dset.delete)
+
+        # As queryset
+        qs = Dataset.objects.filter(tags__name='protected_tag')
+        with transaction.atomic():
+            self.assertRaises(ProtectedError, qs.delete)
+        with self.assertLogs('data.models', 'WARNING'):
+            qs.delete(force=True)
 
 
 class TestDatasetTypeModel(TestCase):
@@ -36,3 +57,4 @@ class TestDatasetTypeModel(TestCase):
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
                 self.assertEqual(get_dataset_type(filename).name, dataname)
+
