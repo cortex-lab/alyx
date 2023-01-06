@@ -232,11 +232,8 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
             return super().delete(request, *args, **kwargs)
         except models.ProtectedError as e:
             # Return Forbidden response with dataset name and list of protected tags associated
-            tags = e.protected_objects.tags.filter(protected=True).values_list('name', flat=True)
-            tags_str = '"' + '", "'.join(tags) + '"'
-            return Response(
-                f'Dataset {e.protected_objects.name} is protected by the tag(s) {tags_str}', 403
-            )
+            err_msg, _ = e.args
+            return Response(e.args[0], 403)
 
 
 # FileRecord

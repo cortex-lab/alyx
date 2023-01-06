@@ -57,4 +57,3 @@ class TestDatasetTypeModel(TestCase):
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
                 self.assertEqual(get_dataset_type(filename).name, dataname)
-

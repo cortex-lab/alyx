@@ -265,7 +265,12 @@ class DatasetQuerySet(BaseQuerySet):
                 logger.warning('The following protected datasets will be deleted:\n%s',
                                '\n'.join(map(str, protected.values_list('name', 'session_id'))))
             else:
-                raise models.ProtectedError(f'{protected.count()} dataset(s) protected.', protected)
+                logger.error(
+                    'The following protected datasets cannot be deleted without force=True:\n%s',
+                    '\n'.join(map(str, protected.values_list('name', 'session_id'))))
+                raise models.ProtectedError(
+                    f'Failed to delete {protected.count()} dataset(s) due to protected tags',
+                    protected)
         super().delete()
 
 
@@ -382,7 +387,11 @@ class Dataset(BaseExperimentalData):
         # If a dataset is protected and force=False, raise an exception
         # NB This is not called when bulk deleting or in cascading deletes
         if self.is_protected and not force:
-            raise models.ProtectedError(f'Dataset {self.name} is protected.', self)
+            tags = self.tags.filter(protected=True).values_list('name', flat=True)
+            tags_str = '"' + '", "'.join(tags) + '"'
+            logger.error(f'Dataset {self.name} is protected by tag(s); use force=True.')
+            raise models.ProtectedError(
+                f'Failed to delete dataset {self.name} due to protected tag(s) {tags_str}', self)
         super().delete(*args, **kwargs)
 
 
