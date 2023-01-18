@@ -5,13 +5,12 @@ import os.path as op
 import re
 import time
 from pathlib import Path
-from fnmatch import fnmatch
 
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
-from one.alf.files import filename_parts, add_uuid_string
-from one.alf.spec import is_valid
+from one.alf.files import add_uuid_string
+from one.registration import get_dataset_type
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
@@ -170,31 +169,6 @@ def globus_file_exists(file_record):
     return False
 
 
-def get_dataset_type(filename, qs=None):
-    """Get the dataset type from a given filename"""
-    dataset_types = []
-    for dt in qs or DatasetType.objects.all():
-        if not dt.filename_pattern.strip():
-            # If the filename pattern is null, check whether the filename object.attribute matches
-            # the dataset type name.
-            if is_valid(filename):
-                obj_attr = '.'.join(filename_parts(filename)[1:3])
-            else:  # will match name against filename sans extension
-                obj_attr = op.splitext(filename)[0]
-            if dt.name == obj_attr:
-                dataset_types.append(dt)
-        # Check whether pattern matches filename
-        elif fnmatch(op.basename(filename).lower(), dt.filename_pattern.lower()):
-            dataset_types.append(dt)
-    n = len(dataset_types)
-    if n == 0:
-        raise ValueError("No dataset type found for filename `%s`" % filename)
-    elif n >= 2:
-        raise ValueError("Multiple matching dataset types found for filename `%s`: %s" % (
-            filename, ', '.join(map(str, dataset_types))))
-    return dataset_types[0]
-
-
 def get_data_format(filename):
     file_extension = op.splitext(filename)[-1]
     # This raises an error if there is 0 or 2+ matching data formats.
@@ -275,7 +249,7 @@ def _create_dataset_file_records(
     assert session is not None
     revision_name = f'#{revision.name}#' if revision else ''
     relative_path = op.join(rel_dir_path, collection or '', revision_name, filename)
-    dataset_type = get_dataset_type(filename)
+    dataset_type = get_dataset_type(filename, DatasetType.objects.all())
     data_format = get_data_format(filename)
     assert dataset_type
     assert data_format

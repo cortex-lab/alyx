@@ -28,4 +28,4 @@ python-magic
 pytz
 structlog>=21.5.0
 webdavclient3
-ONE-api>=1.13.0
+ONE-api>=1.18.0
