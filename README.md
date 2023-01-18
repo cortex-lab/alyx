@@ -25,8 +25,9 @@ this setup will work on other systems. Assumptions made are that you have sudo p
 * alyx-dev is sync with the **dev** branch
 * Migrations files are provided by the repository
 * Continuous integration is setup, to run tests locally:
-    -   `./manage.py test -n` test without migrations (faster)
-    -   `./manage.py test` test with migrations (recommended if model changes)
+    - `./manage.py test -n` test without migrations (faster)
+    - `./manage.py test` test with migrations (recommended if model changes)
+    - NB: When running tests ensure `DEBUG = True` in the settings.py file (specifically `SECURE_SSL_REDIRECT = True` causes REST tests to fail)
 
 ```
 $ /manage.py test -n

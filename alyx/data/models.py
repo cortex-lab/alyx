@@ -1,10 +1,14 @@
+import structlog
+
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField
+from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet
+
+logger = structlog.get_logger(__name__)
 
 
 def _related_string(field):
@@ -252,9 +256,27 @@ class Revision(BaseModel):
         return "<Revision %s>" % self.name
 
 
+class DatasetQuerySet(BaseQuerySet):
+    """A Queryset that checks for protected datasets before deletion"""
+
+    def delete(self, force=False):
+        if (protected := self.filter(tags__protected=True)).exists():
+            if force:
+                logger.warning('The following protected datasets will be deleted:\n%s',
+                               '\n'.join(map(str, protected.values_list('name', 'session_id'))))
+            else:
+                logger.error(
+                    'The following protected datasets cannot be deleted without force=True:\n%s',
+                    '\n'.join(map(str, protected.values_list('name', 'session_id'))))
+                raise models.ProtectedError(
+                    f'Failed to delete {protected.count()} dataset(s) due to protected tags',
+                    protected)
+        super().delete()
+
+
 class DatasetManager(BaseManager):
     def get_queryset(self):
-        qs = super(DatasetManager, self).get_queryset()
+        qs = DatasetQuerySet(self.model, using=self._db)
         qs = qs.select_related('dataset_type', 'data_format')
         return qs
 
@@ -360,6 +382,17 @@ class Dataset(BaseExperimentalData):
             pis = ProbeInsertion.objects.filter(session=self.session, name=name)
             if len(pis):
                 self.probe_insertion.set(pis.values_list('pk', flat=True))
+
+    def delete(self, *args, force=False, **kwargs):
+        # If a dataset is protected and force=False, raise an exception
+        # NB This is not called when bulk deleting or in cascading deletes
+        if self.is_protected and not force:
+            tags = self.tags.filter(protected=True).values_list('name', flat=True)
+            tags_str = '"' + '", "'.join(tags) + '"'
+            logger.error(f'Dataset {self.name} is protected by tag(s); use force=True.')
+            raise models.ProtectedError(
+                f'Failed to delete dataset {self.name} due to protected tag(s) {tags_str}', self)
+        super().delete(*args, **kwargs)
 
 
 # Files
