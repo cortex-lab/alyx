@@ -54,6 +54,8 @@ class TestDatasetTypeModel(TestCase):
             ('bar.baz.ext', 'bar.baz'),
             ('some_file.ext', 'some_file')
         )
+
+        dtypes = DatasetType.objects.all()
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
-                self.assertEqual(get_dataset_type(filename).name, dataname)
+                self.assertEqual(get_dataset_type(filename, dtypes).name, dataname)

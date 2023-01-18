@@ -13,14 +13,14 @@ fr_local = FileRecord.objects.filter(dataset__session__in=sessions,
 fr_server = FileRecord.objects.filter(dataset__session__in=sessions,
                                       data_repository__globus_is_personal=False)
 
-assert(fr_local.count() == fr_server.count())
+assert fr_local.count() == fr_server.count()
 
 fr_server.update(exists=False)
 files_repos_save = fr_local.values_list('id', 'data_repository')
 fr_local.update()
 
 repo = fr_local.values_list('data_repository', flat=True).distinct()
-assert(repo.count() == 1)
+assert repo.count() == 1
 repo = DataRepository.objects.get(id=repo[0])
 
 globus_id_save = repo.globus_endpoint_id
