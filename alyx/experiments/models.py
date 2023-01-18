@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from mptt.models import MPTTModel, TreeForeignKey
 
 from alyx.base import BaseModel, BaseManager
+from actions.models import ChronicRecording
 
 logger = structlog.get_logger(__name__)
 
@@ -79,6 +80,18 @@ class ProbeModel(BaseModel):
         return self.probe_model
 
 
+class ChronicInsertion(ChronicRecording):
+    """
+    Chronic insertions
+    """
+    serial = models.CharField(max_length=255, blank=True, help_text="Probe serial number")
+    model = models.ForeignKey(ProbeModel, blank=True, null=True, on_delete=models.SET_NULL,
+                              related_name='chronic_insertion')
+
+    def __str__(self):
+        return "%s %s %s" % (self.name, self.subject.nickname, self.serial)
+
+
 class ProbeInsertion(BaseModel):
     """
     Describe an electrophysiology probe insertion used for recording
@@ -93,7 +106,7 @@ class ProbeInsertion(BaseModel):
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
     datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='probe_insertion')
-    chronic_recording = models.ForeignKey('actions.ChronicRecording', blank=True, null=True,
+    chronic_insertion = models.ForeignKey(ChronicInsertion, blank=True, null=True,
                                           on_delete=models.CASCADE, related_name='probe_insertion')
 
     def __str__(self):
@@ -140,6 +153,9 @@ class TrajectoryEstimate(models.Model):
     probe_insertion = models.ForeignKey(ProbeInsertion, blank=True, null=True,
                                         on_delete=models.CASCADE,
                                         related_name='trajectory_estimate')
+    chronic_insertion = models.ForeignKey(ChronicInsertion, blank=True, null=True,
+                                          on_delete=models.CASCADE,
+                                          related_name='trajectory_estimate')
     x = models.FloatField(null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
     y = models.FloatField(null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
     z = models.FloatField(null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
@@ -168,20 +184,34 @@ class TrajectoryEstimate(models.Model):
         ]
 
     def __str__(self):
-        return "%s  %s/%s" % \
-               (self.get_provenance_display(), str(self.session), self.probe_insertion.name)
+        if self.probe_insertion:
+            return "%s  %s/%s" % \
+                   (self.get_provenance_display(), str(self.session), self.probe_insertion.name)
+        elif self.chronic_insertion:
+            return "%s  %s/%s" % \
+                   (self.get_provenance_display(), self.chronic_insertion.subject.nickname,
+                    self.chronic_insertion.name)
+        else:
+            return super().__str__()
 
     @property
     def probe_name(self):
-        return self.probe_insertion.name
+        if self.probe_insertion:
+            return self.probe_insertion.name
+        elif self.chronic_insertion:
+            return self.chronic_insertion.name
 
     @property
     def session(self):
-        return self.probe_insertion.session
+        if self.probe_insertion:
+            return self.probe_insertion.session
 
     @property
     def subject(self):
-        return self.probe_insertion.session.subject.nickname
+        if self.probe_insertion:
+            return self.probe_insertion.session.subject.nickname
+        elif self.chronic_insertion:
+            return self.chronic_insertion.subject.nickname
 
 
 class Channel(BaseModel):
