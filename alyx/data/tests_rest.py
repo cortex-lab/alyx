@@ -184,6 +184,19 @@ class APIDataTests(BaseTests):
         self.ar(r, 201)
         self.assertEqual(r.data['default_dataset'], False)
 
+        # Create protected tag and dataset
+        r = self.ar(self.post(reverse('tag-list'), {'name': 'foo_tag', 'protected': True}), 201)
+        data = {'name': 'foo.bar', 'dataset_type': 'dst', 'created_by': 'test',
+                'data_format': 'df', 'date': '2018-01-01', 'number': 2, 'subject': self.subject,
+                'tags': [r['name']]}
+
+        r = self.ar(self.post(reverse('dataset-list'), data), 201)
+        did = r['url'].split('/')[-1]
+
+        # Now attempt to delete the protected dataset
+        r = self.client.delete(reverse('dataset-detail', args=[did]), data)
+        self.assertRegex(self.ar(r, 403), 'protected')
+
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
         data = {
