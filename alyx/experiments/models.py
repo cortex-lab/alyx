@@ -235,3 +235,13 @@ class Channel(BaseModel):
     def save(self, *args, **kwargs):
         super(Channel, self).save(*args, **kwargs)
         self.trajectory_estimate.save()  # this will bump the datetime auto-update of trajectory
+
+
+class TaskProtocol(BaseModel):
+    name = models.CharField(max_length=255, unique=True)
+    version = models.CharField(max_length=255, unique=True)  # TODO Change uniques
+    description = models.CharField(
+        max_length=1023, blank=True, help_text='Description of the task protocol')
+
+    def __str__(self):
+        return "<TaskProtocol %s>" % self.name

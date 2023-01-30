@@ -311,12 +311,15 @@ def generate_sessions_frame(int_id=True, tags=None) -> pd.DataFrame:
     )
     """
     fields = ('id', 'lab__name', 'subject__nickname', 'start_time__date',
-              'number', 'task_protocol', 'all_projects')
+              'number', 'all_protocols', 'all_projects')
+    projects = ArrayAgg('projects__name')
+    protocols = ArrayAgg('task_protocols__name')
     query = (Session
              .objects
              .select_related('subject', 'lab')
              .prefetch_related('projects')
-             .annotate(all_projects=ArrayAgg('projects__name'))
+             .prefetch_related('task_protocols')
+             .annotate(all_projects=projects, all_protocols=protocols)
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
     if tags:
         if not isinstance(tags, str):
@@ -327,16 +330,18 @@ def generate_sessions_frame(int_id=True, tags=None) -> pd.DataFrame:
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
     df['all_projects'] = df['all_projects'].map(lambda x: ','.join(filter(None, set(x))))
+    df['all_protocols'] = df['all_protocols'].map(lambda x: ','.join(filter(None, set(x))))
+    renames = {'start_time': 'date', 'all_projects': 'projects', 'all_protocols': 'task_protocols'}
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
-            .rename({'start_time': 'date', 'all_projects': 'projects'}, axis=1)
+            .rename(renames, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
             .sort_values(['date', 'subject', 'number'], ascending=False))
     )
     df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
     # These columns may be empty; ensure None -> ''
-    for col in ('task_protocol', 'projects'):
+    for col in ('task_protocols', 'projects'):
         df[col] = df[col].astype(str)
 
     if int_id:

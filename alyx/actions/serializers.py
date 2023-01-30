@@ -10,11 +10,12 @@ from subjects.models import Subject, Project
 from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
 from experiments.serializers import ProbeInsertionListSerializer, FilterDatasetSerializer
+from experiments.models import TaskProtocol
 from misc.serializers import NoteSerializer
 
 
 SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'projects', 'type',
-                  'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
+                  'task_protocols', 'number', 'start_time', 'end_time', 'narrative',
                   'parent_session', 'n_correct_trials', 'n_trials', 'url', 'extended_qc', 'qc',
                   'wateradmin_session_related', 'data_dataset_session_related',
                   'auto_datetime')
@@ -127,12 +128,13 @@ class SessionListSerializer(BaseActionSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related('subject', 'lab')
         queryset = queryset.prefetch_related('projects')
+        queryset = queryset.prefetch_related('task_protocols')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
         fields = ('id', 'subject', 'start_time', 'number', 'lab', 'projects', 'url',
-                  'task_protocol')
+                  'task_protocols')
 
 
 class SessionDetailSerializer(BaseActionSerializer):
@@ -142,6 +144,9 @@ class SessionDetailSerializer(BaseActionSerializer):
     probe_insertion = ProbeInsertionListSerializer(read_only=True, many=True)
     projects = serializers.SlugRelatedField(read_only=False, slug_field='name', many=True,
                                             queryset=Project.objects.all(), required=False)
+    task_protocols = serializers.SlugRelatedField(
+        read_only=False, slug_field='name', many=True,
+        queryset=TaskProtocol.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
     qc = BaseSerializerEnumField(required=False)
 

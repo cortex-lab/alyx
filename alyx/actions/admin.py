@@ -477,10 +477,10 @@ def _pass_narrative_templates(context):
 
 class SessionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'number', 'lab', 'dataset_count',
-                    'task_protocol', 'qc', 'user_list', 'project_']
+                    'task_protocol_', 'qc', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
-        'repo_url', 'qc', 'extended_qc', 'projects', ('type', 'task_protocol', ), 'number',
+        'repo_url', 'qc', 'extended_qc', 'projects', ('type', 'task_protocols', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing', 'auto_datetime']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
@@ -488,7 +488,7 @@ class SessionAdmin(BaseActionAdmin):
                    ('lab', RelatedDropdownFilter),
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'projects__name', 'users__username',
-                     'task_protocol', 'pk')
+                     'task_protocol__name', 'pk')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc',
@@ -519,6 +519,9 @@ class SessionAdmin(BaseActionAdmin):
 
     def project_(self, obj):
         return [getattr(p, 'name', None) for p in obj.projects.all()]
+
+    def task_protocol_(self, obj):
+        return [getattr(p, 'name', None) for p in obj.task_protocols.all()]
 
     def repo_url(self, obj):
         url = settings.SESSION_REPO_URL.format(
