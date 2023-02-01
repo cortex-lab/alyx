@@ -296,10 +296,10 @@ class Dataset(BaseExperimentalData):
     """
     objects = DatasetManager()
 
-    # Generic foreign key to arbitrary model instances.
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, default='session')
+    # Generic foreign key to arbitrary model instances allows polymorphic relationships
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
     object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
-                                           "ID must already exist to attach a note.")
+                                           "ID must already exist to attach a note.", null=True)
     content_object = GenericForeignKey()
 
     file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
