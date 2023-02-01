@@ -44,5 +44,5 @@ class Migration(migrations.Migration):
             field=models.UUIDField(null=True, help_text='UUID, an object of content_type with this ID must already exist to attach a note.'),
             preserve_default=False,
         ),
-        migrations.RunPython(forwards, backwards)
+#        migrations.RunPython(forwards, backwards)
     ]
