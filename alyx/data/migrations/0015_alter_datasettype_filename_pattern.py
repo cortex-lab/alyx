@@ -4,9 +4,6 @@
 # issue.
 
 import alyx.base
-from django.db import migrations
-import data.migrations
-
 from django.db import migrations, transaction
 
 PATTERN = '$$$'
@@ -15,6 +12,7 @@ PATTERN = '$$$'
 def fix_null_fields(apps, _):
     """Populate null filename_pattern fields before making column not null"""
     DatasetType = apps.get_model('data', 'DatasetType')
+    assert not DatasetType.objects.filter(filename_pattern__startswith=PATTERN).count()
     with transaction.atomic():
         for dtype in DatasetType.objects.filter(filename_pattern__isnull=True).iterator():
             dtype.filename_pattern = PATTERN + dtype.name

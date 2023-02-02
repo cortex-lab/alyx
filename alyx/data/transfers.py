@@ -261,7 +261,7 @@ def _create_dataset_file_records(
 
     # Get or create the dataset.
     dataset, is_new = Dataset.objects.get_or_create(
-        collection=collection, name=filename, session=session, content_object=session,
+        collection=collection, name=filename, session=session,  # content_object=session,
         dataset_type=dataset_type, data_format=data_format, revision=revision
     )
     dataset.default_dataset = default is True
