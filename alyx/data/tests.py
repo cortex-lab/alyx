@@ -4,6 +4,7 @@ from django.db.utils import IntegrityError
 from django.db.models import ProtectedError
 
 from data.models import Dataset, DatasetType, Tag
+from subjects.models import Subject
 from data.transfers import get_dataset_type
 
 
@@ -11,9 +12,16 @@ class TestModel(TestCase):
     def test_model_methods(self):
         (dset, _) = Dataset.objects.get_or_create(name='toto.npy')
 
-        assert dset.is_online is False
-        assert dset.is_public is False
-        assert dset.is_protected is False
+        self.assertIs(dset.is_online, False)
+        self.assertIs(dset.is_public, False)
+        self.assertIs(dset.is_protected, False)
+
+    def test_generic_foreign_key(self):
+        # Attempt to associate a dataset with a subject
+        (subj, _) = Subject.objects.get_or_create(nickname='foobar')
+        dset = Dataset(name='toto.npy', content_object=subj)
+
+        self.assertIs(dset.content_object, subj)
 
     def test_delete(self):
         (dset, _) = Dataset.objects.get_or_create(name='foo.npy')
