@@ -297,9 +297,10 @@ class Dataset(BaseExperimentalData):
     objects = DatasetManager()
 
     # Generic foreign key to arbitrary model instances allows polymorphic relationships
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
-                                           "ID must already exist to attach a note.", null=True)
+                                           "ID must already exist to attach a note.",
+                                 null=True, blank=True)
     content_object = GenericForeignKey()
 
     file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
@@ -342,7 +343,7 @@ class Dataset(BaseExperimentalData):
     @property
     def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
-        return fr.count() and all(fr.values_list('exists', flat=True))
+        return bool(fr.count() and all(fr.values_list('exists', flat=True)))
 
     @property
     def is_protected(self):

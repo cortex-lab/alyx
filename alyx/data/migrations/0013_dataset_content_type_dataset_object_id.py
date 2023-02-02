@@ -34,13 +34,14 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='content_type',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
+            field=models.ForeignKey(null=True, blank=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='dataset',
             name='object_id',
-            field=models.UUIDField(null=True, help_text='UUID, an object of content_type with this ID must already exist to attach a note.'),
+            field=models.UUIDField(
+                null=True, blank=True, help_text='UUID, an object of content_type with this ID must already exist to attach a note.'),
             preserve_default=False,
         ),
 #        migrations.RunPython(forwards, backwards)

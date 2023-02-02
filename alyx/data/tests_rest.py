@@ -1,5 +1,5 @@
 import datetime
-import os.path as op
+from pathlib import PurePosixPath
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -372,11 +372,11 @@ class APIDataTests(BaseTests):
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d0['file_records'][0]['relative_path'],
-                         op.join(data['path'], 'a.b.e1'))
+                         PurePosixPath(data['path'], 'a.b.e1').as_posix())
 
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
-                         op.join(data['path'], 'a.c.e2'))
+                         PurePosixPath(data['path'], 'a.c.e2').as_posix())
 
     def test_register_existence_options(self):
 
@@ -509,8 +509,8 @@ class APIDataTests(BaseTests):
         self.assertTrue(not r['revision'])
         self.assertEqual(r['collection'], 'dir')
         # Check the revision relative path doesn't exist
-        self.assertTrue(r['file_records'][0]['relative_path'] ==
-                        op.join(data['path'], data['filenames']))
+        self.assertEqual(r['file_records'][0]['relative_path'],
+                         PurePosixPath(data['path'], data['filenames']).as_posix())
 
         # Now test specifying a revision in path
         data = {'path': '%s/2018-01-01/002/dir/#v1#' % self.subject,
@@ -523,7 +523,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(r['revision'] == 'v1')
         self.assertEqual('dir', r['collection'])
         # Check file record relative path includes revision
-        self.assertTrue('#v1#' in r['file_records'][0]['relative_path'])
+        self.assertIn('#v1#', r['file_records'][0]['relative_path'])
 
         # Now test specifying a collection and a revision in filename
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
@@ -535,7 +535,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(r['revision'] == 'v1')
         self.assertTrue(r['collection'] == 'dir/dir1')
         # Check file record relative path includes revision
-        self.assertTrue('#v1#' in r['file_records'][0]['relative_path'])
+        self.assertIn('#v1#', r['file_records'][0]['relative_path'])
 
         # Test that giving nested revision folders gives out an error
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
