@@ -238,10 +238,13 @@ class Channel(BaseModel):
 
 
 class TaskProtocol(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
-    version = models.CharField(max_length=255, unique=True)  # TODO Change uniques
+    name = models.CharField(max_length=255)
+    version = models.CharField(max_length=255, help_text='The major version of the task protocol')
     description = models.CharField(
         max_length=1023, blank=True, help_text='Description of the task protocol')
+
+    class Meta:
+        unique_together = (('name', 'version'),)
 
     def __str__(self):
         return "<TaskProtocol %s>" % self.name
