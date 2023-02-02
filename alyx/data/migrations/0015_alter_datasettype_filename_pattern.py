@@ -5,6 +5,29 @@
 
 import alyx.base
 from django.db import migrations
+import data.migrations
+
+from django.db import migrations, transaction
+
+PATTERN = '$$$'
+
+
+def fix_null_fields(apps, _):
+    """Populate null filename_pattern fields before making column not null"""
+    DatasetType = apps.get_model('data', 'DatasetType')
+    with transaction.atomic():
+        for dtype in DatasetType.objects.filter(filename_pattern__isnull=True).iterator():
+            dtype.filename_pattern = PATTERN + dtype.name
+            dtype.save()
+
+
+def null_fields(apps, _):
+    """Reset previously null filename_pattern fields"""
+    DatasetType = apps.get_model('data', 'DatasetType')
+    with transaction.atomic():
+        for dtype in DatasetType.objects.filter(filename_pattern__startswith=PATTERN).iterator():
+            dtype.filename_pattern = None
+            dtype.save()
 
 
 class Migration(migrations.Migration):
@@ -19,4 +42,5 @@ class Migration(migrations.Migration):
             name='filename_pattern',
             field=alyx.base.CharNullField(blank=True, help_text="File name pattern (with wildcards) for this file in ALF naming convention. E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which would include all files starting with the word 'spikes'. NB: Case-insensitive matching.If null, the name field must match the object.attribute part of the filename.", max_length=255, null=True, unique=True),
         ),
+        migrations.RunPython(null_fields, fix_null_fields),
     ]
