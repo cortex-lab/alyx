@@ -19,7 +19,8 @@ class TestModel(TestCase):
 
     def test_generic_foreign_key(self):
         # Attempt to associate a dataset with a subject
-        (subj, _) = Subject.objects.get_or_create(nickname='foobar', lab=Lab.objects.first())
+        self.lab = Lab.objects.create(name='test_lab')
+        subj = Subject.objects.create(nickname='foo', birth_date='2018-09-01', lab=self.lab)
         dset = Dataset(name='toto.npy', content_object=subj)
 
         self.assertIs(dset.content_object, subj)
