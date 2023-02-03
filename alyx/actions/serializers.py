@@ -122,6 +122,10 @@ class SessionListSerializer(BaseActionSerializer):
                                             slug_field='name',
                                             queryset=Project.objects.all(),
                                             many=True)
+    task_protocols = serializers.SlugRelatedField(read_only=False,
+                                                  slug_field='name',
+                                                  queryset=TaskProtocol.objects.all(),
+                                                  many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
