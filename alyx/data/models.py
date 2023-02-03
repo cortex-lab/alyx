@@ -3,6 +3,8 @@ import structlog
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
@@ -294,6 +296,13 @@ class Dataset(BaseExperimentalData):
     """
     objects = DatasetManager()
 
+    # Generic foreign key to arbitrary model instances allows polymorphic relationships
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
+                                           "ID must already exist to attach a note.",
+                                 null=True, blank=True)
+    content_object = GenericForeignKey()
+
     file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
 
     md5 = models.UUIDField(blank=True, null=True,
@@ -334,31 +343,19 @@ class Dataset(BaseExperimentalData):
     @property
     def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
-        if fr:
-            return all(fr.values_list('exists', flat=True))
-        else:
-            return False
+        return bool(fr.count() and all(fr.values_list('exists', flat=True)))
 
     @property
     def is_protected(self):
-        tags = self.tags.filter(protected=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
+        return bool(self.tags.filter(protected=True).count())
 
     @property
     def is_public(self):
-        tags = self.tags.filter(public=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
+        return bool(self.tags.filter(public=True).count())
 
     @property
     def data_url(self):
-        records = self.file_records.filter(data_repository__data_url__isnull=False,
-                                           exists=True)
+        records = self.file_records.filter(data_repository__data_url__isnull=False, exists=True)
         # returns preferentially globus non-personal endpoint
         if records:
             order_keys = ('data_repository__globus_is_personal', '-data_repository__name')

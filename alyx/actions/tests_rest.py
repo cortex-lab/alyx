@@ -6,6 +6,7 @@ from datetime import timedelta
 from alyx import base
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
+from experiments.models import TaskProtocol
 from misc.models import Lab, Note, ContentType
 from actions.models import Session, WaterType, WaterAdministration
 
@@ -21,6 +22,8 @@ class APIActionsTests(BaseTests):
         self.lab02 = Lab.objects.create(name='awesomelab')
         self.projectX = Project.objects.create(name='projectX')
         self.projectY = Project.objects.create(name='projectY')
+        self.protocolX = TaskProtocol.objects.create(name='ephysChoiceWorld')
+        self.protocolY = TaskProtocol.objects.create(name='passiveChoiceWorld')
         # Set an implant weight.
         self.subject.implant_weight = 4.56
         self.subject.save()
@@ -187,6 +190,45 @@ class APIActionsTests(BaseTests):
         d = self.ar(self.client.get(reverse('session-list') + f'?projects={self.projectY.name}'))
         self.assertEqual(len(d), 1)
 
+    def test_sessions_protocols(self):
+        ses1dict = {'subject': self.subject.nickname,
+                    'users': [self.superuser.username],
+                    'projects': [self.projectX.name],
+                    'start_time': '2020-07-09T12:34:56',
+                    'end_time': '2020-07-09T12:34:57',
+                    'type': 'Base',
+                    'number': '1',
+                    'lab': self.lab01.name,
+                    'task_protocol': [self.protocolX]
+                    }
+        ses2dict = {'subject': self.subject.nickname,
+                    'users': [self.superuser.username, self.superuser2.username],
+                    'projects': [self.projectX.name],
+                    'start_time': '2020-07-09T12:34:56',
+                    'end_time': '2020-07-09T12:34:57',
+                    'type': 'Base',
+                    'number': '2',
+                    'lab': self.lab01.name,
+                    'task_protocol': [self.protocolX, self.protocolY]
+                    }
+        self.ar(self.post(reverse('session-list'), data=ses1dict), 201)
+        self.ar(self.post(reverse('session-list'), data=ses2dict), 201)
+        # Test the user filter, this should return 2 sessions
+        q = f'?task_protocols={self.protocolX.name}'
+        d = self.ar(self.client.get(reverse('session-list') + q))
+        self.assertEqual(len(d), 2)
+        # This should return only one session
+        q = f'?task_protocols={self.protocolY.name}'
+        d = self.ar(self.client.get(reverse('session-list') + q))
+        self.assertEqual(len(d), 1)
+        # test the legacy filter that should act in the same way
+        q = f'?task_protocol={self.protocolX.name}'
+        d = self.ar(self.client.get(reverse('session-list') + q))
+        self.assertEqual(len(d), 2)
+        q = f'?task_protocols={self.protocolY.name}'
+        d = self.ar(self.client.get(reverse('session-list') + q))
+        self.assertEqual(len(d), 1)
+
     def test_sessions(self):
         a_dict4json = {'String': 'this is not a JSON', 'Integer': 4, 'List': ['titi', 4]}
         ses_dict = {'subject': self.subject.nickname,
@@ -201,7 +243,7 @@ class APIActionsTests(BaseTests):
                     'lab': self.lab01.name,
                     'n_trials': 100,
                     'n_correct_trials': 75,
-                    'task_protocol': self.test_protocol,
+                    'task_protocol': [self.protocolX],
                     'json': a_dict4json}
         # Test the session creation
         r = self.post(reverse('session-list'), data=ses_dict)

@@ -4,7 +4,7 @@ import os
 import os.path as op
 import re
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
@@ -88,7 +88,7 @@ def _get_absolute_path(file_record):
         path2 = path2[6:]
     if path2.startswith('/'):
         path2 = path2[1:]
-    path = op.join(path1, path2)
+    path = PurePosixPath(path1, path2).as_posix()
     return path
 
 
@@ -248,7 +248,7 @@ def _create_dataset_file_records(
 
     assert session is not None
     revision_name = f'#{revision.name}#' if revision else ''
-    relative_path = op.join(rel_dir_path, collection or '', revision_name, filename)
+    relative_path = PurePosixPath(rel_dir_path, collection or '', revision_name, filename)
     dataset_type = get_dataset_type(filename, DatasetType.objects.all())
     data_format = get_data_format(filename)
     assert dataset_type
@@ -261,8 +261,9 @@ def _create_dataset_file_records(
 
     # Get or create the dataset.
     dataset, is_new = Dataset.objects.get_or_create(
-        collection=collection, name=filename, session=session,
-        dataset_type=dataset_type, data_format=data_format, revision=revision)
+        collection=collection, name=filename, session=session,  # content_object=session,
+        dataset_type=dataset_type, data_format=data_format, revision=revision
+    )
     dataset.default_dataset = default is True
     dataset.save()
 
@@ -303,7 +304,7 @@ def _create_dataset_file_records(
         exists = repo in exists_in
         # Do not create a new file record if it already exists.
         fr, is_new = FileRecord.objects.get_or_create(
-            dataset=dataset, data_repository=repo, relative_path=relative_path)
+            dataset=dataset, data_repository=repo, relative_path=relative_path.as_posix())
         if is_new or is_patched:
             fr.exists = exists
             fr.json = None  # this is important if a dataset is patched during an ongoing transfer
