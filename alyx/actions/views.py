@@ -486,10 +486,22 @@ class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     lookup_field = 'name'
 
 
+class SurgeriesFilter(BaseFilterSet):
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+
+    class Meta:
+        model = Surgery
+        exclude = ['json']
+
+
 class SurgeriesList(generics.ListAPIView):
     """
-    Lists Surgeries
+        get: **FILTERS**
+
+    -   **subject**: subject nickname `/sessions?subject=Algernon`
+    [===> session model reference](/admin/doc/models/actions.surgery)
     """
     queryset = Surgery.objects.all()
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
+    filter_class = SurgeriesFilter
