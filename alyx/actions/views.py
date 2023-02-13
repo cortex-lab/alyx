@@ -190,6 +190,7 @@ class SessionFilter(BaseFilterSet):
     subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
                                               method='filter_dataset_types')
+    datasets = django_filters.CharFilter(field_name='datasets', method='filter_datasets')
     performance_gte = django_filters.NumberFilter(field_name='performance',
                                                   method=('filter_performance_gte'))
     performance_lte = django_filters.NumberFilter(field_name='performance',
@@ -264,12 +265,21 @@ class SessionFilter(BaseFilterSet):
         )
         return queryset
 
-    def filter_dataset_types(self, queryset, name, value):
+    def filter_dataset_types(self, queryset, _, value):
         dtypes = value.split(',')
         queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
             dtypes_count=Count('data_dataset_session_related__dataset_type', distinct=True))
         queryset = queryset.filter(dtypes_count__gte=len(dtypes))
+        return queryset
+
+    def filter_datasets(self, queryset, _, value):
+        # Note this may later be modified to include collections, e.g. ?datasets=alf/obj.attr.ext
+        dsets = value.split(',')
+        queryset = queryset.filter(data_dataset_session_related__name__in=dsets)
+        queryset = queryset.annotate(
+            dsets_count=Count('data_dataset_session_related', distinct=True))
+        queryset = queryset.filter(dsets_count__gte=len(dsets))
         return queryset
 
     def filter_performance_gte(self, queryset, name, perf):
@@ -317,7 +327,8 @@ class SessionAPIList(generics.ListCreateAPIView):
         get: **FILTERS**
 
     -   **subject**: subject nickname `/sessions?subject=Algernon`
-    -   **dataset_types**: dataset type
+    -   **dataset_types**: dataset type(s) `/sessions?dataset_types=trials.table,camera.times`
+    -   **datasets**: dataset name(s) `/sessions?datasets=_ibl_leftCamera.times.npy`
     -   **number**: session number
     -   **users**: experimenters (exact)
     -   **date_range**: date `/sessions?date_range=2020-01-12,2020-01-16`
