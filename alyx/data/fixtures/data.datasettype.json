@@ -1747,5 +1747,16 @@
       "description": "A list of acquisition devices and behaviour protocols, along with the data and sync file location.  The root keys are (devices, sync, task, procedures).",
       "filename_pattern": "_*_experiment.description.*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "e0614a49-8f18-46b1-a4d9-0710a080fd8d",
+    "fields": {
+      "json": null,
+      "name": "subjectTrials.table",
+      "created_by": null,
+      "description": "All trials data for a given subject, contains the same columns as trials.table, plus \"session\", \"session_start_time\" and \"session_number\"",
+      "filename_pattern": ""
+    }
   }
 ]

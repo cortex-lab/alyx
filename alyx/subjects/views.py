@@ -49,7 +49,7 @@ class SubjectList(generics.ListCreateAPIView):
     queryset = SubjectListSerializer.setup_eager_loading(queryset)
     serializer_class = SubjectListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = SubjectFilter
+    filterset_class = SubjectFilter
 
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):

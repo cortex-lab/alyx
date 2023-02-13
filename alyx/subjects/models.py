@@ -263,7 +263,7 @@ class Subject(BaseModel):
     def age_days(self):
         if (self.death_date is None and self.birth_date is not None):
             # subject still alive
-            age = datetime.now(timezone.utc).date() - self.birth_date
+            age = datetime.utcnow().date() - self.birth_date
         elif (self.death_date is not None and self.birth_date is not None):
             # subject is dead
             age = self.death_date - self.birth_date
