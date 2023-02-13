@@ -1,7 +1,7 @@
 asgiref==3.6.0
 backports.zoneinfo==0.2.1
-boto3==1.26.51
-botocore==1.29.51
+boto3==1.26.69
+botocore==1.29.69
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.0.1
@@ -14,11 +14,11 @@ coverage==6.5.0
 coveralls==3.3.1
 cryptography==36.0.2
 cycler==0.11.0
-Django==4.1.5
+Django==4.1.6
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.9.0
 django-autocomplete-light==3.9.4
-django-cleanup==6.0.0
+django-cleanup==7.0.0
 django-filter==21.1
 django-ipware==4.0.2
 django-js-asset==2.0.0
@@ -26,7 +26,7 @@ django-mptt==0.14.0
 django-polymorphic==3.1.0
 django-reversion==5.0.4
 django-storages==1.13.2
-django-structlog==4.0.1
+django-structlog==4.1.1
 django-test-without-migrations==0.6
 djangorestframework==3.14.0
 docopt==0.6.2
@@ -34,9 +34,9 @@ docutils==0.19
 drfdocs==0.0.11
 flake8==6.0.0
 fonttools==4.38.0
-globus-cli==3.10.1
-globus-sdk==3.15.0
-iblutil==1.4.0
+globus-cli==3.11.0
+globus-sdk==3.16.0
+iblutil==1.5.0
 idna==3.4
 importlib-metadata==6.0.0
 itypes==1.2.0
@@ -51,12 +51,12 @@ matplotlib==3.6.3
 mccabe==0.7.0
 numba==0.56.4
 numpy==1.23.5
-ONE-api==1.18.0
+ONE-api==1.19.1
 packaging==23.0
-pandas==1.5.2
+pandas==1.5.3
 Pillow==9.4.0
 psycopg2-binary==2.9.5
-pyarrow==10.0.1
+pyarrow==11.0.0
 pycodestyle==2.10.0
 pycparser==2.21
 pyflakes==3.0.1
@@ -76,4 +76,4 @@ typing_extensions==4.4.0
 uritemplate==4.1.1
 urllib3==1.26.14
 webdavclient3==3.14.6
-zipp==3.11.0
+zipp==3.13.0
