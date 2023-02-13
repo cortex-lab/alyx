@@ -630,7 +630,11 @@ class Line(BaseModel):
     def new_subject_autoname(self):
         self.subject_autoname_index = self.subject_autoname_index + 1
         self.save()
-        return '%s_%04d' % (self.nickname, self.subject_autoname_index)
+        new_name = '%s_%04d' % (self.nickname, self.subject_autoname_index)
+        if Subject.objects.filter(nickname=new_name).count() > 0:
+            return self.new_subject_autoname()
+        assert Subject.objects.filter(nickname=new_name).count() == 0
+        return new_name
 
     def set_autoname(self, obj):
         if isinstance(obj, BreedingPair):
