@@ -485,7 +485,7 @@ class LabLocationList(generics.ListAPIView):
     permission_classes = rest_permission_classes()
 
 
-class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
+class LabLocationAPIDetail(generics.RetrieveUpdateAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
@@ -511,3 +511,12 @@ class SurgeriesList(generics.ListAPIView):
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
     filter_class = SurgeriesFilter
+
+
+class SurgeriesAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of full detail and update of a surgery.
+    """
+    permission_classes = rest_permission_classes()
+    serializer_class = SurgerySerializer
+    queryset = Surgery.objects.all()
