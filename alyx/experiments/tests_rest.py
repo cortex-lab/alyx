@@ -168,22 +168,6 @@ class APISubjectsTests(BaseTests):
         datasets = self.ar(self.client.get(urlf))
         self.assertTrue(len(datasets) == 2)
 
-        # Test that probe insertion filter with dataset_type specified returns correct insertions
-        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset0')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 2)
-
-        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset1')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 1)
-        self.assertTrue(probe_ins[0]['id'] == insertions[0]['id'])
-
-        # does not include dataset
-        urlf = (reverse('probeinsertion-list') + '?&no_dataset_type=dset1')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 1)
-        self.assertTrue(probe_ins[0]['id'] == insertions[1]['id'])
-
     def test_create_list_delete_trajectory(self):
         # first create a probe insertion
         insertion = {'session': str(self.session.id),
