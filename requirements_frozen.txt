@@ -1,7 +1,7 @@
 asgiref==3.6.0
 backports.zoneinfo==0.2.1
-boto3==1.26.69
-botocore==1.29.69
+boto3==1.26.81
+botocore==1.29.81
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.0.1
@@ -39,6 +39,7 @@ globus-sdk==3.16.0
 iblutil==1.5.0
 idna==3.4
 importlib-metadata==6.0.0
+importlib-resources==5.12.0
 itypes==1.2.0
 Jinja2==3.1.2
 jmespath==1.0.1
@@ -47,11 +48,11 @@ llvmlite==0.39.1
 lxml==4.9.2
 Markdown==3.4.1
 MarkupSafe==2.1.2
-matplotlib==3.6.3
+matplotlib==3.7.0
 mccabe==0.7.0
 numba==0.56.4
 numpy==1.23.5
-ONE-api==1.19.1
+ONE-api==1.21.0
 packaging==23.0
 pandas==1.5.3
 Pillow==9.4.0
@@ -72,8 +73,8 @@ six==1.16.0
 sqlparse==0.4.3
 structlog==22.3.0
 tqdm==4.64.1
-typing_extensions==4.4.0
+typing_extensions==4.5.0
 uritemplate==4.1.1
 urllib3==1.26.14
 webdavclient3==3.14.6
-zipp==3.13.0
+zipp==3.15.0
