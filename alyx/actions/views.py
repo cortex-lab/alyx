@@ -251,10 +251,6 @@ class SessionFilter(BaseActionFilter):
     def filter_tag(self, queryset, name, value):
         """
         returns sessions that contain datasets tagged as
-        :param queryset:
-        :param name:
-        :param value:
-        :return:
         """
         queryset = queryset.filter(
             data_dataset_session_related__tags__name__icontains=value).distinct()
@@ -496,6 +492,8 @@ class LabLocationAPIDetail(generics.RetrieveUpdateAPIView):
 
 
 class SurgeriesFilter(BaseActionFilter):
+    procedure = django_filters.CharFilter(field_name='procedures__name', lookup_expr=('iexact'))
+
     class Meta(BaseActionFilter.Meta):
         model = Surgery
 
@@ -507,7 +505,7 @@ class SurgeriesList(generics.ListAPIView):
     -   **subject**: subject nickname `/sessions?subject=Algernon`
     [===> session model reference](/admin/doc/models/actions.surgery)
     """
-    queryset = Surgery.objects.all()
+    queryset = Surgery.objects.all().order_by('-start_time')
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
     filter_class = SurgeriesFilter
