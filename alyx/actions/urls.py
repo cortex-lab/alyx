@@ -29,7 +29,7 @@ urlpatterns = [
 
     path('locations', av.LabLocationList.as_view(), name="location-list"),
 
-    path('locations/<str:name>', av.LabLocationAPIDetails.as_view(),
+    path('locations/<str:name>', av.LabLocationAPIDetail.as_view(),
          name="location-detail"),
 
     path('procedures', av.ProcedureTypeList.as_view(), name="procedures-list"),
@@ -39,7 +39,9 @@ urlpatterns = [
     path('sessions/<uuid:pk>', av.SessionAPIDetail.as_view(),
          name="session-detail"),
 
-    path('surgeries', av.SurgeriesList.as_view(), name="surgeries-list"),
+    path('surgeries', av.SurgeriesList.as_view(), name='surgeries-list'),
+
+    path('surgeries/<uuid:pk>', av.SurgeriesAPIDetail.as_view(), name='surgeries-detail'),
 
     path('water-administrations', av.WaterAdministrationAPIListCreate.as_view(),
          name="water-administration-create"),

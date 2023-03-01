@@ -8,6 +8,7 @@ from alyx.base import BaseTests
 from subjects.models import Subject, Project
 from misc.models import Lab, Note, ContentType
 from actions.models import Session, WaterType, WaterAdministration
+from data.models import Dataset, DatasetType
 
 
 class APIActionsTests(BaseTests):
@@ -248,7 +249,7 @@ class APIActionsTests(BaseTests):
         self.assertTrue(len(d) == 1)
         d = self.ar(self.client.get(reverse('session-list') + '?performance_lte=50'))
         self.assertEqual(d[0]['url'], s2['url'])
-        self.assertTrue(len(d) == 1)
+        self.assertEqual(1, len(d))
         # test the Session serializer water admin related field
         ses = Session.objects.get(subject=self.subject, users=self.superuser,
                                   lab__name='superlab', start_time__date='2018-07-09')
@@ -261,7 +262,24 @@ class APIActionsTests(BaseTests):
         Note.objects.create(user=self.superuser, text='gnagnagna', content_type=ct,
                             object_id=s1['url'][-36:])
         d = self.ar(self.client.get(reverse('session-detail', args=[s1['url'][-36:]])))
-        self.assertTrue(d['notes'][0]['text'] == 'gnagnagna')
+        self.assertEqual('gnagnagna', d['notes'][0]['text'])
+        # test dataset type filters
+        dtype1, _ = DatasetType.objects.get_or_create(name='trials.table')
+        dtype2, _ = DatasetType.objects.get_or_create(name='wheel.position')
+        Dataset.objects.create(session=ses, name='_ibl_trials.table.pqt', dataset_type=dtype1)
+        Dataset.objects.create(session=ses, name='_ibl_wheel.position.npy', dataset_type=dtype2)
+        d = self.ar(self.client.get(reverse('session-list') + '?dataset_types=wheel.position'))
+        self.assertCountEqual([str(ses.pk)], (x['id'] for x in d))
+        q = '?dataset_types=wheel.position,trials.table'  # Check with list
+        self.assertEqual(d, self.ar(self.client.get(reverse('session-list') + q)))
+        q += ',trials.intervals'
+        self.assertFalse(self.ar(self.client.get(reverse('session-list') + q)))
+        # test dataset filters
+        q = '?datasets=_ibl_wheel.position.npy'
+        d = self.ar(self.client.get(reverse('session-list') + q))
+        self.assertCountEqual([str(ses.pk)], (x['id'] for x in d))
+        q = '?datasets=wheel.position'
+        self.assertFalse(self.ar(self.client.get(reverse('session-list') + q)))
 
     def test_surgeries(self):
         from actions.models import Surgery
