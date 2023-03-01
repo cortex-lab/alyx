@@ -5,7 +5,7 @@ from django.core.management import call_command
 from alyx.base import BaseTests
 from actions.models import Session
 from experiments.models import ProbeInsertion
-from data.models import Dataset
+from data.models import Dataset, DatasetType, Tag
 
 
 class APISubjectsTests(BaseTests):
@@ -168,22 +168,6 @@ class APISubjectsTests(BaseTests):
         datasets = self.ar(self.client.get(urlf))
         self.assertTrue(len(datasets) == 2)
 
-        # Test that probe insertion filter with dataset_type specified returns correct insertions
-        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset0')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 2)
-
-        urlf = (reverse('probeinsertion-list') + '?&dataset_type=dset1')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 1)
-        self.assertTrue(probe_ins[0]['id'] == insertions[0]['id'])
-
-        # does not include dataset
-        urlf = (reverse('probeinsertion-list') + '?&no_dataset_type=dset1')
-        probe_ins = self.ar(self.client.get(urlf))
-        self.assertTrue(len(probe_ins) == 1)
-        self.assertTrue(probe_ins[0]['id'] == insertions[1]['id'])
-
     def test_create_list_delete_trajectory(self):
         # first create a probe insertion
         insertion = {'session': str(self.session.id),
@@ -341,3 +325,50 @@ class APISubjectsTests(BaseTests):
         urlf = (url + '?session=' + str(self.session.id))
         chron = self.ar(self.client.get(urlf))
         self.assertTrue(len(chron) == 1)
+
+    def test_dataset_filters(self):
+
+        # make a probe insertion
+        url = reverse('probeinsertion-list')
+        response = self.post(url, self.dict_insertion)
+        probe = self.ar(response, 201)
+
+        # test dataset type filters
+        dtype1, _ = DatasetType.objects.get_or_create(name='spikes.times')
+        dtype2, _ = DatasetType.objects.get_or_create(name='clusters.amps')
+        tag, _ = Tag.objects.get_or_create(name='tag_test')
+
+        d1 = Dataset.objects.create(session=self.session, name='spikes.times.npy',
+                                    dataset_type=dtype1, collection='alf/probe_00')
+        Dataset.objects.create(session=self.session, name='clusters.amps.npy',
+                               dataset_type=dtype2, collection='alf/probe_00')
+        d1.tags.add(tag)
+        d1.save()
+
+        d = self.ar(self.client.get(reverse('probeinsertion-list') +
+                                    '?dataset_types=spikes.times'))
+        self.assertEqual(len(d), 1)
+        self.assertEqual(probe['id'], d[0]['id'])
+
+        q = '?dataset_types=spikes.times,clusters.amps'  # Check with list
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1)
+        self.assertEqual(probe['id'], d[0]['id'])
+
+        q += ',spikes.amps'
+        self.assertFalse(self.ar(self.client.get(reverse('probeinsertion-list') + q)))
+
+        # test dataset filters
+        q = '?datasets=spikes.times.npy'
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1)
+        self.assertEqual(probe['id'], d[0]['id'])
+
+        q = '?datasets=clusters.amps'
+        self.assertFalse(self.ar(self.client.get(reverse('probeinsertion-list') + q)))
+
+        # test filtering by tag
+        q = '?tag=tag_test'
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1)
+        self.assertEqual(probe['id'], d[0]['id'])
