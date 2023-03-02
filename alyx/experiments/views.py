@@ -107,7 +107,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **subject**: subject nickname: `/insertions?subject=Algernon`
     -   **date**: session date: `/inssertions?date=2020-01-15`
     -   **experiment_number**: session number `/insertions?experiment_number=1`
-    -   **session**: session UUDI`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **session**: session UUID`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **task_protocol** (icontains)
     -   **location**: location name (icontains)
     -   **project**: project name (icontains)
@@ -145,7 +145,7 @@ Trajectory Estimates objects REST filters and views
 class TrajectoryEstimateFilter(BaseFilterSet):
     provenance = CharFilter(method='enum_field_filter')
     subject = CharFilter('probe_insertion__session__subject__nickname')
-    project = CharFilter('probe_insertion__session__project__name')
+    project = CharFilter('probe_insertion__session__projects__name')
     date = CharFilter('probe_insertion__session__start_time__date')
     experiment_number = CharFilter('probe_insertion__session__number')
     session = UUIDFilter('probe_insertion__session__id')

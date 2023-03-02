@@ -1,12 +1,6 @@
-## TODO
-* write instructions in the Alyx playbook
----
-Nice to haves:
+## Future nice to haves:
 * autodeploy docker base image from master merge or PR 
 * auto-deployment/auto-redeployment when a PR for master or dev is completed (there are a few different ways to tackle this)
-* cleanup aws security groups (find better organization)
-  * auto update relevant aws security groups when deploying, utilize awscli
-* auto update gandi DNS when deploying alyx-dev (gandi api - https://api.gandi.net/docs/livedns/)
 
 ## Infrastructure (AWS, Gandi)
 Steps involved to ensure the appropriate infrastructure is in place for running docker.
@@ -68,16 +62,6 @@ sudo apt-get install -y \
 
 # Verify Docker is installed
 sudo docker run hello-world
-
-# Download and configure cloudwatch logging (if relevant)
-wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
-# modify the config if mistakes were made or just for more granular logging
-sudo vim /opt/aws/amazon-cloudwatch-agent/bin/config.json
-sudo mv /opt/aws/amazon-cloudwatch-agent/bin/config.json /home/ubuntu/alyx-docker/cloudwatch_config.json 
-# start logging
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json
 
 # Perform any remaining package upgrades
 sudo apt upgrade -y

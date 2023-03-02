@@ -5,28 +5,29 @@ import json
 import logging
 from pathlib import Path
 import urllib.parse
-from datetime import datetime
 from functools import wraps
 from sys import getsizeof
 import zipfile
 import tempfile
-import re
 
-import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
+from iblutil.io.parquet import uuid2np
+from one.alf.cache import _metadata
+from one.remote.aws import get_s3_virtual_host
 
 from django.db import connection
 from django.db.models import Q, Exists, OuterRef
 from django.core.management.base import BaseCommand
+from django.contrib.postgres.aggregates import ArrayAgg
 
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
 from data.models import Dataset, FileRecord
 
 logger = logging.getLogger(__name__)
-ONE_API_VERSION = '1.10.0'  # Minimum compatible ONE api version
+ONE_API_VERSION = '1.13.0'  # Minimum compatible ONE api version
 
 
 def measure_time(func):
@@ -56,26 +57,6 @@ def _s3_filesystem(**kwargs) -> pa.fs.S3FileSystem:
         S3_ACCESS = {}
     S3_ACCESS.update(kwargs)
     return pa.fs.S3FileSystem(**S3_ACCESS)
-
-
-def _get_s3_virtual_host(uri, region) -> str:
-    """
-    Convert a given bucket URI to a generic Amazon virtual host URL.
-    URI may be the bucket (+ path) or a full URI starting with 's3://'
-
-    S3 documentation:
-    https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html#virtual-host-style-url-ex
-
-    :param uri: The bucket name or full path URI
-    :param region: The region, e.g. eu-west-1
-    :return: The Web URL (virtual host name and https scheme)
-    """
-    assert region and re.match(r'\w{2}-\w+-[1-3]', region), 'Invalid region'
-    parsed = urllib.parse.urlparse(uri)  # remove scheme if necessary
-    key = parsed.path.strip('/').split('/')
-    bucket = parsed.netloc or key.pop(0)
-    hostname = f"{bucket}.{parsed.scheme or 's3'}.{region}.amazonaws.com"
-    return 'https://' + '/'.join((hostname, *key))
 
 
 def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> pa.Table:
@@ -114,11 +95,6 @@ def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> 
     return table
 
 
-def _uuid2np(eids_uuid):
-    return np.asfortranarray(
-        np.array([np.frombuffer(eid.bytes, dtype=np.int64) for eid in eids_uuid]))
-
-
 class Command(BaseCommand):
     """
     NB: When compress flag is passed, all tables are expected to fit into memory together.
@@ -138,6 +114,8 @@ class Command(BaseCommand):
                             help="Save uuids as ints")
         parser.add_argument('--compress', action='store_true',
                             help="Save files into compressed folder")
+        parser.add_argument('--tag', nargs='*',
+                            help="List of tag names to filter datasets by")
 
     def handle(self, *_, **options):
         if options['verbosity'] < 1:
@@ -147,7 +125,7 @@ class Command(BaseCommand):
         self.dst_dir = options.get('destination')
         self.compress = options.get('compress')
         tables, int_id = options.get('tables'), options.get('int_id')
-        self.generate_tables(tables, int_id=int_id)
+        self.generate_tables(tables, int_id=int_id, tags=options.get('tag'))
 
     def generate_tables(self, tables, **kwargs) -> list:
         """
@@ -157,6 +135,8 @@ class Command(BaseCommand):
         :return: A list of paths to the saved files
         """
         self.metadata = create_metadata()
+        if kwargs.get('tags'):
+            self.metadata['database_tags'] = kwargs.get('tags')
         to_compress = {}
         dry = self.compress
         for table in tables:
@@ -233,7 +213,7 @@ class Command(BaseCommand):
                 zip_file = f'{parsed.netloc}/{parsed.path.strip("/")}/{ZIP_NAME}'
                 tag_file = f'{parsed.netloc}/{parsed.path.strip("/")}/{META_NAME}'
                 s3 = _s3_filesystem()
-                metadata['location'] = _get_s3_virtual_host(zip_file, s3.region)  # Add URL
+                metadata['location'] = get_s3_virtual_host(zip_file, s3.region)  # Add URL
                 # Write cache info json to s3
                 logger.debug(f'Opening output stream to {tag_file}')
                 with s3.open_output_stream(tag_file) as stream:
@@ -258,7 +238,7 @@ class Command(BaseCommand):
 
 
 @measure_time
-def generate_sessions_frame(int_id=True) -> pd.DataFrame:
+def generate_sessions_frame(int_id=True, tags=None) -> pd.DataFrame:
     """SESSIONS_COLUMNS = (
         'id',               # uuid str
         'lab',              # str
@@ -266,33 +246,41 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
         'date',             # str yyyy-mm-dd
         'number',           # int64
         'task_protocol',    # str
-        'project'           # str
+        'projects'           # str
     )
     """
     fields = ('id', 'lab__name', 'subject__nickname', 'start_time__date',
-              'number', 'task_protocol', 'project__name')
+              'number', 'task_protocol', 'all_projects')
     query = (Session
              .objects
-             .select_related('subject', 'lab', 'project')
+             .select_related('subject', 'lab')
+             .prefetch_related('projects')
+             .annotate(all_projects=ArrayAgg('projects__name'))
              .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
-    df = pd.DataFrame.from_records(query.values(*fields))
+    if tags:
+        if not isinstance(tags, str):
+            query = query.filter(data_dataset_session_related__tags__name__in=tags)
+        else:
+            query = query.filter(data_dataset_session_related__tags__name=tags)
+    df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
+    df['all_projects'] = df['all_projects'].map(lambda x: ','.join(filter(None, set(x))))
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
-            .rename({'start_time': 'date'}, axis=1)
+            .rename({'start_time': 'date', 'all_projects': 'projects'}, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
             .sort_values(['date', 'subject', 'number'], ascending=False))
     )
     df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
     # These columns may be empty; ensure None -> ''
-    for col in ('task_protocol', 'project'):
+    for col in ('task_protocol', 'projects'):
         df[col] = df[col].astype(str)
 
     if int_id:
         # Convert UUID objects to 2xint64
-        df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
+        df[['id_0', 'id_1']] = uuid2np(df['id'].values)
         df = (
             (df
                 .drop('id', axis=1)
@@ -308,7 +296,7 @@ def generate_sessions_frame(int_id=True) -> pd.DataFrame:
 
 
 @measure_time
-def generate_datasets_frame(int_id=True) -> pd.DataFrame:
+def generate_datasets_frame(int_id=True, tags=None) -> pd.DataFrame:
     """DATASETS_COLUMNS = (
         'id',               # uuid str
         'eid',              # uuid str
@@ -329,6 +317,9 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
                        data_repository__name__startswith='aws').values('pk')
     # Fetch datasets and their related tables
     ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
+    if tags:
+        kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
+        ds = ds.prefetch_related('tag').filter(**kw)
     # Filter out datasets that do not exist on either repository
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
     ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True))
@@ -358,8 +349,8 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
 
     if int_id:
         # Convert UUID objects to 2xint64
-        df[['id_0', 'id_1']] = _uuid2np(df['id'].values)
-        df[['eid_0', 'eid_1']] = _uuid2np(df['eid'].values)
+        df[['id_0', 'id_1']] = uuid2np(df['id'].values)
+        df[['eid_0', 'eid_1']] = uuid2np(df['eid'].values)
         df = (
             (df
                 .drop(['id', 'eid'], axis=1)
@@ -377,11 +368,9 @@ def generate_datasets_frame(int_id=True) -> pd.DataFrame:
 
 def create_metadata() -> dict:
     """Create ONE metadata dictionary"""
-    return {
-        'date_created': datetime.now().isoformat(sep=' ', timespec='minutes'),
-        'origin': connection.settings_dict['NAME'] or socket.gethostname(),
-        'min_api_version': ONE_API_VERSION
-    }
+    meta = _metadata(connection.settings_dict['NAME'] or socket.gethostname())
+    meta['min_api_version'] = ONE_API_VERSION
+    return meta
 
 
 def update_table_metadata(table: pa.Table, metadata: dict) -> pa.Table:

@@ -52,7 +52,7 @@ def get_local_globus_path():
     message = 'Please make a config-paths file in ./globus/lta that contains the ' \
               'folder on your local endpoint accessible by globus e.g echo "/mnt/s0/Data" > ' \
               '~/.globusonline/lta/config-paths'
-    assert(config_path.joinpath("config-paths").exists()), message
+    assert config_path.joinpath("config-paths").exists(), message
     with open(config_path.joinpath("config-paths"), 'r') as fid:
         globus_path = fid.read()
 
@@ -105,23 +105,23 @@ class TestTransfers(object):
 
         # Make sure we can log in
         self.gtc = globus_login(GLOBUS_CLIENT_ID)
-        assert(self.gtc)
+        assert self.gtc
 
         # Check that the local endpoint is connected
         self.local_endpoint_id = get_local_endpoint()
         endpoint_info = self.gtc.get_endpoint(self.local_endpoint_id)
-        assert(endpoint_info['gcp_connected'])
+        assert endpoint_info['gcp_connected']
 
         # Check that the flatiron endpoint is connected
         self.flatiron_endpoint_id = (DataRepository.objects.filter(globus_is_personal=False,
                                                                    name__icontains='flatiron').
                                      first().globus_endpoint_id)
         endpoint_info = self.gtc.get_endpoint(self.flatiron_endpoint_id)
-        assert(endpoint_info['gcp_connected'] is not False)
+        assert endpoint_info['gcp_connected'] is not False
 
         # Make sure we have the correct accessible local globus path
         local_globus_path = get_local_globus_path()
-        assert(self.gtc.operation_ls(self.local_endpoint_id, path=local_globus_path))
+        assert self.gtc.operation_ls(self.local_endpoint_id, path=local_globus_path)
 
         # Connect to client and check we can log in properly
         client = Client()
@@ -275,8 +275,8 @@ class TestTransfers(object):
 
         # Run in dry mode and check you get the correct
         dm = globus_delete_local_datasets(dsets_to_del, dry=True, gc=self.gtc)
-        assert(dm['endpoint'] == self.local_endpoint_id)
-        assert(dm['DATA'][0]['path'] == exp_files[0])
+        assert dm['endpoint'] == self.local_endpoint_id
+        assert dm['DATA'][0]['path'] == exp_files[0]
         # Make sure dry mode hasn't actually deleted anything
         self.assert_delete_datasets(dsets_to_del, before_del=True)
 
@@ -289,7 +289,7 @@ class TestTransfers(object):
         ls_local = self.gtc.operation_ls(self.local_endpoint_id,
                                          path=str(Path(exp_files[0]).parent))
         ls_files = [ls['name'] for ls in ls_local['DATA']]
-        assert(not Path(exp_files[0]).name in ls_files)
+        assert not Path(exp_files[0]).name in ls_files
 
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
                                               name='spikes.times.npy')
@@ -301,7 +301,7 @@ class TestTransfers(object):
         _ = create_data(dsets, data_path, size=300)
 
         dm = globus_delete_local_datasets(dsets_to_del, dry=True, gc=self.gtc)
-        assert(dm == [])
+        assert dm == []
         self.assert_delete_datasets(dsets_to_del, before_del=True)
         globus_delete_local_datasets(dsets_to_del, dry=False, gc=self.gtc)
         # As the delete should have failed we expect to be the same as before we ran delete command
@@ -320,7 +320,7 @@ class TestTransfers(object):
 
         # Try the local only with dry = True
         file_to_del = globus_delete_datasets(dsets_to_del, dry=True, local_only=True, gc=self.gtc)
-        assert(all([file == exp for file, exp in zip(file_to_del, exp_files)]))
+        assert all(file == exp for file, exp in zip(file_to_del, exp_files))
         # Make sure non have been deleted
         self.assert_delete_datasets(dsets_to_del, before_del=True)
 
@@ -332,7 +332,7 @@ class TestTransfers(object):
         ls_local = self.gtc.operation_ls(self.local_endpoint_id,
                                          path=str(Path(exp_files[0]).parent))
         # have spikes.times left
-        assert(len(ls_local['DATA']) == 1)
+        assert len(ls_local['DATA']) == 1
 
         # Now delete off the server too
         globus_delete_datasets(dsets_to_del, dry=False, local_only=False, gc=self.gtc)
@@ -341,7 +341,7 @@ class TestTransfers(object):
         ls_flatiron = self.gtc.operation_ls(self.flatiron_endpoint_id,
                                             path=str(Path(exp_files_server[0]).parent))
         # have spikes.times and spikes.amps left
-        assert(len(ls_flatiron['DATA']) == 2)
+        assert len(ls_flatiron['DATA']) == 2
 
     @staticmethod
     def assert_delete_datasets(dsets2del, local_only=True, before_del=False):

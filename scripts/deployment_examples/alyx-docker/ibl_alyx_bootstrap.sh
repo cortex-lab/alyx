@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Once this script is in the desired directory of a newly created instance, a sample command to run:
-# sudo sh ibl_alyx_bootstrap.sh alyx-dev
+# sudo bash ibl_alyx_bootstrap.sh alyx-dev
 
 echo "NOTE: Installation log can be found in the directory the script is called from and named 'ibl_alyx_bootstrap_install.log'"
 {
@@ -77,7 +77,6 @@ aws s3 cp s3://alyx-docker/privkey.pem-"$1" .
 aws s3 cp s3://alyx-docker/settings.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_lab.py-"$1" .
 aws s3 cp s3://alyx-docker/settings_secret.py-"$1" .
-aws s3 cp s3://alyx-docker/cloudwatch_config.json-"$1" .
 
 echo "Building out docker image..."
 docker build \
@@ -100,11 +99,6 @@ echo "Building out crontab entries..."
 echo -e "${LOG_CRON}\n${CERTBOT_CRON}" >> temp_cron
 crontab temp_cron # install new cron file
 rm temp_cron # remove temp_cron file
-
-echo "Download and configure cloudwatch logging..."
-wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-dpkg -i -E ./amazon-cloudwatch-agent.deb
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ubuntu/alyx-docker/cloudwatch_config.json-"$1"
 
 echo "Adding alias to .bashrc..."
 echo '' >> /home/ubuntu/.bashrc \

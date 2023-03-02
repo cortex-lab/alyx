@@ -774,33 +774,44 @@ def _bp_subjects(line, sex):
     return qs
 
 
+def _bp_cage(bp):
+    """Return the cage of a breeding pair, defined as the cage of the father or mother."""
+    for w in ('father', 'mother1', 'mother2'):
+        subject = getattr(bp, w, None)
+        if subject and subject.cage:
+            return subject.cage
+
+
 class BreedingPairAdminForm(forms.ModelForm):
     cage = forms.CharField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(BreedingPairAdminForm, self).__init__(*args, **kwargs)
+
+        # The current breeding pair.
+        bp = self.instance
+
+        # If updating an existing breeding pair, set the breeding pair cage.
+        if bp and bp.pk is not None:
+            self.fields['cage'].initial = _bp_cage(bp)
+        # Otherwise, if creating a new breeding pair, do not prefill the cage.
+
+        # Prefill the list of possible subjects in the father and mother fields.
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
-            # Remove this feature as requested by Charu (03/2022)
-            # p = getattr(self.instance, w, None)
-            # if p and p.cage:
-            #     self.fields['cage'].initial = p.cage
-
             if w in self.fields:
                 self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
 
-    # def save(self, commit=True):
-    #     cage = self.cleaned_data.get('cage')
-    #     if cage:
-    #         for w in ('father', 'mother1', 'mother2'):
-    #             p = getattr(self.instance, w, None)
-    #             if p:
-
-    #                 # Bug fix (request by Charu in 03/2022): allow cage ids to be non integers
-    #                 # p.cage = int(cage)
-
-    #                 p.save()
-    #     return super(BreedingPairAdminForm, self).save(commit=commit)
+    def save(self, commit=True):
+        cage = self.cleaned_data.get('cage')
+        # When setting a cage, assign it to the subjects.
+        if cage:
+            for w in ('father', 'mother1', 'mother2'):
+                p = getattr(self.instance, w, None)
+                if p:
+                    p.cage = str(cage)
+                    p.save()
+        return super(BreedingPairAdminForm, self).save(commit=commit)
 
     class Meta:
         fields = '__all__'

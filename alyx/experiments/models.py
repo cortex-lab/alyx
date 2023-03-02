@@ -241,7 +241,7 @@ class FOVLocation(BaseModel):
         default=Provenance.ESTIMATE,
         help_text=_phelp
     )
-    default_provinance = models.BooleanField(default=False)
+    default_provenance = models.BooleanField(default=False)
 
     x1 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
     y1 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
@@ -263,13 +263,13 @@ class FOVLocation(BaseModel):
     ny = models.FloatField(blank=True, null=True, help_text='Number of pixels in y-axis')
     nz = models.FloatField(blank=True, null=True, help_text='Number of pixels in z-axis')
 
-    brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
-                                     on_delete=models.SET_NULL, related_name='brain_region')
+    brain_region = models.ManyToManyField(
+        BrainRegion, default=0, null=True, blank=True, related_name='brain_region')
 
     def save(self, *args, **kwargs):
         """Ensure only one provenance can be set as default"""
         locations = FOVLocation.objects.filter(
             field_of_view=self.field_of_view, default_provinance=True)
-        if self.default_provinance and locations.count() > 0:
+        if self.default_provenance and locations.count() > 0:
             locations.update(default_provinance=False)
         super().save(*args, **kwargs)

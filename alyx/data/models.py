@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields, BaseManager
+from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField
 
 
 def _related_string(field):
@@ -136,8 +136,8 @@ class DatasetType(BaseModel):
     objects = NameManager()
 
     name = models.CharField(
-        max_length=255, unique=True, blank=True,
-        help_text="Short identifying nickname, e.g. 'spikes'")
+        max_length=255, unique=True, blank=True, null=False,
+        help_text="Short identifying nickname, e.g. 'spikes.times'")
 
     created_by = models.ForeignKey(
         AUTH_USER_MODEL, blank=True, null=True,
@@ -152,17 +152,25 @@ class DatasetType(BaseModel):
         "the collection. E.g. 'Files related to spike events, including spikes.times.npy, "
         "spikes.clusters.npy, spikes.amps.npy, spikes.depths.npy")
 
-    filename_pattern = models.CharField(
-        max_length=255, unique=True,
+    filename_pattern = CharNullField(
+        max_length=255, unique=True, null=True, blank=True,
         help_text="File name pattern (with wildcards) for this file in ALF naming convention. "
         "E.g. 'spikes.times.*' or '*.timestamps.*', or 'spikes.*.*' for a DataCollection, which "
-        "would include all files starting with the word 'spikes'.")
+        "would include all files starting with the word 'spikes'. NB: Case-insensitive matching."
+        "If null, the name field must match the object.attribute part of the filename."
+    )
 
     class Meta:
         ordering = ('name',)
 
     def __str__(self):
         return "<DatasetType %s>" % self.name
+
+    def save(self, *args, **kwargs):
+        """Ensure filename_pattern is lower case."""
+        if self.filename_pattern:
+            self.filename_pattern = self.filename_pattern.lower()
+        return super().save(*args, **kwargs)
 
 
 class BaseExperimentalData(BaseModel):
@@ -394,8 +402,8 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        from data.transfers import _add_uuid_to_filename
-        return _add_uuid_to_filename(root + self.relative_path, self.dataset.pk)
+        from one.alf.files import add_uuid_string
+        return root + add_uuid_string(self.relative_path, self.dataset.pk).as_posix()
 
     def save(self, *args, **kwargs):
         """this is to trigger the update of the auto-date field"""

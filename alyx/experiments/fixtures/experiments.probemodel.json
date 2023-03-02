@@ -20,5 +20,27 @@
   "probe_model": "3B2",
   "description": null
  }
+},
+  {
+ "model": "experiments.probemodel",
+ "pk": "5df5182a-5113-4e37-b690-0e6cae3abc6a",
+ "fields": {
+  "name": "Neuropixel 2.0 single shank",
+  "json": null,
+  "probe_manufacturer": "Imec",
+  "probe_model": "NP2.1",
+  "description": null
+  }
+ },
+ {
+ "model": "experiments.probemodel",
+ "pk": "6f586705-13a7-4c2a-ac4a-ef58b10d9bc4",
+ "fields": {
+  "name": "Neuropixel 2.0 four shank",
+  "json": null,
+  "probe_manufacturer": "Imec",
+  "probe_model": "NP2.4",
+  "description": null
+ }
 }
 ]

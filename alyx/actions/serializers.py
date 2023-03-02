@@ -7,13 +7,13 @@ from alyx.base import BaseSerializerEnumField
 from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Subject, Project
-from data.models import Dataset, DatasetType, FileRecord, DataRepository
+from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
-from experiments.serializers import ProbeInsertionListSerializer
+from experiments.serializers import ProbeInsertionListSerializer, FilterDatasetSerializer
 from misc.serializers import NoteSerializer
 
 
-SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'project', 'type',
+SESSION_FIELDS = ('subject', 'users', 'location', 'procedures', 'lab', 'projects', 'type',
                   'task_protocol', 'number', 'start_time', 'end_time', 'narrative',
                   'parent_session', 'n_correct_trials', 'n_trials', 'url', 'extended_qc', 'qc',
                   'wateradmin_session_related', 'data_dataset_session_related',
@@ -89,17 +89,6 @@ class LabLocationSerializer(serializers.ModelSerializer):
         fields = ('name', 'lab', 'json')
 
 
-class FilterDatasetSerializer(serializers.ListSerializer):
-
-    def to_representation(self, dsets):
-        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
-            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
-            pkd = frs.filter(exists=True, data_repository__globus_is_personal=False
-                             ).values_list("dataset", flat=True)
-            dsets = dsets.filter(pk__in=pkd)
-        return super(FilterDatasetSerializer, self).to_representation(dsets)
-
-
 class SessionDatasetsSerializer(serializers.ModelSerializer):
 
     dataset_type = serializers.SlugRelatedField(
@@ -128,19 +117,21 @@ class SessionWaterAdminSerializer(serializers.ModelSerializer):
 
 
 class SessionListSerializer(BaseActionSerializer):
-    project = serializers.SlugRelatedField(read_only=False,
-                                           slug_field='name',
-                                           queryset=Project.objects.all())
+    projects = serializers.SlugRelatedField(read_only=False,
+                                            slug_field='name',
+                                            queryset=Project.objects.all(),
+                                            many=True)
 
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'lab', 'project')
+        queryset = queryset.select_related('subject', 'lab')
+        queryset = queryset.prefetch_related('projects')
         return queryset.order_by('-start_time')
 
     class Meta:
         model = Session
-        fields = ('id', 'subject', 'start_time', 'number', 'lab', 'project', 'url',
+        fields = ('id', 'subject', 'start_time', 'number', 'lab', 'projects', 'url',
                   'task_protocol')
 
 
@@ -149,8 +140,8 @@ class SessionDetailSerializer(BaseActionSerializer):
     data_dataset_session_related = SessionDatasetsSerializer(read_only=True, many=True)
     wateradmin_session_related = SessionWaterAdminSerializer(read_only=True, many=True)
     probe_insertion = ProbeInsertionListSerializer(read_only=True, many=True)
-    project = serializers.SlugRelatedField(read_only=False, slug_field='name', many=False,
-                                           queryset=Project.objects.all(), required=False)
+    projects = serializers.SlugRelatedField(read_only=False, slug_field='name', many=True,
+                                            queryset=Project.objects.all(), required=False)
     notes = NoteSerializer(read_only=True, many=True)
     qc = BaseSerializerEnumField(required=False)
 
@@ -201,6 +192,12 @@ class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
         model = Weighing
         fields = ('subject', 'date_time', 'weight',
                   'user', 'url')
+
+
+class ProcedureTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProcedureType
+        fields = ('__all__')
 
 
 class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):

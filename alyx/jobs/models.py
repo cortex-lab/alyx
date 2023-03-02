@@ -47,12 +47,15 @@ class Task(models.Model):
     parents = models.ManyToManyField('self', blank=True, related_name='children',
                                      symmetrical=False)
     datetime = models.DateTimeField(auto_now=True)
+    arguments = models.JSONField(blank=True, null=True, help_text="dictionary of input arguments")
+    data_repository = models.ForeignKey('data.DataRepository', null=True, blank=True,
+                                        related_name='tasks', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name + '  ' + str(self.session) + '  ' + self.get_status_display()
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['name', 'session'],
-                                    name='unique_task_name_per_session')
+            models.UniqueConstraint(fields=['name', 'session', 'arguments'],
+                                    name='unique_name_arguments_per_session')
         ]

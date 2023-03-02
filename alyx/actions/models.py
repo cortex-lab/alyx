@@ -243,7 +243,10 @@ class Session(BaseAction):
                                        on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
     project = models.ForeignKey('subjects.Project', null=True, blank=True,
-                                on_delete=models.SET_NULL, verbose_name='Session Project')
+                                on_delete=models.SET_NULL, verbose_name='Session Project',
+                                related_name='oldproject')
+    projects = models.ManyToManyField('subjects.Project', blank=True,
+                                      verbose_name='Session Projects')
     type = models.CharField(max_length=255, null=True, blank=True,
                             help_text="User-defined session type (e.g. Base, Experiment)")
     number = models.IntegerField(null=True, blank=True,
@@ -341,7 +344,7 @@ class WaterRestriction(BaseAction):
             if w:
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
-                assert(abs(w[0] - self.start_time) < timedelta(days=7))
+                assert abs(w[0] - self.start_time) < timedelta(days=7)
         output = super(WaterRestriction, self).save(*args, **kwargs)
         # When creating a water restriction, the subject's protocol number should be changed to 3
         # (request by Charu in 03/2022)

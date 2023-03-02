@@ -480,15 +480,14 @@ class SessionAdmin(BaseActionAdmin):
                     'task_protocol', 'qc', 'user_list', 'project_']
     list_display_links = ['start_time']
     fields = BaseActionAdmin.fields + [
-        'repo_url', 'qc', 'extended_qc', 'project', ('type', 'task_protocol', ), 'number',
+        'repo_url', 'qc', 'extended_qc', 'projects', ('type', 'task_protocol', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing', 'auto_datetime']
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
-                   ('project', RelatedDropdownFilter),
+                   ('projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
-                   ('subject__projects', RelatedDropdownFilter)
                    ]
-    search_fields = ('subject__nickname', 'lab__name', 'project__name', 'users__username',
+    search_fields = ('subject__nickname', 'lab__name', 'projects__name', 'users__username',
                      'task_protocol', 'pk')
     ordering = ('-start_time', 'task_protocol', 'lab')
     inlines = [WaterAdminInline, DatasetInline, NoteInline]
@@ -501,9 +500,9 @@ class SessionAdmin(BaseActionAdmin):
         form = super(SessionAdmin, self).get_form(request, obj, **kwargs)
         if form.base_fields and not request.user.is_superuser:
             # the projects edit box is limited to projects with no user or containing current user
-            current_proj = obj.project.pk if obj and obj.project else None
-            form.base_fields['project'].queryset = Project.objects.filter(
-                Q(users=request.user.pk) | Q(users=None) | Q(pk=current_proj)
+            current_proj = obj.projects.all() if obj else None
+            form.base_fields['projects'].queryset = Project.objects.filter(
+                Q(users=request.user.pk) | Q(users=None) | Q(pk__in=current_proj)
             ).distinct()
         return form
 
@@ -519,7 +518,7 @@ class SessionAdmin(BaseActionAdmin):
         return super(SessionAdmin, self).add_view(request, extra_context=context)
 
     def project_(self, obj):
-        return getattr(obj.project, 'name', None)
+        return [getattr(p, 'name', None) for p in obj.projects.all()]
 
     def repo_url(self, obj):
         url = settings.SESSION_REPO_URL.format(

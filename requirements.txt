@@ -1,12 +1,12 @@
 boto3
 colorlog
 coreapi
-django>=4.0.3
+django>=4.0.6
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
 django-cleanup
-django-filter
+django-filter==21.1
 django-mptt
 django-polymorphic>=3.0.0
 django-reversion>=3.0.8
@@ -28,3 +28,4 @@ python-magic
 pytz
 structlog>=21.5.0
 webdavclient3
+ONE-api>=1.13.0

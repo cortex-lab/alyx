@@ -227,7 +227,7 @@
    "python_loader_function": ""
   }
  },
-   {
+ {
   "model": "data.dataformat",
   "pk": "11aac07c-b434-425c-a394-d0ecdbcbee10",
   "fields": {
@@ -237,6 +237,42 @@
    "file_extension": ".tar",
    "matlab_loader_function": "",
    "python_loader_function": ""
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "fbe8dfe2-c311-46c3-992c-d7ec54766ea2",
+  "fields": {
+   "json": "",
+   "name": "htsv",
+   "description": "UTF-8 text file with tab-separated values with the first line being a header",
+   "file_extension": ".htsv",
+   "matlab_loader_function": "readtable",
+   "python_loader_function": "pandas.read_csv"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "c472875c-ff15-41d0-a338-ae749b2d68e8",
+  "fields": {
+   "json": "",
+   "name": "yml",
+   "description": "YAML is a human-readable data-serialization language. It is commonly used for configuration files. JSON is considered a subset of YAML.",
+   "file_extension": ".yml",
+   "matlab_loader_function": "ReadYaml",
+   "python_loader_function": "yaml.full_load"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "8c0428b0-9344-43f4-ba7e-17b61b0d7ba9",
+  "fields": {
+   "json": "",
+   "name": "yaml",
+   "description": "YAML is a human-readable data-serialization language. It is commonly used for configuration files. JSON is considered a subset of YAML.",
+   "file_extension": ".yaml",
+   "matlab_loader_function": "ReadYaml",
+   "python_loader_function": "yaml.full_load"
   }
  }
 ]

@@ -5,12 +5,14 @@ from django.core.management import call_command
 
 from subjects.models import Subject, Project, SubjectRequest
 from actions.models import Session, Surgery, NotificationRule, Notification
-from misc.models import Lab, LabMember, LabLocation
+from misc.models import Lab, LabMember, LabLocation, Note
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 from experiments.models import ProbeInsertion, TrajectoryEstimate
 from jobs.models import Task
 
+CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
+
 
 # remove all subjects that never had anything to do with IBL
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
@@ -39,7 +41,7 @@ ses_loc2remove.delete()
 
 # the sessions should also have the cortexlab lab field properly labeled before import
 if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
-    lab_dict = {'pk': '4027da48-7be3-43ec-a222-f75dffe36872',
+    lab_dict = {'pk': CORTEX_LAB_PK,
                 'name': 'cortexlab'}
     lab = Lab.objects.using('cortexlab').create(**lab_dict)
     lab.save()
@@ -112,13 +114,11 @@ for sp in session_pname:
             TrajectoryEstimate.objects.create(**t)
     pi_cortexlab.delete()
 
-
-
 """
 Sync the datasets 1/3. Compute primary keys
 """
 
-dfields = ('session', 'collection', 'name')
+dfields = ('session', 'collection', 'name', 'revision')
 # Primary keys of all datasets in cortexlab database
 cds_pk = set(Dataset.objects.using('cortexlab').values_list('pk', flat=True))
 # Primary keys of all datasets with lab name cortexlab in ibl database
@@ -131,7 +131,7 @@ on the IBL database and cortexlab (new dataset patch), there will be a consisten
 In this case we remove the offending datasets from IBL: the UCL version always has priority
 (at some point using pandas might be much easier and legible)
 """
-# Here we are looking for duplicated that DO NOT have the same primary key, but the same session, collection and name
+# Here we are looking for duplicated that DO NOT have the same primary key, but the same session, collection, name and revision
 # Find the datasets that only exist in the IBL database, load session, collection and name
 pk2check = ids_pk.difference(cds_pk)
 ibl_datasets = Dataset.objects.filter(pk__in=pk2check)
@@ -189,21 +189,29 @@ FileRecord.objects.filter(dataset__in=pk2import).update(exists=False, json=None)
 
 """
 Sync the tasks 1/2: For DLC tasks there might be duplicates, as we sometimes run them as batch on remote servers.
-Import the cortexlab tasks unless there is a NEWER version in the ibl database
+For those import the cortexlab tasks unless there is a NEWER version in the ibl database
 """
 task_names_to_check = ['TrainingDLC', 'EphysDLC']
-# Get the session_id of the DLC tasks from both the cortexlab db and ibl db with cortexlab as lab name
-cortex_dlc_eid = set(Task.objects.using('cortexlab').filter(name__in=task_names_to_check
-                                                            ).values_list('session_id', flat=True))
-ibl_dlc_eid = set(Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check
-                                                                             ).values_list('session_id', flat=True))
-# Get the intersection and the respective tasks from each DB
-duplicate_eid = cortex_dlc_eid.intersection(ibl_dlc_eid)
-dlc_cortex = Task.objects.using('cortexlab').filter(session_id__in=duplicate_eid, name__in=task_names_to_check
-                                                    ).order_by('session_id')
-dlc_ibl = Task.objects.filter(session__lab__name='cortexlab', name__in=task_names_to_check
-                              ).filter(session_id__in=duplicate_eid).order_by('session_id')
-# Get time stamps from those tasks
+dfields = ('session_id', 'name', 'arguments')
+
+from django.db.models import CharField, Value
+from django.db.models.functions import Concat
+# remove duplicates from cortexlab if any
+qs_cortex = Task.objects.using('cortexlab').filter(name__in=task_names_to_check)
+qs_cortex = qs_cortex.distinct(*dfields)
+# this line is needed to allow sorting down the line and avoid SQL distinct on sorting error
+qs_cortex = Task.objects.using('cortexlab').filter(id__in=qs_cortex.values_list('id', flat=True))
+
+# annotate the querysets with compound fields to run bulk queries
+qs_ibl = Task.objects.filter(session__lab__name='cortexlab').filter(name__in=task_names_to_check)
+qs_ibl = qs_ibl.annotate(eid_name_args=Concat(*dfields, output_field=CharField()))
+qs_cortex = qs_cortex.annotate(eid_name_args=Concat(*dfields, output_field=CharField()))
+eid_name_args = set(qs_cortex.values_list('eid_name_args')).intersection(qs_cortex.values_list('eid_name_args'))
+
+dlc_cortex = qs_cortex.filter(eid_name_args__in=eid_name_args).order_by('eid_name_args')
+dlc_ibl = qs_ibl.filter(name__in=task_names_to_check, eid_name_args__in=eid_name_args).order_by('eid_name_args')
+
+
 times_cortex = np.array(dlc_cortex.values_list('datetime', flat=True)).astype(np.datetime64)
 times_ibl = np.array(dlc_ibl.values_list('datetime', flat=True)).astype(np.datetime64)
 # Indices where datetime from IBL is newer than cortexlab -- do not import by deleting the datasets from cortexlab db
@@ -226,7 +234,7 @@ ibl_eids = Task.objects.all().filter(session__lab__name='cortexlab').exclude(
 # finds eids that have tasks on both ibl and cortex lab database
 overlap_eids = set(cortex_eids).intersection(ibl_eids)
 
-dfields = ('id', 'name', 'session')
+dfields = ('id', 'name', 'session', 'arguments')
 task_cortex = Task.objects.using('cortexlab').filter(session__in=overlap_eids).exclude(name__in=task_names_to_exclude)
 cids = task_cortex.values_list(*dfields)
 
@@ -244,6 +252,14 @@ for dup in duplicates:
     ts = task_ibl.get(id=dup[0], name=dup[1], session=dup[2])
     ts.delete()
 
+"""
+Sync the notes. When a note is updated (in the behaviour criteria tracking) it is deleted and created anew.
+The problem is this will create many duplicates on the IBL side after import. 
+Here we look for all of the notes that are present on IBL and remove those that are not in UCL
+"""
+ibl_notes = Note.objects.filter(object_id__in=Subject.objects.filter(lab=CORTEX_LAB_PK))
+ucl_notes = Note.objects.using('cortexlab').filter(object_id__in=Subject.objects.filter(lab=CORTEX_LAB_PK))
+ibl_notes.exclude(pk__in=list(ucl_notes.values_list('pk', flat=True))).count()
 
 """
 Export all the pruned cortexlab database as Json so it can be loaded back into the IBL one

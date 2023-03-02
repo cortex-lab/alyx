@@ -69,43 +69,28 @@ LOGGING = {
                 'CRITICAL': 'bold_red',
             },
         },
-        'json_formatter': {
-            '()': structlog.stdlib.ProcessorFormatter,
-            'processor': structlog.processors.JSONRenderer(),
-        },
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/alyx.log',
             'maxBytes': 16777216,
+            'backupCount': 1,
             'formatter': 'simple'
         },
         'console': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
-        },
-        'json_file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/alyx_json.log',
-            'maxBytes': 16777216,
-            'backupCount': 3,
-            'formatter': 'json_formatter',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'WARNING',
             'propagate': True,
         },
-        'django_structlog': {
-            'handlers': ['json_file'],
-            'level': 'INFO',
-        }
     },
     'root': {
         'handlers': ['file', 'console'],

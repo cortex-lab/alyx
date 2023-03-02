@@ -9,7 +9,8 @@ SKIP_ONE_CACHE = False
 try:
     import pyarrow as pa
     from misc.management.commands import one_cache
-except ImportError:
+except ImportError as ex:
+    print(f'Failed to import one_cache: {ex}')
     SKIP_ONE_CACHE = True
 
 
@@ -123,19 +124,3 @@ class ONECache(TestCase):
         s3 = one_cache._s3_filesystem(region=region)
         self.assertIsInstance(s3, pa.fs.S3FileSystem)
         self.assertEqual(s3.region, region)
-
-    def test_get_s3_virtual_host(self):
-        """Tests for _get_s3_virtual_host function"""
-        expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/'
-        url = one_cache._get_s3_virtual_host('s3://my-s3-bucket', 'eu-east-1')
-        self.assertEqual(expected, url)
-
-        url = one_cache._get_s3_virtual_host('my-s3-bucket/', 'eu-east-1')
-        self.assertEqual(expected, url)
-
-        expected = 'https://my-s3-bucket.s3.eu-east-1.amazonaws.com/path/to/file'
-        url = one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'eu-east-1')
-        self.assertEqual(expected, url)
-
-        with self.assertRaises(AssertionError):
-            one_cache._get_s3_virtual_host('s3://my-s3-bucket/path/to/file', 'wrong-foo-4')
