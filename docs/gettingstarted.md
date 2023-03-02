@@ -59,7 +59,9 @@ cd alyx
 
 python manage.py runserver
 ```
-Then go to http://localhost:8000/admin, connect as `admin:admin` and change your password.
+NB: the password above is the postgres database user password. It is used by Django only to connect to the database, and is distinct from any user password on admin website.
+
+You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. username admin and password admin) and update your admin interface password.
 
 
 ### macOS

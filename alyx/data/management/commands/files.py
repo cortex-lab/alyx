@@ -1,4 +1,5 @@
 import logging
+
 from django.core.management import BaseCommand
 from django.db.models import Count, Q
 
@@ -195,7 +196,7 @@ class Command(BaseCommand):
             dt = None
             for d in FileRecord.objects.all().select_related('dataset'):
                 try:
-                    dt = transfers.get_dataset_type(d.relative_path, qs=qs)
+                    dt = transfers.get_dataset_type(d.relative_path, qs)
                 except ValueError:
                     dt = None
                     continue

@@ -1,8 +1,8 @@
 import structlog
 import re
-from pathlib import Path
 
 from django.contrib.auth import get_user_model
+from django.db import models
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
@@ -33,7 +33,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           TagSerializer
                           )
 from .transfers import (_get_session, _get_repositories_for_labs,
-                        _create_dataset_file_records, bulk_sync)
+                        _create_dataset_file_records, bulk_sync, _check_dataset_protected,
+                        _get_name_collection_revision)
 
 logger = structlog.get_logger(__name__)
 
@@ -226,6 +227,14 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DatasetSerializer
     permission_classes = rest_permission_classes()
 
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super().delete(request, *args, **kwargs)
+        except models.ProtectedError as e:
+            # Return Forbidden response with dataset name and list of protected tags associated
+            err_msg, _ = e.args
+            return Response(e.args[0], 403)
+
 
 # FileRecord
 # ------------------------------------------------------------------------------------------------
@@ -355,6 +364,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               # used to generate the file
               'default': False #optional , defaults to True, if more than one revision of dataset,
               whether to set current one as the default
+              'check_protected: False # optional, defaults to False, before attempting to register
+              datasets checks if any are protected
               }
         ```
 
@@ -416,11 +427,18 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
+        if isinstance(server_only, str):
+            server_only = server_only == 'True'
 
         default = request.data.get('default', True)
         # Need to explicitly cast string to a bool
         if isinstance(default, str):
             default = default == 'True'
+
+        check_protected = request.data.get('check_protected', False)
+        # Need to explicitly cast string to a bool
+        if isinstance(check_protected, str):
+            check_protected = check_protected == 'True'
 
         # Multiple labs
         labs = request.data.get('projects', '') + request.data.get('labs', '')
@@ -432,40 +450,59 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if server_only:
             exists_in = repositories
 
+        # # If exists is specified to be false then we set the exists_in back to None
+        exists = request.data.get('exists', True)
+        # Need to explicitly cast string to a bool
+        if isinstance(exists, str):
+            exists = exists == 'True'
+        if not exists:
+            exists_in = (None,)
+
         session = _get_session(
             subject=subject, date=date, number=session_number, user=user)
         assert session
+
+        # If the check protected flag is True, loop through the files to see if any are protected
+        if check_protected:
+            prot_response = []
+            protected = []
+            for file in filenames:
+
+                info, resp = _get_name_collection_revision(file, rel_dir_path, subject, date)
+
+                if resp:
+                    return resp
+
+                prot, prot_info = _check_dataset_protected(
+                    session, info['collection'], info['filename'])
+                protected.append(prot)
+                prot_response.append({file: prot_info})
+
+            if any(protected):
+                data = {'status_code': 403,
+                        'error': 'One or more datasets is protected',
+                        'details': prot_response}
+                return Response(data=data, status=403)
 
         response = []
         for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
-            # Get collections/revisions for each file
-            fullpath = Path(rel_dir_path).joinpath(filename).as_posix()
-            # Index of relative path (stuff after session path)
-            i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
-            subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
-            # Check for revisions (folders beginning and ending with '#')
-            # Fringe cases:
-            #   '#' is a collection
-            #   '##' is an empty revision
-            #   '##blah#5#' is a revision named '#blah#5'
-            is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
-            if any(is_rev):
-                # There may be only 1 revision and it cannot contain sub folders
-                if is_rev.index(True) != len(is_rev) - 1:
-                    data = {'status_code': 400,
-                            'detail': 'Revision folders cannot contain sub folders'}
-                    return Response(data=data, status=400)
-                revision, _ = Revision.objects.get_or_create(name=subdirs.pop()[1:-1])
+            info, resp = _get_name_collection_revision(filename, rel_dir_path, subject, date)
+
+            if resp:
+                return resp
+
+            if info['revision'] is not None:
+                revision, _ = Revision.objects.get_or_create(name=info['revision'])
             else:
                 revision = None
 
-            filename = Path(filename).name
             dataset, resp = _create_dataset_file_records(
-                collection='/'.join(subdirs), rel_dir_path=fullpath[:i], filename=filename,
-                session=session, user=user, repositories=repositories, exists_in=exists_in,
-                hash=hash, file_size=fsize, version=version, revision=revision, default=default)
+                collection=info['collection'], rel_dir_path=info['rel_dir_path'],
+                filename=info['filename'], session=session, user=user, repositories=repositories,
+                exists_in=exists_in, hash=hash, file_size=fsize, version=version,
+                revision=revision, default=default)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)

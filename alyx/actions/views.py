@@ -35,6 +35,43 @@ from .serializers import (LabLocationSerializer,
                           )
 
 
+class BaseActionFilter(BaseFilterSet):
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
+    nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+    users = django_filters.CharFilter(field_name='users__username', method=('filter_users'))
+    date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
+    lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
+    location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
+    json = django_filters.CharFilter(field_name='json', method=('filter_json'))
+
+    def filter_users(self, queryset, name, value):
+        users = value.split(',')
+        queryset = queryset.filter(users__username__in=users)
+        queryset = queryset.annotate(
+            users_count=Count('users__username'))
+        queryset = queryset.filter(users_count__gte=len(users))
+        return queryset
+
+    def filter_date_range(self, queryset, _, value):
+        drange = value.split(',')
+        queryset = queryset.filter(
+            Q(start_time__date__gte=drange[0]),
+            Q(start_time__date__lte=drange[1]),
+        )
+        return queryset
+
+    def filter_json(self, queryset, name, value):
+        return base_json_filter('json', queryset, name, value)
+
+    class Meta:
+        exclude = []
+        filter_overrides = {
+            JSONField: {
+                'filter_class': CharFilter,
+            },
+        }
+
+
 class SubjectHistoryListView(ListView):
     template_name = 'subject_history.html'
 
@@ -186,23 +223,19 @@ class ProcedureTypeList(generics.ListCreateAPIView):
     lookup_field = 'name'
 
 
-class SessionFilter(BaseFilterSet):
-    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr=('iexact'))
+class SessionFilter(BaseActionFilter):
     dataset_types = django_filters.CharFilter(field_name='dataset_types',
                                               method='filter_dataset_types')
+    datasets = django_filters.CharFilter(field_name='datasets', method='filter_datasets')
     performance_gte = django_filters.NumberFilter(field_name='performance',
                                                   method=('filter_performance_gte'))
     performance_lte = django_filters.NumberFilter(field_name='performance',
                                                   method=('filter_performance_lte'))
-    users = django_filters.CharFilter(field_name='users__username', method=('filter_users'))
-    date_range = django_filters.CharFilter(field_name='date_range', method=('filter_date_range'))
+
     type = django_filters.CharFilter(field_name='type', lookup_expr=('iexact'))
-    lab = django_filters.CharFilter(field_name='lab__name', lookup_expr=('iexact'))
     task_protocol = django_filters.CharFilter(field_name='task_protocol',
                                               lookup_expr=('icontains'))
     qc = django_filters.CharFilter(method='enum_field_filter')
-    json = django_filters.CharFilter(field_name='json', method=('filter_json'))
-    location = django_filters.CharFilter(field_name='location__name', lookup_expr=('icontains'))
     extended_qc = django_filters.CharFilter(field_name='extended_qc',
                                             method=('filter_extended_qc'))
     projects = django_filters.CharFilter(field_name='projects__name', lookup_expr=('icontains'))
@@ -218,10 +251,6 @@ class SessionFilter(BaseFilterSet):
     def filter_tag(self, queryset, name, value):
         """
         returns sessions that contain datasets tagged as
-        :param queryset:
-        :param name:
-        :param value:
-        :return:
         """
         queryset = queryset.filter(
             data_dataset_session_related__tags__name__icontains=value).distinct()
@@ -242,34 +271,24 @@ class SessionFilter(BaseFilterSet):
             fcn_query = queryset.exclude
         return fcn_query(subject__actions_sessions__procedures__name='Histology').distinct()
 
-    def filter_json(self, queryset, name, value):
-        return base_json_filter('json', queryset, name, value)
-
     def filter_extended_qc(self, queryset, name, value):
         return base_json_filter('extended_qc', queryset, name, value)
 
-    def filter_users(self, queryset, name, value):
-        users = value.split(',')
-        queryset = queryset.filter(users__username__in=users)
-        queryset = queryset.annotate(
-            users_count=Count('users__username'))
-        queryset = queryset.filter(users_count__gte=len(users))
-        return queryset
-
-    def filter_date_range(self, queryset, name, value):
-        drange = value.split(',')
-        queryset = queryset.filter(
-            Q(start_time__date__gte=drange[0]),
-            Q(start_time__date__lte=drange[1]),
-        )
-        return queryset
-
-    def filter_dataset_types(self, queryset, name, value):
+    def filter_dataset_types(self, queryset, _, value):
         dtypes = value.split(',')
         queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
         queryset = queryset.annotate(
             dtypes_count=Count('data_dataset_session_related__dataset_type', distinct=True))
         queryset = queryset.filter(dtypes_count__gte=len(dtypes))
+        return queryset
+
+    def filter_datasets(self, queryset, _, value):
+        # Note this may later be modified to include collections, e.g. ?datasets=alf/obj.attr.ext
+        dsets = value.split(',')
+        queryset = queryset.filter(data_dataset_session_related__name__in=dsets)
+        queryset = queryset.annotate(
+            dsets_count=Count('data_dataset_session_related', distinct=True))
+        queryset = queryset.filter(dsets_count__gte=len(dsets))
         return queryset
 
     def filter_performance_gte(self, queryset, name, perf):
@@ -286,30 +305,18 @@ class SessionFilter(BaseFilterSet):
         queryset = queryset.annotate(performance=pf)
         return queryset.filter(performance__lte=float(perf))
 
-    class Meta:
+    class Meta(BaseActionFilter.Meta):
         model = Session
-        exclude = []
-        filter_overrides = {
-            JSONField: {
-                'filter_class': CharFilter,
-            },
-        }
 
 
-class WeighingFilter(BaseFilterSet):
-    nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
-
-    class Meta:
+class WeighingFilter(BaseActionFilter):
+    class Meta(BaseActionFilter.Meta):
         model = Weighing
-        exclude = ['json']
 
 
-class WaterAdministrationFilter(BaseFilterSet):
-    nickname = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
-
-    class Meta:
+class WaterAdministrationFilter(BaseActionFilter):
+    class Meta(BaseActionFilter.Meta):
         model = WaterAdministration
-        exclude = ['json']
 
 
 class SessionAPIList(generics.ListCreateAPIView):
@@ -317,7 +324,8 @@ class SessionAPIList(generics.ListCreateAPIView):
         get: **FILTERS**
 
     -   **subject**: subject nickname `/sessions?subject=Algernon`
-    -   **dataset_types**: dataset type
+    -   **dataset_types**: dataset type(s) `/sessions?dataset_types=trials.table,camera.times`
+    -   **datasets**: dataset name(s) `/sessions?datasets=_ibl_leftCamera.times.npy`
     -   **number**: session number
     -   **users**: experimenters (exact)
     -   **date_range**: date `/sessions?date_range=2020-01-12,2020-01-16`
@@ -449,12 +457,9 @@ class WaterRequirement(APIView):
         return Response(data)
 
 
-class WaterRestrictionFilter(BaseFilterSet):
-    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
-
-    class Meta:
+class WaterRestrictionFilter(BaseActionFilter):
+    class Meta(BaseActionFilter.Meta):
         model = WaterRestriction
-        exclude = ['json']
 
 
 class WaterRestrictionList(generics.ListAPIView):
@@ -476,7 +481,7 @@ class LabLocationList(generics.ListAPIView):
     permission_classes = rest_permission_classes()
 
 
-class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
+class LabLocationAPIDetail(generics.RetrieveUpdateAPIView):
     """
     Allows viewing of full detail and deleting a water administration.
     """
@@ -486,10 +491,30 @@ class LabLocationAPIDetails(generics.RetrieveUpdateAPIView):
     lookup_field = 'name'
 
 
+class SurgeriesFilter(BaseActionFilter):
+    procedure = django_filters.CharFilter(field_name='procedures__name', lookup_expr=('iexact'))
+
+    class Meta(BaseActionFilter.Meta):
+        model = Surgery
+
+
 class SurgeriesList(generics.ListAPIView):
     """
-    Lists Surgeries
+        get: **FILTERS**
+
+    -   **subject**: subject nickname `/sessions?subject=Algernon`
+    [===> session model reference](/admin/doc/models/actions.surgery)
     """
-    queryset = Surgery.objects.all()
+    queryset = Surgery.objects.all().order_by('-start_time')
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
+    filter_class = SurgeriesFilter
+
+
+class SurgeriesAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of full detail and update of a surgery.
+    """
+    permission_classes = rest_permission_classes()
+    serializer_class = SurgerySerializer
+    queryset = Surgery.objects.all()

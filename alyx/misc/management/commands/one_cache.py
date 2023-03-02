@@ -25,6 +25,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from alyx.settings import TABLES_ROOT
 from actions.models import Session
 from data.models import Dataset, FileRecord
+from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
 ONE_API_VERSION = '1.13.0'  # Minimum compatible ONE api version
@@ -116,6 +117,8 @@ class Command(BaseCommand):
                             help="Save files into compressed folder")
         parser.add_argument('--tag', nargs='*',
                             help="List of tag names to filter datasets by")
+        parser.add_argument('--qc', action='store_true',
+                            help="Save QC fields to a JSON file")
 
     def handle(self, *_, **options):
         if options['verbosity'] < 1:
@@ -124,15 +127,16 @@ class Command(BaseCommand):
             logger.setLevel(logging.DEBUG)
         self.dst_dir = options.get('destination')
         self.compress = options.get('compress')
-        tables, int_id = options.get('tables'), options.get('int_id')
-        self.generate_tables(tables, int_id=int_id, tags=options.get('tag'))
+        tables, int_id, qc = options.get('tables'), options.get('int_id'), options.get('qc')
+        self.generate_tables(tables, int_id=int_id, export_qc=qc, tags=options.get('tag'))
 
-    def generate_tables(self, tables, **kwargs) -> list:
+    def generate_tables(self, tables, export_qc=False, **kwargs) -> list:
         """
         Generate and save a list of tables.  Supported tables include 'sessions' and 'datasets'.
         :param tables: A tuple of table names.
-        :param kwargs:
-        :return: A list of paths to the saved files
+        :param export_qc: If true, the extended QC will be saved to a JSON file.
+        :param kwargs: Arguments to pass to cache generation functions.
+        :return: A list of paths to the saved files.
         """
         self.metadata = create_metadata()
         if kwargs.get('tags'):
@@ -150,6 +154,10 @@ class Command(BaseCommand):
                 to_compress[filename] = tbl
             else:
                 raise ValueError(f'Unknown table "{table}"')
+
+        if export_qc:
+            tbl, filename = self._save_qc(dry=dry, tags=kwargs.get('tags'))
+            to_compress[filename] = tbl
 
         if self.compress:
             return list(self._compress_tables(to_compress))
@@ -178,6 +186,51 @@ class Command(BaseCommand):
         pa_table = _save(str(filename), table, self.metadata, **kwargs)
         return pa_table, str(filename)
 
+    @measure_time
+    def _save_qc(self, dry=False, tags=None):
+        sessions = Session.objects.all()
+        if tags:
+            if not isinstance(tags, str):
+                sessions = sessions.filter(data_dataset_session_related__tags__name__in=tags)
+            else:
+                sessions = sessions.filter(data_dataset_session_related__tags__name=tags)
+        qc = list(sessions.values('pk', 'qc', 'extended_qc').distinct())
+        outcome_map = dict(Session.QC_CHOICES)
+        for d in qc:  # replace enumeration int with string
+            d['eid'] = str(d.pop('pk'))  # rename field
+            d['qc_outcome'] = outcome_map[d.pop('qc')]
+            d['extended_qc'] = d.pop('extended_qc')  # pop to preserve order
+        logger.debug('Fetched %i QC records', len(qc))
+
+        # Fetch insertion QC
+        insertions = ProbeInsertion.objects.all()
+        if tags:
+            if not isinstance(tags, str):
+                insertions = insertions.filter(
+                    session__data_dataset_session_related__tags__name__in=tags)
+            else:
+                insertions = insertions.filter(
+                    session__data_dataset_session_related__tags__name=tags)
+        qc_ins = list(insertions.values('pk', 'name', 'json', 'session__pk').distinct())
+
+        # Collate with session QC list
+        for ins in qc_ins:
+            if 'extended_qc' not in ins['json']:
+                continue
+            d = next(x for x in qc if x['eid'] == str(ins['session__pk']))
+            d.setdefault('probe_insertions', []).append({
+                'pid': str(ins.pop('pk')),
+                'probe_name': ins.pop('name'),
+                'qc_outcome': ins['json'].pop('qc', 'NOT_SET'),
+                'extended_qc': ins['json'].pop('extended_qc')
+            })
+
+        filename = self.dst_dir.strip('/') + '/QC.json'  # Save to JSON
+        if not dry:
+            with open(filename, 'w') as fp:
+                json.dump(qc, fp)
+        return qc, str(filename)
+
     def _compress_tables(self, table_map) -> tuple:
         """
         Write cache_info JSON and create zip file comprising parquet tables + JSON
@@ -195,13 +248,21 @@ class Command(BaseCommand):
             jsonmeta = {}
             for filename, table in table_map.items():
                 tmp_filename = Path(tmp) / Path(filename).name  # Table filename in temp dir
-                pq.write_table(table, tmp_filename)  # Write table to tempdir
-                zip.write(tmp_filename, Path(filename).name)  # Load and compress
-                pqtinfo = pq.read_metadata(tmp_filename)  # Load metadata for cache_info file
-                jsonmeta[Path(filename).stem] = {
-                    'nrecs': pqtinfo.num_rows,
-                    'size': pqtinfo.serialized_size
-                }
+                ext = Path(filename).suffix
+                if ext == '.pqt':
+                    pq.write_table(table, tmp_filename)  # Write table to tempdir
+                    zip.write(tmp_filename, Path(filename).name)  # Load and compress
+                    pqtinfo = pq.read_metadata(tmp_filename)  # Load metadata for cache_info file
+                    jsonmeta[Path(filename).stem] = {
+                        'nrecs': pqtinfo.num_rows,
+                        'size': pqtinfo.serialized_size
+                    }
+                elif ext == '.json':
+                    with open(tmp_filename, 'w') as fp:
+                        json.dump(table, fp)
+                    zip.write(tmp_filename, Path(filename).name)
+                else:
+                    raise NotImplementedError(f'Unable to save table with extension "{ext}"')
             metadata = {**self.metadata, 'tables': jsonmeta}
             zip.writestr(META_NAME, json.dumps(metadata, indent=1))  # Compress cache info
 
@@ -320,9 +381,9 @@ def generate_datasets_frame(int_id=True, tags=None) -> pd.DataFrame:
     if tags:
         kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
         ds = ds.prefetch_related('tag').filter(**kw)
-    # Filter out datasets that do not exist on either repository
+    # Filter out datasets that do not exist on either repository or have no associated session
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
-    ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True))
+    ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True), session__isnull=False)
 
     # fields to keep from Dataset table
     fields = (

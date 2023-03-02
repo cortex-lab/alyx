@@ -1,14 +1,15 @@
 from rest_framework import generics
 from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
-from django.db.models import F, Func, Value, CharField, functions, Q
+from django.db.models import Count
 
 
 from alyx.base import BaseFilterSet, rest_permission_classes
-from data.models import Dataset
-from experiments.models import ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion
+from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
+                                ChronicInsertion)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
-                                     TrajectoryEstimateSerializer,
-                                     ChannelSerializer, BrainRegionSerializer)
+                                     TrajectoryEstimateSerializer, ChannelSerializer,
+                                     BrainRegionSerializer, ChronicInsertionDetailSerializer,
+                                     ChronicInsertionListSerializer)
 
 """
 Probe insertion objects REST filters and views
@@ -24,7 +25,8 @@ def _filter_qs_with_brain_regions(self, queryset, region_field, region_value):
     if queryset.model.__name__ == 'Session':
         qs = queryset.prefetch_related('probe_insertion__trajectory_estimate').filter(
             probe_insertion__trajectory_estimate__in=qs_trajs)
-    elif queryset.model.__name__ == 'ProbeInsertion':
+    elif (queryset.model.__name__ == 'ProbeInsertion' or
+          queryset.model.__name__ == 'ChronicInsertion'):
         qs = queryset.prefetch_related('trajectory_estimate').filter(
             trajectory_estimate__in=qs_trajs)
     return qs
@@ -37,14 +39,28 @@ class ProbeInsertionFilter(BaseFilterSet):
     name = CharFilter('name')
     session = UUIDFilter('session')
     model = CharFilter('model__name')
-    dataset_type = CharFilter(method='dtype_exists')
-    no_dataset_type = CharFilter(method='dtype_not_exists')
+    dataset_types = CharFilter(field_name='dataset_types', method='filter_dataset_types')
+    datasets = CharFilter(field_name='datasets', method='filter_datasets')
+    lab = CharFilter(field_name='session__lab__name', lookup_expr='iexact')
     project = CharFilter(field_name='session__project__name', lookup_expr='icontains')
     task_protocol = CharFilter(field_name='session__task_protocol', lookup_expr='icontains')
+    tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
     atlas_name = CharFilter(field_name='name__icontains', method='atlas')
     atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
     atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def filter_tag(self, queryset, _, value):
+        """
+        returns insertions that contain datasets tagged as
+        :param queryset:
+        :param name:
+        :param value:
+        :return:
+        """
+        queryset = queryset.filter(
+            datasets__tags__name__icontains=value).distinct()
+        return queryset
 
     def atlas(self, queryset, name, value):
         """
@@ -53,45 +69,21 @@ class ProbeInsertionFilter(BaseFilterSet):
         """
         return _filter_qs_with_brain_regions(self, queryset, name, value)
 
-    def dtype_exists(self, probes, _, dtype_name):
-        """
-        Filter for probe insertions that contain specified dataset type
-        """
-        dsets = Dataset.objects.filter(dataset_type__name=dtype_name)
+    def filter_dataset_types(self, queryset, _, value):
 
-        # Annotate with new column that contains unique session, probe name
-        dsets = dsets.annotate(session_probe_name=functions.Concat(
-            functions.Cast(F('session'), output_field=CharField()),
-            Func(F('collection'), Value('/'), Value(2), function='split_part'),
-            output_field=CharField()))
-
-        probes = probes.annotate(session_probe_name=functions.Concat(
-            functions.Cast(F('session'), output_field=CharField()), F('name'),
-            output_field=CharField()))
-
-        queryset = probes.filter(session_probe_name__in=dsets.values_list('session_probe_name',
-                                                                          flat=True))
+        dtypes = value.split(',')
+        queryset = queryset.filter(datasets__dataset_type__name__in=dtypes)
+        queryset = queryset.annotate(
+            dtypes_count=Count('datasets__dataset_type', distinct=True))
+        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
         return queryset
 
-    def dtype_not_exists(self, probes, _, dtype_name):
-        """
-        Filter for probe insertions that don't contain specified dataset type
-        """
-
-        dsets = Dataset.objects.filter(dataset_type__name=dtype_name)
-
-        # Annotate with new column that contains unique session, probe name
-        dsets = dsets.annotate(session_probe_name=functions.Concat(
-            functions.Cast(F('session'), output_field=CharField()),
-            Func(F('collection'), Value('/'), Value(2), function='split_part'),
-            output_field=CharField()))
-
-        probes = probes.annotate(session_probe_name=functions.Concat(
-            functions.Cast(F('session'), output_field=CharField()), F('name'),
-            output_field=CharField()))
-
-        queryset = probes.filter(~Q(session_probe_name__in=dsets.values_list('session_probe_name',
-                                                                             flat=True)))
+    def filter_datasets(self, queryset, _, value):
+        dsets = value.split(',')
+        queryset = queryset.filter(datasets__name__in=dsets)
+        queryset = queryset.annotate(
+            dsets_count=Count('datasets', distinct=True))
+        queryset = queryset.filter(dsets_count__gte=len(dsets))
         return queryset
 
     class Meta:
@@ -112,9 +104,10 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **location**: location name (icontains)
     -   **project**: project name (icontains)
     -   **model**: probe model name `/insertions?model=3A`
-    -   **dataset_type**: contains dataset type `/insertions?dataset_type=clusters.metrics`
-    -   **no_dataset_type**: doesn't contain dataset type
-    `/insertions?no_dataset_type=clusters.metrics`
+    -   **lab**: lab name (exact)
+    -   **tag**: tag name (icontains)
+    -   **dataset_types**: dataset type(s)
+    -   **datasets**: datasets name(s)
     -   **atlas_name**: returns a session if any channel name icontains
      the value: `/insertions?brain_region=visual cortex`
     -   **atlas_acronym**: returns a session if any of its channels name exactly
@@ -134,6 +127,66 @@ class ProbeInsertionList(generics.ListCreateAPIView):
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProbeInsertion.objects.all()
     serializer_class = ProbeInsertionDetailSerializer
+    permission_classes = rest_permission_classes()
+
+
+class ChronicInsertionFilter(BaseFilterSet):
+    subject = CharFilter('subject__nickname')
+    lab = CharFilter('lab__name')
+    model = CharFilter('model__name')
+    probe = UUIDFilter('probe_insertion__id')
+    session = UUIDFilter('probe_insertion__session__id')
+    serial = CharFilter('serial')
+
+    # brain region filters
+    atlas_name = CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def atlas(self, queryset, name, value):
+        """
+        returns sessions containing at least one channel in the given brain region.
+        Hierarchical tree search"
+        """
+        return _filter_qs_with_brain_regions(self, queryset, name, value)
+
+    class Meta:
+        model = ChronicInsertion
+        exclude = ['json']
+
+
+class ChronicInsertionList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **name**: chronic insertion name `/chronic-insertions?name=probe00`
+    -   **subject**: subject nickname: `/chronic-insertions?subject=Algernon`
+    -   **lab**: lab name `/chronic-insertions?lab=UCLA`
+    -   **model**: probe model name `/insertions?model=3A`
+    -   **probe**: probe UUID
+    `/chronic-insertions?probe=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **session**: session UUID
+    `/chronic-insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **serial**: serial no. of probe `/chronic-insertions?serial=101010`
+    -   **atlas_name**: returns a session if any channel name icontains
+     the value: `/chronic-insertions?brain_region=visual cortex`
+    -   **atlas_acronym**: returns a session if any of its channels name exactly
+     matches the value `/chronic-insertions?atlas_acronym=SSp-m4`, cf Allen CCFv2017
+    -   **atlas_id**: returns a session if any of its channels id matches the
+     provided value: `/chronic-insertions?atlas_id=950`, cf Allen CCFv2017
+
+    [===> chronic insertion model reference](/admin/doc/models/experiments.chronicinsertion)
+    """
+    queryset = ChronicInsertion.objects.all()
+    queryset = ChronicInsertionListSerializer.setup_eager_loading(queryset)
+    serializer_class = ChronicInsertionListSerializer
+    permission_classes = rest_permission_classes()
+    filter_class = ChronicInsertionFilter
+
+
+class ChronicInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ChronicInsertion.objects.all()
+    serializer_class = ChronicInsertionDetailSerializer
     permission_classes = rest_permission_classes()
 
 

@@ -1,15 +1,46 @@
 from django.test import TestCase
+from django.db import transaction
 from django.db.utils import IntegrityError
-from data.models import Dataset, DatasetType
+from django.db.models import ProtectedError
+
+from data.models import Dataset, DatasetType, Tag
+from subjects.models import Subject
+from misc.models import Lab
 from data.transfers import get_dataset_type
 
 
 class TestModel(TestCase):
     def test_model_methods(self):
         (dset, _) = Dataset.objects.get_or_create(name='toto.npy')
-        assert dset.is_online is False
-        assert dset.is_public is False
-        assert dset.is_protected is False
+
+        self.assertIs(dset.is_online, False)
+        self.assertIs(dset.is_public, False)
+        self.assertIs(dset.is_protected, False)
+
+    def test_generic_foreign_key(self):
+        # Attempt to associate a dataset with a subject
+        self.lab = Lab.objects.create(name='test_lab')
+        subj = Subject.objects.create(nickname='foo', birth_date='2018-09-01', lab=self.lab)
+        dset = Dataset(name='toto.npy', content_object=subj)
+
+        self.assertIs(dset.content_object, subj)
+
+    def test_delete(self):
+        (dset, _) = Dataset.objects.get_or_create(name='foo.npy')
+        (tag, _) = Tag.objects.get_or_create(name='protected_tag', protected=True)
+        dset.tags.set([tag])
+        assert dset.is_protected is True
+
+        # Individual object delete
+        with transaction.atomic():
+            self.assertRaises(ProtectedError, dset.delete)
+
+        # As queryset
+        qs = Dataset.objects.filter(tags__name='protected_tag')
+        with transaction.atomic():
+            self.assertRaises(ProtectedError, qs.delete)
+        with self.assertLogs('data.models', 'WARNING'):
+            qs.delete(force=True)
 
 
 class TestDatasetTypeModel(TestCase):
@@ -33,6 +64,8 @@ class TestDatasetTypeModel(TestCase):
             ('bar.baz.ext', 'bar.baz'),
             ('some_file.ext', 'some_file')
         )
+
+        dtypes = DatasetType.objects.all()
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
-                self.assertEqual(get_dataset_type(filename).name, dataname)
+                self.assertEqual(get_dataset_type(filename, dtypes).name, dataname)

@@ -545,7 +545,6 @@ class SessionAdmin(BaseActionAdmin):
         col = '008000' if cr == cs else '808080'  # green if all files uploaded on server
         return format_html('<b><a style="color: #{};">{}</a></b>', col, '{:2.0f}'.format(cr))
     dataset_count.short_description = '# datasets'
-    dataset_count.admin_order_field = '_dataset_count'
 
     def weighing(self, obj):
         wei = Weighing.objects.filter(date_time=obj.start_time)
@@ -570,7 +569,7 @@ class EphysSessionAdmin(SessionAdmin):
 
     def get_queryset(self, request):
         qs = super(EphysSessionAdmin, self).get_queryset(request)
-        return qs.filter(task_protocol__icontains='ephys')
+        return qs.filter(procedures__name__icontains='ephys')
 
 
 class NotificationUserFilter(DefaultListFilter):

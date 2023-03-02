@@ -1,10 +1,16 @@
+import structlog
+
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField
+from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet
+
+logger = structlog.get_logger(__name__)
 
 
 def _related_string(field):
@@ -252,9 +258,27 @@ class Revision(BaseModel):
         return "<Revision %s>" % self.name
 
 
+class DatasetQuerySet(BaseQuerySet):
+    """A Queryset that checks for protected datasets before deletion"""
+
+    def delete(self, force=False):
+        if (protected := self.filter(tags__protected=True)).exists():
+            if force:
+                logger.warning('The following protected datasets will be deleted:\n%s',
+                               '\n'.join(map(str, protected.values_list('name', 'session_id'))))
+            else:
+                logger.error(
+                    'The following protected datasets cannot be deleted without force=True:\n%s',
+                    '\n'.join(map(str, protected.values_list('name', 'session_id'))))
+                raise models.ProtectedError(
+                    f'Failed to delete {protected.count()} dataset(s) due to protected tags',
+                    protected)
+        super().delete()
+
+
 class DatasetManager(BaseManager):
     def get_queryset(self):
-        qs = super(DatasetManager, self).get_queryset()
+        qs = DatasetQuerySet(self.model, using=self._db)
         qs = qs.select_related('dataset_type', 'data_format')
         return qs
 
@@ -271,6 +295,13 @@ class Dataset(BaseExperimentalData):
     Note that by convention, binary arrays are stored as .npy and text arrays as .tsv
     """
     objects = DatasetManager()
+
+    # Generic foreign key to arbitrary model instances allows polymorphic relationships
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
+                                           "ID must already exist to attach a note.",
+                                 null=True, blank=True)
+    content_object = GenericForeignKey()
 
     file_size = models.BigIntegerField(blank=True, null=True, help_text="Size in bytes")
 
@@ -312,31 +343,19 @@ class Dataset(BaseExperimentalData):
     @property
     def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
-        if fr:
-            return all(fr.values_list('exists', flat=True))
-        else:
-            return False
+        return bool(fr.count() and all(fr.values_list('exists', flat=True)))
 
     @property
     def is_protected(self):
-        tags = self.tags.filter(protected=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
+        return bool(self.tags.filter(protected=True).count())
 
     @property
     def is_public(self):
-        tags = self.tags.filter(public=True)
-        if tags.count() > 0:
-            return True
-        else:
-            return False
+        return bool(self.tags.filter(public=True).count())
 
     @property
     def data_url(self):
-        records = self.file_records.filter(data_repository__data_url__isnull=False,
-                                           exists=True)
+        records = self.file_records.filter(data_repository__data_url__isnull=False, exists=True)
         # returns preferentially globus non-personal endpoint
         if records:
             order_keys = ('data_repository__globus_is_personal', '-data_repository__name')
@@ -360,6 +379,17 @@ class Dataset(BaseExperimentalData):
             pis = ProbeInsertion.objects.filter(session=self.session, name=name)
             if len(pis):
                 self.probe_insertion.set(pis.values_list('pk', flat=True))
+
+    def delete(self, *args, force=False, **kwargs):
+        # If a dataset is protected and force=False, raise an exception
+        # NB This is not called when bulk deleting or in cascading deletes
+        if self.is_protected and not force:
+            tags = self.tags.filter(protected=True).values_list('name', flat=True)
+            tags_str = '"' + '", "'.join(tags) + '"'
+            logger.error(f'Dataset {self.name} is protected by tag(s); use force=True.')
+            raise models.ProtectedError(
+                f'Failed to delete dataset {self.name} due to protected tag(s) {tags_str}', self)
+        super().delete(*args, **kwargs)
 
 
 # Files

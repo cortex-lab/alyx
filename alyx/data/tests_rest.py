@@ -1,5 +1,5 @@
 import datetime
-import os.path as op
+from pathlib import PurePosixPath
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -184,6 +184,19 @@ class APIDataTests(BaseTests):
         self.ar(r, 201)
         self.assertEqual(r.data['default_dataset'], False)
 
+        # Create protected tag and dataset
+        r = self.ar(self.post(reverse('tag-list'), {'name': 'foo_tag', 'protected': True}), 201)
+        data = {'name': 'foo.bar', 'dataset_type': 'dst', 'created_by': 'test',
+                'data_format': 'df', 'date': '2018-01-01', 'number': 2, 'subject': self.subject,
+                'tags': [r['name']]}
+
+        r = self.ar(self.post(reverse('dataset-list'), data), 201)
+        did = r['url'].split('/')[-1]
+
+        # Now attempt to delete the protected dataset
+        r = self.client.delete(reverse('dataset-detail', args=[did]), data)
+        self.assertRegex(self.ar(r, 403), 'protected')
+
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
         data = {
@@ -359,11 +372,126 @@ class APIDataTests(BaseTests):
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d0['file_records'][0]['relative_path'],
-                         op.join(data['path'], 'a.b.e1'))
+                         PurePosixPath(data['path'], 'a.b.e1').as_posix())
 
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
         self.assertEqual(d1['file_records'][0]['relative_path'],
-                         op.join(data['path'], 'a.c.e2'))
+                         PurePosixPath(data['path'], 'a.c.e2').as_posix())
+
+    def test_register_existence_options(self):
+
+        self.post(reverse('datarepository-list'), {'name': 'ibl1', 'hostname': 'iblhost1',
+                                                   'globus_is_personal': 'True'})
+        self.post(reverse('datarepository-list'), {'name': 'ibl2', 'hostname': 'iblhost2',
+                                                   'globus_is_personal': 'True'})
+        # server repo
+        self.post(reverse('datarepository-list'), {'name': 'ibl3', 'hostname': 'iblhost3',
+                                                   'globus_is_personal': 'False'})
+
+        self.post(reverse('lab-list'), {'name': 'ibl',
+                                        'repositories': ['ibl1', 'ibl2', 'ibl3']})
+
+        # Case 1, server_only = False, no repo name specified
+        # Expect: 3 file records (one for each repo),
+        # all with exists = False (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.a.e1',  # this is the repository name
+                'server_only': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertEqual(fr['exists'], False)
+
+        # Case 2, server_only = True, no repo name specified
+        # Expect: 1 file record for data repo with globus is personal == True,
+        # with exists = True (preserves old behavior)
+
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.a.e2',  # this is the repository name
+                'server_only': True,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 1)
+        self.assertEqual(frs[0]['exists'], True)
+        self.assertEqual(frs[0]['data_repository'], 'ibl3')
+
+        # Case 3, server_only = False, repo name specified
+        # Expect: 3 file records, specified repo with exists = True,
+        # the others False (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.b.e1',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertEqual(fr['exists'], fr['data_repository'] == 'ibl1')
+
+        # Case 4, server_only = False, repo name specified, exists = False
+        # Expect: 3 file records, all with exists = False
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.b.e2',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': False,
+                'exists': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 3)
+        for fr in frs:
+            self.assertEqual(fr['exists'], False)
+
+        # Case 5, server_only = True, repo name specified
+        # Expect: 2 file records, 1 for specified repo and 1 for server repo,
+        # all with exists = True (preserves old behavior)
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.c.e1',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': True,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 2)
+        for fr in frs:
+            self.assertEqual(fr['exists'], True)
+
+        # Case 6, server_only = True, repo name specified, exists = False
+        # Expect: 2 file records, 1 for specified repo and 1 for server repo,
+        # all with exists = False
+        data = {'path': '%s/2018-01-01/002/dir' % self.subject,
+                'filenames': 'a.c.e2',  # this is the repository name
+                'name': 'ibl1',
+                'server_only': True,
+                'exists': False,
+                'labs': ['ibl']
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)[0]
+        frs = r['file_records']
+        self.assertTrue(len(frs) == 2)
+        for fr in frs:
+            self.assertEqual(fr['exists'], False)
 
     def test_register_with_revision(self):
         self.post(reverse('datarepository-list'), {'name': 'drb2', 'hostname': 'hostb2'})
@@ -381,8 +509,8 @@ class APIDataTests(BaseTests):
         self.assertTrue(not r['revision'])
         self.assertEqual(r['collection'], 'dir')
         # Check the revision relative path doesn't exist
-        self.assertTrue(r['file_records'][0]['relative_path'] ==
-                        op.join(data['path'], data['filenames']))
+        self.assertEqual(r['file_records'][0]['relative_path'],
+                         PurePosixPath(data['path'], data['filenames']).as_posix())
 
         # Now test specifying a revision in path
         data = {'path': '%s/2018-01-01/002/dir/#v1#' % self.subject,
@@ -395,7 +523,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(r['revision'] == 'v1')
         self.assertEqual('dir', r['collection'])
         # Check file record relative path includes revision
-        self.assertTrue('#v1#' in r['file_records'][0]['relative_path'])
+        self.assertIn('#v1#', r['file_records'][0]['relative_path'])
 
         # Now test specifying a collection and a revision in filename
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
@@ -407,7 +535,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(r['revision'] == 'v1')
         self.assertTrue(r['collection'] == 'dir/dir1')
         # Check file record relative path includes revision
-        self.assertTrue('#v1#' in r['file_records'][0]['relative_path'])
+        self.assertIn('#v1#', r['file_records'][0]['relative_path'])
 
         # Test that giving nested revision folders gives out an error
         data = {'path': '%s/2018-01-01/002/dir' % self.subject,
@@ -557,6 +685,52 @@ class APIDataTests(BaseTests):
         self.assertEqual(r['default'], False)
         r = self.ar(self.client.get(reverse('dataset-list') + '?id=' + str(dataset_id1)))[0]
         self.assertEqual(r['default_dataset'], True)
+
+    def test_protected_view(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
+
+        # Create protected tag
+        self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': True})
+
+        # Create some datasets and register
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_prot/a.d.e2,test_prot/a.d.e1,',
+                'name': 'drb1',  # this is the repository name
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 201)
+
+        # add protected tag to the first dataset
+        dataset1 = Dataset.objects.get(pk=r[0]['id'])
+        tag1 = Tag.objects.get(name='tag1')
+        dataset1.tags.add(tag1)
+
+        # Check the protected status of three files
+        # 1. already created + protected --> expect protected=True
+        # 2. already created --> expect protected=False
+        # 3. not yet created --> expect protected=False
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_prot/a.d.e2,test_prot/a.d.e1,test_prot/a.b.e1',
+                'name': 'drb1',
+                'check_protected': True
+                }
+
+        r = self.client.post(reverse('register-file'), data)
+        r = self.ar(r, 403)
+        self.assertEqual(r['error'], 'One or more datasets is protected')
+
+        r = r['details']
+        (name, prot_info), = r[0].items()
+        self.assertEqual(name, 'test_prot/a.d.e2')
+        self.assertEqual(prot_info, [{'': True}])
+        (name, prot_info), = r[1].items()
+        self.assertEqual(name, 'test_prot/a.d.e1')
+        self.assertEqual(prot_info, [{'': False}])
+        (name, prot_info), = r[2].items()
+        self.assertEqual(name, 'test_prot/a.b.e1')
+        self.assertEqual(prot_info, [])
 
     def test_revisions(self):
         # Check revision lookup with name

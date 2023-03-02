@@ -1,5 +1,5 @@
-from django.db.models import Count
-from django.contrib import admin
+from django.db.models import Count, ProtectedError
+from django.contrib import admin, messages
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rangefilter.filter import DateRangeFilter
@@ -134,6 +134,21 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
         return obj.is_public
     _public.short_description = 'Public'
     _public.boolean = True
+
+    def delete_queryset(self, request, queryset):
+        try:
+            queryset.delete()
+        except ProtectedError as e:
+            err_msg = e.args[0] if e.args else 'One or more dataset(s) protected'
+            self.message_user(request, err_msg, level=messages.ERROR)
+
+    def delete_model(self, request, obj):
+        try:
+            obj.delete()
+        except ProtectedError as e:
+            # FIXME This still shows the successful message which is confusing for users
+            err_msg = e.args[0] if e.args else f'Dataset {obj.name} is protected'
+            self.message_user(request, err_msg, level=messages.ERROR)
 
 
 class FileRecordAdmin(BaseAdmin):
