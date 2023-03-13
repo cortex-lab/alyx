@@ -1,7 +1,7 @@
 asgiref==3.6.0
 backports.zoneinfo==0.2.1
-boto3==1.26.88
-botocore==1.29.88
+boto3==1.26.89
+botocore==1.29.89
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -75,6 +75,6 @@ structlog==22.3.0
 tqdm==4.65.0
 typing_extensions==4.5.0
 uritemplate==4.1.1
-urllib3==1.26.14
+urllib3==1.26.15
 webdavclient3==3.14.6
 zipp==3.15.0
