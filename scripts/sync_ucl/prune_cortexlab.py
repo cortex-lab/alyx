@@ -18,6 +18,8 @@ json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 # remove all subjects that never had anything to do with IBL
 ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
+# Since we currently still use both the project and the projects field, we need to filter for both
+ses = ses.union(Session.objects.using('cortexlab').filter(projects__name__icontains='ibl'))
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
 sub_ibl += list(Subject.objects.using('cortexlab').filter(
