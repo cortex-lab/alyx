@@ -1780,5 +1780,16 @@
       "description": "Manual labels of the pupils for training pose estimation algorithms. Contains csv files with labels, frame images and short video snippets from various sessions",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "bb1add37-910b-4153-bd50-53dc5c9bf77a",
+    "fields": {
+      "json": null,
+      "name": "camera.lightningPose",
+      "created_by": null,
+      "description": "Dataframe with coordinates of body parts as estimated by Lightning Pose algorithm",
+      "filename_pattern": ""
+    }
   }
 ]
