@@ -1764,7 +1764,7 @@
     "pk": "479ea451-e7d5-413a-8dc1-e8eb44e5afc2",
     "fields": {
       "json": null,
-      "name": "_ibl_videoTracking.trainingDataPaw",
+      "name": "videoTracking.trainingDataPaw",
       "created_by": null,
       "description": "Manual labels of the paws for training pose estimation algorithms. Contains csv files with labels, frame images and short video snippets from various sessions",
       "filename_pattern": ""
@@ -1775,7 +1775,7 @@
     "pk": "4ef9e5ed-c132-4329-a9b0-63260c26ccac",
     "fields": {
       "json": null,
-      "name": "_ibl_videoTracking.trainingDataPupil",
+      "name": "videoTracking.trainingDataPupil",
       "created_by": null,
       "description": "Manual labels of the pupils for training pose estimation algorithms. Contains csv files with labels, frame images and short video snippets from various sessions",
       "filename_pattern": ""
