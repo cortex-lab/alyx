@@ -1791,5 +1791,203 @@
       "description": "Dataframe with coordinates of body parts as estimated by Lightning Pose algorithm",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "533c2ab3-3f44-463d-9a07-770c477d6954",
+    "fields": {
+      "json": null,
+      "name": "mpci.componentsActivity",
+      "created_by": null,
+      "description": "SVT of singular value compression, separately for each plane",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "462a0471-ff2e-43d1-a70a-dd13bbab1d88",
+    "fields": {
+      "json": null,
+      "name": "mpci.ROIActivityF",
+      "created_by": null,
+      "description": "Mean activity of all pixels in each ROI",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "beee53c8-273a-42d4-b171-750f43db6ac0",
+    "fields": {
+      "json": null,
+      "name": "mpci.ROINeuropilActivityF",
+      "created_by": null,
+      "description": "Mean activity neuropil pixels neighboring each ROI",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "bef8f983-d194-458c-aa3b-a23789723da3",
+    "fields": {
+      "json": null,
+      "name": "mpci.ROIActivityDeconvolved",
+      "created_by": null,
+      "description": "Neuropil-subtracted deconvolved activity of each ROI using standard parameters",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "d30a5416-8c0f-45d1-b444-daed3cbd14dd",
+    "fields": {
+      "json": null,
+      "name": "mpci.times",
+      "created_by": null,
+      "description": "Times of each frame",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "c09943db-a710-4482-8eb0-beabceedeb93",
+    "fields": {
+      "json": null,
+      "name": "mpci.badFrames",
+      "created_by": null,
+      "description": "Bad frames as identified by processing software",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "d4cb6475-2863-4ab9-bc89-993bdf84fe01",
+    "fields": {
+      "json": null,
+      "name": "mpci.mpciFrameQC",
+      "created_by": null,
+      "description": "Frame-level quality control as added by experimenter. 0 means good, other values defined in mpciFrameQC.names.tsv",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "eddc887f-d9e6-4bb1-86b1-1520e9f1ee54",
+    "fields": {
+      "json": null,
+      "name": "mpciFrameQC.names",
+      "created_by": null,
+      "description": "",
+      "filename_pattern": "Human-readable definition of QC types. 0 always should mean good."
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "47f99a07-9244-4c8d-8851-733f23df9393",
+    "fields": {
+      "json": null,
+      "name": "mpciComponents.images",
+      "created_by": null,
+      "description": "Component image for each plane",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3759b20a-d83b-43c1-b4d7-abf91406433f",
+    "fields": {
+      "json": null,
+      "name": "mpciMeanImage.images",
+      "created_by": null,
+      "description": "Mean image for each plane and each channel. Channel 0 should be the calcium-sensitive channel",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3777d0d9-ea37-489b-be6e-73e7fc6ff36a",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.stackPos",
+      "created_by": null,
+      "description": "X, Y, and Z (plane) coordinate of each ROI's centroid",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "8103033c-f8a6-482a-9ca3-e932c8d2f9af",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.mlapdv",
+      "created_by": null,
+      "description": "Allen CCF coordinates of each ROI centroid",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "96b0c2af-86ce-4a20-9ffa-06e90f900069",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.mpciROITypes",
+      "created_by": null,
+      "description": "Numerical code of ROI type for each ROI",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a0d580cb-bf14-448b-872a-4a5023e4ce24",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.masks",
+      "created_by": null,
+      "description": "Floating-point mask of each ROI, in 2d or 3d according to how you did detection. Saved as sparse array",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "4871a117-728c-4cc1-b64d-f82d29f81f8b",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.neuropilMasks",
+      "created_by": null,
+      "description": "Floating-point neuropil mask for each ROI, in 2d or 3d according to how you did detection. Saved as a sparse array",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "606674e5-adfa-4049-9f2b-03a1b40c9099",
+    "fields": {
+      "json": null,
+      "name": "mpciROITypes.names",
+      "created_by": null,
+      "description": "String describing each ROI type",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "d0236da1-008c-458d-ab8d-c74d22c76148",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.cellClassifier",
+      "created_by": null,
+      "description": "Floating-point cell classifier score for each ROI, ranging between 0 and 1",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "ccc2bc98-e708-44f4-a6fe-4eabe6766ece",
+    "fields": {
+      "json": null,
+      "name": "mpciStack.timeshift",
+      "created_by": null,
+      "description": "Offset time for scanning of each voxel in the stack",
+      "filename_pattern": ""
+    }
   }
 ]
