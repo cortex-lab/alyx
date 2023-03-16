@@ -655,11 +655,12 @@ def globus_transfer_datasets(dsets, dry=True):
     return gc, tm
 
 
-def globus_delete_local_datasets(datasets, dry=True, gc=None):
+def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
     """
     For each dataset in the queryset delete the file records belonging to a Globus personal repo
     only if a server file exists and matches the size.
     :param datasets:
+    :param label: label for the transfer
     :param dry: default True
     :return:
     """
@@ -667,11 +668,12 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None):
     file_records = FileRecord.objects.filter(dataset__in=datasets)
     globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
                                                 flat=True).distinct()
+    label = label or 'alyx globus client'
     # create a globus delete_client for each globus endpoint
     gtc = gc or globus_transfer_client()
     delete_clients = []
     for ge in globus_endpoints:
-        delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
+        delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=label))
 
     def _ls_globus(file_record, add_uuid=False):
         N_RETRIES = 3
@@ -767,7 +769,7 @@ def globus_delete_datasets(datasets, dry=True, local_only=False, gc=None):
         ds.delete()
 
 
-def globus_delete_file_records(file_records, dry=True, gc=None):
+def globus_delete_file_records(file_records, dry=True, gc=None, label=None):
     """
     For each filecord in the queryset, attempt a Globus delete for all physical file-records
     associated. Admin territory.
@@ -780,14 +782,14 @@ def globus_delete_file_records(file_records, dry=True, gc=None):
     globus_endpoints = file_records.values_list(
         'data_repository__globus_endpoint_id', flat=True).distinct()
     related_datasets = file_records.values_list('dataset', flat=True).distinct()
-
+    label = label or 'alyx globus client'
     # create a globus delete_client for each globus endpoint
     gtc = gc or globus_transfer_client()
     delete_clients = []
     if not dry:
         # delete_clients = []
         for ge in globus_endpoints:
-            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=''))
+            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=label))
     # appends each file for deletion
     for i, ge in enumerate(globus_endpoints):
         current_path = None
