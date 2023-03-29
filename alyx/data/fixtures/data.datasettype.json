@@ -1989,5 +1989,16 @@
       "description": "Offset time for scanning of each voxel in the stack",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a5caf8ae-46f9-4755-8366-171f26bff278",
+    "fields": {
+      "json": null,
+      "name": "_timeline_softwareEvents.log",
+      "created_by": null,
+      "description": "A table of software events in DAQ time, one row per event. Columns include 'time', 'name', and 'message'.",
+      "filename_pattern": "_timeline_softwareEvents.log.*"
+    }
   }
 ]
