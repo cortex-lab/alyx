@@ -2,7 +2,7 @@
 import numpy as np
 
 from django.core.management import call_command
-from django.db.models import CharField
+from django.db.models import CharField, Q
 from django.db.models.functions import Concat
 
 from subjects.models import Subject, Project, SubjectRequest
@@ -16,10 +16,11 @@ CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
+# Since we currently still use both the project and the projects field, we need to filter for
+# either containing an IBL project
+ses = Session.objects.using('cortexlab').filter(
+    Q(project__name__icontains='ibl') | Q(projects__name__icontains='ibl'))
 # remove all subjects that never had anything to do with IBL
-ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
-# Since we currently still use both the project and the projects field, we need to filter for both
-ses = ses.union(Session.objects.using('cortexlab').filter(projects__name__icontains='ibl'))
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
 sub_ibl += list(Subject.objects.using('cortexlab').filter(
