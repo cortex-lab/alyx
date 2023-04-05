@@ -1997,8 +1997,19 @@
       "json": null,
       "name": "_timeline_softwareEvents.log",
       "created_by": null,
-      "description": "A table of software events in DAQ time, one row per event. Columns include 'time', 'name', and 'message'.",
+      "description": "A table of software events in DAQ time, one row per event. Columns include 'time', 'name', and 'info'.",
       "filename_pattern": "_timeline_softwareEvents.log.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "23185e3e-4d4c-463b-a74b-8e69869ecec8",
+    "fields": {
+      "json": null,
+      "name": "reference.image",
+      "created_by": null,
+      "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
+      "filename_pattern": ""
     }
   }
 ]
