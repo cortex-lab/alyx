@@ -1,7 +1,7 @@
 asgiref==3.6.0
 backports.zoneinfo==0.2.1
-boto3==1.26.104
-botocore==1.29.104
+boto3==1.26.106
+botocore==1.29.106
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -54,9 +54,9 @@ numba==0.56.4
 numpy==1.23.5
 ONE-api==1.21.3
 packaging==23.0
-pandas==1.5.3
+pandas==2.0.0
 Pillow==9.5.0
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
 pyarrow==11.0.0
 pycodestyle==2.10.0
 pycparser==2.21
@@ -74,6 +74,7 @@ sqlparse==0.4.3
 structlog==22.3.0
 tqdm==4.65.0
 typing_extensions==4.5.0
+tzdata==2023.3
 uritemplate==4.1.1
 urllib3==1.26.15
 webdavclient3==3.14.6
