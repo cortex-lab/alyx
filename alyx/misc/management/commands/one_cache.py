@@ -88,7 +88,8 @@ def _save(filename: str, df: pd.DataFrame, metadata: dict = None, dry=False) -> 
         parsed = urllib.parse.urlparse(filename)
         if parsed.scheme == 's3':
             # Filename mustn't include scheme
-            pq.write_table(table, parsed.path, filesystem=_s3_filesystem())
+            path = parsed.path[int(parsed.path.startswith('/')):]
+            pq.write_table(table, path, filesystem=_s3_filesystem())
         elif parsed.scheme == '':
             pq.write_table(table, filename)
         else:
