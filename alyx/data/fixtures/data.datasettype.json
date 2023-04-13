@@ -1876,7 +1876,7 @@
       "json": null,
       "name": "mpciFrameQC.names",
       "created_by": null,
-      "description": "human-readable definition of QC types. First column, 'qc_values', contains unsigned ints where 0 always should mean good. Second column, 'qc_labels', contains a short human-readable description.",
+      "description": "Human-readable definition of QC types. First column, 'qc_values', contains unsigned ints where 0 always should mean good. Second column, 'qc_labels', contains a short human-readable description.",
       "filename_pattern": ""
     }
   },
