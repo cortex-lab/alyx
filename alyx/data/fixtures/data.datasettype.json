@@ -1876,8 +1876,8 @@
       "json": null,
       "name": "mpciFrameQC.names",
       "created_by": null,
-      "description": "",
-      "filename_pattern": "Human-readable definition of QC types. 0 always should mean good."
+      "description": "Human-readable definition of QC types. First column, 'qc_values', contains unsigned ints where 0 always should mean good. Second column, 'qc_labels', contains a short human-readable description.",
+      "filename_pattern": ""
     }
   },
   {
@@ -1987,6 +1987,28 @@
       "name": "mpciStack.timeshift",
       "created_by": null,
       "description": "Offset time for scanning of each voxel in the stack",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a5caf8ae-46f9-4755-8366-171f26bff278",
+    "fields": {
+      "json": null,
+      "name": "_timeline_softwareEvents.log",
+      "created_by": null,
+      "description": "A table of software events in DAQ time, one row per event. Columns include 'time', 'name', and 'info'.",
+      "filename_pattern": "_timeline_softwareEvents.log.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "23185e3e-4d4c-463b-a74b-8e69869ecec8",
+    "fields": {
+      "json": null,
+      "name": "reference.image",
+      "created_by": null,
+      "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
       "filename_pattern": ""
     }
   }

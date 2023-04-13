@@ -286,5 +286,17 @@
    "matlab_loader_function": "ReadYaml",
    "python_loader_function": "yaml.full_load"
   }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "145e9d9a-bce4-4181-a6d4-935895f2679e",
+  "fields": {
+   "json": "",
+   "name": "tif",
+   "description": "An image file format for storing raster graphics images and associated metadata.",
+   "file_extension": ".tif",
+   "matlab_loader_function": "read",
+   "python_loader_function": "ScanImageTiffReader"
+  }
  }
 ]
