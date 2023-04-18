@@ -2011,5 +2011,16 @@
       "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "4cb6bc06-a549-4ab6-9ac0-7e28a4f29d32",
+    "fields": {
+      "json": null,
+      "name": "subjectTraining.table",
+      "created_by": null,
+      "description": "Overview of training status for subject, date and session at which the subject reached different training criterion",
+      "filename_pattern": ""
+    }
   }
 ]
