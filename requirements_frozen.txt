@@ -1,7 +1,7 @@
 asgiref==3.6.0
 backports.zoneinfo==0.2.1
-boto3==1.26.112
-botocore==1.29.112
+boto3==1.26.115
+botocore==1.29.115
 certifi==2022.12.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -26,7 +26,7 @@ django-mptt==0.14.0
 django-polymorphic==3.1.0
 django-reversion==5.0.4
 django-storages==1.13.2
-django-structlog==5.0.1
+django-structlog==5.0.2
 django-test-without-migrations==0.6
 djangorestframework==3.14.0
 docopt==0.6.2
@@ -38,7 +38,7 @@ globus-cli==3.12.0
 globus-sdk==3.17.0
 iblutil==1.6.0
 idna==3.4
-importlib-metadata==6.3.0
+importlib-metadata==6.4.1
 importlib-resources==5.12.0
 itypes==1.2.0
 Jinja2==3.1.2
@@ -70,7 +70,7 @@ PyYAML==6.0
 requests==2.28.2
 s3transfer==0.6.0
 six==1.16.0
-sqlparse==0.4.3
+sqlparse==0.4.4
 structlog==23.1.0
 tqdm==4.65.0
 typing_extensions==4.5.0
