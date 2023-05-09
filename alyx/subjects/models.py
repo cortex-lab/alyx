@@ -12,7 +12,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from alyx.base import BaseModel, alyx_mail, modify_fields
+from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
 from actions.models import Surgery
@@ -140,10 +140,9 @@ class Subject(BaseModel):
     )
     PROTOCOL_NUMBERS = tuple((str(i), str(i)) for i in range(1, 5))
 
-    nickname_validator = validators.RegexValidator(r'^[-._~\+\*\w]+$',
+    nickname_validator = validators.RegexValidator(f"^{ALF_SPEC['subject']}$",
                                                    "Nicknames must only contain letters, "
-                                                   "numbers, or any of -._~.")
-
+                                                   "numbers, hyphens and underscores.")
     nickname = models.CharField(max_length=64,
                                 default='-',
                                 help_text="Easy-to-remember name (e.g. 'Hercules').",
@@ -329,6 +328,7 @@ class Subject(BaseModel):
 
     def save(self, *args, **kwargs):
         from actions.models import WaterRestriction, Cull, CullMethod
+        self.clean_fields()
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)

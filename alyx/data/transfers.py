@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
-from one.alf.files import add_uuid_string
+from one.alf.files import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 
 from alyx import settings
@@ -187,36 +187,36 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
-def _get_name_collection_revision(file, rel_dir_path, subject, date):
+def _get_name_collection_revision(file, rel_dir_path):
+    """
+    Extract collection, revision and session parts from the full file path.
 
+    :param file: The filename
+    :param rel_dir_path: The relative path (subject/date/number/collection/revision)
+    :return: dict of path parts
+    :return: a REST Response object if ALF path is invalid, otherwise None
+    """
     # Get collections/revisions for each file
-    fullpath = Path(rel_dir_path).joinpath(file).as_posix()
-    # Index of relative path (stuff after session path)
-    i = re.search(f'{subject}/{date}/' + r'\d{1,3}', fullpath).end()
-    subdirs = list(Path(fullpath[i:].strip('/')).parent.parts)
-    # Check for revisions (folders beginning and ending with '#')
-    # Fringe cases:
-    #   '#' is a collection
-    #   '##' is an empty revision
-    #   '##blah#5#' is a revision named '#blah#5'
-    is_rev = [len(x) >= 2 and x[0] + x[-1] == '##' for x in subdirs]
-    if any(is_rev):
-        # There may be only 1 revision and it cannot contain sub folders
-        if is_rev.index(True) != len(is_rev) - 1:
-            data = {'status_code': 400,
-                    'detail': 'Revision folders cannot contain sub folders'}
-            return None, Response(data=data, status=400)
-        revision = subdirs.pop()[1:-1]
-    else:
-        revision = None
+    fullpath = Path(rel_dir_path).joinpath(file)
+    try:
+        info = folder_parts(fullpath.parent, as_dict=True)
+        if info['revision'] is not None:
+            path_parts = fullpath.parent.parts
+            assert path_parts.index(f"#{info['revision']}#") == len(path_parts) - 1
+    except AssertionError:
+        data = {'status_code': 400,
+                'detail': 'Invalid ALF path. There must be only 1 revision and it cannot contain'
+                          'sub folders. A revision folder must be surrounded by pound signs (#).'}
+        return None, Response(data=data, status=400)
+    except ValueError:
+        data = {'status_code': 400,
+                'detail': 'Invalid ALF path. Only letters, numbers, hyphen and underscores '
+                          'allowed. A revision folder must be surrounded by pound signs (#).'}
+        return None, Response(data=data, status=400)
 
-    info = dict()
-    info['full_path'] = fullpath
-    info['filename'] = Path(file).name
-    info['collection'] = '/'.join(subdirs)
-    info['revision'] = revision
-    info['rel_dir_path'] = fullpath[:i]
-
+    info['full_path'] = fullpath.as_posix()
+    info['filename'] = fullpath.name
+    info['rel_dir_path'] = '{subject}/{date}/{number}'.format(**info)
     return info, None
 
 
