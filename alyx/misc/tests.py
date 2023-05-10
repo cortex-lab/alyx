@@ -3,7 +3,7 @@ import unittest
 from django.test import TestCase
 
 from subjects.models import Subject
-from misc.models import Housing, HousingSubject, CageType, LabMember
+from misc.models import Housing, HousingSubject, CageType, LabMember, Lab
 
 SKIP_ONE_CACHE = False
 try:
@@ -16,15 +16,16 @@ except ImportError as ex:
 
 class LabMemberTests(TestCase):
     def setUp(self):
+        lab = Lab.objects.create(name='multi_user_lab')
         self.lab_member_0 = LabMember.objects.create(username='test_user', is_stock_manager=True)
         self.lab_member_a = LabMember.objects.create(username='test_user_a')
         self.lab_member_b = LabMember.objects.create(username='test_user_b')
         self.lab_member_b.allowed_users.set([self.lab_member_a])
-        self.subject_a = Subject.objects.create(nickname='subject_a',
+        self.subject_a = Subject.objects.create(nickname='subject_a', lab=lab,
                                                 responsible_user=self.lab_member_a)
-        self.subject_b = Subject.objects.create(nickname='subject_b',
+        self.subject_b = Subject.objects.create(nickname='subject_b', lab=lab,
                                                 responsible_user=self.lab_member_b)
-        self.subject_c = Subject.objects.create(nickname='subject_c')
+        self.subject_c = Subject.objects.create(nickname='subject_c', lab=lab)
 
     def test_allowed_users(self):
         # stock manager sees all of the subjects
