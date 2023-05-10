@@ -760,6 +760,17 @@
   },
   {
     "model": "data.datasettype",
+    "pk": "acb644d5-05a6-41b0-8f4e-b290d0b7a9cc",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.quiescencePeriod",
+      "created_by": null,
+      "description": "At the beginning of each trial, the mouse must not move the wheel for a fixed, “quiescent” period for the trial to continue. The quiescence period is the duration of this period in seconds.",
+      "filename_pattern": "_ibl_trials.quiescencePeriod.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
     "pk": "7e27c540-e61d-401f-b774-54d573886a6c",
     "fields": {
       "json": null,
