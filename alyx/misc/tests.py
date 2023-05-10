@@ -3,7 +3,7 @@ import unittest
 from django.test import TestCase
 
 from subjects.models import Subject
-from misc.models import Housing, HousingSubject, CageType
+from misc.models import Housing, HousingSubject, CageType, LabMember
 
 SKIP_ONE_CACHE = False
 try:
@@ -12,6 +12,33 @@ try:
 except ImportError as ex:
     print(f'Failed to import one_cache: {ex}')
     SKIP_ONE_CACHE = True
+
+
+class LabMemberTests(TestCase):
+    def setUp(self):
+        self.lab_member_0 = LabMember.objects.create(username='test_user', is_stock_manager=True)
+        self.lab_member_a = LabMember.objects.create(username='test_user_a')
+        self.lab_member_b = LabMember.objects.create(username='test_user_b')
+        self.lab_member_b.allowed_users.set([self.lab_member_a])
+        self.subject_a = Subject.objects.create(nickname='subject_a',
+                                                responsible_user=self.lab_member_a)
+        self.subject_b = Subject.objects.create(nickname='subject_b',
+                                                responsible_user=self.lab_member_b)
+        self.subject_c = Subject.objects.create(nickname='subject_c')
+
+    def test_allowed_users(self):
+        # stock manager sees all of the subjects
+        sub_stock_manager = set(
+            self.lab_member_0.get_allowed_subjects().values_list('nickname', flat=True))
+        self.assertEqual(sub_stock_manager, set(['subject_a', 'subject_b', 'subject_c']))
+        # lab_member_a has delegate access to lab_member_b, so sees subject_b
+        sub_lab_member_a = set(
+            self.lab_member_a.get_allowed_subjects().values_list('nickname', flat=True))
+        self.assertEqual(sub_lab_member_a, set(['subject_a', 'subject_b']))
+        # lab_member_b sees only her subjects
+        sub_lab_member_b = set(
+            self.lab_member_b.get_allowed_subjects().values_list('nickname', flat=True))
+        self.assertEqual(sub_lab_member_b, set(['subject_b']))
 
 
 class HousingTests(TestCase):
