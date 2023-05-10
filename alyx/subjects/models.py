@@ -328,10 +328,11 @@ class Subject(BaseModel):
 
     def save(self, *args, **kwargs):
         from actions.models import WaterRestriction, Cull, CullMethod
-        self.clean_fields()
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
+        # Check nickname doesn't contain any special characters that will mess with the ALF spec
+        self.nickname_validator(self.nickname)
         # Default strain.
         if self.line and not self.strain:
             self.strain = self.line.strain
