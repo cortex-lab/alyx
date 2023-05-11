@@ -2022,5 +2022,49 @@
       "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
       "filename_pattern": ""
     }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
+    "fields": {
+      "json": null,
+      "name": "_ibl_clusters.table",
+      "created_by": null,
+      "description": "Aggregate of several sessions clusters in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectClusters.table",
+      "created_by": null,
+      "description": "Aggregate of several sessions clusters in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+   {
+    "model": "data.datasettype",
+    "pk": "d49b5321-f970-470a-98a6-4a62e1abc422",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectChannels.table",
+      "created_by": null,
+      "description": "Aggregate of several sessions channels in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "d53892ab-7576-48ed-92d0-8a1fcd5cc36d",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectEphysFeatures.table",
+      "created_by": null,
+      "description": "Aggregate of channel based electrophysiology features in a recapitualive table",
+      "filename_pattern": ""
+    }
   }
 ]
