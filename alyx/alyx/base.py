@@ -8,6 +8,7 @@ import pytz
 import uuid
 from collections import OrderedDict
 from rest_framework import serializers
+import one.alf.spec
 from datetime import datetime
 
 from django import forms
@@ -34,6 +35,7 @@ logger = structlog.get_logger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 DISABLE_MAIL = False  # used for testing
+ALF_SPEC = dict(one.alf.spec._DEFAULT)  # Regex for ALF part validation
 
 
 class CharNullField(models.CharField):
