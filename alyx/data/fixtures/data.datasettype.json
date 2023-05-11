@@ -760,6 +760,17 @@
   },
   {
     "model": "data.datasettype",
+    "pk": "acb644d5-05a6-41b0-8f4e-b290d0b7a9cc",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.quiescencePeriod",
+      "created_by": null,
+      "description": "At the beginning of each trial, the mouse must not move the wheel for a fixed, “quiescent” period for the trial to continue. The quiescence period is the duration of this period in seconds.",
+      "filename_pattern": "_ibl_trials.quiescencePeriod.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
     "pk": "7e27c540-e61d-401f-b774-54d573886a6c",
     "fields": {
       "json": null,
@@ -1759,6 +1770,17 @@
       "filename_pattern": ""
     }
   },
+    {
+    "model": "data.datasettype",
+    "pk": "4cb6bc06-a549-4ab6-9ac0-7e28a4f29d32",
+    "fields": {
+      "json": null,
+      "name": "subjectTraining.table",
+      "created_by": null,
+      "description": "Overview of training status for subject, date and session at which the subject reached different training criterion",
+      "filename_pattern": ""
+    }
+  },
   {
     "model": "data.datasettype",
     "pk": "479ea451-e7d5-413a-8dc1-e8eb44e5afc2",
@@ -2012,14 +2034,47 @@
       "filename_pattern": ""
     }
   },
-  {
+    {
     "model": "data.datasettype",
-    "pk": "4cb6bc06-a549-4ab6-9ac0-7e28a4f29d32",
+    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
     "fields": {
       "json": null,
-      "name": "subjectTraining.table",
+      "name": "_ibl_clusters.table",
       "created_by": null,
-      "description": "Overview of training status for subject, date and session at which the subject reached different training criterion",
+      "description": "Aggregate of several sessions clusters in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectClusters.table",
+      "created_by": null,
+      "description": "Aggregate of several sessions clusters in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+   {
+    "model": "data.datasettype",
+    "pk": "d49b5321-f970-470a-98a6-4a62e1abc422",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectChannels.table",
+      "created_by": null,
+      "description": "Aggregate of several sessions channels in a recapitulative table",
+      "filename_pattern": ""
+    }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "d53892ab-7576-48ed-92d0-8a1fcd5cc36d",
+    "fields": {
+      "json": null,
+      "name": "_ibl_projectEphysFeatures.table",
+      "created_by": null,
+      "description": "Aggregate of channel based electrophysiology features in a recapitualive table",
       "filename_pattern": ""
     }
   }

@@ -7,6 +7,8 @@ import pytz
 
 from PIL import Image
 
+from django.db.models import Q
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -49,6 +51,22 @@ class LabMember(AbstractUser):
             return settings.TIME_ZONE
         else:
             return labs[0].timezone
+
+    def get_allowed_subjects(self, subjects_queryset=None):
+        """
+        Find all subjects for which the user is responsible and has delegated access
+        The stock managers and super users have access to all subjects
+        :param subjects_queryset: Queryset of subjects to filter on, if None, all subjects
+        :return: Queryset of subjects accessible by the user
+        """
+        if subjects_queryset is None:
+            from subjects.models import Subject  # avoid circular import
+            subjects_queryset = Subject.objects.all()
+        # stock mangers or super users have access to all subjects
+        if self.is_superuser or self.is_stock_manager:
+            return subjects_queryset
+        responsible_users = get_user_model().objects.filter(Q(allowed_users=self) | Q(pk=self.pk))
+        return subjects_queryset.filter(responsible_user__in=responsible_users)
 
 
 class Lab(BaseModel):
