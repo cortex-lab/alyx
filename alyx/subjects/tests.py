@@ -8,6 +8,7 @@ import warnings
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test.client import RequestFactory
 
@@ -100,8 +101,12 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
             self.request.user = user
             self._test_list_change(self.site._registry[cls])
 
+    def test_validation(self):
+        # Expect raises when using special characters
+        self.assertRaises(ValidationError, Subject.objects.create, nickname='~mango.*')
+
     def test_history(self):
-        from subjects.models import Subject, _has_field_changed
+        from subjects.models import _has_field_changed
 
         s = Subject.objects.first()
 

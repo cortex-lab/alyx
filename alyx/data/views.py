@@ -6,6 +6,7 @@ from django.db import models
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
+from one.alf.spec import regex
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from subjects.models import Subject, Project
@@ -312,18 +313,13 @@ def _make_dataset_response(dataset):
 
 
 def _parse_path(path):
-    pattern = (r'^(?P<nickname>[a-zA-Z0-9\-\_]+)/'
-               # '(?P<year>[0-9]{4})\-(?P<month>[0-9]{2})\-(?P<day>[0-9]{2})/'
-               r'(?P<date>[0-9\-]{10})/'
-               r'(?P<session_number>[0-9]+)'
-               r'(.*)$')
+    pattern = regex(spec='{subject}/{date}/{number}').pattern + '.*'
     m = re.match(pattern, path)
     if not m:
         raise ValueError(r"The path %s should be `nickname/YYYY-MM-DD/n/..." % path)
-    # date_triplet = (m.group('year'), m.group('month'), m.group('day'))
     date = m.group('date')
-    nickname = m.group('nickname')
-    session_number = int(m.group('session_number'))
+    nickname = m.group('subject')
+    session_number = int(m.group('number'))
     # An error is raised if the subject or data repository do not exist.
     subject = Subject.objects.get(nickname=nickname)
     return subject, date, session_number
@@ -468,7 +464,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             protected = []
             for file in filenames:
 
-                info, resp = _get_name_collection_revision(file, rel_dir_path, subject, date)
+                info, resp = _get_name_collection_revision(file, rel_dir_path)
 
                 if resp:
                     return resp
@@ -488,7 +484,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
             if not filename:
                 continue
-            info, resp = _get_name_collection_revision(filename, rel_dir_path, subject, date)
+            info, resp = _get_name_collection_revision(filename, rel_dir_path)
 
             if resp:
                 return resp
@@ -575,11 +571,11 @@ class DownloadDetail(generics.RetrieveUpdateAPIView):
 
 
 class DownloadFilter(BaseFilterSet):
-    json = django_filters.CharFilter(field_name='json', lookup_expr=('icontains'))
+    json = django_filters.CharFilter(field_name='json', lookup_expr='icontains')
     dataset = django_filters.CharFilter('dataset__name')
     user = django_filters.CharFilter('user__username')
     dataset_type = django_filters.CharFilter(field_name='dataset__dataset_type__name',
-                                             lookup_expr=('icontains'))
+                                             lookup_expr='icontains')
 
     class Meta:
         model = Download

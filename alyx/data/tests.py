@@ -1,9 +1,10 @@
 from django.test import TestCase
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.db.models import ProtectedError
 
-from data.models import Dataset, DatasetType, Tag
+from data.models import Dataset, DatasetType, Tag, Revision
 from subjects.models import Subject
 from misc.models import Lab
 from data.transfers import get_dataset_type
@@ -24,6 +25,11 @@ class TestModel(TestCase):
         dset = Dataset(name='toto.npy', content_object=subj)
 
         self.assertIs(dset.content_object, subj)
+
+    def test_validation(self):
+        # Expect raises when using special characters
+        self.assertRaises(ValidationError, Dataset.objects.create,
+                          name='toto.npy', collection='~alf/.*')
 
     def test_delete(self):
         (dset, _) = Dataset.objects.get_or_create(name='foo.npy')
@@ -69,3 +75,9 @@ class TestDatasetTypeModel(TestCase):
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
                 self.assertEqual(get_dataset_type(filename, dtypes).name, dataname)
+
+
+class TestRevisionModel(TestCase):
+    def test_validation(self):
+        # Expect raises when using special characters
+        self.assertRaises(ValidationError, Revision.objects.create, name='#2022-01-01.#')
