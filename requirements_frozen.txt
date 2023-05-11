@@ -74,7 +74,6 @@ sqlparse==0.4.4
 structlog==23.1.0
 tqdm==4.65.0
 typing_extensions==4.5.0
-tzdata==2023.3
 uritemplate==4.1.1
 urllib3==1.26.15
 webdavclient3==3.14.6
