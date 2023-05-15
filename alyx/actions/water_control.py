@@ -513,12 +513,12 @@ class WaterControl(object):
                 ax.axvspan(d0, d1, color=c or 'w')
 
             # Plot reference weight and zscore
-            ax.plot(ds, rw, '--', color='b', lw=1)
-            ax.plot(ds, zw, '-.', color='g', lw=1)
+            ax.plot(ds, rw, '--', color='b', lw=1, label='ref_weight')
+            ax.plot(ds, zw, '-.', color='g', lw=1, label='zscore')
 
             # Plot weight thresholds.
             for p, bgc, fgc, ls in self.thresholds:
-                ax.plot(ds, p * es, ls, color=fgc, lw=2)
+                ax.plot(ds, p * es, ls, color=fgc, lw=2, label=f'{p:.0%}')
 
             # Plot weights.
             ax.plot(ds, ws, '-ok', lw=2)
@@ -530,8 +530,7 @@ class WaterControl(object):
         ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
-        leg = ['ref weight', 'zscore'] + ['%d%%' % (100 * t[0]) for t in self.thresholds]
-        ax.legend(leg, loc=2)
+        ax.legend(loc=2)
         ax.grid(True)
         f.tight_layout()
         return return_figure(f)
