@@ -493,6 +493,7 @@ class WaterControl(object):
                 [self.reference_weight(date) for date in weighing_dates],
                 dtype=np.float64)
 
+        label = None
         # spans is a list of pairs (date, color) where there are changes of background colors.
         for start_wr, end_wr, ref_weight in self.water_restrictions:
             end_wr = end_wr or end
@@ -513,15 +514,16 @@ class WaterControl(object):
                 ax.axvspan(d0, d1, color=c or 'w')
 
             # Plot reference weight and zscore
-            ax.plot(ds, rw, '--', color='b', lw=1, label='ref_weight')
-            ax.plot(ds, zw, '-.', color='g', lw=1, label='zscore')
+            ax.plot(ds, rw, '--', color='b', lw=1, label=label or 'ref_weight')
+            ax.plot(ds, zw, '-.', color='g', lw=1, label=label or 'zscore')
 
             # Plot weight thresholds.
             for p, bgc, fgc, ls in self.thresholds:
-                ax.plot(ds, p * es, ls, color=fgc, lw=2, label=f'{p:.0%}')
+                ax.plot(ds, p * es, ls, color=fgc, lw=2, label=label or f'{p:.0%}')
 
             # Plot weights.
             ax.plot(ds, ws, '-ok', lw=2)
+            label = '_nolegend_'  # Ensure label added to legend only once
 
         # Axes and legends.
         ax.set_xlim(start, end)
