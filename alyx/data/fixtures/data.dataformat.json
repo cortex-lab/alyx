@@ -236,7 +236,7 @@
    "description": "Uncompresses TAR archive file",
    "file_extension": ".tar",
    "matlab_loader_function": "",
-   "python_loader_function": ""
+   "python_loader_function": "tarfile.TarFile"
   }
  },
  {
@@ -297,6 +297,18 @@
    "file_extension": ".tif",
    "matlab_loader_function": "read",
    "python_loader_function": "ScanImageTiffReader"
+  }
+ },
+ {
+  "model": "data.dataformat",
+  "pk": "7e432648-42f5-4f73-9aa6-fa9b89a61358",
+  "fields": {
+   "json": "",
+   "name": "bzip2",
+   "description": "A single file compressed using the Burrows–Wheeler algorithm.",
+   "file_extension": ".bz2",
+   "matlab_loader_function": "",
+   "python_loader_function": "bz2.open"
   }
  }
 ]
