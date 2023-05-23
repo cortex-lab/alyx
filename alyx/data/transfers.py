@@ -701,7 +701,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
                                            data_repository__globus_is_personal=False,
                                            data_repository__name__icontains='flatiron').first()
         if fr_server is None:
-            logger.warning(str(ds.session) + '/' + ds.collection +
+            logger.warning(str(ds.session) + '/' + (ds.collection or '') +
                            '/' + ds.name + " doesnt exist on server - skipping")
             continue
         ls_server = _ls_globus(fr_server, add_uuid=True)

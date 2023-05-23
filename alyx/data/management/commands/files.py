@@ -116,7 +116,7 @@ class Command(BaseCommand):
                                                    "--before=yyyy-mm-dd flag. Exiting now."))
                 return
             dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',
-                      '_iblrig_Camera.raw', '_kilosort_raw.output']
+                      '_iblrig_Camera.raw', '_kilosort_raw.output', 'imaging.frames']
             frecs = FileRecord.objects.filter(
                 data_repository__globus_is_personal=True,
                 dataset__dataset_type__name__in=dtypes,
