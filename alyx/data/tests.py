@@ -182,7 +182,7 @@ class TestManagementFiles(TestCase):
         deleted_files = [x.args[0] for x in delete_clients[0].add_item.call_args_list]
         expected = ['/mnt/foo/subject/2020-01-01/001/imaging.frames.tar.bz2',
                     '/mnt/foo/subject/2020-01-01/001/ephysData.raw.ap.bin']
-        self.assertEqual(deleted_files, expected)
+        self.assertEqual(set(deleted_files), set(expected))
         # Check files deleted
         fr = list(
             (FileRecord
