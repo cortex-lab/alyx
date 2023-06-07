@@ -107,9 +107,10 @@ class Command(BaseCommand):
                 limit = 1000
             else:
                 limit = int(limit)
-            if lab is None:
-                self.stdout.write(self.style.ERROR("Lab name should be specified to delete "
-                                                   "files on local server. Exiting now."))
+            if lab is None and data_repository is None:
+                self.stdout.write(self.style.ERROR(
+                    "Either Lab name or data repository should be specified to delete "
+                    "files on local server. Exiting now."))
                 return
             if before is None:
                 self.stdout.write(self.style.ERROR("Date beforeshould be specified: use the "
@@ -122,13 +123,19 @@ class Command(BaseCommand):
                 dataset__dataset_type__name__in=dtypes,
                 exists=True,
                 dataset__session__start_time__date__lte=before,
-                dataset__session__lab__name=lab
             )
+            # apply optional filters. At least one of them is specified as per arguments check
+            if lab is not None:
+                frecs = frecs.filter(dataset__session__lab__name=lab)
+            if data_repository is not None:
+                frecs = frecs.filter(data_repository__name=data_repository)
+            # only keep a limited amount of datasets as per th elimit
             dsets = frecs.values_list('dataset', flat=True)
             dsets = Dataset.objects.filter(id__in=dsets).order_by('session__start_time')[:limit]
             if dsets.count() == 0:
                 self.stdout.write(self.style.WARNING("Empty dataset list. Exiting now."))
                 return
+            # compute aggregate size of deletion for prompt
             siz = 0
             self.stdout.write("Deletion list:")
             for dset in dsets:
