@@ -92,6 +92,7 @@ class TestRevisionModel(TestCase):
 
 class TestManagementFiles(TestCase):
     """Tests for the files management command."""
+
     def setUp(self) -> None:
         """Create some data repositories and file records to clean up"""
         # Two of these are 'large' datasets that will be removed
@@ -114,8 +115,11 @@ class TestManagementFiles(TestCase):
             name='flatiron', globus_is_personal=False,
             globus_endpoint_id=uuid4(), globus_path='/mnt/foo/')
         # Create one session per lab
-        subj = Subject.objects.create(nickname='subject')
-        sessions = [Session.objects.create(subject=subj, number=1, lab=lab) for lab in self.labs]
+        self.subjects = [
+            Subject.objects.create(
+                nickname=f'subject{i}', lab=lab) for i, lab in enumerate(self.labs)]
+        sessions = [Session.objects.create(
+            subject=sub, number=1, lab=lab) for lab, sub in zip(self.labs, self.subjects)]
         # Create datasets and file records
         self.dset_names = ['ephysData.raw.ap.bin', 'imaging.frames.tar.bz2', 'foo.bar.baz']
         self.dsets = []
