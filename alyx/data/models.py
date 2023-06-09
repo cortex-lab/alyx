@@ -306,8 +306,7 @@ class Dataset(BaseExperimentalData):
 
     # Generic foreign key to arbitrary model instances allows polymorphic relationships
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
-    object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
-                                           "ID must already exist to attach a note.",
+    object_id = models.UUIDField(help_text="UUID of an object whose type matches content_type.",
                                  null=True, blank=True)
     content_object = GenericForeignKey()
 
