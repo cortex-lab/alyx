@@ -2088,5 +2088,27 @@
       "description": "Raw cell detection output ROI data.",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3736afe6-a006-44fd-8f9f-6cfbb41d98f4",
+    "fields": {
+      "json": null,
+      "name": "widefieldU.mask",
+      "created_by": null,
+      "description": "Mask to apply to widefield session data prior to pre-processing steps",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "7f124173-c108-4a67-9400-b314a6d8b6b5",
+    "fields": {
+      "json": null,
+      "name": "subjectWidefieldU.mask",
+      "created_by": null,
+      "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
+      "filename_pattern": ""
+    }
   }
 ]
