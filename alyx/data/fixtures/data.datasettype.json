@@ -1503,7 +1503,7 @@
       "name": "widefieldU.images",
       "created_by": null,
       "description": "Projected SVD spatial components (denoised/decomposed) with the shape [H, W, nComponents] where H and W are the dimensions of a single frame.",
-      "filename_pattern": "widefieldU.images*"
+      "filename_pattern": "*widefieldU.images*"
     }
   },
   {
@@ -1514,7 +1514,7 @@
       "name": "widefieldSVT.uncorrected",
       "created_by": null,
       "description": "temporal SVD components (denoised/decomposed), s·Vᵀ with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.uncorrected.*"
+      "filename_pattern": "*widefieldSVT.uncorrected.*"
     }
   },
   {
@@ -1525,7 +1525,7 @@
       "name": "widefieldSVT.haemoCorrected",
       "created_by": null,
       "description": "hemodynamic corrected temporal SVD components with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.haemoCorrected.*"
+      "filename_pattern": "*widefieldSVT.haemoCorrected.*"
     }
   },
   {
@@ -2105,7 +2105,7 @@
     "pk": "7f124173-c108-4a67-9400-b314a6d8b6b5",
     "fields": {
       "json": null,
-      "name": "subjectWidefieldU.mask",
+      "name": "subjectWidefieldU.mask_atlasTransformed",
       "created_by": null,
       "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
       "filename_pattern": ""
