@@ -1503,7 +1503,7 @@
       "name": "widefieldU.images",
       "created_by": null,
       "description": "Projected SVD spatial components (denoised/decomposed) with the shape [H, W, nComponents] where H and W are the dimensions of a single frame.",
-      "filename_pattern": "widefieldU.images*"
+      "filename_pattern": "*widefieldU.images*"
     }
   },
   {
@@ -1514,7 +1514,7 @@
       "name": "widefieldSVT.uncorrected",
       "created_by": null,
       "description": "temporal SVD components (denoised/decomposed), s·Vᵀ with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.uncorrected.*"
+      "filename_pattern": "*widefieldSVT.uncorrected.*"
     }
   },
   {
@@ -1525,7 +1525,7 @@
       "name": "widefieldSVT.haemoCorrected",
       "created_by": null,
       "description": "hemodynamic corrected temporal SVD components with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.haemoCorrected.*"
+      "filename_pattern": "*widefieldSVT.haemoCorrected.*"
     }
   },
   {
@@ -2086,6 +2086,28 @@
       "name": "ROIData.raw",
       "created_by": null,
       "description": "Raw cell detection output ROI data.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3736afe6-a006-44fd-8f9f-6cfbb41d98f4",
+    "fields": {
+      "json": null,
+      "name": "widefieldU.mask",
+      "created_by": null,
+      "description": "Mask to apply to widefield session data prior to pre-processing steps",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "7f124173-c108-4a67-9400-b314a6d8b6b5",
+    "fields": {
+      "json": null,
+      "name": "subjectWidefieldU.mask_atlasTransformed",
+      "created_by": null,
+      "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
       "filename_pattern": ""
     }
   }
