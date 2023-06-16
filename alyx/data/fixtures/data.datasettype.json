@@ -1942,7 +1942,7 @@
       "json": null,
       "name": "mpciROIs.mlapdv",
       "created_by": null,
-      "description": "Allen CCF coordinates of each ROI centroid",
+      "description": "3D location of the ROI centroid relative to bregma - mediolateral; anterior-posterior; dorsoventral coordinates (um). '_estimate' means not resolved with histology.",
       "filename_pattern": ""
     }
   },
@@ -2086,6 +2086,39 @@
       "name": "ROIData.raw",
       "created_by": null,
       "description": "Raw cell detection output ROI data.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "1c40f606-d232-4d86-9719-c4a518d2c79a",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.brainLocationIds",
+      "created_by": null,
+      "description": "Brain location acronym of each ROI centroid. A '_ccf_2017' in the dataset means an alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework. '_estimate' means not resolved with histology.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "6556b4e4-c586-4ce7-b756-f2f290acfd0a",
+    "fields": {
+      "json": null,
+      "name": "mpciMeanImage.brainLocationIds",
+      "created_by": null,
+      "description": "Brain location acronym of each pixel of the mean image. A '_ccf_2017' in the dataset means an alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework. '_estimate' means not resolved with histology.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "1629448f-10a5-444b-abf8-5e8448eed191",
+    "fields": {
+      "json": null,
+      "name": "mpciMeanImage.mlapdv",
+      "created_by": null,
+      "description": "3D location of the cluster relative to bregma of each pixel of the mean image - mediolateral; anterior-posterior; dorsoventral coordinates (um). '_estimate' means not resolved with histology.",
       "filename_pattern": ""
     }
   }
