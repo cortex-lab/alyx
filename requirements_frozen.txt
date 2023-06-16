@@ -1,7 +1,7 @@
 asgiref==3.7.2
 backports.zoneinfo==0.2.1
-boto3==1.26.153
-botocore==1.29.153
+boto3==1.26.154
+botocore==1.29.154
 certifi==2023.5.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -18,7 +18,7 @@ Django==4.2.2
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.10.0
 django-autocomplete-light==3.9.7
-django-cleanup==7.0.0
+django-cleanup==8.0.0
 django-filter==21.1
 django-ipware==5.0.0
 django-js-asset==2.0.0
@@ -34,8 +34,8 @@ docutils==0.20.1
 drfdocs==0.0.11
 flake8==6.0.0
 fonttools==4.40.0
-globus-cli==3.13.0
-globus-sdk==3.19.0
+globus-cli==3.14.0
+globus-sdk==3.20.1
 iblutil==1.6.0
 idna==3.4
 importlib-metadata==6.6.0
