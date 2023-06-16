@@ -1503,7 +1503,7 @@
       "name": "widefieldU.images",
       "created_by": null,
       "description": "Projected SVD spatial components (denoised/decomposed) with the shape [H, W, nComponents] where H and W are the dimensions of a single frame.",
-      "filename_pattern": "widefieldU.images*"
+      "filename_pattern": "*widefieldU.images*"
     }
   },
   {
@@ -1514,7 +1514,7 @@
       "name": "widefieldSVT.uncorrected",
       "created_by": null,
       "description": "temporal SVD components (denoised/decomposed), s·Vᵀ with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.uncorrected.*"
+      "filename_pattern": "*widefieldSVT.uncorrected.*"
     }
   },
   {
@@ -1525,7 +1525,7 @@
       "name": "widefieldSVT.haemoCorrected",
       "created_by": null,
       "description": "hemodynamic corrected temporal SVD components with dimensions [nComponents, nFrames]",
-      "filename_pattern": "widefieldSVT.haemoCorrected.*"
+      "filename_pattern": "*widefieldSVT.haemoCorrected.*"
     }
   },
   {
@@ -1942,7 +1942,7 @@
       "json": null,
       "name": "mpciROIs.mlapdv",
       "created_by": null,
-      "description": "Allen CCF coordinates of each ROI centroid",
+      "description": "3D location of the ROI centroid relative to bregma - mediolateral; anterior-posterior; dorsoventral coordinates (um). '_estimate' means not resolved with histology.",
       "filename_pattern": ""
     }
   },
@@ -2034,7 +2034,7 @@
       "filename_pattern": ""
     }
   },
-    {
+  {
     "model": "data.datasettype",
     "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
     "fields": {
@@ -2045,7 +2045,7 @@
       "filename_pattern": ""
     }
   },
-    {
+  {
     "model": "data.datasettype",
     "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
     "fields": {
@@ -2056,7 +2056,7 @@
       "filename_pattern": ""
     }
   },
-   {
+  {
     "model": "data.datasettype",
     "pk": "d49b5321-f970-470a-98a6-4a62e1abc422",
     "fields": {
@@ -2067,7 +2067,7 @@
       "filename_pattern": ""
     }
   },
-    {
+  {
     "model": "data.datasettype",
     "pk": "d53892ab-7576-48ed-92d0-8a1fcd5cc36d",
     "fields": {
@@ -2076,6 +2076,72 @@
       "created_by": null,
       "description": "Aggregate of channel based electrophysiology features in a recapitualive table",
       "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "042cf522-e3c5-4f16-a43e-be8988baa64d",
+    "fields": {
+      "json": null,
+      "name": "ROIData.raw",
+      "created_by": null,
+      "description": "Raw cell detection output ROI data.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "1c40f606-d232-4d86-9719-c4a518d2c79a",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.brainLocationIds",
+      "created_by": null,
+      "description": "Brain location acronym of each ROI centroid. A '_ccf_2017' in the dataset means an alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework. '_estimate' means not resolved with histology.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "3736afe6-a006-44fd-8f9f-6cfbb41d98f4",
+    "fields": {
+      "json": null,
+      "name": "widefieldU.mask",
+      "created_by": null,
+      "description": "Mask to apply to widefield session data prior to pre-processing steps",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "6556b4e4-c586-4ce7-b756-f2f290acfd0a",
+    "fields": {
+      "json": null,
+      "name": "mpciMeanImage.brainLocationIds",
+      "created_by": null,
+      "description": "Brain location acronym of each pixel of the mean image. A '_ccf_2017' in the dataset means an alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework. '_estimate' means not resolved with histology.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "1629448f-10a5-444b-abf8-5e8448eed191",
+    "fields": {
+      "json": null,
+      "name": "mpciMeanImage.mlapdv",
+      "created_by": null,
+      "description": "3D location of the cluster relative to bregma of each pixel of the mean image - mediolateral; anterior-posterior; dorsoventral coordinates (um). '_estimate' means not resolved with histology.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "7f124173-c108-4a67-9400-b314a6d8b6b5",
+    "fields": {
+      "json": null,
+      "name": "subjectWidefieldU.mask_atlasTransformed",
+      "created_by": null,
+      "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
+      "filename_pattern": "*subjectWidefieldU.mask_atlasTransformed*"
     }
   }
 ]
