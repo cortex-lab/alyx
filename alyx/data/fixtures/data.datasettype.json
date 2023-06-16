@@ -2141,7 +2141,7 @@
       "name": "subjectWidefieldU.mask_atlasTransformed",
       "created_by": null,
       "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
-      "filename_pattern": ""
+      "filename_pattern": "*subjectWidefieldU.mask_atlasTransformed*"
     }
   }
 ]

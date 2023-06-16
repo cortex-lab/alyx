@@ -12,7 +12,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
-from alyx.base import BaseModel, alyx_mail, modify_fields
+from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
 from actions.water_control import water_control
 from actions.models import Surgery
@@ -142,8 +142,9 @@ class Subject(BaseModel):
 
     objects = SubjectManager()
     nickname_validator = validators.RegexValidator(
-        r"^[\w.-]+$", "Nicknames must only contain letters, numbers, hyphens and underscores. "
-                      "Dots are reserved for breeding subjects.")
+        f"^{ALF_SPEC['subject']}$",
+        "Nicknames must only contain letters, numbers, hyphens and underscores. "
+        "Dots are reserved for breeding subjects.")
     nickname = models.CharField(max_length=64,
                                 default='-',
                                 help_text="Easy-to-remember name (e.g. 'Hercules').",
