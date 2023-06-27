@@ -212,9 +212,11 @@ class WaterAdministrationForm(forms.ModelForm):
             return
         elif ids:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
-            self.fields['subject'].queryset = Subject.objects.order_by(preserved, 'nickname')
+            subjects = Subject.objects.order_by(preserved, 'nickname')
         else:
-            self.fields['subject'].queryset = Subject.objects.order_by('nickname')
+            subjects = Subject.objects.order_by('nickname')
+        # filters the subjects by the current user: responsible users, allowed users
+        self.fields['subject'].queryset = self.current_user.get_allowed_subjects(subjects)
         self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
 
@@ -387,6 +389,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 class WeighingForm(BaseActionForm):
     def __init__(self, *args, **kwargs):
         super(WeighingForm, self).__init__(*args, **kwargs)
+        self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
         if self.fields.keys():
             self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
 

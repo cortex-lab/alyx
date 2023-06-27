@@ -41,7 +41,7 @@ class SubjectFilter(BaseFilterSet):
 
     class Meta:
         model = Subject
-        exclude = ['json']
+        exclude = []
 
 
 class SubjectList(generics.ListCreateAPIView):

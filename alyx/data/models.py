@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
-from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet
+from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet, ALF_SPEC
 
 logger = structlog.get_logger(__name__)
 
@@ -246,7 +246,11 @@ class Revision(BaseModel):
     Dataset revision information
     """
     objects = NameManager()
-    name = models.CharField(max_length=255, blank=True, help_text="Long name", unique=True)
+    name_validator = RegexValidator(f"^{ALF_SPEC['revision']}$",
+                                    "Revisions must only contain letters, "
+                                    "numbers, hyphens, underscores and forward slashes.")
+    name = models.CharField(max_length=255, blank=True, help_text="Long name",
+                            unique=True, validators=[name_validator])
     description = models.CharField(max_length=1023, blank=True)
     created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
                                             help_text="created date")
@@ -256,6 +260,10 @@ class Revision(BaseModel):
 
     def __str__(self):
         return "<Revision %s>" % self.name
+
+    def save(self, *args, **kwargs):
+        self.clean_fields()
+        return super(Revision, self).save(*args, **kwargs)
 
 
 class DatasetQuerySet(BaseQuerySet):
@@ -298,8 +306,7 @@ class Dataset(BaseExperimentalData):
 
     # Generic foreign key to arbitrary model instances allows polymorphic relationships
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
-    object_id = models.UUIDField(help_text="UUID, an object of content_type with this "
-                                           "ID must already exist to attach a note.",
+    object_id = models.UUIDField(help_text="UUID of an object whose type matches content_type.",
                                  null=True, blank=True)
     content_object = GenericForeignKey()
 
@@ -316,9 +323,13 @@ class Dataset(BaseExperimentalData):
     version = models.CharField(blank=True, null=True, max_length=64,
                                help_text="version of the algorithm generating the file")
 
-    # while the collection is seen more as a data revision
+    # the collection comprises session sub-folders
+    collection_validator = RegexValidator(f"^{ALF_SPEC['collection']}$",
+                                          "Collections must only contain letters, "
+                                          "numbers, hyphens, underscores and forward slashes.")
     collection = models.CharField(blank=True, null=True, max_length=255,
-                                  help_text='file subcollection or subfolder')
+                                  help_text='file subcollection or subfolder',
+                                  validators=[collection_validator])
 
     dataset_type = models.ForeignKey(
         DatasetType, blank=False, null=False, on_delete=models.SET_DEFAULT,
@@ -372,6 +383,7 @@ class Dataset(BaseExperimentalData):
         super(Dataset, self).save(*args, **kwargs)
         if self.collection is None:
             return
+        self.clean_fields()  # Validate collection field
         from experiments.models import ProbeInsertion
         parts = self.collection.rsplit('/')
         if len(parts) > 1:

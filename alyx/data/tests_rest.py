@@ -371,12 +371,12 @@ class APIDataTests(BaseTests):
         self.assertEqual(d1['data_format'], 'e2')
 
         self.assertEqual(d0['file_records'][0]['data_repository'], 'dr')
-        self.assertEqual(d0['file_records'][0]['relative_path'],
-                         PurePosixPath(data['path'], 'a.b.e1').as_posix())
+        self.assertEqual(PurePosixPath(data['path'], 'a.b.e1').as_posix(),
+                         d0['file_records'][0]['relative_path'])
 
         self.assertEqual(d1['file_records'][0]['data_repository'], 'dr')
-        self.assertEqual(d1['file_records'][0]['relative_path'],
-                         PurePosixPath(data['path'], 'a.c.e2').as_posix())
+        self.assertEqual(PurePosixPath(data['path'], 'a.c.e2').as_posix(),
+                         d1['file_records'][0]['relative_path'])
 
     def test_register_existence_options(self):
 

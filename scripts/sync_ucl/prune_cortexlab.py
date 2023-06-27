@@ -2,7 +2,7 @@
 import numpy as np
 
 from django.core.management import call_command
-from django.db.models import CharField
+from django.db.models import CharField, Q
 from django.db.models.functions import Concat
 
 from subjects.models import Subject, Project, SubjectRequest
@@ -11,13 +11,17 @@ from misc.models import Lab, LabMember, LabLocation, Note
 from data.models import Dataset, DatasetType, DataRepository, FileRecord
 from experiments.models import ProbeInsertion, TrajectoryEstimate
 from jobs.models import Task
+from alyx.base import flatten
 
 CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
+# Since we currently still use both the project and the projects field, we need to filter for
+# either containing an IBL project
+ibl_proj = Q(project__name__icontains='ibl') | Q(projects__name__icontains='ibl')
+ses = Session.objects.using('cortexlab').filter(ibl_proj)
 # remove all subjects that never had anything to do with IBL
-ses = Session.objects.using('cortexlab').filter(project__name__icontains='ibl')
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
 sub_ibl += list(Subject.objects.using('cortexlab').filter(
@@ -31,7 +35,7 @@ Session.objects.using('cortexlab').filter(type='Base').delete()
 SubjectRequest.objects.using('cortexlab').all().delete()
 
 # remove all sessions that are not part of IBL project
-Session.objects.using('cortexlab').exclude(project__name__icontains='ibl').delete()
+Session.objects.using('cortexlab').exclude(ibl_proj).delete()
 
 # also if cortexlab sessions have been removed on the server, remove them
 ses_ucl = Session.objects.using('cortexlab').all().values_list('pk', flat=True)
@@ -71,7 +75,7 @@ DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
 
 # import projects from cortexlab. remove those that don't correspond to any session
-pk_projs = list(ses_ucl.values_list('project', flat=True).distinct())
+pk_projs = list(filter(None, flatten(ses_ucl.values_list('project', 'projects').distinct())))
 pk_projs += list(Project.objects.values_list('pk', flat=True))
 
 Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()

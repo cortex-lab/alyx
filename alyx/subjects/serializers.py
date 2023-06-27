@@ -12,7 +12,7 @@ SUBJECT_LIST_SERIALIZER_FIELDS = ('nickname', 'url', 'id', 'responsible_user', '
                                   'source', 'line', 'projects', 'session_projects',
                                   'lab', 'genotype', 'description',
                                   'alive', 'reference_weight', 'last_water_restriction',
-                                  'expected_water', 'remaining_water')
+                                  'expected_water', 'remaining_water', 'json')
 
 
 class _WaterRestrictionBaseSerializer(serializers.HyperlinkedModelSerializer):
