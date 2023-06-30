@@ -23,6 +23,7 @@ from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
 from experiments.models import ProbeInsertion
+from jobs.models import Task
 
 logger = structlog.get_logger(__name__)
 
@@ -472,6 +473,13 @@ class WaterAdminInline(BaseInlineAdmin):
     readonly_fields = ('name', 'water_administered', 'water_type')
 
 
+class TasksAdminInline(BaseInlineAdmin):
+    model = Task
+    extra = 0
+    fields = ('status', 'name', 'version', 'parents', 'datetime', 'arguments')
+    readonly_fields = ('name', 'version', 'parents', 'datetime', 'arguments')
+
+
 def _pass_narrative_templates(context):
     context['narrative_templates'] = \
         base64.b64encode(json.dumps(settings.NARRATIVE_TEMPLATES).encode('utf-8')).decode('utf-8')
@@ -493,7 +501,7 @@ class SessionAdmin(BaseActionAdmin):
     search_fields = ('subject__nickname', 'lab__name', 'projects__name', 'users__username',
                      'task_protocol', 'pk')
     ordering = ('-start_time', 'task_protocol', 'lab')
-    inlines = [WaterAdminInline, DatasetInline, NoteInline]
+    inlines = [WaterAdminInline, TasksAdminInline, DatasetInline, NoteInline]
     readonly_fields = ['repo_url', 'task_protocol', 'weighing', 'qc', 'extended_qc',
                        'auto_datetime']
 
