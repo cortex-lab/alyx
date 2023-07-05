@@ -354,7 +354,7 @@ class Dataset(BaseExperimentalData):
     @property
     def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)
-        return bool(fr.count() and all(fr.values_list('exists', flat=True)))
+        return bool(fr.count() and any(fr.values_list('exists', flat=True)))
 
     @property
     def is_protected(self):
