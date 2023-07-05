@@ -1,7 +1,7 @@
 asgiref==3.7.2
 backports.zoneinfo==0.2.1
-boto3==1.26.164
-botocore==1.29.164
+boto3==1.27.0
+botocore==1.30.0
 certifi==2023.5.7
 cffi==1.15.1
 charset-normalizer==3.1.0
@@ -14,7 +14,7 @@ coverage==6.5.0
 coveralls==3.3.1
 cryptography==41.0.1
 cycler==0.11.0
-Django==4.2.2
+Django==4.2.3
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.10.0
 django-autocomplete-light==3.9.7
@@ -26,7 +26,7 @@ django-mptt==0.14.0
 django-polymorphic==3.1.0
 django-reversion==5.0.4
 django-storages==1.13.2
-django-structlog==5.2.0
+django-structlog==5.3.0
 django-test-without-migrations==0.6
 djangorestframework==3.14.0
 docopt==0.6.2
@@ -55,7 +55,7 @@ numpy==1.24.4
 ONE-api==2.1.0
 packaging==23.1
 pandas==2.0.3
-Pillow==9.5.0
+Pillow==10.0.0
 psycopg2-binary==2.9.6
 pyarrow==12.0.1
 pycodestyle==2.10.0
@@ -73,7 +73,7 @@ six==1.16.0
 sqlparse==0.4.4
 structlog==23.1.0
 tqdm==4.65.0
-typing_extensions==4.7.0
+typing_extensions==4.7.1
 tzdata==2023.3
 uritemplate==4.1.1
 urllib3==1.26.16
