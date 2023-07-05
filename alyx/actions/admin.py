@@ -461,7 +461,7 @@ class DatasetInline(BaseInlineAdmin):
     ordering = ("name",)
 
     def _online(self, obj):
-        return obj.online
+        return obj.is_online
     _online.short_description = 'On server'
     _online.boolean = True
 
