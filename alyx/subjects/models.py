@@ -196,8 +196,6 @@ class Subject(BaseModel):
     reduced = models.BooleanField(default=False)
     reduced_date = models.DateField(null=True, blank=True)
 
-    objects = SubjectManager()
-
     # We save the history of these fields.
     _fields_history = ('nickname', 'responsible_user', 'cage')
     # We track the changes of these fields without saving their history in the JSON.

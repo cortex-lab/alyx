@@ -384,13 +384,16 @@ class Dataset(BaseExperimentalData):
         if self.collection is None:
             return
         self.clean_fields()  # Validate collection field
-        from experiments.models import ProbeInsertion
+        from experiments.models import ProbeInsertion, FOV
         parts = self.collection.rsplit('/')
         if len(parts) > 1:
             name = parts[1]
             pis = ProbeInsertion.objects.filter(session=self.session, name=name)
             if len(pis):
                 self.probe_insertion.set(pis.values_list('pk', flat=True))
+            fovs = FOV.objects.filter(session=self.session, name=name)
+            if len(fovs):
+                self.field_of_view.set(fovs.values_list('pk', flat=True))
 
     def delete(self, *args, force=False, **kwargs):
         # If a dataset is protected and force=False, raise an exception

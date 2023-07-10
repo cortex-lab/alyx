@@ -2,6 +2,7 @@ import structlog
 import uuid
 
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -220,7 +221,7 @@ class Channel(BaseModel):
                               help_text=("Distance in micrometers along the probe from the tip."
                                          " 0 means the tip."))
     lateral = models.FloatField(blank=True, null=True, help_text=("Distance in micrometers"
-                                                                  " accross the probe"))
+                                                                  " across the probe"))
     x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
     y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
     z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
@@ -240,66 +241,136 @@ class Channel(BaseModel):
 
 class ImagingType(BaseModel):
     """Imaging field of view model"""
+    name = models.CharField(
+        max_length=255, blank=False, null=False, unique=True, help_text='Long name')
+    objects = BaseManager()
+
+    def __str__(self):
+        return self.name
+
+
+class ImagingStack(BaseModel):
+    """Imaging stack model
+
+    This model has a one-to-many relationship with the FOV model. Each FOV constitutes a slice
+    within the stack, its order determined by the first z coordinate (or by convention, the FOV
+    name).  This allows us to associate fields of view that lie along the same z axis.  Note that
+    slices are not necessarily contiguous in the raw data (e.g. a stack may comprise FOV_03,
+    FOV_06, and FOV_09).
+    """
     objects = BaseManager()
 
 
 class FOV(BaseModel):
     """Imaging field of view model"""
     objects = BaseManager()
-    session = models.ForeignKey('actions.ImagingSession', blank=True, null=True,
+    session = models.ForeignKey('actions.ImagingSession', blank=True, null=False,
                                 on_delete=models.CASCADE, related_name='field_of_view')
-    type = models.ForeignKey(ImagingType, blank=True, null=True, on_delete=models.SET_NULL,
-                             related_name='imaging_type')
+    imaging_type = models.ForeignKey(ImagingType, blank=True, null=False, on_delete=models.CASCADE,
+                                     related_name='field_of_view')
+    datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='field_of_view')
+    stack = models.ForeignKey(ImagingStack, blank=True, null=True, on_delete=models.CASCADE,
+                              related_name='slices')
+
+    @property
+    def subject(self):
+        return self.session.subject.nickname
+
+    @property
+    def datetime(self):
+        return self.session.start_time
+
+    class Meta:
+        verbose_name = 'field of view'
+        verbose_name_plural = 'fields of view'
+        unique_together = ('session', 'name')
+        ordering = ('session', 'name')
+
+    def __str__(self):
+        return f'{self.pk} {self.imaging_type} {self.name}'
+
+
+@receiver(post_save, sender=FOV)
+def update_fov_m2m_relationships_on_save(sender, instance, **kwargs):
+    from data.models import Dataset
+    try:
+        dsets = Dataset.objects.filter(session=instance.session,
+                                       collection__icontains=instance.name)
+        instance.datasets.set(dsets, clear=True)
+    except Exception:
+        logger.warning("Skip update m2m relationship on saving FOV")
 
 
 class FOVLocation(BaseModel):
-    """Imaging field of view location model"""
+    """Imaging field of view location model
+
+    The location has a many-to-one relationship with the FOV model, and defines the brain
+    coordinates and brain region(s) covered by a field of view, analogous to the ProbeInsertion
+    and TragectoryEstimate relationship.  Typically a field of view has an estimated location and a
+    final location determined by histology (referred to as its provenance).  For a given field of
+    view there should be at most one locations where default_provenance is True. This location is
+    the one used when querying brain region.
+
+    The x, y, z coordinates comprise the coordinates of each corner pixel.  Most fields of view are
+    considered to be a plane (n_xyz = [X, Y, 1]), hence there should be 4 coordinates per axis. If
+    there are more than 1 pixels along the z axis, the coordinates should be considered the
+    top/most shallow aspect of the volume and a further 4 coordinates can be provided for the
+    bottom extent.
+    """
 
     class Provenance(models.TextChoices):
-        ESTIMATE = 'E', _('Estimate')
-        FUNCTIONAL = 'F', _('Functional')
-        VASCULATURE = 'V', _('Vasculature')
-        LANDMARK = 'L', _('Landmark')
+        """How the location and brain regions were determined"""
+        ESTIMATE = 'E', _('Estimate')  # e.g. centre of craniotomy measured during surgery
+        FUNCTIONAL = 'F', _('Functional')  # e.g. retinotopy
+        LANDMARK = 'L', _('Landmark')  # e.g. vasculature
+        HISTOLOGY = 'H', _('Histology')
 
     objects = BaseManager()
     field_of_view = models.ForeignKey(
-        FOV, null=False, on_delete=models.CASCADE, related_name='field_of_view')
+        FOV, null=False, on_delete=models.CASCADE, related_name='location')
     _phelp = ' / '.join([f'{s[0]}: {s[1]}' for s in Provenance.choices])
     provenance = models.CharField(
         max_length=1,
         choices=Provenance.choices,
-        default=Provenance.ESTIMATE,
+        default=Provenance.LANDMARK,
         help_text=_phelp
     )
     default_provenance = models.BooleanField(default=False)
+    coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
+                                          on_delete=models.SET_NULL,
+                                          help_text='3D coordinate system used.')
+    auto_datetime = models.DateTimeField(auto_now=True, verbose_name='last update')
 
-    x1 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
-    y1 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
-    z1 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    _HELP_TEXT = ('The location in um of the top left, top right, bottom left and '
+                  'bottom right pixels respectively, along the %s axis (typically the '
+                  '%s extent) at the most superficial depth.  For volumetric imaging '
+                  'provide four more coordinates for the deepest extent.')
 
-    x2 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
-    y2 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
-    z2 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    x = ArrayField(models.FloatField(blank=True, null=True), size=8, default=list,
+                   help_text=_HELP_TEXT % ('x', 'medio-lateral'))
+    y = ArrayField(models.FloatField(blank=True, null=True), size=8, default=list,
+                   help_text=_HELP_TEXT % ('y', 'antereo-posterior'))
+    z = ArrayField(models.FloatField(blank=True, null=True), size=8, default=list,
+                   help_text=_HELP_TEXT % ('z', 'dorsal-ventral'))
 
-    x3 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
-    y3 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
-    z3 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    n_xyz = ArrayField(models.IntegerField(blank=True, null=True), size=3, default=list,
+                       help_text='Number of pixels along each axis')
 
-    x4 = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
-    y4 = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
-    z4 = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    brain_region = models.ManyToManyField(BrainRegion, related_name='brain_region')
 
-    nx = models.FloatField(blank=True, null=True, help_text='Number of pixels in x-axis')
-    ny = models.FloatField(blank=True, null=True, help_text='Number of pixels in y-axis')
-    nz = models.FloatField(blank=True, null=True, help_text='Number of pixels in z-axis')
-
-    brain_region = models.ManyToManyField(
-        BrainRegion, default=0, null=True, blank=True, related_name='brain_region')
+    class Meta:
+        verbose_name = 'field of view location'
+        verbose_name_plural = 'fields of view location'
+        constraints = [
+            models.UniqueConstraint(fields=['provenance', 'field_of_view'],
+                                    name='unique_provenance_per_field_of_view')
+        ]
+        ordering = ('-default_provenance',)
 
     def save(self, *args, **kwargs):
         """Ensure only one provenance can be set as default"""
         locations = FOVLocation.objects.filter(
-            field_of_view=self.field_of_view, default_provinance=True)
+            field_of_view=self.field_of_view, default_provenance=True).exclude(id=self.id)
         if self.default_provenance and locations.count() > 0:
-            locations.update(default_provinance=False)
+            locations.update(default_provenance=False)
         super().save(*args, **kwargs)
