@@ -3,7 +3,7 @@ import uuid
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
@@ -285,6 +285,13 @@ class FOV(BaseModel):
         verbose_name_plural = 'fields of view'
         unique_together = ('session', 'name')
         ordering = ('session', 'name')
+
+    def save(self, *args, **kwargs):
+        """Ensure FOVs belonging to stack share the same session"""
+        if self.stack and self.stack.slices.count() > 0:
+            if self.session.id != FOV.objects.filter(stack=self.stack).first().session.id:
+                raise ValidationError('Stack fields of view must belong to the same session')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.pk} {self.imaging_type} {self.name}'

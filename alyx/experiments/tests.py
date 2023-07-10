@@ -1,9 +1,11 @@
 from random import choice, randint, random
 
-from alyx.base import BaseTests
+from django.db import transaction
+from django.core.exceptions import ValidationError
 
+from alyx.base import BaseTests
 from actions.models import Session
-from experiments.models import ProbeInsertion, ImagingType, FOV, FOVLocation
+from experiments.models import ProbeInsertion, ImagingType, FOV, FOVLocation, ImagingStack
 from data.models import Dataset
 
 
@@ -40,3 +42,18 @@ class ImagingModels(BaseTests):
         fov_location2 = FOVLocation.objects.create(**data)
         self.assertTrue(fov_location2.default_provenance)
         self.assertFalse(FOVLocation.objects.get(id=fov_location.id).default_provenance)
+
+    def test_create_stack(self):
+        """Test fields of view associated with a stack"""
+        ses = Session.objects.first()
+        ses2 = Session.objects.last()
+        assert ses != ses2
+        typ, _ = ImagingType.objects.get_or_create(name='two-photon')
+        stack = ImagingStack.objects.create()
+        data = {'session': ses, 'imaging_type': typ, 'name': 'fov_00', 'stack': stack}
+        # Creating a FOV associated to the same stack but with a different session should raise a
+        # validation error
+        FOV.objects.create(**data)
+        data.update(name='fov_01', session=ses2)
+        with transaction.atomic():
+            self.assertRaises(ValidationError, FOV.objects.create, **data)
