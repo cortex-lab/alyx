@@ -11,18 +11,18 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib.admin import TabularInline
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule, Cull, CullReason, CullMethod,
+                     Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from subjects.models import Subject
 from .water_control import WaterControl
-from experiments.models import ProbeInsertion
+from experiments.models import ProbeInsertion, FOV
 from jobs.models import Task
 
 logger = structlog.get_logger(__name__)
@@ -575,12 +575,33 @@ class ProbeInsertionInline(TabularInline):
     extra = 0
 
 
+class FOVInline(TabularInline):
+    fk_name = 'session'
+    show_change_link = True
+    model = FOV
+    fields = ('name', 'imaging_type')
+    extra = 0
+
+
 class EphysSessionAdmin(SessionAdmin):
     inlines = [ProbeInsertionInline, WaterAdminInline, DatasetInline, NoteInline]
 
     def get_queryset(self, request):
         qs = super(EphysSessionAdmin, self).get_queryset(request)
         return qs.filter(procedures__name__icontains='ephys')
+
+
+class ImagingSessionAdmin(SessionAdmin):
+    inlines = [FOVInline, WaterAdminInline, DatasetInline, NoteInline]
+    list_filter = [('users', RelatedDropdownFilter),
+                   ('start_time', DateRangeFilter),
+                   ('projects', RelatedDropdownFilter),
+                   ('lab', RelatedDropdownFilter),
+                   ('field_of_view__imaging_type', RelatedDropdownFilter)]
+
+    def get_queryset(self, request):
+        qs = super(ImagingSessionAdmin, self).get_queryset(request)
+        return qs.filter(procedures__name__icontains='imaging')
 
 
 class NotificationUserFilter(DefaultListFilter):
@@ -649,6 +670,7 @@ admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 
 admin.site.register(Session, SessionAdmin)
 admin.site.register(EphysSession, EphysSessionAdmin)
+admin.site.register(ImagingSession, ImagingSessionAdmin)
 admin.site.register(OtherAction, BaseActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 

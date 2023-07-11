@@ -298,8 +298,20 @@ class Session(BaseAction):
 class EphysSession(Session):
     """
     This proxy class allows to register as a different admin page.
-    The database is left untouched
-    New methods are fine but not new fields
+    The database is left untouched.
+    New methods are fine but not new fields.
+    For what defines an ephys session see actions.admin.EphysSessionAdmin.get_queryset.
+    """
+    class Meta:
+        proxy = True
+
+
+class ImagingSession(Session):
+    """
+    This proxy class allows to register as a different admin page.
+    The database is left untouched.
+    New methods are fine but not new fields.
+    For what defines an ephys session see actions.admin.ImagingSessionAdmin.get_queryset.
     """
     class Meta:
         proxy = True

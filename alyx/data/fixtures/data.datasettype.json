@@ -2028,7 +2028,7 @@
     "pk": "23185e3e-4d4c-463b-a74b-8e69869ecec8",
     "fields": {
       "json": null,
-      "name": "reference.image",
+      "name": "referenceImage.raw",
       "created_by": null,
       "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
       "filename_pattern": ""
@@ -2142,6 +2142,28 @@
       "created_by": null,
       "description": "Mask to apply to all widefield sessions from a subject after pre-processing and atlas alignment",
       "filename_pattern": "*subjectWidefieldU.mask_atlasTransformed*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "4268cfad-84c2-4a1f-8a63-f0050639ee17",
+    "fields": {
+      "json": null,
+      "name": "referenceImage.stack",
+      "created_by": null,
+      "description": "A stitched mean multiphoton imaging stack, containing X and Y resolution/size information in the tiff header.  Used in histology alignment.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "e7e0b91e-7bd0-457d-a883-e19a684e42c9",
+    "fields": {
+      "json": null,
+      "name": "referenceImage.meta",
+      "created_by": null,
+      "description": "Stack image meta-data listing the depth in microns of each slice in the stack, and ML and AP coordinates of the center.",
+      "filename_pattern": ""
     }
   }
 ]
