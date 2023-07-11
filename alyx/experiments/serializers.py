@@ -2,7 +2,8 @@ from rest_framework import serializers
 from alyx.base import BaseSerializerEnumField
 from actions.models import Session
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, CoordinateSystem,
-                                Channel, BrainRegion, ChronicInsertion)
+                                Channel, BrainRegion, ChronicInsertion, FOV, FOVLocation,
+                                ImagingType, ImagingStack)
 from data.models import DatasetType, Dataset, DataRepository, FileRecord
 from subjects.models import Subject
 from misc.models import Lab
@@ -242,3 +243,75 @@ class BrainRegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = BrainRegion
         fields = ('id', 'acronym', 'name', 'description', 'parent', 'related_descriptions')
+
+
+class FOVLocationDetailSerializer(serializers.ModelSerializer):
+    brain_region = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='id', many=True,
+        queryset=BrainRegion.objects.all(),
+    )
+    coordinate_system = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name', many=False, default='IBL-Allen',
+        queryset=CoordinateSystem.objects.all(),
+    )
+    provenance = serializers.ChoiceField(choices=FOVLocation.Provenance.values)
+    x = serializers.ListField()
+    y = serializers.ListField()
+    z = serializers.ListField()
+    n_xyz = serializers.ListField()
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('coordinate_system')
+        queryset = queryset.prefetch_related('brain_region')
+        return queryset
+
+    class Meta:
+        model = FOVLocation
+        exclude = ('name',)
+
+
+class FOVLocationListSerializer(FOVLocationDetailSerializer):
+
+    class Meta:
+        model = FOVLocation
+        exclude = ('name', 'json', 'field_of_view')
+
+
+class FOVSerializer(serializers.ModelSerializer):
+    imaging_type = serializers.SlugRelatedField(
+        read_only=False, required=False, slug_field='name', queryset=ImagingType.objects.all())
+    location = FOVLocationListSerializer(read_only=True, many=True)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('model', 'session')
+        queryset = queryset.prefetch_related(
+            'session__subject', 'session__lab', 'location', 'datasets')
+        return queryset.order_by('-session__start_time')
+
+    class Meta:
+        model = FOV
+        exclude = ('json',)
+
+
+class ImagingStackDetailSerializer(serializers.ModelSerializer):
+    slices = FOVSerializer(read_only=True, many=True)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.prefetch_related('slices')
+        return queryset.order_by('slices__z__0')
+
+    class Meta:
+        model = ImagingStack
+
+
+class ImagingStackListSerializer(ImagingStackDetailSerializer):
+
+    class Meta:
+        model = ImagingStack
+        exclude = ('name', 'json')

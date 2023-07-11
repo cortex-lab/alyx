@@ -7,7 +7,7 @@ from django.contrib.admin import TabularInline
 from mptt.admin import MPTTModelAdmin
 
 from experiments.models import (TrajectoryEstimate, ProbeInsertion, ProbeModel, CoordinateSystem,
-                                BrainRegion, Channel, ChronicInsertion)
+                                BrainRegion, Channel, ChronicInsertion, FOV, FOVLocation)
 from misc.admin import NoteInline
 from alyx.base import BaseAdmin
 
@@ -23,8 +23,8 @@ class ProbeInsertionInline(BaseAdmin):
     ordering = ('-session__start_time',)
     exclude = ['session', 'datasets']
     readonly_fields = ['id', '_session', 'auto_datetime', '_datasets']
-    list_display = ['name', 'datetime', 'subject', 'session']
-    list_display_links = ('name', 'subject', 'session',)
+    list_display = ['name', 'datetime', '_subject', '_session']
+    list_display_links = ('name', '_subject', '_session',)
     search_fields = ('session__subject__nickname', 'session__pk', 'id')
     inlines = (TrajectoryEstimateInline, NoteInline)
 
@@ -46,6 +46,14 @@ class ProbeInsertionInline(BaseAdmin):
                                 dset.collection, dset.name, url=url)
         return SafeString(html)
     _datasets.short_descritption = 'datasets'
+
+    def _subject(self, obj):
+        # this is to provide a link back to the _subject page
+        url = reverse('admin:%s_%s_change' % (obj.session.subject._meta.app_label,
+                                              obj.session.subject._meta.model_name),
+                      args=[obj.session.subject.id])
+        return format_html('<b><a href="{url}" ">{}</a></b>', obj.session.subject, url=url)
+    _subject.short_descritption = 'subject'
 
 
 class ChronicInsertionAdmin(BaseAdmin):
@@ -142,6 +150,63 @@ class BrainRegionsAdmin(MPTTModelAdmin):
             d['name'], d['id'], d['level'], d['description']) for d in descriptions])
 
 
+class FOVLocationInline(TabularInline):
+    show_change_link = True
+    model = FOVLocation
+    exclude = ('name', 'json', 'x', 'y', 'z')
+    readonly_fields = ('_x', '_y', '_z', 'n_xyz')
+    list_display = ('_x', '_y', '_z')
+
+    @staticmethod
+    def _x(obj):
+        return ', '.join(map('{:.1f}'.format, obj.x))
+
+    @staticmethod
+    def _y(obj):
+        return ', '.join(map('{:.1f}'.format, obj.x))
+
+    @staticmethod
+    def _z(obj):
+        return ', '.join(map('{:.1f}'.format, obj.x))
+
+
+class FOVInline(BaseAdmin):
+    ordering = ('-session__start_time',)
+    exclude = ('session', 'datasets', 'json')
+    readonly_fields = ('id', '_session', '_datasets')
+    list_display = ('name', '_subject', '_session', 'imaging_type')
+    list_display_links = ('name', '_subject', '_session',)
+    search_fields = ('session__subject__nickname', 'session__pk', 'id', 'imaging_type__name')
+    inlines = (FOVLocationInline, NoteInline)
+
+    def _session(self, obj):
+        # this is to provide a link back to the session page
+        url = reverse('admin:%s_%s_change' % (obj.session._meta.app_label,
+                                              obj.session._meta.model_name),
+                      args=[obj.session.id])
+        return format_html('<b><a href="{url}" ">{}</a></b>', obj.session, url=url)
+    _session.short_description = 'imaging session'
+
+    def _datasets(self, obj):
+        # this is to provide a link back to the session page
+        html = ""
+        for dset in obj.datasets.all().order_by('collection', 'name'):
+            url = reverse('admin:%s_%s_change'
+                          % (dset._meta.app_label, dset._meta.model_name), args=[dset.id])
+            html += format_html('<a href="{url}" ">./{}/{}</a><br></br>',
+                                dset.collection, dset.name, url=url)
+        return SafeString(html)
+    _datasets.short_descritption = 'datasets'
+
+    def _subject(self, obj):
+        # this is to provide a link back to the _subject page
+        url = reverse('admin:%s_%s_change' % (obj.session.subject._meta.app_label,
+                                              obj.session.subject._meta.model_name),
+                      args=[obj.session.subject.id])
+        return format_html('<b><a href="{url}" ">{}</a></b>', obj.session.subject, url=url)
+    _subject.short_descritption = 'subject'
+
+
 admin.site.register(BrainRegion, BrainRegionsAdmin)
 admin.site.register(TrajectoryEstimate, TrajectoryEstimateAdmin)
 admin.site.register(ProbeInsertion, ProbeInsertionInline)
@@ -149,3 +214,4 @@ admin.site.register(ProbeModel, ProbeModelAdmin)
 admin.site.register(ChronicInsertion, ChronicInsertionAdmin)
 admin.site.register(CoordinateSystem, BaseAdmin)
 admin.site.register(Channel, ChannelAdmin)
+admin.site.register(FOV, FOVInline)

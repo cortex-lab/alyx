@@ -1,34 +1,66 @@
+import logging
+
 from rest_framework import generics
 from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
-from django.db.models import Count
+from django.db.models import Count, Q
 
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
-                                ChronicInsertion)
+                                ChronicInsertion, FOV, FOVLocation, ImagingStack)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
                                      TrajectoryEstimateSerializer, ChannelSerializer,
                                      BrainRegionSerializer, ChronicInsertionDetailSerializer,
-                                     ChronicInsertionListSerializer)
+                                     ChronicInsertionListSerializer, FOVSerializer,
+                                     FOVLocationListSerializer, FOVLocationDetailSerializer,
+                                     ImagingStackListSerializer)
 
+logger = logging.getLogger(__name__)
 """
 Probe insertion objects REST filters and views
 """
 
 
-def _filter_qs_with_brain_regions(self, queryset, region_field, region_value):
-    brs = BrainRegion.objects.filter(
-        **{region_field: region_value}).get_descendants(include_self=True)
-    qs_trajs = TrajectoryEstimate.objects.filter(provenance__gte=70). \
-        prefetch_related('channels__brain_region'). \
-        filter(channels__brain_region__in=brs).distinct()
+def _filter_qs_with_brain_regions(queryset, region_field: str, region_value: str):
+    """
+    Filter a Session, ProbeInsertion, ChronicInsertion or FOV queryset for those recording a given
+    brain region.
+
+    :param queryset: A QuerySet object (NB: must not have already been filtered.
+    :param region_field: The BrainRegion model field to filter, e.g. id, name, acronym.
+    :param region_value: The brain region to filter.
+    :return: The filtered queryset.
+    """
+    brs = (BrainRegion.objects
+           .filter(**{region_field: region_value})
+           .get_descendants(include_self=True))
+    qs_trajs = (TrajectoryEstimate.objects
+                .filter(provenance__gte=70)
+                .prefetch_related('channels__brain_region')
+                .filter(channels__brain_region__in=brs)
+                .distinct())
+    qs_fov_loc = (FOVLocation.objects
+                  .filter(default_provenance=True)
+                  .prefetch_related('brain_region')
+                  .filter(brain_region__in=brs)
+                  .distinct())
     if queryset.model.__name__ == 'Session':
-        qs = queryset.prefetch_related('probe_insertion__trajectory_estimate').filter(
-            probe_insertion__trajectory_estimate__in=qs_trajs)
+        probe_in_region = Q(probe_insertion__trajectory_estimate__in=qs_trajs)
+        fov_in_region = Q(field_of_view__location__in=qs_fov_loc)
+        qs = (queryset
+              .prefetch_related('probe_insertion__trajectory_estimate', 'field_of_view__location')
+              .filter(probe_in_region | fov_in_region))
     elif (queryset.model.__name__ == 'ProbeInsertion' or
           queryset.model.__name__ == 'ChronicInsertion'):
         qs = queryset.prefetch_related('trajectory_estimate').filter(
             trajectory_estimate__in=qs_trajs)
+    elif queryset.model.__name__ == 'FOV':
+        qs = queryset.prefetch_related('location').filter(location__in=qs_fov_loc)
+    elif queryset.model.__name__ == 'ImagingStack':
+        qs = queryset.prefetch_related('slices').filter(slices__location__in=qs_fov_loc)
+    else:
+        logger.error('Filtering by brain region with a %s query set not supported',
+                     queryset.model.__name__)
     return qs
 
 
@@ -64,10 +96,9 @@ class ProbeInsertionFilter(BaseFilterSet):
 
     def atlas(self, queryset, name, value):
         """
-        returns sessions containing at least one channel in the given brain region.
-        Hierarchical tree search"
+        Returns probe insertions containing at least one channel in the given brain region.
         """
-        return _filter_qs_with_brain_regions(self, queryset, name, value)
+        return _filter_qs_with_brain_regions(queryset, name, value)
 
     def filter_dataset_types(self, queryset, _, value):
 
@@ -148,7 +179,7 @@ class ChronicInsertionFilter(BaseFilterSet):
         returns sessions containing at least one channel in the given brain region.
         Hierarchical tree search"
         """
-        return _filter_qs_with_brain_regions(self, queryset, name, value)
+        return _filter_qs_with_brain_regions(queryset, name, value)
 
     class Meta:
         model = ChronicInsertion
@@ -322,3 +353,175 @@ class BrainRegionDetail(generics.RetrieveUpdateAPIView):
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
     permission_classes = rest_permission_classes()
+
+
+"""
+FOV objects REST filters and views
+"""
+
+
+class FOVFilter(BaseFilterSet):
+    subject = CharFilter('session__subject__nickname')
+    lab = CharFilter(field_name='session__lab__name', lookup_expr='iexact')
+    project = CharFilter('session__projects__name')
+    date = CharFilter('session__start_time__date')
+    experiment_number = CharFilter('session__number')
+    dataset_types = CharFilter(field_name='dataset_types', method='filter_dataset_types')
+    datasets = CharFilter(field_name='datasets', method='filter_datasets')
+    imaging_type = CharFilter(field_name='imaging_type__name', lookup_expr='icontains')
+    # brain region filters
+    atlas_name = CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def atlas(self, queryset, name, value):
+        """
+        Returns FOVs in the given brain region.
+        """
+        return _filter_qs_with_brain_regions(queryset, name, value)
+
+    def filter_tag(self, queryset, _, value):
+        """
+        Returns FOVs that contain datasets with the provided tag
+        """
+        queryset = queryset.filter(
+            datasets__tags__name__icontains=value).distinct()
+        return queryset
+
+    def filter_dataset_types(self, queryset, _, value):
+        """
+        Returns FOVs associated with the given dataset type(s)
+        """
+        dtypes = value.split(',')
+        queryset = queryset.filter(datasets__dataset_type__name__in=dtypes)
+        queryset = queryset.annotate(
+            dtypes_count=Count('datasets__dataset_type', distinct=True))
+        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
+        return queryset
+
+    def filter_datasets(self, queryset, _, value):
+        """
+        Returns FOVs associated with the given dataset(s)
+        """
+        dsets = value.split(',')
+        queryset = queryset.filter(datasets__name__in=dsets)
+        queryset = queryset.annotate(
+            dsets_count=Count('datasets', distinct=True))
+        queryset = queryset.filter(dsets_count__gte=len(dsets))
+        return queryset
+
+    class Meta:
+        model = FOV
+        exclude = ['json']
+
+
+class FOVList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **provenance**: field of view provenance
+        must one of the strings among those choices:
+        'Estimate', 'Functional', 'Landmark', 'Histology'.
+        `/fields-of-view?provenance=Estimate`
+    -   **atlas**: One or more brain regions covered by a field of view
+    -   **subject**: subject nickname: `/fields-of-view?subject=Algernon`
+    -   **project**: the
+    -   **date**: session date: `/fields-of-view?date=2020-01-15`
+    -   **experiment_number**: session number `/fields-of-view?experiment_number=1`
+    -   **session**: `/fields-of-view?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **name**: field of view name `/trajectories?name=FOV_01`
+
+    [===> FOV model reference](/admin/doc/models/experiments.fov)
+    """
+    queryset = FOV.objects.all()
+    serializer_class = FOVSerializer
+    permission_classes = rest_permission_classes()
+    filter_class = FOVFilter
+
+
+class FOVDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FOV.objects.all()
+    serializer_class = FOVSerializer
+    permission_classes = rest_permission_classes()
+
+
+class FOVLocationFilter(BaseFilterSet):
+    provenance = CharFilter(method='enum_field_filter')
+    coordinate_system = CharFilter('coordinate_system__name')
+    x = NumberFilter(lookup_expr='contains')
+    y = NumberFilter(lookup_expr='contains')
+    z = NumberFilter(lookup_expr='contains')
+    n_xyz = NumberFilter(lookup_expr='contains')
+
+    class Meta:
+        model = FOVLocation
+        exclude = ['json']
+
+
+class FOVLocationList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **provenance**: field of view provenance
+        must one of the strings among those choices:
+        'Estimate', 'Functional', 'Landmark', 'Histology'
+        `/fov-location?provenance=Estimate`
+    -   **fov: field of view: `/fov-location?fov=aad23144-0e52-4eac-80c5-c4ee2decb198`
+    -   **default_provenance**: default provenance: `/fov-location?default_provenance=True`
+    -   **brain_location**: one or more brain location IDs:
+        `/fov-location?brain_location=[10, 263]`
+
+    [===> FOVLocation model reference](/admin/doc/models/experiments.fovlocation)
+    """
+    queryset = FOVLocation.objects.all()
+    permission_classes = rest_permission_classes()
+    filter_class = FOVLocationFilter
+
+    def get_serializer_class(self):
+        if not self.request:
+            return FOVLocationListSerializer
+        if self.request.method == 'GET':
+            return FOVLocationListSerializer
+        if self.request.method == 'POST':
+            return FOVLocationDetailSerializer
+
+
+class FOVLocationDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FOVLocation.objects.all()
+    serializer_class = FOVLocationDetailSerializer
+    permission_classes = rest_permission_classes()
+
+
+class ImagingStackFilter(BaseFilterSet):
+    """Basic support for filtering stacks by brain regions covered.
+
+    Most situations are already covered by the field of view filter, using the stack ID.
+    """
+    # brain region filters
+    atlas_name = CharFilter(field_name='name__icontains', method='atlas')
+    atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
+    atlas_id = NumberFilter(field_name='pk', method='atlas')
+
+    def atlas(self, queryset, name, value):
+        """
+        Returns stacks covering the given brain region.
+        """
+        return _filter_qs_with_brain_regions(queryset, name, value)
+
+    class Meta:
+        model = ImagingStack
+        exclude = ('json', 'name')
+
+
+class ImagingStackList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+
+    -   **atlas**: One or more brain regions covered by a stack
+
+    [===> ImagingStack model reference](/admin/doc/models/experiments.imagingstack)
+    """
+    queryset = ImagingStack.objects.all()
+    serializer_class = ImagingStackListSerializer
+    permission_classes = rest_permission_classes()
+    filter_class = ImagingStackFilter
