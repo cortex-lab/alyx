@@ -13,7 +13,7 @@ from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertio
                                      BrainRegionSerializer, ChronicInsertionDetailSerializer,
                                      ChronicInsertionListSerializer, FOVSerializer,
                                      FOVLocationListSerializer, FOVLocationDetailSerializer,
-                                     ImagingStackListSerializer)
+                                     ImagingStackListSerializer, ImagingStackDetailSerializer)
 
 logger = logging.getLogger(__name__)
 """
@@ -510,7 +510,7 @@ class ImagingStackFilter(BaseFilterSet):
 
     class Meta:
         model = ImagingStack
-        exclude = ('json', 'name')
+        exclude = ('json',)
 
 
 class ImagingStackList(generics.ListCreateAPIView):
@@ -518,10 +518,26 @@ class ImagingStackList(generics.ListCreateAPIView):
     get: **FILTERS**
 
     -   **atlas**: One or more brain regions covered by a stack
+    -   **name**: The image stack name
 
     [===> ImagingStack model reference](/admin/doc/models/experiments.imagingstack)
     """
     queryset = ImagingStack.objects.all()
-    serializer_class = ImagingStackListSerializer
+    # serializer_class = ImagingStackListSerializer
     permission_classes = rest_permission_classes()
     filter_class = ImagingStackFilter
+
+    def get_serializer_class(self):
+        if not self.request or self.request.method == 'GET':
+            return ImagingStackListSerializer
+        if self.request.method == 'POST':
+            return ImagingStackDetailSerializer
+
+
+class ImagingStackDetail(generics.RetrieveAPIView):
+    """
+    [===> ImagingStack model reference](/admin/doc/models/experiments.imagingstack)
+    """
+    queryset = ImagingStack.objects.all()
+    serializer_class = ImagingStackDetailSerializer
+    permission_classes = rest_permission_classes()

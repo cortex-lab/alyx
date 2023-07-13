@@ -17,4 +17,5 @@ urlpatterns = [
     path('fields-of-view', ev.FOVList.as_view(), name="fieldsofview-list"),
     path('fields-of-view/<uuid:pk>', ev.FOVDetail.as_view(), name="fieldsofview-detail"),
     path('fov-location', ev.FOVLocationList.as_view(), name="fovlocation-list"),
-    path('imaging-stack', ev.ImagingStackList.as_view(), name="imagingstack-list")]
+    path('imaging-stack', ev.ImagingStackList.as_view(), name="imagingstack-list"),
+    path('imaging-stack/<uuid:pk>', ev.ImagingStackDetail.as_view(), name="imagingstack-detail")]
