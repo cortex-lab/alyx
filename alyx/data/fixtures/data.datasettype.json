@@ -1689,7 +1689,7 @@
       "json": null,
       "name": "imaging.frames",
       "created_by": null,
-      "description": "Frame images with the dimensions [nframes, nx, ny(, nchannels)].",
+      "description": "Raw frame images with the dimensions [nframes, nx, ny(, nchannels)]. Note that depending on modality, multiple planes and channels may be stitched together and/or presented in a different order.",
       "filename_pattern": "imaging.frames*"
     }
   },
@@ -1931,7 +1931,7 @@
       "json": null,
       "name": "mpciROIs.stackPos",
       "created_by": null,
-      "description": "X, Y, and Z (plane) coordinate of each ROI's centroid",
+      "description": "X, Y, and Z (plane) pixel coordinates of each ROI's centroid.",
       "filename_pattern": ""
     }
   },
@@ -1953,7 +1953,7 @@
       "json": null,
       "name": "mpciROIs.mpciROITypes",
       "created_by": null,
-      "description": "Numerical code of ROI type for each ROI",
+      "description": "Numerical enumeration of ROI type for each ROI.",
       "filename_pattern": ""
     }
   },
@@ -1964,7 +1964,7 @@
       "json": null,
       "name": "mpciROIs.masks",
       "created_by": null,
-      "description": "Floating-point mask of each ROI, in 2d or 3d according to how you did detection. Saved as sparse array",
+      "description": "Floating-point mask of each ROI, in 2D or 3D according to how you did detection. Saved as a sparse array. sum(roi_mask * frames[ypix, xpix, :]) = fluorescence",
       "filename_pattern": ""
     }
   },
@@ -1975,7 +1975,7 @@
       "json": null,
       "name": "mpciROIs.neuropilMasks",
       "created_by": null,
-      "description": "Floating-point neuropil mask for each ROI, in 2d or 3d according to how you did detection. Saved as a sparse array",
+      "description": "Boolean neuropil mask for each ROI, in 2D or 3D according to how you did detection. Saved as a sparse array.",
       "filename_pattern": ""
     }
   },
@@ -1986,7 +1986,7 @@
       "json": null,
       "name": "mpciROITypes.names",
       "created_by": null,
-      "description": "String describing each ROI type",
+      "description": "Human-readable definition of ROI types (neuron, dendrite, etc). First column, 'roi_values', contains the ROI type enumeration.  The second, 'roi_labels', contains a string description.",
       "filename_pattern": ""
     }
   },
