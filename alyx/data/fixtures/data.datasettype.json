@@ -2165,5 +2165,16 @@
       "description": "Stack image meta-data listing the depth in microns of each slice in the stack, and ML and AP coordinates of the center.",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "77ea3095-c8d8-4db7-893c-a699d7efec48",
+    "fields": {
+      "json": null,
+      "name": "_ibl_rawImagingData.meta",
+      "created_by": null,
+      "description": "Image meta-data listing the depths and dimensions of each field of view, acquisition parameters, channels, and the MLAP coordinates of the imaging window center.",
+      "filename_pattern": "_*_rawImagingData.meta*"
+    }
   }
 ]
