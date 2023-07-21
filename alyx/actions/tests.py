@@ -8,7 +8,7 @@ from actions.water_control import to_date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
     Notification, NotificationRule, create_notification)
-from actions.notifications import check_water_administration
+from actions.notifications import check_water_administration, check_weighed
 from misc.models import LabMember, LabMembership, Lab
 from subjects.models import Subject
 
@@ -149,7 +149,22 @@ class NotificationTests(TestCase):
             date_time=timezone.datetime(2018, 6, 9, 16, 0, 0)
         )
         notif = Notification.objects.last()
-        self.assertTrue(notif.title.startswith('Warning'))
+        self.assertTrue(notif.title.startswith('ATTENTION'))
+
+    def test_notif_weighed(self):
+        """Test for actions.notifications.check_weighed function."""
+        check_weighed(self.subject, self.date)
+        notif = Notification.objects.last()
+        self.assertTrue(notif.title.startswith('ATTENTION'))
+        self.assertIn('weighing missing', notif.title)
+        self.assertIn(self.date.date().isoformat(), notif.title)
+
+        # Create weighing for the day
+        Weighing.objects.create(subject=self.subject, weight=25.,
+                                date_time=self.date.replace(second=0, hour=0, minute=0))
+        n = Notification.objects.count()
+        check_weighed(self.subject, self.date)
+        self.assertEqual(n, Notification.objects.count(), 'created unexpected notification')
 
     def test_notif_water_1(self):
         date = timezone.datetime(2018, 6, 3, 16, 0, 0)
