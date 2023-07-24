@@ -1,8 +1,8 @@
 asgiref==3.7.2
 backports.zoneinfo==0.2.1
-boto3==1.28.8
-botocore==1.31.8
-certifi==2023.5.7
+boto3==1.28.10
+botocore==1.31.10
+certifi==2023.7.22
 cffi==1.15.1
 charset-normalizer==3.2.0
 click==8.1.6
@@ -33,9 +33,9 @@ docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
 flake8==6.0.0
-fonttools==4.41.0
-globus-cli==3.15.0
-globus-sdk==3.21.0
+fonttools==4.41.1
+globus-cli==3.16.0
+globus-sdk==3.25.0
 iblutil==1.7.0
 idna==3.4
 importlib-metadata==6.8.0
