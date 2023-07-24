@@ -16,7 +16,7 @@ def responsible_user_changed(subject, old_user, new_user):
     create_notification('responsible_user_change', msg, subject, users=[old_user, new_user])
 
 
-def check_weighing(subject, date=None):
+def check_underweight(subject, date=None):
     """Called when a weighing is added."""
     # Reinit the water_control instance to make sure the just-added
     # weighing is taken into account
@@ -26,9 +26,27 @@ def check_weighing(subject, date=None):
     lwb = wc.last_weighing_before(date=date)
     datetime = lwb[0] if lwb else None
     if 0 < perc <= min_perc + 2:
-        header = 'WARNING' if perc <= min_perc else 'Warning'
+        header = 'WARNING' if perc <= min_perc else 'ATTENTION'
         msg = "%s: %s weight was %.1f%% on %s" % (header, subject, perc, datetime)
         create_notification('mouse_underweight', msg, subject)
+
+
+def check_weighed(subject, date=None):
+    """Check the a subject was weighed in the last 24 hours."""
+    date = date or timezone.now()
+    # Reinit the water_control instance to make sure the just-added
+    # weighing is taken into account
+    wc = subject.reinit_water_control()
+    if not wc:
+        return
+    lwb = wc.last_weighing_before(date=date)
+    if hasattr(date, 'date'):
+        date = date.date()
+    datetime = lwb[0] if lwb else None
+    if not datetime or datetime.date() != date:
+        header = 'ATTENTION'
+        msg = '%s: subject "%s" weighing missing for %s' % (header, wc.nickname, date)
+        create_notification('mouse_not_weighed', msg, subject)
 
 
 def check_water_administration(subject, date=None):

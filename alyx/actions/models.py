@@ -60,13 +60,11 @@ class Weighing(BaseModel):
 
     def save(self, *args, **kwargs):
         super(Weighing, self).save(*args, **kwargs)
-        from actions.notifications import check_weighing
-        check_weighing(self.subject)
+        from actions.notifications import check_underweight
+        check_underweight(self.subject)
 
     def __str__(self):
-        return 'Weighing %.2f g for %s' % (self.weight,
-                                           str(self.subject),
-                                           )
+        return 'Weighing %.2f g for %s' % (self.weight, str(self.subject))
 
 
 class WaterType(BaseModel):
@@ -372,6 +370,7 @@ NOTIFICATION_TYPES = (
     ('mouse_underweight', 'mouse is underweight'),
     ('mouse_water', 'water to give to mouse'),
     ('mouse_training', 'check training days'),
+    ('mouse_not_weighed', 'no weight entered for date')
 )
 
 
@@ -379,7 +378,7 @@ NOTIFICATION_TYPES = (
 NOTIFICATION_MIN_DELAYS = {
     'responsible_user_change': 3600,
     'mouse_underweight': 3600,
-    'mouse_water': 3600,
+    'mouse_water': 3600
 }
 
 

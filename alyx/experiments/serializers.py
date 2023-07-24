@@ -299,6 +299,7 @@ class FOVSerializer(serializers.ModelSerializer):
 
 class ImagingStackDetailSerializer(serializers.ModelSerializer):
     slices = FOVSerializer(read_only=True, many=True)
+    name = serializers.CharField()
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -308,10 +309,12 @@ class ImagingStackDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ImagingStack
+        fields = '__all__'
 
 
 class ImagingStackListSerializer(ImagingStackDetailSerializer):
+    name = None  # Only show name on read, but allow filtering by name
 
     class Meta:
         model = ImagingStack
-        exclude = ('name', 'json')
+        exclude = ('json', 'name')
