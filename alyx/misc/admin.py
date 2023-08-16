@@ -9,7 +9,7 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 from django.utils.html import format_html, format_html_join
 
-from misc.models import Note, Lab, LabMembership, LabLocation, CageType,\
+from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
 from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url
 

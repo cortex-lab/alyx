@@ -1,0 +1,10 @@
+[
+{
+ "model": "experiments.imagingtype",
+ "pk": "8c009775-2bff-4de7-baca-c27dc949426e",
+ "fields": {
+  "json": null,
+  "name": "mesoscope"
+  }
+}
+]
