@@ -584,7 +584,7 @@ class FOVInline(TabularInline):
 
 
 class EphysSessionAdmin(SessionAdmin):
-    inlines = [ProbeInsertionInline, WaterAdminInline, DatasetInline, NoteInline]
+    inlines = [ProbeInsertionInline, TasksAdminInline, WaterAdminInline, DatasetInline, NoteInline]
 
     def get_queryset(self, request):
         qs = super(EphysSessionAdmin, self).get_queryset(request)
@@ -592,7 +592,7 @@ class EphysSessionAdmin(SessionAdmin):
 
 
 class ImagingSessionAdmin(SessionAdmin):
-    inlines = [FOVInline, WaterAdminInline, DatasetInline, NoteInline]
+    inlines = [FOVInline, TasksAdminInline, WaterAdminInline, DatasetInline, NoteInline]
     list_filter = [('users', RelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('projects', RelatedDropdownFilter),
