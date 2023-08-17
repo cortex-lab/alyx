@@ -14,7 +14,7 @@
  "fields": {
   "name": "Water restriction",
   "json": null,
-  "description": "- Variation in the composition, constituents, quantity and/or availability of the diet and/or drinking water which may cause pain, suffering, distress or lasting harm - withholding of water"
+  "description": "- Variation in the compositigit con, constituents, quantity and/or availability of the diet and/or drinking water which may cause pain, suffering, distress or lasting harm - withholding of water"
  }
 },
 {
@@ -267,6 +267,15 @@
   "name": "Histology",
   "json": null,
   "description": "Covers the acquisition of histological sections, the subsequent registration of slices to a common reference atlas and the eventual recovery of electrophysiology tracks through manual picking."
+ }
+},
+  {
+ "model": "actions.proceduretype",
+ "pk": "e55c9ca1-3208-4b81-936f-75c0cf6e9565",
+ "fields": {
+  "name": "handling_habituation",
+  "json": null,
+  "description": "Rig habituation protocol for a new task and/or a new subject"
  }
 },
 {
