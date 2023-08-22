@@ -1733,8 +1733,30 @@
       "json": null,
       "name": "DAQdata.raw",
       "created_by": null,
-      "description": "The output of the DAQ software for a given device.  The namespace should identify the DAQ model, e.g. 'mcc', 'ni' or 'ni-usb-6211'.",
+      "description": "The output of the DAQ software for a given device.  The namespace should identify the DAQ model or acquisition software, e.g. 'mcc', 'ni' or 'timeline'.",
       "filename_pattern": "_*_DAQdata.raw*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "22e89603-0ce9-40c9-8db8-8765d43cf7a8",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.timestamps",
+      "created_by": null,
+      "description": "The DAQ software timestamps for a given device.  The namespace should identify the DAQ model or acquisition software, e.g. 'mcc', 'ni' or 'timeline'.",
+      "filename_pattern": "_*_DAQdata.timestamps*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a8cc815d-c643-450f-af50-872b22744383",
+    "fields": {
+      "json": null,
+      "name": "DAQdata.meta",
+      "created_by": null,
+      "description": "Associated DAQ metadata, such as input and output channel configurations. The metadata structure varies between namespaces.",
+      "filename_pattern": "_*_DAQdata.meta*"
     }
   },
   {
