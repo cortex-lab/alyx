@@ -1,7 +1,7 @@
 asgiref==3.7.2
 backports.zoneinfo==0.2.1
-boto3==1.28.31
-botocore==1.31.31
+boto3==1.28.37
+botocore==1.31.37
 certifi==2023.7.22
 cffi==1.15.1
 charset-normalizer==3.2.0
@@ -34,8 +34,8 @@ docutils==0.20.1
 drfdocs==0.0.11
 flake8==6.1.0
 fonttools==4.42.1
-globus-cli==3.16.0
-globus-sdk==3.25.0
+globus-cli==3.17.0
+globus-sdk==3.27.0
 iblutil==1.7.0
 idna==3.4
 importlib-metadata==6.8.0
@@ -43,7 +43,7 @@ importlib-resources==6.0.1
 itypes==1.2.0
 Jinja2==3.1.2
 jmespath==1.0.1
-kiwisolver==1.4.4
+kiwisolver==1.4.5
 llvmlite==0.40.1
 lxml==4.9.3
 Markdown==3.4.4
@@ -57,7 +57,7 @@ packaging==23.1
 pandas==2.0.3
 Pillow==10.0.0
 psycopg2-binary==2.9.7
-pyarrow==12.0.1
+pyarrow==13.0.0
 pycodestyle==2.11.0
 pycparser==2.21
 pyflakes==3.1.0
