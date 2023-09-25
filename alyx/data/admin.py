@@ -93,6 +93,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
+                   ('tags', RelatedDropdownFilter)
                    ]
     search_fields = ('session__id', 'name', 'collection', 'dataset_type__name',
                      'dataset_type__filename_pattern', 'version')
