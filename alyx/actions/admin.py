@@ -478,6 +478,7 @@ class TasksAdminInline(BaseInlineAdmin):
     extra = 0
     fields = ('status', 'name', 'version', 'parents', 'datetime', 'arguments')
     readonly_fields = ('name', 'version', 'parents', 'datetime', 'arguments')
+    ordering = ('status',)
 
 
 def _pass_narrative_templates(context):
