@@ -659,21 +659,22 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
     """
     For each dataset in the queryset delete the file records belonging to a Globus personal repo
     only if a server file exists and matches the size.
-    :param datasets:
+    :param datasets: data.models.Dataset query set
     :param label: label for the transfer
     :param dry: default True
     :return:
     """
     # first get the list of Globus endpoints concerned
-    file_records = FileRecord.objects.filter(dataset__in=datasets)
+    file_records = FileRecord.objects.filter(
+        dataset__in=datasets, data_repository__globus_is_personal=True)
+    file_records = file_records.exclude(data_repository__globus_endpoint_id__isnull=True)
     globus_endpoints = file_records.values_list('data_repository__globus_endpoint_id',
                                                 flat=True).distinct()
     label = label or 'alyx globus client'
     # create a globus delete_client for each globus endpoint
     gtc = gc or globus_transfer_client()
-    delete_clients = []
-    for ge in globus_endpoints:
-        delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=label))
+    # Map of Globus endpoint UUID -> DeleteData client
+    delete_clients = {ge: globus_sdk.DeleteData(gtc, ge, label=label) for ge in globus_endpoints}
 
     def _ls_globus(file_record, add_uuid=False):
         N_RETRIES = 3
@@ -694,7 +695,6 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
         return [ls for ls in ls_obj['DATA'] if ls['name'] == path.name]
     # appends each file for deletion
     fr2delete = []
-    del_client = []
     for ds in datasets:
         # check the existence of the server file
         fr_server = ds.file_records.filter(exists=True,
@@ -724,17 +724,16 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
             # the files exist local and remote,
             fr2delete.append(frloc.id)
             file2del = _filename_from_file_record(frloc)
-            del_client = [dc for dc in delete_clients if dc['endpoint'] ==
-                          str(frloc.data_repository.globus_endpoint_id)][0]
+            del_client = delete_clients[(gid := frloc.data_repository.globus_endpoint_id)]
+            assert del_client['endpoint'] == str(gid)
             del_client.add_item(file2del)
             logger.info('DELETE: ' + _filename_from_file_record(frloc))
     # launch the deletion jobs and remove records from the database
     if dry:
-        return del_client
-    for dc in delete_clients:
-        # submitting a deletion without data will create an error
-        if dc['DATA'] == []:
-            continue
+        return delete_clients
+    # NB: filter empty clients as submitting a deletion without data will raise an error
+    for dc in filter(lambda x: x['DATA'], delete_clients.values()):
+        logger.info('Submitting delete for %i file(s) on %s', len(dc['DATA']), dc['endpoint'])
         gtc.submit_delete(dc)
     # remove file records
     frecs = FileRecord.objects.filter(id__in=fr2delete).exclude(
