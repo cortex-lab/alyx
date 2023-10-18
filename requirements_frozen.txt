@@ -76,6 +76,6 @@ tqdm==4.66.1
 typing_extensions==4.8.0
 tzdata==2023.3
 uritemplate==4.1.1
-urllib3==1.26.17
+urllib3==1.26.18
 webdavclient3==3.14.6
 zipp==3.17.0
