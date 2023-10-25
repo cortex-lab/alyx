@@ -1419,16 +1419,17 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'birth_date', 'death_date', 'sex_f', 'ear_mark',
-                    'line', 'cage', 'responsible_user', 'to_be_culled', 'reduced', 'cull_l']
+    list_display = ['nickname', 'to_be_culled', 'birth_date', 'death_date', 'sex_f', 'ear_mark',
+                    'line', 'zygosities', 'cage', 'responsible_user', 'reduced', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
+                   ZygosityFilter,
                    ('line', LineDropdownFilter),
                    ]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 
-    ordering = ('-birth_date',)
+    ordering = ['-birth_date', '-nickname']
 
     def sex_f(self, obj):
         return obj.sex[0] if obj.sex else ''
