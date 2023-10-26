@@ -2198,5 +2198,16 @@
       "description": "Image meta-data listing the depths and dimensions of each field of view, acquisition parameters, channels, and the MLAP coordinates of the imaging window center.",
       "filename_pattern": "_*_rawImagingData.meta*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "289cb419-274f-4699-ac43-7612de07382e",
+    "fields": {
+      "json": null,
+      "name": "mpciROIs.uuids",
+      "created_by": null,
+      "description": "Unique identifier assigned to each ROI when ALF files created after ROI detection.",
+      "filename_pattern": ""
+    }
   }
 ]

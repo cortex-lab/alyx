@@ -269,6 +269,15 @@
   "description": "Covers the acquisition of histological sections, the subsequent registration of slices to a common reference atlas and the eventual recovery of electrophysiology tracks through manual picking."
  }
 },
+  {
+ "model": "actions.proceduretype",
+ "pk": "e55c9ca1-3208-4b81-936f-75c0cf6e9565",
+ "fields": {
+  "name": "handling_habituation",
+  "json": null,
+  "description": "Rig habituation protocol for a new task and/or a new subject"
+ }
+},
 {
  "model": "actions.proceduretype",
  "pk": "f573f844-4fa5-4c00-8fcd-61369950f2dc",
