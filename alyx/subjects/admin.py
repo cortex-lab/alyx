@@ -126,16 +126,26 @@ class ZygosityFilter(DefaultListFilter):
             (None, 'All'),
             ('p', 'All positive'),
             ('h', 'All homo'),
+            ('n', 'All negative'),
+            ('e', 'All het')
         )
 
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset.all()
-        elif self.value() in ('p', 'h'):
+        elif self.value() in ('p', 'h', 'n', 'e'):
             # Only keep subjects with a non-null geontype.
             queryset = queryset.filter(genotype__isnull=False).distinct()
-            # Exclude subjects that have a specific zygosity/
-            d = dict(zygosity=0) if self.value() == 'p' else dict(zygosity__in=(0, 1, 3))
+            # Exclude subjects that have a specific zygosity
+            # See alyx/alyx/subjects/models.py - ZYGOSITY_TYPES for explanation
+            if self.value() == 'p':
+                d = dict(zygosity=0)
+            elif self.value() == 'h':
+                d = dict(zygosity__in=(0, 1, 3))
+            elif self.value() == 'n':
+                d = dict(zygosity__in=(1, 2, 3))
+            else:
+                d = dict(zygosity__in=(0, 2, 3))
             nids = set([z.subject.id.hex for z in Zygosity.objects.filter(**d)])
             return queryset.exclude(pk__in=nids)
 
