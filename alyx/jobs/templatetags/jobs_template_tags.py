@@ -93,6 +93,13 @@ def get_task_colour(status):
         return "color:MediumSeaGreen"
 
 
+@register.filter
+def get_parents(obj):
+    parents = obj.parents.all()
+
+    return parents
+
+
 @register.simple_tag(takes_context=True)
 def param_replace(context, **kwargs):
     """
