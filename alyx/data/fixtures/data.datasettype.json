@@ -2220,5 +2220,5 @@
       "description": "Look up table from photometry ROI, to fiber name registered in the database and Allen brain location",
       "filename_pattern": "*photometryROI.locations*"
     }
-  },
+  }
 ]
