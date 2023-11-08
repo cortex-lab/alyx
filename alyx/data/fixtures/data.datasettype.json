@@ -2209,5 +2209,16 @@
       "description": "Unique identifier assigned to each ROI when ALF files created after ROI detection.",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "e0a71fbc-f8ff-42a1-bfa7-d7764ab4104d",
+    "fields": {
+      "json": null,
+      "name": "photometryROI.locations",
+      "created_by": null,
+      "description": "Look up table from photometry ROI, to fiber name registered in the database and Allen brain location",
+      "filename_pattern": "*photometryROI.locations*"
+    }
   }
 ]
