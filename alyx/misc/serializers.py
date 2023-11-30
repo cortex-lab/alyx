@@ -50,6 +50,8 @@ class NoteSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     subjects_responsible = serializers.SlugRelatedField(
         many=True, queryset=Subject.objects.all(), slug_field='nickname')
+    allowed_users = serializers.SlugRelatedField(
+        many=True, queryset=LabMember.objects.all(), slug_field='username')
 
     @staticmethod
     def setup_eager_loading(queryset):
@@ -58,7 +60,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ('id', 'username', 'email', 'subjects_responsible', 'lab')
+        fields = ('id', 'username', 'email', 'subjects_responsible', 'lab', 'allowed_users')
 
 
 class LabSerializer(serializers.HyperlinkedModelSerializer):
