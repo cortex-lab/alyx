@@ -2,7 +2,7 @@ from django.db.models import Count, ProtectedError
 from django.contrib import admin, messages
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Download, Revision, Tag)
