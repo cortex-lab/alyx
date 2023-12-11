@@ -1,7 +1,7 @@
 asgiref==3.7.2
 backports.zoneinfo==0.2.1
-boto3==1.33.8
-botocore==1.33.8
+boto3==1.33.11
+botocore==1.33.11
 certifi==2023.11.17
 cffi==1.16.0
 charset-normalizer==3.3.2
@@ -16,7 +16,7 @@ cryptography==41.0.7
 cycler==0.12.1
 Django==4.2.8
 django-admin-list-filter-dropdown==1.0.3
-django-admin-rangefilter==0.11.2
+django-admin-rangefilter==0.12.0
 django-autocomplete-light==3.9.7
 django-cleanup==8.0.0
 django-filter==21.1
@@ -34,9 +34,9 @@ docutils==0.20.1
 drfdocs==0.0.11
 flake8==6.1.0
 fonttools==4.46.0
-globus-cli==3.19.0
-globus-sdk==3.30.0
-iblutil==1.7.1
+globus-cli==3.21.0
+globus-sdk==3.33.0
+iblutil==1.7.2
 idna==3.6
 importlib-metadata==7.0.0
 importlib-resources==6.1.1
@@ -73,7 +73,7 @@ six==1.16.0
 sqlparse==0.4.4
 structlog==23.2.0
 tqdm==4.66.1
-typing_extensions==4.8.0
+typing_extensions==4.9.0
 tzdata==2023.3
 uritemplate==4.1.1
 urllib3==1.26.18
