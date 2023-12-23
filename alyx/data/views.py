@@ -220,7 +220,7 @@ class DatasetList(generics.ListCreateAPIView):
     queryset = DatasetSerializer.setup_eager_loading(queryset)
     serializer_class = DatasetSerializer
     permission_classes = rest_permission_classes()
-    filter_class = DatasetFilter
+    filterset_class = DatasetFilter
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -265,7 +265,7 @@ class FileRecordList(generics.ListCreateAPIView):
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
     serializer_class = FileRecordSerializer
     permission_classes = rest_permission_classes()
-    filter_class = FileRecordFilter
+    filterset_class = FileRecordFilter
 
 
 class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -595,4 +595,4 @@ class DownloadList(generics.ListAPIView):
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
     permission_classes = rest_permission_classes()
-    filter_class = DownloadFilter
+    filterset_class = DownloadFilter

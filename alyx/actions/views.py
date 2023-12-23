@@ -66,7 +66,7 @@ class BaseActionFilter(BaseFilterSet):
         exclude = []
         filter_overrides = {
             JSONField: {
-                'filter_class': CharFilter,
+                'filterset_class': CharFilter,
             },
         }
 
@@ -365,7 +365,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     queryset = SessionListSerializer.setup_eager_loading(queryset)
     permission_classes = rest_permission_classes()
 
-    filter_class = SessionFilter
+    filterset_class = SessionFilter
 
     def get_serializer_class(self):
         if not self.request:
@@ -394,7 +394,7 @@ class WeighingAPIListCreate(generics.ListCreateAPIView):
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
     queryset = WeighingDetailSerializer.setup_eager_loading(queryset)
-    filter_class = WeighingFilter
+    filterset_class = WeighingFilter
 
 
 class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
@@ -421,7 +421,7 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
     queryset = WaterAdministrationDetailSerializer.setup_eager_loading(queryset)
-    filter_class = WaterAdministrationFilter
+    filterset_class = WaterAdministrationFilter
 
 
 class WaterAdministrationAPIDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -458,7 +458,7 @@ class WaterRestrictionList(generics.ListAPIView):
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
     serializer_class = WaterRestrictionListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = WaterRestrictionFilter
+    filterset_class = WaterRestrictionFilter
 
 
 class LabLocationList(generics.ListAPIView):
@@ -497,7 +497,7 @@ class SurgeriesList(generics.ListAPIView):
     queryset = Surgery.objects.all().order_by('-start_time')
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
-    filter_class = SurgeriesFilter
+    filterset_class = SurgeriesFilter
 
 
 class SurgeriesAPIDetail(generics.RetrieveUpdateAPIView):

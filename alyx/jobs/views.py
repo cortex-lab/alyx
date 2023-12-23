@@ -100,7 +100,7 @@ class TaskList(generics.ListCreateAPIView):
     queryset = Task.objects.all().order_by('level', '-priority', '-session__start_time')
     serializer_class = TaskSerializer
     permission_classes = rest_permission_classes()
-    filter_class = TaskFilter
+    filterset_class = TaskFilter
 
 
 class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
