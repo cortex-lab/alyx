@@ -152,7 +152,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     queryset = ProbeInsertionListSerializer.setup_eager_loading(queryset)
     serializer_class = ProbeInsertionListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = ProbeInsertionFilter
+    filterset_class = ProbeInsertionFilter
 
 
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -212,7 +212,7 @@ class ChronicInsertionList(generics.ListCreateAPIView):
     queryset = ChronicInsertionListSerializer.setup_eager_loading(queryset)
     serializer_class = ChronicInsertionListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = ChronicInsertionFilter
+    filterset_class = ChronicInsertionFilter
 
 
 class ChronicInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -259,7 +259,7 @@ class TrajectoryEstimateList(generics.ListCreateAPIView):
     queryset = TrajectoryEstimate.objects.all()
     serializer_class = TrajectoryEstimateSerializer
     permission_classes = rest_permission_classes()
-    filter_class = TrajectoryEstimateFilter
+    filterset_class = TrajectoryEstimateFilter
 
 
 class TrajectoryEstimateDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -300,7 +300,7 @@ class ChannelList(generics.ListCreateAPIView):
     queryset = Channel.objects.all()
     serializer_class = ChannelSerializer
     permission_classes = rest_permission_classes()
-    filter_class = ChannelFilter
+    filterset_class = ChannelFilter
 
 
 class ChannelDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -346,7 +346,7 @@ class BrainRegionList(generics.ListAPIView):
     queryset = BrainRegion.objects.all()
     serializer_class = BrainRegionSerializer
     permission_classes = rest_permission_classes()
-    filter_class = BrainRegionFilter
+    filterset_class = BrainRegionFilter
 
 
 class BrainRegionDetail(generics.RetrieveUpdateAPIView):
@@ -436,7 +436,7 @@ class FOVList(generics.ListCreateAPIView):
     queryset = FOV.objects.all()
     serializer_class = FOVSerializer
     permission_classes = rest_permission_classes()
-    filter_class = FOVFilter
+    filterset_class = FOVFilter
 
 
 class FOVDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -475,7 +475,7 @@ class FOVLocationList(generics.ListCreateAPIView):
     """
     queryset = FOVLocation.objects.all()
     permission_classes = rest_permission_classes()
-    filter_class = FOVLocationFilter
+    filterset_class = FOVLocationFilter
 
     def get_serializer_class(self):
         if not self.request:
@@ -525,7 +525,7 @@ class ImagingStackList(generics.ListCreateAPIView):
     queryset = ImagingStack.objects.all()
     # serializer_class = ImagingStackListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = ImagingStackFilter
+    filterset_class = ImagingStackFilter
 
     def get_serializer_class(self):
         if not self.request or self.request.method == 'GET':

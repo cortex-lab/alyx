@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import structlog
 from operator import attrgetter
 import urllib
@@ -10,7 +10,7 @@ from django.core import validators
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.utils import timezone
+import django.utils.timezone
 
 from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
@@ -284,9 +284,9 @@ class Subject(BaseModel):
 
     def timezone(self):
         if not self.lab:
-            return timezone.get_default_timezone()
+            return django.utils.timezone.get_default_timezone()
         elif not self.lab.timezone:
-            return timezone.get_default_timezone()
+            return django.utils.timezone.get_default_timezone()
         else:
             try:
                 tz = pytz.timezone(self.lab.timezone)
@@ -369,7 +369,7 @@ class Subject(BaseModel):
             self.cull.save()
         # Save the reduced date.
         if self.reduced and _has_field_changed(self, 'reduced'):
-            self.reduced_date = timezone.now().date()
+            self.reduced_date = django.utils.timezone.now().date()
         # Update subject request.
         if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
@@ -408,7 +408,7 @@ class SubjectRequest(BaseModel):
         help_text="Who requested this subject.")
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     count = models.IntegerField(null=True, blank=True)
-    date_time = models.DateField(default=timezone.now, null=True, blank=True)
+    date_time = models.DateField(default=django.utils.timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
 

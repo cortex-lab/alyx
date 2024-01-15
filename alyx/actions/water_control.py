@@ -11,7 +11,7 @@ import os.path as op
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import HttpResponse
-from django.utils import timezone
+import django.utils.timezone
 
 import numpy as np
 
@@ -27,7 +27,7 @@ PALETTE = {
 
 
 def today():
-    return timezone.now()
+    return django.utils.timezone.now()
 
 
 def to_date(s):
@@ -110,8 +110,8 @@ def return_figure(f):
 
 def tzone_convert(date_t, tz):
     assert isinstance(date_t, datetime)
-    date_t = timezone.make_aware(date_t, timezone.get_default_timezone(), is_dst=False)
-    return timezone.make_naive(date_t, tz)
+    date_t = django.utils.timezone.make_aware(date_t, django.utils.timezone.get_default_timezone())
+    return django.utils.timezone.make_naive(date_t, tz)
 
 
 class WaterControl(object):
@@ -119,7 +119,7 @@ class WaterControl(object):
                  implant_weight=None, subject_id=None,
                  reference_weight_pct=0.,
                  zscore_weight_pct=0.,
-                 timezone=timezone.get_default_timezone(),
+                 timezone=django.utils.timezone.get_default_timezone(),
                  ):
         assert nickname, "Subject nickname not provided"
         self.nickname = nickname

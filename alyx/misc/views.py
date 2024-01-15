@@ -89,7 +89,7 @@ class UserList(generics.ListCreateAPIView):
     queryset = UserSerializer.setup_eager_loading(get_user_model().objects.all())
     serializer_class = UserSerializer
     permission_classes = rest_permission_classes()
-    filter_class = UserFilter
+    filterset_class = UserFilter
     lookup_field = 'username'
 
 
@@ -113,7 +113,7 @@ class LabList(generics.ListCreateAPIView):
     serializer_class = LabSerializer
     permission_classes = rest_permission_classes()
     lookup_field = 'name'
-    filter_class = LabFilter
+    filterset_class = LabFilter
 
 
 class LabDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -138,7 +138,7 @@ class NoteList(generics.ListCreateAPIView):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     permission_classes = rest_permission_classes()
-    filter_class = BaseFilterSet
+    filterset_class = BaseFilterSet
 
 
 class NoteDetail(generics.RetrieveUpdateDestroyAPIView):

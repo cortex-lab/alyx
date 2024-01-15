@@ -7,9 +7,9 @@ import sys
 import pytz
 import uuid
 from collections import OrderedDict
-from rest_framework import serializers
 import one.alf.spec
 from datetime import datetime
+import traceback
 
 from django import forms
 from django.db import models
@@ -23,9 +23,9 @@ from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
 from django_filters import CharFilter
-from django_filters.rest_framework import FilterSet
+from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
-
+from rest_framework import serializers
 from rest_framework import permissions
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
@@ -457,7 +457,7 @@ class BaseTests(TestCase):
         return self.client.patch(*args, **kwargs, content_type='application/json')
 
 
-class BaseFilterSet(FilterSet):
+class BaseFilterSet(filters.FilterSet):
     """
     Base class for Alyx filters. Adds a custom django filter for extensible queries using
     Django syntax. For example this is a query on a start_time field of a REST accessible model:
@@ -624,13 +624,14 @@ def rest_filters_exception_handler(exc, context):
     REST queries
     """
     response = exception_handler(exc, context)
-
     from rest_framework.response import Response
     # Now add the HTTP status code to the response.
     if response is not None:
         response.data['status_code'] = response.status_code
     else:
-        data = {'status_code': 500, 'detail': str(exc)}
+        # we send back a long form error message in debug mode
+        debug_text = traceback.format_exc() if settings.DEBUG else str(exc)
+        data = {'status_code': 500, 'detail': debug_text}
         response = Response(data, status=500)
 
     return response
