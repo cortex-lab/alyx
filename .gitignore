@@ -21,6 +21,7 @@ notes.txt
 build
 *venv
 .idea/*
+.cache/
 alyx/alyx_full.sql.gz
 .vscode/
 alyx/data/management/commands/*ibl*

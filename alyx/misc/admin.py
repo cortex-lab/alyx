@@ -8,6 +8,7 @@ from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
@@ -80,16 +81,16 @@ class LabLocationAdmin(BaseAdmin):
 
 
 class AdminImageWidget(AdminFileWidget):
+
     def render(self, name, value, attrs=None, renderer=None):
         output = []
         if value and getattr(value, "url", None):
             image_url = value.url
             file_name = str(value)
-            output.append(('<a href="%s" target="_blank">'
-                           '<img src="%s" width="400" alt="%s" /></a><br>') %
-                          (image_url, image_url, file_name))
+            output.append(f'<a href="{image_url}" target="_blank">'
+                          f'<img src="{image_url}" width="400" alt="{file_name}" /></a><br>')
         output.append(super(AdminFileWidget, self).render(name, value, attrs, renderer))
-        return ''.join(output)
+        return mark_safe(''.join(output))
 
 
 class ImageWidgetAdmin(BaseAdmin):
