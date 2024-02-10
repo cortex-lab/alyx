@@ -55,6 +55,12 @@ class APIDataTests(BaseTests):
         r = self.client.get(reverse('datarepository-list'))
         self.assertEqual(self.ar(r)[-1]['name'], 'dr')
 
+        # the filter should not return anything
+        r = self.client.get(reverse('datarepository-list') + '?name=unexisting_repo')
+        self.assertEqual(0, len(self.ar(r)))
+        r = self.client.get(reverse('datarepository-list') + '?name=dr')
+        self.assertEqual(1, len(self.ar(r)))
+
         r = self.client.get(reverse('datarepository-detail', kwargs={'name': 'dr'}))
         self.assertEqual(self.ar(r)['name'], 'dr')
 
