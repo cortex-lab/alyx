@@ -390,7 +390,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 class WeighingForm(BaseActionForm):
     def __init__(self, *args, **kwargs):
         super(WeighingForm, self).__init__(*args, **kwargs)
-        self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
+        if 'subject' in self.fields:
+            self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
         if self.fields.keys():
             self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
 
