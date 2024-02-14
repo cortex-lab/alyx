@@ -1,6 +1,8 @@
 from datetime import timedelta
-import structlog
 from math import inf
+
+import structlog
+from one.alf.spec import QC
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -253,16 +255,10 @@ class Session(BaseAction):
     n_trials = models.IntegerField(blank=True, null=True)
     n_correct_trials = models.IntegerField(blank=True, null=True)
 
-    QC_CHOICES = [
-        (50, 'CRITICAL',),
-        (40, 'FAIL',),
-        (30, 'WARNING',),
-        (0, 'NOT_SET',),
-        (10, 'PASS',),
-    ]
-
-    qc = models.IntegerField(default=0, choices=QC_CHOICES,
+    QC_CHOICES = [(e.value, e.name) for e in QC]
+    qc = models.IntegerField(default=QC.NOT_SET, choices=QC_CHOICES,
                              help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
+
     extended_qc = models.JSONField(null=True, blank=True,
                                    help_text="Structured data about session QC,"
                                              "formatted in a user-defined way")

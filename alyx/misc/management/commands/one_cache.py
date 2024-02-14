@@ -16,6 +16,8 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 from tqdm import tqdm
 from one.alf.cache import _metadata
+from one.util import QC_TYPE
+from one.alf.spec import QC
 from one.remote.aws import get_s3_virtual_host
 
 from django.db import connection
@@ -30,7 +32,7 @@ from data.models import Dataset, FileRecord
 from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
-ONE_API_VERSION = '1.13.0'  # Minimum compatible ONE api version
+ONE_API_VERSION = '2.7.0'  # Minimum compatible ONE api version
 
 
 def measure_time(func):
@@ -382,7 +384,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     fields = (
         'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
         'session__id', 'session__start_time__date', 'session__number',
-        'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws'
+        'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws', 'qc'
     )
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
 
@@ -410,6 +412,9 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
         # Convert UUIDs to str: not supported by parquet
         df[['id', 'eid']] = df[['id', 'eid']].astype(str)
         df = df.set_index(['eid', 'id'])
+
+        # Convert QC enum int to pandas category
+        df['qc'] = pd.Categorical([QC(i).name for i in df['qc']], dtype=QC_TYPE)
 
         all_df = pd.concat([all_df, df], ignore_index=False, copy=False)
 

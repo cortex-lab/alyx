@@ -5,6 +5,7 @@ from django.db.models import Count, Q, BooleanField
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, Download, FileRecord, Revision, Tag)
 from .transfers import _get_session, _change_default_dataset
+from alyx.base import BaseSerializerEnumField
 from actions.models import Session
 from subjects.models import Subject
 from misc.models import LabMember
@@ -142,6 +143,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     default_dataset = serializers.BooleanField(required=False, allow_null=True)
     public = serializers.ReadOnlyField()
     protected = serializers.ReadOnlyField()
+    qc = BaseSerializerEnumField(required=False)
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
     experiment_number = serializers.SerializerMethodField()
@@ -213,7 +215,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number', 'auto_datetime', 'revision',
-                  'default_dataset', 'protected', 'public', 'tags')
+                  'default_dataset', 'protected', 'public', 'tags', 'qc')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},

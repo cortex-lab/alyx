@@ -1,7 +1,7 @@
 from django.db.models import Count, ProtectedError
 from django.contrib import admin, messages
 from django.utils.html import format_html
-from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter, ChoiceDropdownFilter
 from rangefilter.filters import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
@@ -84,16 +84,17 @@ class FileRecordInline(BaseInlineAdmin):
 class DatasetAdmin(BaseExperimentalDataAdmin):
     fields = ['name', '_online', 'version', 'dataset_type', 'file_size', 'hash',
               'session_ro', 'collection', 'auto_datetime', 'revision_', 'default_dataset',
-              '_protected', '_public', 'tags']
+              '_protected', '_public', 'tags', 'qc']
     readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_',
                        '_protected', '_public', 'tags']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
-                    'session_ro', 'created_by', 'created_datetime']
+                    'session_ro', 'created_by', 'created_datetime', 'qc']
     inlines = [FileRecordInline]
     list_filter = [('created_by', RelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
-                   ('tags', RelatedDropdownFilter)
+                   ('tags', RelatedDropdownFilter),
+                   ('qc', ChoiceDropdownFilter)
                    ]
     search_fields = ('session__id', 'name', 'collection', 'dataset_type__name',
                      'dataset_type__filename_pattern', 'version')

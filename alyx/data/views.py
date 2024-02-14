@@ -157,6 +157,7 @@ class DatasetFilter(BaseFilterSet):
     protected = django_filters.BooleanFilter(method='filter_protected')
     tag = django_filters.CharFilter('tags__name')
     revision = django_filters.CharFilter('revision__name')
+    qc = django_filters.CharFilter(method='enum_field_filter')
 
     class Meta:
         model = Dataset
@@ -212,6 +213,7 @@ class DatasetList(generics.ListCreateAPIView):
     -   **tag**: tag name '/datasets?tag=repeated_site
     -   **public**: only returns datasets that are public or not public
     -   **protected**: only returns datasets that are protected or not protected
+    -   **qc**: only returns datasets with this QC value `/datasets?qc=PASS`
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """

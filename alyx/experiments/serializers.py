@@ -87,7 +87,7 @@ class ProbeInsertionDatasetsSerializer(serializers.ModelSerializer):
         list_serializer_class = FilterDatasetSerializer
         model = Dataset
         fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
-                  'hash', 'version', 'collection')
+                  'hash', 'version', 'collection', 'qc')
 
 
 class ChronicProbeInsertionListSerializer(serializers.ModelSerializer):
