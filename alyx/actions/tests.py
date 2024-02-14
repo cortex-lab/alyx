@@ -6,11 +6,11 @@ from django.utils import timezone
 from alyx import base
 from actions.water_control import to_date
 from actions.models import (
-    WaterAdministration, WaterRestriction, WaterType, Weighing,
-    Notification, NotificationRule, create_notification)
+    WaterAdministration, WaterRestriction, WaterType, Weighing, Session,
+    Notification, NotificationRule, create_notification, Surgery, ProcedureType)
 from actions.notifications import check_water_administration, check_weighed
 from misc.models import LabMember, LabMembership, Lab
-from subjects.models import Subject
+from subjects.models import Subject, Project
 
 
 class WaterControlTests(TestCase):
@@ -40,6 +40,18 @@ class WaterControlTests(TestCase):
         Lab.objects.create(name='zscore', reference_weight_pct=0, zscore_weight_pct=0.85)
         Lab.objects.create(name='rweigh', reference_weight_pct=0.85, zscore_weight_pct=0)
         Lab.objects.create(name='mixed', reference_weight_pct=0.425, zscore_weight_pct=0.425)
+        # create some surgeries to go with it (for testing implant weight in calculations)
+        date = self.start_date - datetime.timedelta(days=7)
+        surgery0 = Surgery.objects.create(subject=self.sub, implant_weight=4.56, start_time=date)
+        implant_proc, _ = ProcedureType.objects.get_or_create(name='Headplate implant')
+        surgery0.procedures.add(implant_proc.pk)
+        date = self.start_date + datetime.timedelta(days=10)
+        surgery1 = Surgery.objects.create(subject=self.sub, implant_weight=0., start_time=date)
+        date = self.start_date + datetime.timedelta(days=25)
+        surgery2 = Surgery.objects.create(subject=self.sub, implant_weight=7., start_time=date)
+        surgery2.procedures.add(implant_proc.pk)
+        self.surgeries = [surgery0, surgery1, surgery2]
+
         # Create an initial Water Restriction
         start_wr = self.start_date + datetime.timedelta(days=self.rwind)
         water_type = WaterType.objects.get(name='Hydrogel 5% Citric Acid')
@@ -70,6 +82,11 @@ class WaterControlTests(TestCase):
         wc.expected_weight()
         self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         self.assertAlmostEqual(self.wei[self.rwind], wc.expected_weight())
+        # test implant weight values
+        self.assertEqual([4.56, 7.0], [x[1] for x in wc.implant_weights])
+        self.assertEqual(7.0, wc.implant_weight())
+        self.assertEqual(4.56, wc.implant_weight(self.start_date))
+        self.assertEqual(4.56, wc.reference_implant_weight_at())
         # test computation on zscore weight lab alone
         self.sub.lab = Lab.objects.get(name='zscore')
         self.sub.save()
@@ -237,3 +254,31 @@ class NotificationTests(TestCase):
         nr.subjects_scope = 'none'
         nr.save()
         _assert_users([self.user2], [self.user2])
+
+
+class SessionTests(TestCase):
+
+    def setUp(self):
+        # Create a subject
+        self.lab = Lab.objects.create(name='testlab', reference_weight_pct=.85)
+        self.subject = Subject.objects.create(
+            nickname='bigboy', birth_date='2018-09-01', lab=self.lab)
+        self.projects = [Project.objects.create(name=f'project_{i}') for i in range(4)]
+
+    def test_session_create(self):
+        """Test subject projects added when session has none."""
+        # First create a session with no projects and no subject projects
+        start_time = datetime.datetime(year=2018, month=10, day=1)
+        session = Session.objects.create(
+            subject=self.subject, start_time=start_time, number=1, type='Experiment')
+        session.save()
+        self.assertFalse(session.projects.count())
+        # Now save after adding projects to the associated subject
+        self.subject.projects.add(*[x.pk for x in self.projects[:2]])
+        session.save()
+        self.assertEqual(2, session.projects.count())
+        # Now create a new session and add projects before saving
+        session = Session.objects.create(
+            subject=self.subject, start_time=start_time, number=2, type='Experiment')
+        session.projects.add(self.projects[-1].pk)
+        self.assertEqual(3, session.projects.count())

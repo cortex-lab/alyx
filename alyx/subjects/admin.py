@@ -220,7 +220,7 @@ class SurgeryInline(BaseInlineAdmin):
     model = Surgery
     extra = 1
     fields = ['procedures', 'narrative', 'start_time', 'end_time', 'outcome_type',
-              'users', 'location']
+              'users', 'location', 'implant_weight']
     readonly_fields = fields
     classes = ['collapse']
     show_change_link = True
@@ -334,9 +334,10 @@ class SubjectAdmin(BaseAdmin):
         ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
                       'classes': ('collapse',),
                       }),
-        ('WEIGHINGS/WATER', {'fields': ('implant_weight',
-                                        'current_weight',
+        ('WEIGHINGS/WATER', {'fields': ('current_weight',
+                                        'current_implant_weight',
                                         'reference_weight',
+                                        'reference_implant_weight',
                                         'expected_weight',
                                         'given_water',
                                         'expected_water',
@@ -365,7 +366,7 @@ class SubjectAdmin(BaseAdmin):
                        'breeding_pair_l', 'litter_l', 'line_l',
                        'cage_changes', 'cull_', 'cull_reason_',
                        'death_date',
-                       ) + fieldsets[4][1]['fields'][1:] + HOUSING_FIELDS  # water read only fields
+                       ) + fieldsets[4][1]['fields'] + HOUSING_FIELDS  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
     list_filter = [ResponsibleUserListFilter,
@@ -477,6 +478,10 @@ class SubjectAdmin(BaseAdmin):
     def zygosities(self, obj):
         return '; '.join(obj.zygosity_strings())
 
+    def reference_implant_weight(self, obj):
+        res = obj.water_control.reference_implant_weight
+        return '%.2f' % res[1] if res else '0'
+
     def reference_weight(self, obj):
         res = obj.water_control.reference_weighing_at()
         return '%.2f' % res[1] if res else '0'
@@ -484,6 +489,10 @@ class SubjectAdmin(BaseAdmin):
     def current_weight(self, obj):
         res = obj.water_control.current_weighing()
         return '%.2f' % res[1] if res else '0'
+
+    def current_implant_weight(self, obj):
+        res = obj.water_control.implant_weight() or 0.
+        return '%.2f' % res
 
     def expected_weight(self, obj):
         res = obj.water_control.expected_weight()
