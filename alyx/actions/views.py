@@ -224,10 +224,11 @@ class ProcedureTypeList(generics.ListCreateAPIView):
 
 
 class SessionFilter(BaseActionFilter):
-    dataset_types = django_filters.CharFilter(field_name='dataset_types',
-                                              method='filter_dataset_types')
+    dataset_types = django_filters.CharFilter(
+        field_name='dataset_types', method='filter_dataset_types')
     datasets = django_filters.CharFilter(field_name='datasets', method='filter_datasets')
-    dataset_qc_lte = django_filters.CharFilter(field_name='dataset_qc', method='filter_dataset_qc_lte')
+    dataset_qc_lte = django_filters.CharFilter(
+        field_name='dataset_qc', method='filter_dataset_qc_lte')
     performance_gte = django_filters.NumberFilter(field_name='performance',
                                                   method='filter_performance_gte')
     performance_lte = django_filters.NumberFilter(field_name='performance',

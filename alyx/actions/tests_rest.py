@@ -266,8 +266,10 @@ class APIActionsTests(BaseTests):
         # test dataset type filters
         dtype1, _ = DatasetType.objects.get_or_create(name='trials.table')
         dtype2, _ = DatasetType.objects.get_or_create(name='wheel.position')
-        Dataset.objects.create(session=ses, name='_ibl_trials.table.pqt', dataset_type=dtype1, qc=40)
-        Dataset.objects.create(session=ses, name='_ibl_wheel.position.npy', dataset_type=dtype2, qc=30)
+        Dataset.objects.create(
+            session=ses, name='_ibl_trials.table.pqt', dataset_type=dtype1, qc=40)
+        Dataset.objects.create(
+            session=ses, name='_ibl_wheel.position.npy', dataset_type=dtype2, qc=30)
         d = self.ar(self.client.get(reverse('session-list') + '?dataset_types=wheel.position'))
         self.assertCountEqual([str(ses.pk)], (x['id'] for x in d))
         q = '?dataset_types=wheel.position,trials.table'  # Check with list
