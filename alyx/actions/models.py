@@ -260,7 +260,7 @@ class Session(BaseAction):
                              help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
 
     extended_qc = models.JSONField(null=True, blank=True,
-                                   help_text="Structured data about session QC,"
+                                   help_text="Structured data about session QC, "
                                              "formatted in a user-defined way")
 
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,

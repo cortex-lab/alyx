@@ -86,7 +86,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
               'session_ro', 'collection', 'auto_datetime', 'revision_', 'default_dataset',
               '_protected', '_public', 'tags', 'qc']
     readonly_fields = ['name_', 'session_ro', '_online', 'auto_datetime', 'revision_',
-                       '_protected', '_public', 'tags']
+                       '_protected', '_public', 'tags', 'qc']
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime', 'qc']
     inlines = [FileRecordInline]

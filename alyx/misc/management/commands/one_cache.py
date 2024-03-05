@@ -32,7 +32,7 @@ from data.models import Dataset, FileRecord
 from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
-ONE_API_VERSION = '2.7.0'  # Minimum compatible ONE api version
+ONE_API_VERSION = '2.7'  # Minimum compatible ONE api version
 
 
 def measure_time(func):

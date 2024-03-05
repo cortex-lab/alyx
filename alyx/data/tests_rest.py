@@ -145,6 +145,8 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data['collection'], None)
         # Check that it has been set as the default dataset
         self.assertEqual(r.data['default_dataset'], True)
+        # Check QC value is NOT_SET by default
+        self.assertEqual(r.data['qc'], 'NOT_SET')
         # Make sure a session has been created.
         session = r.data['session']
         r = self.client.get(session)
@@ -162,6 +164,7 @@ class APIDataTests(BaseTests):
             'date': '2018-01-01',
             'number': 2,
             'collection': 'test_path',
+            'qc': 'PASS'
         }
 
         r = self.post(reverse('dataset-list'), data)
