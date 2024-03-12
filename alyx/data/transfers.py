@@ -11,7 +11,6 @@ import globus_sdk
 import numpy as np
 from one.alf.files import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
-from one.util import ensure_list
 from one.alf.spec import QC
 
 from alyx import settings
