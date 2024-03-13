@@ -379,6 +379,15 @@ class BaseAdmin(VersionAdmin):
             return True
         if request.user.is_superuser:
             return True
+
+        # [CR 2024-03-12]
+        # HACK: following a request by Charu R from cortexlab, we authorize all users in the
+        # special Husbandry group to edit litters.
+        husbandry = 'husbandry' in ', '.join(_.name.lower() for _ in request.user.groups.all())
+        if husbandry:
+            if obj.__class__.__name__ == 'Litter':
+                return True
+
         # Find subject associated to the object.
         if hasattr(obj, 'responsible_user'):
             subj = obj
