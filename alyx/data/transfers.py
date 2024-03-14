@@ -11,6 +11,7 @@ import globus_sdk
 import numpy as np
 from one.alf.files import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
+from one.alf.spec import QC
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
@@ -244,7 +245,7 @@ def _check_dataset_protected(session, collection, filename):
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,
-        file_size=None, version=None, revision=None, default=None):
+        file_size=None, version=None, revision=None, default=None, qc=None):
 
     assert session is not None
     revision_name = f'#{revision.name}#' if revision else ''
@@ -265,6 +266,12 @@ def _create_dataset_file_records(
         dataset_type=dataset_type, data_format=data_format, revision=revision
     )
     dataset.default_dataset = default is True
+    try:
+        dataset.qc = int(QC.validate(qc or 'NOT_SET'))
+    except ValueError:
+        data = {'status_code': 400,
+                'detail': f'Invalid QC value "{qc}" for dataset "{relative_path}"'}
+        return None, Response(data=data, status=403)
     dataset.save()
 
     # If the dataset already existed see if it is protected (i.e can't be overwritten)

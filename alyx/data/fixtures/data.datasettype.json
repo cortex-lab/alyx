@@ -2220,5 +2220,16 @@
       "description": "Look up table from photometry ROI, to fiber name registered in the database and Allen brain location",
       "filename_pattern": "*photometryROI.locations*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "140cd2a9-91c1-45ee-9d19-77e8d39abb5f",
+    "fields": {
+      "json": null,
+      "name": "laserStimulation.intervals",
+      "created_by": null,
+      "description": "The start and end times of the laser stimulation period.",
+      "filename_pattern": ""
+    }
   }
 ]

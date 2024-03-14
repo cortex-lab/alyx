@@ -344,9 +344,9 @@ class APIProbeExperimentTests(BaseTests):
         tag, _ = Tag.objects.get_or_create(name='tag_test')
 
         d1 = Dataset.objects.create(session=self.session, name='spikes.times.npy',
-                                    dataset_type=dtype1, collection='alf/probe_00')
+                                    dataset_type=dtype1, collection='alf/probe_00', qc=30)
         Dataset.objects.create(session=self.session, name='clusters.amps.npy',
-                               dataset_type=dtype2, collection='alf/probe_00')
+                               dataset_type=dtype2, collection='alf/probe_00', qc=40)
         d1.tags.add(tag)
         d1.save()
 
@@ -368,9 +368,27 @@ class APIProbeExperimentTests(BaseTests):
         d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
         self.assertEqual(len(d), 1)
         self.assertEqual(probe['id'], d[0]['id'])
-
         q = '?datasets=clusters.amps'
         self.assertFalse(self.ar(self.client.get(reverse('probeinsertion-list') + q)))
+
+        # test dataset + qc filters
+        q = '?datasets=spikes.times.npy,clusters.amps.npy&dataset_qc_lte=FAIL'
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1, 'Expect insertion returned as all dsets match QC')
+        q = '?datasets=spikes.times.npy,clusters.amps.npy&dataset_qc_lte=WARNING'
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 0, 'Expect none returned as one dset doesn''t match QC')
+        q = '?datasets=spikes.times.npy&dataset_qc_lte=30'  # QC code should also work
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1, 'Expect insertion returned as searched dset matches QC')
+
+        # test qc alone
+        q = '?dataset_qc_lte=WARNING'
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 1, 'Expect insertion returned as at least 1 dset matches QC')
+        q = '?dataset_qc_lte=10'  # PASS
+        d = self.ar(self.client.get(reverse('probeinsertion-list') + q))
+        self.assertEqual(len(d), 0, 'Expect none returned as no dset matches QC')
 
         # test filtering by tag
         q = '?tag=tag_test'
