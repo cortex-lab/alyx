@@ -242,9 +242,6 @@ class Session(BaseAction):
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
-    project = models.ForeignKey('subjects.Project', null=True, blank=True,
-                                on_delete=models.SET_NULL, verbose_name='Session Project',
-                                related_name='oldproject')
     projects = models.ManyToManyField('subjects.Project', blank=True,
                                       verbose_name='Session Projects')
     type = models.CharField(max_length=255, null=True, blank=True,
