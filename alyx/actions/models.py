@@ -264,12 +264,14 @@ class Session(BaseAction):
                                          verbose_name='last updated')
 
     def save(self, *args, **kwargs):
-        # Default project is the subject's project.
-        if not self.project_id:
-            self.project = self.subject.projects.first()
+        # Default project is the subject's projects.
         if not self.lab:
             self.lab = self.subject.lab
-        return super(Session, self).save(*args, **kwargs)
+        obj = super(Session, self).save(*args, **kwargs)
+        if self.projects.count() == 0 and self.subject.projects.count() > 0:
+            from subjects.models import Project
+            self.projects.add(*Project.objects.filter(subject=self.subject))
+        return obj
 
     def __str__(self):
         try:
