@@ -76,7 +76,7 @@ class ProbeInsertionFilter(BaseFilterSet):
     datasets = CharFilter(field_name='datasets', method='filter_datasets')
     dataset_qc_lte = CharFilter(field_name='dataset_qc', method='filter_dataset_qc_lte')
     lab = CharFilter(field_name='session__lab__name', lookup_expr='iexact')
-    project = CharFilter(field_name='session__project__name', lookup_expr='icontains')
+    projects = CharFilter(field_name='session__projects__name', lookup_expr='icontains')
     task_protocol = CharFilter(field_name='session__task_protocol', lookup_expr='icontains')
     tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
@@ -143,7 +143,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **session**: session UUID`/insertions?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **task_protocol** (icontains)
     -   **location**: location name (icontains)
-    -   **project**: project name (icontains)
+    -   **projects**: project name (icontains)
     -   **model**: probe model name `/insertions?model=3A`
     -   **lab**: lab name (exact)
     -   **tag**: tag name (icontains)

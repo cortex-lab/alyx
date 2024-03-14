@@ -113,7 +113,7 @@ class APIProbeExperimentTests(BaseTests):
         self.assertTrue(len(probe_ins) == 0)
 
         # test the project filter
-        urlf = (reverse('probeinsertion-list') + '?&project=brain_wide')
+        urlf = (reverse('probeinsertion-list') + '?&projects=brain_wide')
         probe_ins = self.ar(self.client.get(urlf))
         self.assertTrue(len(probe_ins) == 0)
 
