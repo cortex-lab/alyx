@@ -128,6 +128,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(new_mod_date > mod_date)
 
     def test_dataset(self):
+        # Test dataset creation via the datasets endpoint
         data = {
             'name': 'some-dataset',
             'dataset_type': 'dst',
@@ -172,6 +173,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data['revision'], None)
         self.assertEqual(r.data['collection'], data['collection'])
         self.assertEqual(r.data['default_dataset'], True)
+        self.assertEqual(r.data['qc'], 'PASS')
         data_url = r.data['url']
 
         # But if we change the collection, we are okay
@@ -344,6 +346,24 @@ class APIDataTests(BaseTests):
         self.assertEqual(ds1.file_size, 45686)
         self.assertEqual(ds0.version, '1.1.1')
         self.assertEqual(ds1.version, '2.2.2')
+
+    def test_qc_validation(self):
+        # this tests the validation of dataset QC outcomes
+        data = {
+            'path': '%s/2018-01-01/2/dir' % self.subject,
+            'filenames': 'a.b.e1,a.c.e2',
+            'hostname': 'hostname',
+            'qc': '10,critical'  # Both numerical and string QC values should be parsed
+        }
+        r = self.post(reverse('register-file'), data)
+        records = self.ar(r, 201)
+        self.assertEqual([10, 50], [rec['qc'] for rec in records])
+        self._assert_registration(r, data)
+        # a single QC value should be applied to all datasets
+        data['qc'] = 'FAIL'
+        r = self.post(reverse('register-file'), data)
+        records = self.ar(r, 201)
+        self.assertEqual([40, 40], [rec['qc'] for rec in records])
 
     def test_register_files_hash(self):
         # this is old use case where we register one dataset according to the hostname, no need
