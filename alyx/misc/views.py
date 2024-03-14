@@ -10,7 +10,7 @@ from django.http import (
     HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 )
 
-from rest_framework import viewsets, views
+from rest_framework import views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
@@ -69,15 +69,35 @@ def api_root(request, format=None):
     })
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
+class UserFilter(BaseFilterSet):
+    class Meta:
+        model = get_user_model()
+        exclude = ['json']
+
+
+class UserList(generics.ListCreateAPIView):
     """
-    Lists all users with the subjects which they are responsible for.
+    get: **FILTERS**
+    - 'id'
+    - 'username'
+    - 'email'
+    - 'subjects_responsible'
+    - 'lab'
+    - 'allowed_users'
+    [===> user model reference](/admin/doc/models/misc.labmember)
     """
-    queryset = get_user_model().objects.all()
-    queryset = UserSerializer.setup_eager_loading(queryset)
+    queryset = UserSerializer.setup_eager_loading(get_user_model().objects.all())
     serializer_class = UserSerializer
-    lookup_field = 'username'
     permission_classes = rest_permission_classes()
+    filterset_class = UserFilter
+    lookup_field = 'username'
+
+
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = UserSerializer.setup_eager_loading(get_user_model().objects.all())
+    serializer_class = UserSerializer
+    permission_classes = rest_permission_classes()
+    lookup_field = 'username'
 
 
 class LabFilter(BaseFilterSet):
@@ -93,7 +113,7 @@ class LabList(generics.ListCreateAPIView):
     serializer_class = LabSerializer
     permission_classes = rest_permission_classes()
     lookup_field = 'name'
-    filter_class = LabFilter
+    filterset_class = LabFilter
 
 
 class LabDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -118,7 +138,7 @@ class NoteList(generics.ListCreateAPIView):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
     permission_classes = rest_permission_classes()
-    filter_class = BaseFilterSet
+    filterset_class = BaseFilterSet
 
 
 class NoteDetail(generics.RetrieveUpdateDestroyAPIView):

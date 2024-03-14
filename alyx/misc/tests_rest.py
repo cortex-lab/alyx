@@ -20,6 +20,7 @@ class APIActionsTests(BaseTests):
         self.lab = Lab.objects.create(name='basement')
         self.public_user = get_user_model().objects.create(
             username='troublemaker', password='azerty', is_public_user=True)
+        self.public_user.allowed_users.set([self.superuser])
 
     def test_create_lab_membership(self):
         # first test creation of lab through rest endpoint
@@ -55,6 +56,12 @@ class APIActionsTests(BaseTests):
     def test_user_rest(self):
         response = self.client.get(reverse('user-list') + '/test')
         self.ar(response, 200)
+        response = self.client.get(reverse('user-list') + '/troublemaker')
+        self.ar(response, 200)
+        self.assertEqual(
+            response.data.get('allowed_users'),
+            list(self.public_user.allowed_users.all().values_list('username', flat=True))
+        )
 
     def test_note_rest(self):
         user = self.ar(self.client.get(reverse('user-list')), 200)
@@ -71,7 +78,7 @@ class APIActionsTests(BaseTests):
 
 class TestCacheView(BaseTests):
     def setUp(self):
-        # This doesn't need super user privilages but I didn't know how to create a normal user
+        # This doesn't need super user privileges but I didn't know how to create a normal user
         self.superuser = get_user_model().objects.create_user('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.tag = Tag.objects.create(name='2022_Q1_paper')

@@ -390,7 +390,8 @@ class WaterRestrictionAdmin(BaseActionAdmin):
 class WeighingForm(BaseActionForm):
     def __init__(self, *args, **kwargs):
         super(WeighingForm, self).__init__(*args, **kwargs)
-        self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
+        if 'subject' in self.fields:
+            self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
         if self.fields.keys():
             self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
 
@@ -455,10 +456,10 @@ class DatasetInline(BaseInlineAdmin):
     show_change_link = True
     model = Dataset
     extra = 1
-    fields = ('name', 'dataset_type', 'collection', '_online', 'version', 'created_by',
-              'created_datetime')
+    fields = ('name', 'dataset_type', 'collection', '_online', 'version', 'qc',
+              'created_by', 'created_datetime')
     readonly_fields = fields
-    ordering = ("name",)
+    ordering = ('name',)
 
     def _online(self, obj):
         return obj.is_online
@@ -478,6 +479,7 @@ class TasksAdminInline(BaseInlineAdmin):
     extra = 0
     fields = ('status', 'name', 'version', 'parents', 'datetime', 'arguments')
     readonly_fields = ('name', 'version', 'parents', 'datetime', 'arguments')
+    ordering = ('status',)
 
 
 def _pass_narrative_templates(context):

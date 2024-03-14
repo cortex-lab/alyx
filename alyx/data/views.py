@@ -59,12 +59,11 @@ class DataRepositoryTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 
 # DataRepository
 # ------------------------------------------------------------------------------------------------
-
 class DataRepositoryList(generics.ListCreateAPIView):
     queryset = DataRepository.objects.all()
     serializer_class = DataRepositorySerializer
     permission_classes = rest_permission_classes()
-    filter_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
+    filterset_fields = ('name', 'globus_is_personal', 'globus_endpoint_id')
     lookup_field = 'name'
 
 
@@ -158,6 +157,7 @@ class DatasetFilter(BaseFilterSet):
     protected = django_filters.BooleanFilter(method='filter_protected')
     tag = django_filters.CharFilter('tags__name')
     revision = django_filters.CharFilter('revision__name')
+    qc = django_filters.CharFilter(method='enum_field_filter')
 
     class Meta:
         model = Dataset
@@ -213,6 +213,7 @@ class DatasetList(generics.ListCreateAPIView):
     -   **tag**: tag name '/datasets?tag=repeated_site
     -   **public**: only returns datasets that are public or not public
     -   **protected**: only returns datasets that are protected or not protected
+    -   **qc**: only returns datasets with this QC value `/datasets?qc=PASS`
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """
@@ -220,7 +221,7 @@ class DatasetList(generics.ListCreateAPIView):
     queryset = DatasetSerializer.setup_eager_loading(queryset)
     serializer_class = DatasetSerializer
     permission_classes = rest_permission_classes()
-    filter_class = DatasetFilter
+    filterset_class = DatasetFilter
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -265,7 +266,7 @@ class FileRecordList(generics.ListCreateAPIView):
     queryset = FileRecordSerializer.setup_eager_loading(queryset)
     serializer_class = FileRecordSerializer
     permission_classes = rest_permission_classes()
-    filter_class = FileRecordFilter
+    filterset_class = FileRecordFilter
 
 
 class FileRecordDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -307,6 +308,7 @@ def _make_dataset_response(dataset):
         'collection': dataset.collection,
         'revision': getattr(dataset.revision, 'name', None),
         'default': dataset.default_dataset,
+        'qc': dataset.qc
     }
     out['file_records'] = file_records
     return out
@@ -354,6 +356,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'hashes': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
                        'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               'filesizes': [145684, 354213],    # optional
+              'qc': ['NOT_SET', 'PASS'],  # optional
               'server_only': True,   # optional, defaults to False. Will only create file
               # records in the server repositories and skips local repositories
               'versions': ['1.4.4', '1.4.4'],  # optional, usually refers to the software version
@@ -374,7 +377,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         ```
 
         If the dataset already exists, it will use the file hash to deduce if the file has been
-        patched or not (ie. the filerecords will be created as not existing)
+        patched or not (i.e. the filerecords will be created as not existing)
         """
         user = request.data.get('created_by', None)
         if user:
@@ -420,6 +423,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
+
+        # qc if provided
+        qcs = request.data.get('qc', [None] * len(filenames)) or 'NOT_SET'
+        if isinstance(qcs, str):
+            qcs = qcs.split(',')
+            if len(qcs) == 1:
+                qcs = qcs * len(filenames)
 
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
@@ -481,7 +491,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 return Response(data=data, status=403)
 
         response = []
-        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
+        for filename, hash, fsize, version, qc in zip(filenames, hashes, filesizes, versions, qcs):
             if not filename:
                 continue
             info, resp = _get_name_collection_revision(filename, rel_dir_path)
@@ -498,7 +508,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 collection=info['collection'], rel_dir_path=info['rel_dir_path'],
                 filename=info['filename'], session=session, user=user, repositories=repositories,
                 exists_in=exists_in, hash=hash, file_size=fsize, version=version,
-                revision=revision, default=default)
+                revision=revision, default=default, qc=qc)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)
@@ -595,4 +605,4 @@ class DownloadList(generics.ListAPIView):
     queryset = Download.objects.all()
     serializer_class = DownloadSerializer
     permission_classes = rest_permission_classes()
-    filter_class = DownloadFilter
+    filterset_class = DownloadFilter

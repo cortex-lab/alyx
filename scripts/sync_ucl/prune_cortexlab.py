@@ -18,7 +18,7 @@ json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
 # Filter for sessions containing an IBL project
-ibl_proj = Q(projects__name__icontains='ibl')
+ibl_proj = Q(projects__name__icontains='ibl') | Q(projects__name='practice')
 ses = Session.objects.using('cortexlab').filter(ibl_proj)
 # remove all subjects that never had anything to do with IBL
 sub_ibl = list(ses.values_list('subject', flat=True))
@@ -80,7 +80,8 @@ Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
 
 # only imports users that are relevant to IBL
 users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
-                   'Karolina_Socha', 'Hamish', 'laura', 'niccolo', 'SamuelP']
+                   'Karolina_Socha', 'Hamish', 'laura', 'niccolo', 'SamuelP', 'miriam.jansen',
+                   'carolina.quadrado']
 users_to_leave = LabMember.objects.using('cortexlab').exclude(username__in=users_to_import)
 users_to_keep = Dataset.objects.using('cortexlab').values_list('created_by', flat=True).distinct()
 users_to_leave = users_to_leave.exclude(pk__in=users_to_keep)

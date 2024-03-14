@@ -1,4 +1,5 @@
 import structlog
+from one.alf.spec import QC
 
 from django.core.validators import RegexValidator
 from django.db import models
@@ -350,6 +351,10 @@ class Dataset(BaseExperimentalData):
     default_dataset = models.BooleanField(default=True,
                                           help_text="Whether this dataset is the default "
                                                     "latest revision")
+
+    QC_CHOICES = [(e.value, e.name) for e in QC]
+    qc = models.IntegerField(default=QC.NOT_SET, choices=QC_CHOICES,
+                             help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
 
     @property
     def is_online(self):

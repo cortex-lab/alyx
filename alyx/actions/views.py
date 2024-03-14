@@ -1,6 +1,7 @@
 from datetime import timedelta, date
 from operator import itemgetter
 
+from one.alf.spec import QC
 from django.contrib.postgres.fields import JSONField
 from django.db.models import Count, Q, F, ExpressionWrapper, FloatField
 from django.db.models.deletion import Collector
@@ -66,7 +67,7 @@ class BaseActionFilter(BaseFilterSet):
         exclude = []
         filter_overrides = {
             JSONField: {
-                'filter_class': CharFilter,
+                'filterset_class': CharFilter,
             },
         }
 
@@ -223,9 +224,11 @@ class ProcedureTypeList(generics.ListCreateAPIView):
 
 
 class SessionFilter(BaseActionFilter):
-    dataset_types = django_filters.CharFilter(field_name='dataset_types',
-                                              method='filter_dataset_types')
+    dataset_types = django_filters.CharFilter(
+        field_name='dataset_types', method='filter_dataset_types')
     datasets = django_filters.CharFilter(field_name='datasets', method='filter_datasets')
+    dataset_qc_lte = django_filters.CharFilter(
+        field_name='dataset_qc', method='filter_dataset_qc_lte')
     performance_gte = django_filters.NumberFilter(field_name='performance',
                                                   method='filter_performance_gte')
     performance_lte = django_filters.NumberFilter(field_name='performance',
@@ -284,11 +287,21 @@ class SessionFilter(BaseActionFilter):
 
     def filter_datasets(self, queryset, _, value):
         # Note this may later be modified to include collections, e.g. ?datasets=alf/obj.attr.ext
+        qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
         dsets = value.split(',')
-        queryset = queryset.filter(data_dataset_session_related__name__in=dsets)
+        queryset = queryset.filter(data_dataset_session_related__name__in=dsets,
+                                   data_dataset_session_related__qc__lte=qc)
         queryset = queryset.annotate(
             dsets_count=Count('data_dataset_session_related', distinct=True))
         queryset = queryset.filter(dsets_count__gte=len(dsets))
+        return queryset
+
+    def filter_dataset_qc_lte(self, queryset, _, value):
+        # If filtering on datasets too, `filter_datasets` handles both QC and Datasets
+        if 'datasets' in self.request.query_params:
+            return queryset
+        qc = QC.validate(value)
+        queryset = queryset.filter(data_dataset_session_related__qc__lte=qc)
         return queryset
 
     def filter_performance_gte(self, queryset, name, perf):
@@ -326,6 +339,8 @@ class SessionAPIList(generics.ListCreateAPIView):
     -   **subject**: subject nickname `/sessions?subject=Algernon`
     -   **dataset_types**: dataset type(s) `/sessions?dataset_types=trials.table,camera.times`
     -   **datasets**: dataset name(s) `/sessions?datasets=_ibl_leftCamera.times.npy`
+    -   **dataset_qc_lte**: dataset QC values less than or equal to this
+        `/sessions?dataset_qc_lte=WARNING`
     -   **number**: session number
     -   **users**: experimenters (exact)
     -   **date_range**: date `/sessions?date_range=2020-01-12,2020-01-16`
@@ -354,9 +369,9 @@ class SessionAPIList(generics.ListCreateAPIView):
     -   **histology**: returns sessions for which the subject has an histology session:
         `/sessions?histology=True`
     -   **django**: generic filter allowing lookups (same syntax as json filter)
-        `/sessions?django=projects__name__icontains,matlab
+        `/sessions?django=projects__name__icontains,matlab`
         filters sessions that have matlab in the project names
-        `/sessions?django=~projects__name__icontains,matlab
+        `/sessions?django=~projects__name__icontains,matlab`
         does the exclusive set: filters sessions that do not have matlab in the project names
 
     [===> session model reference](/admin/doc/models/actions.session)
@@ -365,7 +380,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     queryset = SessionListSerializer.setup_eager_loading(queryset)
     permission_classes = rest_permission_classes()
 
-    filter_class = SessionFilter
+    filterset_class = SessionFilter
 
     def get_serializer_class(self):
         if not self.request:
@@ -394,7 +409,7 @@ class WeighingAPIListCreate(generics.ListCreateAPIView):
     serializer_class = WeighingDetailSerializer
     queryset = Weighing.objects.all()
     queryset = WeighingDetailSerializer.setup_eager_loading(queryset)
-    filter_class = WeighingFilter
+    filterset_class = WeighingFilter
 
 
 class WeighingAPIDetail(generics.RetrieveDestroyAPIView):
@@ -421,7 +436,7 @@ class WaterAdministrationAPIListCreate(generics.ListCreateAPIView):
     serializer_class = WaterAdministrationDetailSerializer
     queryset = WaterAdministration.objects.all()
     queryset = WaterAdministrationDetailSerializer.setup_eager_loading(queryset)
-    filter_class = WaterAdministrationFilter
+    filterset_class = WaterAdministrationFilter
 
 
 class WaterAdministrationAPIDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -458,7 +473,7 @@ class WaterRestrictionList(generics.ListAPIView):
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
     serializer_class = WaterRestrictionListSerializer
     permission_classes = rest_permission_classes()
-    filter_class = WaterRestrictionFilter
+    filterset_class = WaterRestrictionFilter
 
 
 class LabLocationList(generics.ListAPIView):
@@ -497,7 +512,7 @@ class SurgeriesList(generics.ListAPIView):
     queryset = Surgery.objects.all().order_by('-start_time')
     serializer_class = SurgerySerializer
     permission_classes = rest_permission_classes()
-    filter_class = SurgeriesFilter
+    filterset_class = SurgeriesFilter
 
 
 class SurgeriesAPIDetail(generics.RetrieveUpdateAPIView):
