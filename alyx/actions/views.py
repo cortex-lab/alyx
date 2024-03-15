@@ -347,7 +347,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     -   **lab**: lab name (exact)
     -   **task_protocol** (icontains)
     -   **location**: location name (icontains)
-    -   **project**: project name (icontains)
+    -   **projects**: project name (icontains)
     -   **json**: queries on json fields, for example here `tutu`
         -   exact/equal lookup: `/sessions?extended_qc=tutu,True`,
         -   gte lookup: `/sessions/?extended_qc=tutu__gte,0.5`,
@@ -369,10 +369,10 @@ class SessionAPIList(generics.ListCreateAPIView):
     -   **histology**: returns sessions for which the subject has an histology session:
         `/sessions?histology=True`
     -   **django**: generic filter allowing lookups (same syntax as json filter)
-        `/sessions?django=project__name__icontains,matlab`
-        filters sessions that have matlab in the project name
-        `/sessions?django=~project__name__icontains,matlab`
-        does the exclusive set: filters sessions that do not have matlab in the project name
+        `/sessions?django=projects__name__icontains,matlab`
+        filters sessions that have matlab in the project names
+        `/sessions?django=~projects__name__icontains,matlab`
+        does the exclusive set: filters sessions that do not have matlab in the project names
 
     [===> session model reference](/admin/doc/models/actions.session)
     """

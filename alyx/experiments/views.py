@@ -76,7 +76,7 @@ class ProbeInsertionFilter(BaseFilterSet):
     datasets = CharFilter(field_name='datasets', method='filter_datasets')
     dataset_qc_lte = CharFilter(field_name='dataset_qc', method='filter_dataset_qc_lte')
     lab = CharFilter(field_name='session__lab__name', lookup_expr='iexact')
-    project = CharFilter(field_name='session__project__name', lookup_expr='icontains')
+    project = CharFilter(field_name='session__projects__name', lookup_expr='icontains')
     task_protocol = CharFilter(field_name='session__task_protocol', lookup_expr='icontains')
     tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
@@ -436,7 +436,7 @@ class FOVList(generics.ListCreateAPIView):
         `/fields-of-view?provenance=Estimate`
     -   **atlas**: One or more brain regions covered by a field of view
     -   **subject**: subject nickname: `/fields-of-view?subject=Algernon`
-    -   **project**: the
+    -   **project**: the project name
     -   **date**: session date: `/fields-of-view?date=2020-01-15`
     -   **experiment_number**: session number `/fields-of-view?experiment_number=1`
     -   **session**: `/fields-of-view?session=aad23144-0e52-4eac-80c5-c4ee2decb198`

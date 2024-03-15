@@ -17,16 +17,13 @@ CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
-# Since we currently still use both the project and the projects field, we need to filter for
-# either containing an IBL project
-ibl_proj = (Q(project__name__icontains='ibl') | Q(projects__name__icontains='ibl') |
-            Q(project__name='practice') | Q(projects__name='practice'))
+# Filter for sessions containing an IBL project
+ibl_proj = Q(projects__name__icontains='ibl') | Q(projects__name='practice')
 ses = Session.objects.using('cortexlab').filter(ibl_proj)
 # remove all subjects that never had anything to do with IBL
 sub_ibl = list(ses.values_list('subject', flat=True))
 sub_ibl += list(Subject.objects.values_list('pk', flat=True))
-sub_ibl += list(Subject.objects.using('cortexlab').filter(
-    projects__name__icontains='ibl').values_list('pk', flat=True))
+sub_ibl += list(Subject.objects.using('cortexlab').filter(ibl_proj).values_list('pk', flat=True))
 Subject.objects.using('cortexlab').exclude(pk__in=sub_ibl).delete()
 
 # then remove base Sessions
@@ -76,7 +73,7 @@ DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
 
 # import projects from cortexlab. remove those that don't correspond to any session
-pk_projs = list(filter(None, flatten(ses_ucl.values_list('project', 'projects').distinct())))
+pk_projs = list(filter(None, flatten(ses_ucl.values_list('projects').distinct())))
 pk_projs += list(Project.objects.values_list('pk', flat=True))
 
 Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
