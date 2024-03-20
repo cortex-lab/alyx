@@ -761,6 +761,37 @@ class APIDataTests(BaseTests):
         self.assertEqual(name, 'test_prot/a.b.e1')
         self.assertEqual(prot_info, [])
 
+    def test_check_protected(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
+
+        # Create protected tag
+        self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': True})
+
+        # Create some datasets and register
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_prot/a.c.e2',
+                'name': 'drb1',  # this is the repository name
+                }
+
+        d = self.client.post(reverse('register-file'), data)
+
+        # Check the same dataset to see if it is protected, should be unprotected
+        # and get a status 200 respons
+        _ = data.pop('name')
+        r = self.client.post(reverse('check-protected'), data)
+        self.assertEqual(r['status'], 200)
+
+        # add protected tag to the first dataset
+        dataset1 = Dataset.objects.get(pk=d[0]['id'])
+        tag1 = Tag.objects.get(name='tag1')
+        dataset1.tags.add(tag1)
+
+        # Check the same dataset to see if it is protected
+        r = self.client.post(reverse('check-protected'), data)
+        self.assertEqual(r['status'], 403)
+        self.assertEqual(r['error'], 'One or more datasets is protected')
+
     def test_revisions(self):
         # Check revision lookup with name
         self.post(reverse('revision-list'), {'name': 'v2'})
