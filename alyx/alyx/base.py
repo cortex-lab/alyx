@@ -385,7 +385,7 @@ class BaseAdmin(VersionAdmin):
         # special Husbandry group to edit litters.
         husbandry = 'husbandry' in ', '.join(_.name.lower() for _ in request.user.groups.all())
         if husbandry:
-            if obj.__class__.__name__ == 'Litter':
+            if obj.__class__.__name__ in ('Litter', 'Subject', 'BreedingPair'):
                 return True
 
         # Find subject associated to the object.
@@ -650,6 +650,7 @@ class BaseRestPublicPermission(permissions.BasePermission):
     """
     The purpose is to prevent public users from interfering in any way using writable methods
     """
+
     def has_permission(self, request, view):
         if request.method == 'GET':
             return True
