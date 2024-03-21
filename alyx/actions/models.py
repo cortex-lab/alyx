@@ -267,11 +267,7 @@ class Session(BaseAction):
         # Default project is the subject's projects.
         if not self.lab:
             self.lab = self.subject.lab
-        obj = super(Session, self).save(*args, **kwargs)
-        if self.projects.count() == 0 and self.subject.projects.count() > 0:
-            from subjects.models import Project
-            self.projects.add(*Project.objects.filter(subject=self.subject))
-        return obj
+        return super(Session, self).save(*args, **kwargs)
 
     def __str__(self):
         try:
