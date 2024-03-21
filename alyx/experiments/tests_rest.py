@@ -465,7 +465,7 @@ class APIImagingExperimentTests(BaseTests):
         url = reverse('fovlocation-list')
         with transaction.atomic():
             response = self.post(url, loc_dict)
-            self.ar(response, 500)
+            self.assertIn(response.status_code, (400, 500))  # In later versions status code is 400
 
         url = reverse('fieldsofview-list')
         # FOV location containing atlas ID 9 should no longer be default provenance and therefore

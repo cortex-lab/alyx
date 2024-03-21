@@ -327,6 +327,79 @@ def _parse_path(path):
     return subject, date, session_number
 
 
+class ProtectedFileViewSet(mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
+    def list(self, request):
+        """
+        Endpoint to check if set of files are protected or not
+
+        The session is retrieved by the ALF convention in the relative path, so this field has to
+        match the format Subject/Date/Number as shown below.
+
+        The client side REST query should look like this:
+
+        ```python
+        r_ = {'created_by': 'user_name_alyx',
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2'],
+              }
+        ```
+
+        Returns a response indicating if any of the datasets are protected or not
+        -   Status 403 if a dataset is protected, details contains a list of protected datasets
+        -   Status 200 is none of the datasets are protected
+        """
+
+        req = request.GET.dict() if len(request.data) == 0 else request.data
+
+        user = req.get('created_by', None)
+        if user:
+            user = get_user_model().objects.get(username=user)
+        else:
+            user = request.user
+
+        rel_dir_path = req.get('path', '')
+        if not rel_dir_path:
+            raise ValueError("The path argument is required.")
+
+        # Extract the data repository from the hostname, the subject, the directory path.
+        rel_dir_path = rel_dir_path.replace('\\', '/')
+        rel_dir_path = rel_dir_path.replace('//', '/')
+        subject, date, session_number = _parse_path(rel_dir_path)
+
+        filenames = req.get('filenames', ())
+        if isinstance(filenames, str):
+            filenames = filenames.split(',')
+
+        session = _get_session(
+            subject=subject, date=date, number=session_number, user=user)
+        assert session
+
+        # Loop through the files to see if any are protected
+        prot_response = []
+        protected = []
+        for file in filenames:
+            info, resp = _get_name_collection_revision(file, rel_dir_path)
+            if resp:
+                return resp
+            prot, prot_info = _check_dataset_protected(
+                session, info['collection'], info['filename'])
+            protected.append(prot)
+            prot_response.append({file: prot_info})
+        if any(protected):
+            data = {'status_code': 403,
+                    'error': 'One or more datasets is protected',
+                    'details': prot_response}
+            return Response(data=data)
+        else:
+            data = {'status_code': 200,
+                    'details': 'None of the datasets are protected'}
+            return Response(data=data)
+
+
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
