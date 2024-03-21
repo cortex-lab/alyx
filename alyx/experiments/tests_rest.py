@@ -2,7 +2,6 @@ from random import random, choice, randint
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.core.management import call_command
 from django.db import transaction
 
 from alyx.base import BaseTests
@@ -15,9 +14,9 @@ from data.models import Dataset, DatasetType, Tag
 
 class APIProbeExperimentTests(BaseTests):
 
+    fixtures = ['experiments.brainregion.json', 'experiments.probemodel.json']
+
     def setUp(self):
-        call_command('loaddata', 'experiments/fixtures/experiments.probemodel.json', verbosity=0)
-        call_command('loaddata', 'experiments/fixtures/experiments.brainregion.json', verbosity=0)
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         self.session = Session.objects.first()
@@ -398,12 +397,9 @@ class APIProbeExperimentTests(BaseTests):
 
 
 class APIImagingExperimentTests(BaseTests):
+    fixtures = ['experiments.brainregion.json', 'experiments.coordinatesystem.json']
 
     def setUp(self):
-        call_command('loaddata', 'experiments/fixtures/experiments.brainregion.json', verbosity=0)
-        call_command(
-            'loaddata', 'experiments/fixtures/experiments.coordinatesystem.json', verbosity=0
-        )
         self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
         self.client.login(username='test', password='test')
         # self.session = Session.objects.first()
@@ -465,7 +461,7 @@ class APIImagingExperimentTests(BaseTests):
         url = reverse('fovlocation-list')
         with transaction.atomic():
             response = self.post(url, loc_dict)
-            self.ar(response, 500)
+            self.assertIn(response.status_code, (400, 500))  # In later versions status code is 400
 
         url = reverse('fieldsofview-list')
         # FOV location containing atlas ID 9 should no longer be default provenance and therefore

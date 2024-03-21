@@ -6,7 +6,6 @@ from polymorphic.models import PolymorphicModel
 import sys
 import pytz
 import uuid
-from collections import OrderedDict
 import one.alf.spec
 from datetime import datetime
 import traceback
@@ -445,7 +444,7 @@ class BaseTests(TestCase):
         """
         self.assertTrue(r.status_code == code, r.data)
         pkeys = {'count', 'next', 'previous', 'results'}
-        if isinstance(r.data, OrderedDict) and set(r.data.keys()) == pkeys:
+        if isinstance(r.data, dict) and set(r.data.keys()) == pkeys:
             return r.data['results']
         else:
             return r.data

@@ -27,9 +27,10 @@ class SessionListSerializer(serializers.ModelSerializer):
 
 class TrajectoryEstimateSerializer(serializers.ModelSerializer):
     probe_insertion = serializers.SlugRelatedField(
-        read_only=False, required=False, slug_field='id', many=False,
+        read_only=False, required=False, slug_field='id', many=False, allow_null=True,
         queryset=ProbeInsertion.objects.all(),
     )
+
     x = serializers.FloatField(required=True, allow_null=True)
     y = serializers.FloatField(required=True, allow_null=True)
     z = serializers.FloatField(required=False, allow_null=True)
@@ -44,6 +45,15 @@ class TrajectoryEstimateSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='name', many=False,
         queryset=CoordinateSystem.objects.all(),
     )
+
+    def to_internal_value(self, data):
+        if data.get('chronic_insertion', None) is None:
+            data['chronic_insertion'] = None
+
+        if data.get('probe_insertion', None) is None:
+            data['probe_insertion'] = None
+
+        return super(TrajectoryEstimateSerializer, self).to_internal_value(data)
 
     class Meta:
         model = TrajectoryEstimate
