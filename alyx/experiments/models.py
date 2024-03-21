@@ -181,8 +181,12 @@ class TrajectoryEstimate(models.Model):
 
     class Meta:
         constraints = [
+            models.UniqueConstraint(fields=['provenance', 'chronic_insertion'],
+                                    condition=models.Q(probe_insertion__isnull=True),
+                                    name='unique_trajectory_per_chronic_provenance'),
             models.UniqueConstraint(fields=['provenance', 'probe_insertion'],
-                                    name='unique_trajectory_per_provenance')
+                                    condition=models.Q(probe_insertion__isnull=False),
+                                    name='unique_trajectory_per_provenance'),
         ]
 
     def __str__(self):
