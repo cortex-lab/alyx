@@ -353,13 +353,15 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
         -   Status 200 is none of the datasets are protected
         """
 
-        user = request.data.get('created_by', None)
+        req = request.GET.dict() if len(request.data) == 0 else request.data
+
+        user = req.get('created_by', None)
         if user:
             user = get_user_model().objects.get(username=user)
         else:
             user = request.user
 
-        rel_dir_path = request.data.get('path', '')
+        rel_dir_path = req.get('path', '')
         if not rel_dir_path:
             raise ValueError("The path argument is required.")
 
@@ -368,7 +370,7 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
         rel_dir_path = rel_dir_path.replace('//', '/')
         subject, date, session_number = _parse_path(rel_dir_path)
 
-        filenames = request.data.get('filenames', ())
+        filenames = req.get('filenames', ())
         if isinstance(filenames, str):
             filenames = filenames.split(',')
 

@@ -774,13 +774,15 @@ class APIDataTests(BaseTests):
                 'name': 'drb1',  # this is the repository name
                 }
 
-        d = self.client.post(reverse('register-file'), data)
+        d = self.ar(self.client.post(reverse('register-file'), data), 201)
 
         # Check the same dataset to see if it is protected, should be unprotected
         # and get a status 200 respons
         _ = data.pop('name')
-        r = self.client.post(reverse('check-protected'), data)
-        self.assertEqual(r['status'], 200)
+
+        r = self.ar(self.client.get(reverse('check-protected'), data=data,
+                                    content_type='application/json'), 200)
+        self.assertEqual(r['status_code'], 200)
 
         # add protected tag to the first dataset
         dataset1 = Dataset.objects.get(pk=d[0]['id'])
@@ -788,8 +790,9 @@ class APIDataTests(BaseTests):
         dataset1.tags.add(tag1)
 
         # Check the same dataset to see if it is protected
-        r = self.client.post(reverse('check-protected'), data)
-        self.assertEqual(r['status'], 403)
+        r = self.ar(self.client.get(reverse('check-protected'), data=data,
+                                    content_type='application/json'), 200)
+        self.assertEqual(r['status_code'], 403)
         self.assertEqual(r['error'], 'One or more datasets is protected')
 
     def test_revisions(self):
