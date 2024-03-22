@@ -1,4 +1,4 @@
-asgiref==3.8.0
+asgiref==3.8.1
 backports.zoneinfo==0.2.1
 boto3==1.34.68
 botocore==1.34.68
@@ -28,7 +28,7 @@ django-reversion==5.0.12
 django-storages==1.14.2
 django-structlog==8.0.0
 django-test-without-migrations==0.6
-djangorestframework==3.15.0
+djangorestframework==3.15.1
 docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
