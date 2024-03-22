@@ -2,9 +2,12 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.db.models import Count, Q, BooleanField
 
+from one.alf.spec import QC
+
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, Download, FileRecord, Revision, Tag)
 from .transfers import _get_session, _change_default_dataset
+from alyx.base import BaseSerializerEnumField
 from actions.models import Session
 from subjects.models import Subject
 from misc.models import LabMember
@@ -142,6 +145,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     default_dataset = serializers.BooleanField(required=False, allow_null=True)
     public = serializers.ReadOnlyField()
     protected = serializers.ReadOnlyField()
+    qc = BaseSerializerEnumField(required=False)
     file_records = DatasetFileRecordsSerializer(read_only=True, many=True)
 
     experiment_number = serializers.SerializerMethodField()
@@ -178,6 +182,9 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         name = validated_data.get('name', None)
         default = validated_data.get('default_dataset', None)
         session = validated_data.get('session', None)
+        # validate QC value
+        if 'qc' in validated_data:
+            validated_data['qc'] = QC.validate(validated_data['qc'])
 
         if session:
             if default is not False:
@@ -213,7 +220,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
                   'session', 'file_size', 'hash', 'version',
                   'experiment_number', 'file_records',
                   'subject', 'date', 'number', 'auto_datetime', 'revision',
-                  'default_dataset', 'protected', 'public', 'tags')
+                  'default_dataset', 'protected', 'public', 'tags', 'qc', 'json')
         extra_kwargs = {
             'subject': {'write_only': True},
             'date': {'write_only': True},

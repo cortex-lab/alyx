@@ -14,6 +14,9 @@ new_download = dv.DownloadViewSet.as_view({
     'post': 'create'
 })
 
+check_protected = dv.ProtectedFileViewSet.as_view({
+    'get': 'list'
+})
 
 urlpatterns = [
     path('data-formats', dv.DataFormatList.as_view(),
@@ -77,5 +80,8 @@ urlpatterns = [
 
     path('sync-file-status', sync_file_status,
          name="sync-file-status"),
+
+    path('check-protected', check_protected,
+         name="check-protected"),
 
 ]

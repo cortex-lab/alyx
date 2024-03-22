@@ -157,6 +157,7 @@ class DatasetFilter(BaseFilterSet):
     protected = django_filters.BooleanFilter(method='filter_protected')
     tag = django_filters.CharFilter('tags__name')
     revision = django_filters.CharFilter('revision__name')
+    qc = django_filters.CharFilter(method='enum_field_filter')
 
     class Meta:
         model = Dataset
@@ -212,6 +213,7 @@ class DatasetList(generics.ListCreateAPIView):
     -   **tag**: tag name '/datasets?tag=repeated_site
     -   **public**: only returns datasets that are public or not public
     -   **protected**: only returns datasets that are protected or not protected
+    -   **qc**: only returns datasets with this QC value `/datasets?qc=PASS`
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """
@@ -306,6 +308,7 @@ def _make_dataset_response(dataset):
         'collection': dataset.collection,
         'revision': getattr(dataset.revision, 'name', None),
         'default': dataset.default_dataset,
+        'qc': dataset.qc
     }
     out['file_records'] = file_records
     return out
@@ -322,6 +325,79 @@ def _parse_path(path):
     # An error is raised if the subject or data repository do not exist.
     subject = Subject.objects.get(nickname=nickname)
     return subject, date, session_number
+
+
+class ProtectedFileViewSet(mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
+
+    serializer_class = serializers.Serializer
+
+    def list(self, request):
+        """
+        Endpoint to check if set of files are protected or not
+
+        The session is retrieved by the ALF convention in the relative path, so this field has to
+        match the format Subject/Date/Number as shown below.
+
+        The client side REST query should look like this:
+
+        ```python
+        r_ = {'created_by': 'user_name_alyx',
+              'path': 'ZM_1085/2019-02-12/002/alf',  # relative path to repo path
+              'filenames': ['file1', 'file2'],
+              }
+        ```
+
+        Returns a response indicating if any of the datasets are protected or not
+        -   Status 403 if a dataset is protected, details contains a list of protected datasets
+        -   Status 200 is none of the datasets are protected
+        """
+
+        req = request.GET.dict() if len(request.data) == 0 else request.data
+
+        user = req.get('created_by', None)
+        if user:
+            user = get_user_model().objects.get(username=user)
+        else:
+            user = request.user
+
+        rel_dir_path = req.get('path', '')
+        if not rel_dir_path:
+            raise ValueError("The path argument is required.")
+
+        # Extract the data repository from the hostname, the subject, the directory path.
+        rel_dir_path = rel_dir_path.replace('\\', '/')
+        rel_dir_path = rel_dir_path.replace('//', '/')
+        subject, date, session_number = _parse_path(rel_dir_path)
+
+        filenames = req.get('filenames', ())
+        if isinstance(filenames, str):
+            filenames = filenames.split(',')
+
+        session = _get_session(
+            subject=subject, date=date, number=session_number, user=user)
+        assert session
+
+        # Loop through the files to see if any are protected
+        prot_response = []
+        protected = []
+        for file in filenames:
+            info, resp = _get_name_collection_revision(file, rel_dir_path)
+            if resp:
+                return resp
+            prot, prot_info = _check_dataset_protected(
+                session, info['collection'], info['filename'])
+            protected.append(prot)
+            prot_response.append({file: prot_info})
+        if any(protected):
+            data = {'status_code': 403,
+                    'error': 'One or more datasets is protected',
+                    'details': prot_response}
+            return Response(data=data)
+        else:
+            data = {'status_code': 200,
+                    'details': 'None of the datasets are protected'}
+            return Response(data=data)
 
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
@@ -353,6 +429,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
               'hashes': ['f9c26e42-8f22-4f07-8fdd-bb51a63bedaa',
                        'f9c26e42-8f22-4f07-8fdd-bb51a63bedad']  # optional
               'filesizes': [145684, 354213],    # optional
+              'qc': ['NOT_SET', 'PASS'],  # optional
               'server_only': True,   # optional, defaults to False. Will only create file
               # records in the server repositories and skips local repositories
               'versions': ['1.4.4', '1.4.4'],  # optional, usually refers to the software version
@@ -373,7 +450,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         ```
 
         If the dataset already exists, it will use the file hash to deduce if the file has been
-        patched or not (ie. the filerecords will be created as not existing)
+        patched or not (i.e. the filerecords will be created as not existing)
         """
         user = request.data.get('created_by', None)
         if user:
@@ -419,6 +496,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
+
+        # qc if provided
+        qcs = request.data.get('qc', [None] * len(filenames)) or 'NOT_SET'
+        if isinstance(qcs, str):
+            qcs = qcs.split(',')
+            if len(qcs) == 1:
+                qcs = qcs * len(filenames)
 
         # flag to discard file records creation on local repositories, defaults to False
         server_only = request.data.get('server_only', False)
@@ -480,7 +564,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 return Response(data=data, status=403)
 
         response = []
-        for filename, hash, fsize, version in zip(filenames, hashes, filesizes, versions):
+        for filename, hash, fsize, version, qc in zip(filenames, hashes, filesizes, versions, qcs):
             if not filename:
                 continue
             info, resp = _get_name_collection_revision(filename, rel_dir_path)
@@ -497,7 +581,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 collection=info['collection'], rel_dir_path=info['rel_dir_path'],
                 filename=info['filename'], session=session, user=user, repositories=repositories,
                 exists_in=exists_in, hash=hash, file_size=fsize, version=version,
-                revision=revision, default=default)
+                revision=revision, default=default, qc=qc)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)

@@ -1,5 +1,6 @@
 import logging
 
+from one.alf.spec import QC
 from rest_framework import generics
 from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
 from django.db.models import Count, Q
@@ -73,8 +74,9 @@ class ProbeInsertionFilter(BaseFilterSet):
     model = CharFilter('model__name')
     dataset_types = CharFilter(field_name='dataset_types', method='filter_dataset_types')
     datasets = CharFilter(field_name='datasets', method='filter_datasets')
+    dataset_qc_lte = CharFilter(field_name='dataset_qc', method='filter_dataset_qc_lte')
     lab = CharFilter(field_name='session__lab__name', lookup_expr='iexact')
-    project = CharFilter(field_name='session__project__name', lookup_expr='icontains')
+    project = CharFilter(field_name='session__projects__name', lookup_expr='icontains')
     task_protocol = CharFilter(field_name='session__task_protocol', lookup_expr='icontains')
     tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
@@ -110,12 +112,20 @@ class ProbeInsertionFilter(BaseFilterSet):
         return queryset
 
     def filter_datasets(self, queryset, _, value):
+        qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
         dsets = value.split(',')
-        queryset = queryset.filter(datasets__name__in=dsets)
+        queryset = queryset.filter(datasets__name__in=dsets, datasets__qc__lte=qc)
         queryset = queryset.annotate(
             dsets_count=Count('datasets', distinct=True))
         queryset = queryset.filter(dsets_count__gte=len(dsets))
         return queryset
+
+    def filter_dataset_qc_lte(self, queryset, _, value):
+        # If filtering on datasets too, `filter_datasets` handles both QC and Datasets
+        if 'datasets' in self.request.query_params:
+            return queryset
+        qc = QC.validate(value)
+        return queryset.filter(datasets__qc__lte=qc)
 
     class Meta:
         model = ProbeInsertion
@@ -139,6 +149,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     -   **tag**: tag name (icontains)
     -   **dataset_types**: dataset type(s)
     -   **datasets**: datasets name(s)
+    -   **dataset_qc_lte**: dataset QC value, e.g. PASS, WARNING, FAIL, CRITICAL
     -   **atlas_name**: returns a session if any channel name icontains
      the value: `/insertions?brain_region=visual cortex`
     -   **atlas_acronym**: returns a session if any of its channels name exactly
@@ -425,7 +436,7 @@ class FOVList(generics.ListCreateAPIView):
         `/fields-of-view?provenance=Estimate`
     -   **atlas**: One or more brain regions covered by a field of view
     -   **subject**: subject nickname: `/fields-of-view?subject=Algernon`
-    -   **project**: the
+    -   **project**: the project name
     -   **date**: session date: `/fields-of-view?date=2020-01-15`
     -   **experiment_number**: session number `/fields-of-view?experiment_number=1`
     -   **session**: `/fields-of-view?session=aad23144-0e52-4eac-80c5-c4ee2decb198`

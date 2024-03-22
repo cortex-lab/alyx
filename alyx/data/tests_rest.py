@@ -128,6 +128,7 @@ class APIDataTests(BaseTests):
         self.assertTrue(new_mod_date > mod_date)
 
     def test_dataset(self):
+        # Test dataset creation via the datasets endpoint
         data = {
             'name': 'some-dataset',
             'dataset_type': 'dst',
@@ -145,6 +146,8 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data['collection'], None)
         # Check that it has been set as the default dataset
         self.assertEqual(r.data['default_dataset'], True)
+        # Check QC value is NOT_SET by default
+        self.assertEqual(r.data['qc'], 'NOT_SET')
         # Make sure a session has been created.
         session = r.data['session']
         r = self.client.get(session)
@@ -162,6 +165,7 @@ class APIDataTests(BaseTests):
             'date': '2018-01-01',
             'number': 2,
             'collection': 'test_path',
+            'qc': 'PASS'
         }
 
         r = self.post(reverse('dataset-list'), data)
@@ -169,6 +173,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(r.data['revision'], None)
         self.assertEqual(r.data['collection'], data['collection'])
         self.assertEqual(r.data['default_dataset'], True)
+        self.assertEqual(r.data['qc'], 'PASS')
         data_url = r.data['url']
 
         # But if we change the collection, we are okay
@@ -341,6 +346,24 @@ class APIDataTests(BaseTests):
         self.assertEqual(ds1.file_size, 45686)
         self.assertEqual(ds0.version, '1.1.1')
         self.assertEqual(ds1.version, '2.2.2')
+
+    def test_qc_validation(self):
+        # this tests the validation of dataset QC outcomes
+        data = {
+            'path': '%s/2018-01-01/2/dir' % self.subject,
+            'filenames': 'a.b.e1,a.c.e2',
+            'hostname': 'hostname',
+            'qc': '10,critical'  # Both numerical and string QC values should be parsed
+        }
+        r = self.post(reverse('register-file'), data)
+        records = self.ar(r, 201)
+        self.assertEqual([10, 50], [rec['qc'] for rec in records])
+        self._assert_registration(r, data)
+        # a single QC value should be applied to all datasets
+        data['qc'] = 'FAIL'
+        r = self.post(reverse('register-file'), data)
+        records = self.ar(r, 201)
+        self.assertEqual([40, 40], [rec['qc'] for rec in records])
 
     def test_register_files_hash(self):
         # this is old use case where we register one dataset according to the hostname, no need
@@ -737,6 +760,40 @@ class APIDataTests(BaseTests):
         (name, prot_info), = r[2].items()
         self.assertEqual(name, 'test_prot/a.b.e1')
         self.assertEqual(prot_info, [])
+
+    def test_check_protected(self):
+        self.post(reverse('datarepository-list'), {'name': 'drb1', 'hostname': 'hostb1'})
+        self.post(reverse('lab-list'), {'name': 'labb', 'repositories': ['drb1']})
+
+        # Create protected tag
+        self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': True})
+
+        # Create some datasets and register
+        data = {'path': '%s/2018-01-01/002/' % self.subject,
+                'filenames': 'test_prot/a.c.e2',
+                'name': 'drb1',  # this is the repository name
+                }
+
+        d = self.ar(self.client.post(reverse('register-file'), data), 201)
+
+        # Check the same dataset to see if it is protected, should be unprotected
+        # and get a status 200 respons
+        _ = data.pop('name')
+
+        r = self.ar(self.client.get(reverse('check-protected'), data=data,
+                                    content_type='application/json'), 200)
+        self.assertEqual(r['status_code'], 200)
+
+        # add protected tag to the first dataset
+        dataset1 = Dataset.objects.get(pk=d[0]['id'])
+        tag1 = Tag.objects.get(name='tag1')
+        dataset1.tags.add(tag1)
+
+        # Check the same dataset to see if it is protected
+        r = self.ar(self.client.get(reverse('check-protected'), data=data,
+                                    content_type='application/json'), 200)
+        self.assertEqual(r['status_code'], 403)
+        self.assertEqual(r['error'], 'One or more datasets is protected')
 
     def test_revisions(self):
         # Check revision lookup with name

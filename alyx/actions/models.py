@@ -1,6 +1,8 @@
 from datetime import timedelta
-import structlog
 from math import inf
+
+import structlog
+from one.alf.spec import QC
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -240,9 +242,6 @@ class Session(BaseAction):
     parent_session = models.ForeignKey('Session', null=True, blank=True,
                                        on_delete=models.SET_NULL,
                                        help_text="Hierarchical parent to this session")
-    project = models.ForeignKey('subjects.Project', null=True, blank=True,
-                                on_delete=models.SET_NULL, verbose_name='Session Project',
-                                related_name='oldproject')
     projects = models.ManyToManyField('subjects.Project', blank=True,
                                       verbose_name='Session Projects')
     type = models.CharField(max_length=255, null=True, blank=True,
@@ -253,27 +252,19 @@ class Session(BaseAction):
     n_trials = models.IntegerField(blank=True, null=True)
     n_correct_trials = models.IntegerField(blank=True, null=True)
 
-    QC_CHOICES = [
-        (50, 'CRITICAL',),
-        (40, 'FAIL',),
-        (30, 'WARNING',),
-        (0, 'NOT_SET',),
-        (10, 'PASS',),
-    ]
-
-    qc = models.IntegerField(default=0, choices=QC_CHOICES,
+    QC_CHOICES = [(e.value, e.name) for e in QC]
+    qc = models.IntegerField(default=QC.NOT_SET, choices=QC_CHOICES,
                              help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
+
     extended_qc = models.JSONField(null=True, blank=True,
-                                   help_text="Structured data about session QC,"
+                                   help_text="Structured data about session QC, "
                                              "formatted in a user-defined way")
 
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
 
     def save(self, *args, **kwargs):
-        # Default project is the subject's project.
-        if not self.project_id:
-            self.project = self.subject.projects.first()
+        # Default project is the subject's projects.
         if not self.lab:
             self.lab = self.subject.lab
         return super(Session, self).save(*args, **kwargs)
