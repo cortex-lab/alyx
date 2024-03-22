@@ -260,7 +260,7 @@ class SubjectProtocolNumber(TestCase):
         assert self.sub.protocol_number == '1'
         # after a surgery protocol number goes to 2
         self.surgery = Surgery.objects.create(
-            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0))
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0), implant_weight=0.)
         assert self.sub.protocol_number == '2'
         # after water restriction number goes to 3
         self.wr = WaterRestriction.objects.create(

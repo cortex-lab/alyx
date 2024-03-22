@@ -244,15 +244,6 @@ class WaterAdministrationAdmin(BaseActionAdmin):
 
 
 class WaterRestrictionForm(forms.ModelForm):
-    implant_weight = forms.FloatField()
-
-    def save(self, commit=True):
-        implant_weight = self.cleaned_data.get('implant_weight')
-        subject = self.cleaned_data.get('subject', None)
-        if implant_weight:
-            subject.implant_weight = implant_weight
-            subject.save()
-        return super(WaterRestrictionForm, self).save(commit=commit)
 
     class Meta:
         model = WaterRestriction
@@ -272,22 +263,20 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super(WaterRestrictionAdmin, self).get_form(request, obj, **kwargs)
         subject = getattr(obj, 'subject', None)
-        iw = getattr(subject, 'implant_weight', None)
         rw = subject.water_control.weight() if subject else None
-        form.base_fields['implant_weight'].initial = iw
         if self.has_change_permission(request, obj):
             form.base_fields['reference_weight'].initial = rw or 0
         return form
 
     form = WaterRestrictionForm
 
-    fields = ['subject', 'implant_weight', 'reference_weight',
-              'start_time', 'end_time', 'water_type', 'users', 'narrative']
+    fields = ['subject', 'reference_weight', 'start_time',
+              'end_time', 'water_type', 'users', 'narrative', 'implant_weight']
     list_display = ('subject_w', 'start_time_l', 'end_time_l', 'water_type', 'weight',
                     'weight_ref') + WaterControl._columns[3:] + ('projects',)
     list_select_related = ('subject',)
     list_display_links = ('start_time_l', 'end_time_l')
-    readonly_fields = ('weight',)  # WaterControl._columns[1:]
+    readonly_fields = ('weight', 'implant_weight')  # WaterControl._columns[1:]
     ordering = ['-start_time', 'subject__nickname']
     search_fields = ['subject__nickname', 'subject__projects__name']
     list_filter = [ResponsibleUserListFilter,
@@ -361,6 +350,12 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         return '%.2f' % obj.subject.water_control.given_water_total()
     given_water_total.short_description = 'water tot'
 
+    def implant_weight(self, obj):
+        if not obj.subject:
+            return
+        return '%.2f' % (obj.subject.water_control.implant_weight() or 0.)
+    implant_weight.short_description = 'implant weight'
+
     def has_change_permission(self, request, obj=None):
         # setting to override edition of water restrictions in the settings.lab file
         override = getattr(settings, 'WATER_RESTRICTIONS_EDITABLE', False)
@@ -422,10 +417,11 @@ class WaterTypeAdmin(BaseActionAdmin):
 
 
 class SurgeryAdmin(BaseActionAdmin):
-    list_display = ['subject_l', 'date', 'users_l', 'procedures_l', 'narrative', 'projects']
+    list_display = ['subject_l', 'date', 'users_l', 'procedures_l',
+                    'narrative', 'projects', 'implant_weight']
     list_select_related = ('subject',)
 
-    fields = BaseActionAdmin.fields + ['outcome_type']
+    fields = BaseActionAdmin.fields + ['outcome_type', 'implant_weight']
     list_display_links = ['date']
     search_fields = ('subject__nickname', 'subject__projects__name')
     list_filter = [SubjectAliveListFilter,
