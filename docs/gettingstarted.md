@@ -1,8 +1,8 @@
 # Getting Started
 
 The example details how to
-1. install a local instance of Alyx 
-2. initialize it with the fixtures 
+1. install a local instance of Alyx
+2. initialize it with the fixtures
 3. register some local data to it
 4. using the ONE-api, load the registered data
 
@@ -24,11 +24,11 @@ Go to the directory of your choice (for example: `/var/www/alyx-local`) and foll
 
 Install required packages
 ```shell
-# install required packages 
+# install required packages
 sudo apt-get install python3-pip python3-dev libpq-dev postgresql postgresql-contrib virtualenv
 ```
 
-Create log folder and folder for storing uploaded content.  
+Create log folder and folder for storing uploaded content.
 ```shell
 sudo mkdir /var/log/alyx
 sudo mkdir uploaded
@@ -38,7 +38,7 @@ sudo chown www-data:www-data -fR uploaded
 
 Clone the repository and install the environment
 ```shell
-git clone https://github.com/cortex-lab/alyx.git 
+git clone https://github.com/cortex-lab/alyx.git
 virtualenv alyxvenv --python=python3
 source ./alyxvenv/bin/activate
 pip install -r requirements.txt
@@ -52,6 +52,7 @@ python setup.py
     $ Enter a postgres username [alyxlocaluser]:
     $ Enter a postgres password:
     ...
+python alyx/manage.py collectstatic --noinput
 python alyx/manage.py check
 
 cd alyx
@@ -81,6 +82,7 @@ You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. us
 * Type `pip install python-magic-bin`
 * Type `python setup.py`, and follow the instructions.
 * If everything went well you should see no error message and the message `Alyx setup successful <3`.
+* Type `python alyx/manage.py collectstatic --noinput`. You should see a message about files being copied to ./alyx/alyx/static
 * Type `python alyx/manage.py check`. You should see the message `System check identified no issues (0 silenced).`
 * To reinitialize your local database, type `alyx/manage.py reset_db --noinput`
 * To clone an existing alyx database from a backup, get an `alyx_full.sql.gz` in your alyx folder, and type `gunzip -f alyx_full.sql.gz`
@@ -90,14 +92,14 @@ You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. us
 * Go to `http://localhost:8000/admin/`
 
 
- 
+
 ## Interaction with the database
 
 There are 3 main ways to interact with the database, listed below:
 
-|   	   | **Where**   	| **Who**  	|  **Notes** 	
-| ---	| ---	| ---	| ---	
-| **Django Shell**	| server only	| admin only	| This hits the database directly. It is a very powerful way to do maintenance at scale, with the risks associated. Run the `./manage.py shell` Django command to access the Ipython shell. 	 
+|   	   | **Where**   	| **Who**  	|  **Notes**
+| ---	| ---	| ---	| ---
+| **Django Shell**	| server only	| admin only	| This hits the database directly. It is a very powerful way to do maintenance at scale, with the risks associated. Run the `./manage.py shell` Django command to access the Ipython shell.
 | **Admin Web Page**  	| web client  	|  anyone 	| Manual way to input data in the database. This is privilegied for users needing to add/amend/correct metadata related to subjects. For the local database, this is accessible here: http://localhost:8000/admin.
 | **REST**  	|  web client 	|  anyone 	|   Programmatical way to input data, typically by acquisition software using a dedicated Alyx client [ONE](https://github.com/int-brain-lab/ONE) (Python) or [ALyx-matlab](https://github.com/cortex-lab/alyx-matlab) (Matlab).
 
@@ -107,8 +109,8 @@ There are 3 main ways to interact with the database, listed below:
 ### Create an experiment, register data and access it locally
 Here we'll create the minimal set of fixtures to register some data to an experimental session.
 
-1.  create project
-2.  create repository
+1. create project
+2. create repository
 3. assign repository to lab
 4. create a subject
 
@@ -174,7 +176,7 @@ eid = session['url'][-36:]  # this is the experimental id that will be used to r
 # create a trials table in the relative folder defaultlab/Subjects/Algernon/yyyy-mm-dd/001
 session_path = ROOT_EXPERIMENTAL_FOLDER.joinpath(
     session['lab'], 'Subjects', session['subject'], session['start_time'][:10], str(session['number']).zfill(3))
-alf_path = session_path.joinpath('alf') 
+alf_path = session_path.joinpath('alf')
 alf_path.mkdir(parents=True, exist_ok=True)
 ntrials = 400
 trials = pd.DataFrame({'choice': np.random.randn(400) > 0.5, 'value': np.random.randn(400)})
