@@ -37,7 +37,7 @@ fonttools==4.50.0
 globus-cli==3.26.0
 globus-sdk==3.37.0
 iblutil==1.8.0
-idna==3.6
+idna==3.7
 importlib_metadata==7.1.0
 importlib_resources==6.4.0
 itypes==1.2.0
