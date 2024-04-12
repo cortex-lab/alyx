@@ -457,7 +457,10 @@ class WaterRequirement(APIView):
         end_date = request.query_params.get('end_date', None)
         subject = Subject.objects.get(nickname=nickname)
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
-        data = {'subject': nickname, 'implant_weight': subject.implant_weight, 'records': records}
+        data = {'subject': nickname, 'implant_weight': subject.implant_weight,
+                'reference_weight_pct': subject.water_control.reference_weight_pct,
+                'zscore_weight_pct': subject.water_control.zscore_weight_pct,
+                'records': records}
         return Response(data)
 
 
