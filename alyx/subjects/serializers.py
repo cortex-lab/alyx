@@ -28,10 +28,18 @@ class _WaterRestrictionBaseSerializer(serializers.HyperlinkedModelSerializer):
     def get_last_water_restriction(self, obj):
         return obj.water_control.water_restriction_at()
 
+    def get_reference_weight_pct(self, obj):
+        return obj.water_control.reference_weight_pct
+
+    def get_zscore_weight_pct(self, obj):
+        return obj.water_control.zscore_weight_pct
+
     expected_water = serializers.SerializerMethodField()
     remaining_water = serializers.SerializerMethodField()
     reference_weight = serializers.SerializerMethodField()
     last_water_restriction = serializers.SerializerMethodField()
+    reference_weight_pct = serializers.SerializerMethodField()
+    zscore_weight_pct = serializers.SerializerMethodField()
 
 
 class WaterRestrictedSubjectListSerializer(_WaterRestrictionBaseSerializer):
@@ -42,6 +50,8 @@ class WaterRestrictedSubjectListSerializer(_WaterRestrictionBaseSerializer):
                   'remaining_water',
                   'reference_weight',
                   'last_water_restriction',
+                  'reference_weight_pct',
+                  'zscore_weight_pct'
                   )
 
         lookup_field = 'nickname'

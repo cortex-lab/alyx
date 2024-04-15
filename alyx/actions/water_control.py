@@ -8,6 +8,7 @@ import structlog
 from operator import attrgetter, itemgetter
 import os.path as op
 
+from django.conf import settings
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import HttpResponse
@@ -563,7 +564,9 @@ def water_control(subject):
         implant_weight=subject.implant_weight
     )
     wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
-    wc.add_threshold(percentage=.7, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
+    if absolute_min := settings.WEIGHT_THRESHOLD:
+        wc.add_threshold(
+            percentage=absolute_min, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
     # Water restrictions.
     wrs = sorted(list(subject.actions_waterrestrictions.all()), key=attrgetter('start_time'))
     # Reference weight.
