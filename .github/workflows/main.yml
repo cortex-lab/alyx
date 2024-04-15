@@ -86,7 +86,8 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git commit -m "GitHub Actions generated requirements_frozen.txt" -a
+          git add requirements_frozen.txt
+          git commit -m "GitHub Actions generated requirements_frozen.txt"
           git push
 
       # Docker steps only run when master branch pushed to directly OR when a PR is merged
