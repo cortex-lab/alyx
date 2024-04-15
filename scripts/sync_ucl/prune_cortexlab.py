@@ -45,8 +45,7 @@ ses_loc2remove.delete()
 
 # the sessions should also have the cortexlab lab field properly labeled before import
 if Lab.objects.using('cortexlab').filter(name='cortexlab').count() == 0:
-    lab_dict = {'pk': CORTEX_LAB_PK,
-                'name': 'cortexlab'}
+    lab_dict = {'pk': CORTEX_LAB_PK, 'name': 'cortexlab'}
     lab = Lab.objects.using('cortexlab').create(**lab_dict)
     lab.save()
 else:
