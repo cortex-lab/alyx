@@ -1833,7 +1833,7 @@
       "name": "camera.lightningPose",
       "created_by": null,
       "description": "Dataframe with coordinates of body parts as estimated by Lightning Pose algorithm",
-      "filename_pattern": ""
+      "filename_pattern": "*camera.lightningPose.*"
     }
   },
   {
