@@ -57,7 +57,7 @@ def _s3_filesystem(**kwargs) -> pa.fs.S3FileSystem:
     :return: A FileSystem object with the given credentials
     """
     try:
-        from alyx.settings_secret import S3_ACCESS
+        from alyx.settings import S3_ACCESS
     except ImportError:
         S3_ACCESS = {}
     S3_ACCESS.update(kwargs)
