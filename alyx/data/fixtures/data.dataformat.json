@@ -322,7 +322,7 @@
    "matlab_loader_function": "",
    "python_loader_function": "sparse.load_npz"
   }
- }
+ },
  {
   "model": "data.dataformat",
   "pk": "f6474942-3f0e-4a68-89a1-64d8d600d953",
