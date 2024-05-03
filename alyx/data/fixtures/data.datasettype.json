@@ -2261,7 +2261,7 @@
       "json": null,
       "name": "waveforms.table",
       "created_by": null,
-      "description": "Pandas dataframe containing the sample index, cluster id, and peak channel id for each waveform extracted.",
+      "description": "Table containing the sample index, cluster id, and peak channel id for each waveform extracted.",
       "filename_pattern": ""
     }
   },
