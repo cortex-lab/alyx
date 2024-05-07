@@ -170,7 +170,7 @@ class NotificationTests(TestCase):
         date = timezone.datetime(2018, 6, 3, 16, 0, 0)
         check_water_administration(self.subject, date=date)
         notif = Notification.objects.last()
-        self.assertTrue(notif is None)
+        self.assertIsNone(notif)
 
     def test_notif_water_2(self):
         # If the last water admin was on June 3 at 12pm, the notification
@@ -181,6 +181,14 @@ class NotificationTests(TestCase):
             check_water_administration(self.subject, date=date)
             notif = Notification.objects.last()
             self.assertTrue((notif is not None) is r)
+
+    def test_notif_water_3(self):
+        # If the subject was place on water restriction on the same day
+        # there should be no notification
+        date = timezone.datetime(2018, 6, 2, 22, 30, 0)
+        check_water_administration(self.subject, date=date)
+        notif = Notification.objects.last()
+        self.assertIsNone(notif)
 
     def test_notif_user_change_1(self):
         self.subject.responsible_user = self.user2

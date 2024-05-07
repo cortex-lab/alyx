@@ -37,11 +37,20 @@ def check_weighed(subject, date=None):
     # Reinit the water_control instance to make sure the just-added
     # weighing is taken into account
     wc = subject.reinit_water_control()
-    if not wc:
+    if not wc or not wc.is_water_restricted(date):
         return
+
+    assert hasattr(date, 'date')
+    ref_weight = wc.reference_weight(date)
+    is_restriction_day = wc.water_restriction_at(date).date() == date.date()
+    # Don't notifiy if a reference weight was entered and subject
+    # was put on water restriction on the same day
+    if is_restriction_day and ref_weight:
+        return
+
     lwb = wc.last_weighing_before(date=date)
-    if hasattr(date, 'date'):
-        date = date.date()
+    date = date.date()
+
     datetime = lwb[0] if lwb else None
     if not datetime or datetime.date() != date:
         header = 'ATTENTION'
@@ -50,13 +59,30 @@ def check_weighed(subject, date=None):
 
 
 def check_water_administration(subject, date=None):
+    """
+    Check the subject was administered water in the last 24 hours.
+
+    Creates a notification if the subject was not given required water
+    today.
+
+    Parameters
+    ----------
+    subject : subject.models.Subject
+        A subject instance.
+    date : datetime.datetime
+        The datetime to check, deafults to now.
+    """
     date = date or timezone.now()
     wc = subject.reinit_water_control()
+    if not wc or not wc.is_water_restricted(date):
+        return
     remaining = wc.remaining_water(date=date)
     wa = wc.last_water_administration_at(date=date)
-    if not wa:
+    # If the subject is not on water restriction, or the restriction
+    # was created on the same day, water administration is not required
+    if wc.water_restriction_at(date).date() == date.date():
         return
-    delay = date - wa[0]
+    delay = date - (wa[0] if wa else wc.current_water_restriction())
     # Notification if water needs to be given more than 23h after the last
     # water administration.
     if remaining > 0 and delay.total_seconds() >= 23 * 3600 - 10:
