@@ -1833,7 +1833,7 @@
       "name": "camera.lightningPose",
       "created_by": null,
       "description": "Dataframe with coordinates of body parts as estimated by Lightning Pose algorithm",
-      "filename_pattern": ""
+      "filename_pattern": "*camera.lightningPose.*"
     }
   },
   {
@@ -2229,6 +2229,50 @@
       "name": "laserStimulation.intervals",
       "created_by": null,
       "description": "The start and end times of the laser stimulation period.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "c2eae195-624d-4ff5-a533-01d78caf5805",
+    "fields": {
+      "json": null,
+      "name": "waveforms.traces",
+      "created_by": null,
+      "description": "Snippets of lightly preprocessed waveforms from spikes, organized by unit.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "482dc8e6-0fda-4c9b-877d-f114ef75a9ff",
+    "fields": {
+      "json": null,
+      "name": "waveforms.templates",
+      "created_by": null,
+      "description": "Medians of unit waveforms.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "ff5867ab-cd28-4fde-9baa-142e2bc2f4fc",
+    "fields": {
+      "json": null,
+      "name": "waveforms.table",
+      "created_by": null,
+      "description": "Table containing the sample index, cluster id, and peak channel id for each waveform extracted.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "be70b6ac-7635-4554-9615-e40277a138ae",
+    "fields": {
+      "json": null,
+      "name": "waveforms.channels",
+      "created_by": null,
+      "description": "Array containing the channel ids for each waveform.",
       "filename_pattern": ""
     }
   }

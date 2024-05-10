@@ -459,7 +459,10 @@ class WaterRequirement(APIView):
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
         date_str = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
         ref_iw = subject.water_control.reference_implant_weight_at(date_str)
-        data = {'subject': nickname, 'implant_weight': ref_iw, 'records': records}
+        data = {'subject': nickname, 'implant_weight': ref_iw,
+                'reference_weight_pct': subject.water_control.reference_weight_pct,
+                'zscore_weight_pct': subject.water_control.zscore_weight_pct,
+                'records': records}
         return Response(data)
 
 

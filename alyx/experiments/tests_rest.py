@@ -184,6 +184,7 @@ class APIProbeExperimentTests(BaseTests):
         # create a trajectory
         url = reverse('trajectoryestimate-list')
         tdict = {'probe_insertion': alyx_insertion['id'],
+                 'chronic_insertion': None,
                  'x': -4521.2,
                  'y': 2415.0,
                  'z': 0,
@@ -215,6 +216,7 @@ class APIProbeExperimentTests(BaseTests):
         # create the probe insertion
         pi = self.ar(self.post(reverse('probeinsertion-list'), self.dict_insertion), 201)
         tdict = {'probe_insertion': pi['id'],
+                 'chronic_insertion': None,
                  'x': -4521.2,
                  'y': 2415.0,
                  'z': 0,
@@ -272,6 +274,7 @@ class APIProbeExperimentTests(BaseTests):
 
         # create a trajectory and attach it to the chronic insertion
         traj_dict = {'chronic_insertion': ci['id'],
+                     'probe_insertion': None,
                      'x': -4521.2,
                      'y': 2415.0,
                      'z': 0,
