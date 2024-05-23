@@ -253,7 +253,10 @@ class WaterControl:
         return self.last_implant_weight_before(wr or date, return_date)
 
     def reference_weighing_at(self, date=None):
-        """Return a tuple (date, weight) the reference weighing at the specified date, or today."""
+        """Return a tuple (date, weight) the reference weighing at the specified date, or today.
+
+        NB: this does not account for changes in implant weight.
+        """
         if self.reference_weighing and (date is None or date >= self.reference_weighing[0]):
             return self.reference_weighing
         date = date or self.today()
@@ -271,10 +274,16 @@ class WaterControl:
         return ref_weight
 
     def reference_weight(self, date=None):
-        """Return the reference weight at a given date."""
+        """Return the reference weight at a given date.
+
+        NB: Unlike `reference_weighing_at` this accounts for changes in implant
+        weight.
+        """
         rw = self.reference_weighing_at(date=date)
         if rw:
-            return rw[1]
+            ref_iw = self.reference_implant_weight_at(date) or 0.
+            iw = self.last_implant_weight_before(date) or 0.
+            return (rw[1] - ref_iw) + iw
         return 0.
 
     def last_implant_weight_before(self, date=None, return_date=False):
@@ -414,7 +423,10 @@ class WaterControl:
         weight = self.last_weighing_before(date=date)
         weight = weight[1] if weight else 0.
         expected_weight = self.expected_weight(date=date) or 0.
-        return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
+        pct_sum = (self.reference_weight_pct + self.zscore_weight_pct)
+        # Increase required water by 0.01mL/g if weight below pct reference
+        pct_weight = (pct_sum * expected_weight)
+        return 0.05 * (weight - iw) if weight < pct_weight else 0.04 * (weight - iw)
 
     def given_water(self, date=None, has_session=None):
         """Return the amount of water given at a specified date."""
