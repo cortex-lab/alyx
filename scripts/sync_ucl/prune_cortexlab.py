@@ -78,7 +78,8 @@ pk_projs += list(Project.objects.values_list('pk', flat=True))
 Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
 
 # only imports users that are relevant to IBL
-users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'nick', 'olivier',
+# OW: I removed nick from the import so his IBL account is active but his cortexlab expired
+users_to_import = ['cyrille', 'Gaelle', 'kenneth', 'lauren', 'matteo', 'miles', 'olivier',
                    'Karolina_Socha', 'Hamish', 'laura', 'niccolo', 'SamuelP', 'miriam.jansen',
                    'carolina.quadrado']
 users_to_leave = LabMember.objects.using('cortexlab').exclude(username__in=users_to_import)
