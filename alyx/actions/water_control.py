@@ -282,8 +282,7 @@ class WaterControl:
         rw = self.reference_weighing_at(date=date)
         if rw:
             ref_iw = self.reference_implant_weight_at(date) or 0.
-            iw = self.last_implant_weight_before(date) or 0.
-            return (rw[1] - ref_iw) + iw
+            return rw[1] - ref_iw
         return 0.
 
     def last_implant_weight_before(self, date=None, return_date=False):
@@ -338,7 +337,6 @@ class WaterControl:
             return 0
         ref_date, ref_weight = rw
         ref_iw = self.reference_implant_weight_at(date) or 0.
-        iw = self.last_implant_weight_before(date) or 0.
         if not self.birth_date:
             logger.warning("The birth date of %s has not been specified.", self.nickname)
             return 0
@@ -351,7 +349,7 @@ class WaterControl:
         zscore = (ref_weight - ref_iw - mrw_ref) / srw_ref
         # Expected weight.
         mrw_date, srw_date = expected_weighing_mean_std(self.sex, age_date)
-        return (srw_date * zscore) + mrw_date + iw
+        return (srw_date * zscore) + mrw_date
 
     def expected_weight(self, date=None):
         """Expected weight of the mouse at the specified date, either the reference weight
@@ -361,7 +359,8 @@ class WaterControl:
             return 0
         pz = self.zscore_weight_pct / pct_sum
         pr = self.reference_weight_pct / pct_sum
-        return pz * self.zscore_weight(date=date) + pr * self.reference_weight(date=date)
+        iw = self.last_implant_weight_before(date) or 0.
+        return pz * self.zscore_weight(date=date) + pr * self.reference_weight(date=date) + iw
 
     def percentage_weight(self, date=None):
         """Percentage of the weight relative to the expected weight.
@@ -401,8 +400,9 @@ class WaterControl:
     def min_weight(self, date=None):
         """Minimum weight for the mouse."""
         date = date or self.today()
+        iw = self.last_implant_weight_before(date) or 0.
         return (self.zscore_weight(date=date) * self.zscore_weight_pct +
-                self.reference_weight(date=date) * self.reference_weight_pct)
+                self.reference_weight(date=date) * self.reference_weight_pct) + iw
 
     def min_percentage(self, date=None):
         return self.thresholds[-1][0] * 100
@@ -425,7 +425,7 @@ class WaterControl:
         expected_weight = self.expected_weight(date=date) or 0.
         pct_sum = (self.reference_weight_pct + self.zscore_weight_pct)
         # Increase required water by 0.01mL/g if weight below pct reference
-        pct_weight = (pct_sum * expected_weight)
+        pct_weight = pct_sum * (expected_weight - iw) + iw
         return 0.05 * (weight - iw) if weight < pct_weight else 0.04 * (weight - iw)
 
     def given_water(self, date=None, has_session=None):
