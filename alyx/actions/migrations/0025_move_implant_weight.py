@@ -38,7 +38,7 @@ def move_implant_weight(apps, schema_editor):
         subject.json = json
         subject.save()
         # If possible, add implant weight to previous surgery
-        surgeries = subject.actions_surgerys.filter(procedures__name__icontains='implant')
+        surgeries = subject.actions_surgerys.filter(procedures__name__icontains='implant').distinct()
         if surgeries.count() == 0:
             # If no surgeries contain an implant procedure, attempt to find one surgery where
             # implant or headplate are mentioned in the narrative
