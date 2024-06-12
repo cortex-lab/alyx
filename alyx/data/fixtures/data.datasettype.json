@@ -1008,7 +1008,7 @@
       "name": "_iblrig_micData.raw",
       "created_by": null,
       "description": "Microphone data lossless compression for ephys",
-      "filename_pattern": "_iblrig_micData.raw.flac"
+      "filename_pattern": ""
     }
   },
   {
