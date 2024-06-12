@@ -416,7 +416,14 @@ class WaterTypeAdmin(BaseActionAdmin):
     list_display_links = ('name',)
 
 
+class SurgeryActionForm(BaseActionForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['implant_weight'].required = True
+
+
 class SurgeryAdmin(BaseActionAdmin):
+    form = SurgeryActionForm
     list_display = ['subject_l', 'date', 'users_l', 'procedures_l',
                     'narrative', 'projects', 'implant_weight']
     list_select_related = ('subject',)
