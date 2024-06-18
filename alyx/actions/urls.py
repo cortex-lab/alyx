@@ -55,6 +55,12 @@ urlpatterns = [
     path('water-restriction', av.WaterRestrictionList.as_view(),
          name='water-restriction-list'),
 
+    path('water-restriction/add', av.WaterRestrictionCreateView.as_view(),
+         name='water-restriction-add'),
+
+    path('water-restriction-confirm', av.WaterRestrictionConfirmationView.as_view(),
+         name='water-restriction-confirm'),
+
     path('water-type', av.WaterTypeList.as_view(),
          name="watertype-list"),
 

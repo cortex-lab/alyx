@@ -10,6 +10,8 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
+from django.views.generic.edit import CreateView
+from django.views import View
 
 import django_filters
 from rest_framework import generics
@@ -479,6 +481,40 @@ class WaterRestrictionList(generics.ListAPIView):
     serializer_class = WaterRestrictionListSerializer
     permission_classes = rest_permission_classes()
     filterset_class = WaterRestrictionFilter
+
+
+class WaterRestrictionCreateView(CreateView):
+    model = WaterRestriction
+    fields = '__all__'
+
+    def form_valid(self, form):
+        # This method is called when valid form data has been POSTed.
+        # It should return an HttpResponse.
+        response = super().form_valid(form)
+        if form.instance.implant_weight == 0:
+            from django.http import HttpResponseRedirect
+            return HttpResponseRedirect(reverse('water-restriction-confirm', args=[form.instance.pk]))
+        return response
+
+
+from django.shortcuts import render, redirect
+from django.views import View
+from .admin import ConfirmationForm
+
+class WaterRestrictionConfirmationView(View):
+    form_class = ConfirmationForm
+    template_name = 'confirmation.html'
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            # Perform your actions here
+            return redirect('success_url')  # replace with your success url
+        return render(request, self.template_name, {'form': form})
 
 
 class LabLocationList(generics.ListAPIView):

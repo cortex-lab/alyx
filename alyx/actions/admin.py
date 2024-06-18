@@ -250,6 +250,10 @@ class WaterRestrictionForm(forms.ModelForm):
         fields = '__all__'
 
 
+class ConfirmationForm(forms.Form):
+    pass
+
+
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
