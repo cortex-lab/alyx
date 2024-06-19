@@ -2294,8 +2294,19 @@
       "json": null,
       "name": "passingSpikes.table",
       "created_by": null,
-      "description": "A compressed table containing only the spikes belonging to passing units, to accelarate data loading",
-      "filename_pattern": "*passingspikes.table*"
+      "description": "A compressed table containing only the spikes belonging to passing units, to accelerate data loading.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "5137d09a-41b6-435f-aba5-c4a7e2b0d240",
+    "fields": {
+      "json": null,
+      "name": "rawImagingData.times",
+      "created_by": null,
+      "description": "The raw frame exposure times.",
+      "filename_pattern": ""
     }
   }
 ]
