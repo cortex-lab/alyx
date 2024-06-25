@@ -82,8 +82,9 @@ class WaterControlTests(TestCase):
         wc.expected_weight()
         # expected weight should be different to reference weight as the implant weight changes
         expected = self.wei[self.rwind] + (wc.implant_weights[1][1] - wc.implant_weights[0][1])
-        self.assertAlmostEqual(expected, wc.reference_weight())
         self.assertAlmostEqual(expected, wc.expected_weight())
+        expected = self.wei[self.rwind] - wc.implant_weights[0][1]
+        self.assertAlmostEqual(expected, wc.reference_weight())
         # test implant weight values
         self.assertEqual([4.56, 7.0], [x[1] for x in wc.implant_weights])
         self.assertEqual(7.0, wc.implant_weight())
@@ -94,14 +95,15 @@ class WaterControlTests(TestCase):
         self.sub.save()
         wc = self.sub.reinit_water_control()
         zscore = wc.zscore_weight()
-        self.assertAlmostEqual(zscore, 38.049183673469386)
-        self.assertEqual(zscore, wc.expected_weight())
+        self.assertAlmostEqual(zscore, 31.04918367346939)
+        self.assertEqual(zscore + wc.implant_weights[1][1], wc.expected_weight())
         # test computation on mixed lab
         self.sub.lab = Lab.objects.get(name='mixed')
         self.sub.save()
         wc = self.sub.reinit_water_control()
         self.assertAlmostEqual(expected, wc.reference_weight())
-        self.assertAlmostEqual(wc.expected_weight(), (wc.reference_weight() + zscore) / 2)
+        expected_zscore = (wc.reference_weight() + zscore) / 2 + wc.implant_weights[1][1]
+        self.assertAlmostEqual(wc.expected_weight(), expected_zscore)
         # test that the thresholds are all above 70%
         self.assertTrue(all(thrsh[0] > 0.4 for thrsh in wc.thresholds))
         # if we change the reference weight of the water restriction, this should change in wc too
