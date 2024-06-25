@@ -115,10 +115,9 @@ def tzone_convert(date_t, tz):
     return django.utils.timezone.make_naive(date_t, tz)
 
 
-class WaterControl(object):
+class WaterControl:
     def __init__(self, nickname=None, birth_date=None, sex=None,
-                 implant_weight=None, subject_id=None,
-                 reference_weight_pct=0.,
+                 subject_id=None, reference_weight_pct=0.,
                  zscore_weight_pct=0.,
                  timezone=django.utils.timezone.get_default_timezone(),
                  ):
@@ -129,10 +128,10 @@ class WaterControl(object):
         self.birth_date = to_date(birth_date)
         assert self.birth_date is None or isinstance(self.birth_date, datetime)
         self.sex = sex
-        self.implant_weight = implant_weight or 0.
         self.subject_id = subject_id
         self.water_restrictions = []
         self.water_administrations = []
+        self.implant_weights = []
         self.weighings = []
         self.reference_weighing = None
         self.reference_weight_pct = reference_weight_pct
@@ -222,6 +221,10 @@ class WaterControl(object):
         assert s.date() <= date.date()
         return s
 
+    def add_implant_weight(self, date, weight):
+        """Add an implant weight."""
+        self.implant_weights.append((tzone_convert(date, self.timezone), weight))
+
     def add_weighing(self, date, weighing):
         """Add a weighing."""
         self.weighings.append((tzone_convert(date, self.timezone), weighing))
@@ -239,8 +242,21 @@ class WaterControl(object):
         self.thresholds.append((percentage, bgcolor, fgcolor, line_style))
         self.thresholds[:] = sorted(self.thresholds, key=itemgetter(0))
 
+    def reference_implant_weight_at(self, date=None, return_date=False):
+        """Return a the reference implant weight at the specified date.
+
+        Returns a tuple (date, implant_weight) for the specified date (or today)
+        """
+        date = date or self.today()
+        assert isinstance(date, datetime)
+        wr = self.water_restriction_at(date)  # if exists, use date of water restriction
+        return self.last_implant_weight_before(wr or date, return_date)
+
     def reference_weighing_at(self, date=None):
-        """Return a tuple (date, weight) the reference weighing at the specified date, or today."""
+        """Return a tuple (date, weight) the reference weighing at the specified date, or today.
+
+        NB: this does not account for changes in implant weight.
+        """
         if self.reference_weighing and (date is None or date >= self.reference_weighing[0]):
             return self.reference_weighing
         date = date or self.today()
@@ -258,11 +274,28 @@ class WaterControl(object):
         return ref_weight
 
     def reference_weight(self, date=None):
-        """Return the reference weight at a given date."""
+        """Return the reference weight at a given date.
+
+        NB: Unlike `reference_weighing_at` this accounts for changes in implant
+        weight.
+        """
         rw = self.reference_weighing_at(date=date)
         if rw:
-            return rw[1]
+            ref_iw = self.reference_implant_weight_at(date) or 0.
+            return rw[1] - ref_iw
         return 0.
+
+    def last_implant_weight_before(self, date=None, return_date=False):
+        """Return the last known implant weight of the subject before the specified date."""
+        date = date or self.today()
+        assert isinstance(date, datetime)
+        # Sort the weighings.
+        self.implant_weights[:] = sorted(self.implant_weights, key=itemgetter(0))
+        weights_before = (
+            (d, w) for (d, w) in reversed(self.implant_weights) if d.date() <= date.date()
+        )
+        w = next(weights_before, None)
+        return w[1] if (w and not return_date) else w
 
     def last_weighing_before(self, date=None):
         """Return the last known weight of the subject before the specified date."""
@@ -270,16 +303,18 @@ class WaterControl(object):
         assert isinstance(date, datetime)
         # Sort the weighings.
         self.weighings[:] = sorted(self.weighings, key=itemgetter(0))
-        weighings_before = [(d, w) for (d, w) in self.weighings if d.date() <= date.date()]
-        if weighings_before:
-            return weighings_before[-1]
+        weighings_before = (
+            (d, w) for (d, w) in reversed(self.weighings) if d.date() <= date.date()
+        )
+        return next(weighings_before, None)
 
     def weighing_at(self, date=None):
         """Return the weight of the subject at the specified date."""
         date = date or self.today()
         assert isinstance(date, datetime)
-        weighings_at = [(d, w) for (d, w) in self.weighings if d.date() == date.date()]
-        return weighings_at[0][1] if weighings_at else None
+        weighings_at = ((d, w) for (d, w) in reversed(self.weighings) if d.date() == date.date())
+        weighing = next(weighings_at, None)
+        return weighing[1] if weighing else None
 
     def current_weighing(self):
         """Return the last known weight."""
@@ -290,6 +325,10 @@ class WaterControl(object):
         cw = self.last_weighing_before(date=date)
         return cw[1] if cw else 0
 
+    def implant_weight(self, date=None):
+        """Return current implant weight."""
+        return self.last_implant_weight_before(date=date)
+
     def zscore_weight(self, date=None):
         """Return the expected zscored weight at the specified date."""
         date = date or self.today()
@@ -297,7 +336,7 @@ class WaterControl(object):
         if not rw:
             return 0
         ref_date, ref_weight = rw
-        iw = self.implant_weight
+        ref_iw = self.reference_implant_weight_at(date) or 0.
         if not self.birth_date:
             logger.warning("The birth date of %s has not been specified.", self.nickname)
             return 0
@@ -307,10 +346,10 @@ class WaterControl(object):
         # Expected mean/std at that time.
         mrw_ref, srw_ref = expected_weighing_mean_std(self.sex, age_ref)
         # z-score.
-        zscore = (ref_weight - iw - mrw_ref) / srw_ref
+        zscore = (ref_weight - ref_iw - mrw_ref) / srw_ref
         # Expected weight.
         mrw_date, srw_date = expected_weighing_mean_std(self.sex, age_date)
-        return (srw_date * zscore) + mrw_date + iw
+        return (srw_date * zscore) + mrw_date
 
     def expected_weight(self, date=None):
         """Expected weight of the mouse at the specified date, either the reference weight
@@ -320,7 +359,8 @@ class WaterControl(object):
             return 0
         pz = self.zscore_weight_pct / pct_sum
         pr = self.reference_weight_pct / pct_sum
-        return pz * self.zscore_weight(date=date) + pr * self.reference_weight(date=date)
+        iw = self.last_implant_weight_before(date) or 0.
+        return pz * self.zscore_weight(date=date) + pr * self.reference_weight(date=date) + iw
 
     def percentage_weight(self, date=None):
         """Percentage of the weight relative to the expected weight.
@@ -331,7 +371,7 @@ class WaterControl(object):
 
         """
         date = date or self.today()
-        iw = self.implant_weight or 0.
+        iw = self.last_implant_weight_before(date) or 0.
         w = self.weight(date=date)
         e = self.expected_weight(date=date)
         return 100 * (w - iw) / (e - iw) if (e - iw) > 0 else 0.
@@ -360,8 +400,9 @@ class WaterControl(object):
     def min_weight(self, date=None):
         """Minimum weight for the mouse."""
         date = date or self.today()
+        iw = self.last_implant_weight_before(date) or 0.
         return (self.zscore_weight(date=date) * self.zscore_weight_pct +
-                self.reference_weight(date=date) * self.reference_weight_pct)
+                self.reference_weight(date=date) * self.reference_weight_pct) + iw
 
     def min_percentage(self, date=None):
         return self.thresholds[-1][0] * 100
@@ -371,19 +412,21 @@ class WaterControl(object):
         date = date or self.today()
         # Sort the water administrations.
         self.water_administrations[:] = sorted(self.water_administrations, key=itemgetter(0))
-        wa_before = [(d, w, h) for (d, w, h) in self.water_administrations if d <= date]
-        if wa_before:
-            return wa_before[-1]
+        wa_before = ((d, w, h) for (d, w, h) in reversed(self.water_administrations) if d <= date)
+        return next(wa_before, None)
 
     def expected_water(self, date=None):
         """Return the expected water for the specified date."""
         date = date or self.today()
         assert isinstance(date, datetime)
-        iw = self.implant_weight or 0.
+        iw = self.last_implant_weight_before(date) or 0.
         weight = self.last_weighing_before(date=date)
         weight = weight[1] if weight else 0.
         expected_weight = self.expected_weight(date=date) or 0.
-        return 0.05 * (weight - iw) if weight < 0.8 * expected_weight else 0.04 * (weight - iw)
+        pct_sum = (self.reference_weight_pct + self.zscore_weight_pct)
+        # Increase required water by 0.01mL/g if weight below pct reference
+        pct_weight = pct_sum * (expected_weight - iw) + iw
+        return 0.05 * (weight - iw) if weight < pct_weight else 0.04 * (weight - iw)
 
     def given_water(self, date=None, has_session=None):
         """Return the amount of water given at a specified date."""
@@ -433,6 +476,7 @@ class WaterControl(object):
                 'expected_water',
                 'excess_water',
                 'is_water_restricted',
+                'implant_weight'
                 )
 
     def weight_status(self, date=None):
@@ -530,7 +574,7 @@ class WaterControl(object):
         ax.set_xlim(start, end)
         eq = 'weight > %.1f*ref + %.1f*zscore' % (
             self.reference_weight_pct, self.zscore_weight_pct)
-        ax.set_title("Weighings for %s (%s)" % (self.nickname, eq))
+        ax.set_title('Weighings for %s (%s)' % (self.nickname, eq))
         ax.set_xlabel('Date')
         ax.set_ylabel('Weight (g)')
         ax.legend(loc=2)
@@ -560,8 +604,7 @@ def water_control(subject):
         reference_weight_pct=rw_pct,
         zscore_weight_pct=zw_pct,
         timezone=subject.timezone(),
-        subject_id=subject.id,
-        implant_weight=subject.implant_weight
+        subject_id=subject.id
     )
     wc.add_threshold(percentage=rw_pct + zw_pct, bgcolor=PALETTE['orange'], fgcolor='#FFC28E')
     if absolute_min := settings.WEIGHT_THRESHOLD:
@@ -569,10 +612,17 @@ def water_control(subject):
             percentage=absolute_min, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
     # Water restrictions.
     wrs = sorted(list(subject.actions_waterrestrictions.all()), key=attrgetter('start_time'))
+    # Surgeries.
+    srgs = sorted(list(subject.actions_surgerys.all()), key=attrgetter('start_time'))
+    for srg in srgs:
+        iw = srg.implant_weight
+        if iw:
+            wc.add_implant_weight(srg.start_time, iw)
     # Reference weight.
     last_wr = wrs[-1] if wrs else None
-    if last_wr and last_wr.reference_weight:
-        wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
+    if last_wr:
+        if last_wr.reference_weight:
+            wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
     for wr in wrs:
         wc.add_water_restriction(wr.start_time, wr.end_time, wr.reference_weight)
 

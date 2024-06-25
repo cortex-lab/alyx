@@ -32,6 +32,7 @@
         <th>water tot</th>
         <th>water exp</th>
         <th>water excess</th>
+        <th>implant weight</th>
     </tr>
 </thead>
 <tbody>
@@ -48,6 +49,7 @@
         <td><strong>{{ obj.given_water_total | floatformat:2 }} mL</strong></td>
         <td>{{ obj.expected_water | floatformat:2 }} mL</td>
         <td>{{ obj.excess_water | floatformat:2 }} mL</td>
+        <td>{% if obj.implant_weight %} {{ obj.implant_weight | floatformat:1 }} {% else %} 0.0 {% endif %} g</td>
     </tr>
 {% endfor %}
 </tbody>

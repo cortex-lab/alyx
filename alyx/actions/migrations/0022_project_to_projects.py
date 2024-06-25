@@ -6,6 +6,7 @@ from django.db.models import F, Q
 
 logger = logging.getLogger(__name__)
 
+
 def project2projects(apps, schema_editor):
     """
     Find sessions where the project field (singular) value is not in the projects (plural) many-to-many

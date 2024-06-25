@@ -41,4 +41,4 @@ Going further
 The list of endpoints, fields and methods is self-documented for each database at the  `/docs` URL.
 For example, a public Alyx instance is available here for reference: https://openalyx.internationalbrainlab.org/docs/
 
-REST endpoints are programmatically accessed client side. And example of a client side application is described in details here: https://int-brain-lab.github.io/ONE/.
+REST endpoints are programmatically accessed client side. And example of a client side application is described in details here: [https://one.internationalbrainlab.org/](https://int-brain-lab.github.io/ONE/).
