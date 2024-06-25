@@ -46,6 +46,15 @@ class TrajectoryEstimateSerializer(serializers.ModelSerializer):
         queryset=CoordinateSystem.objects.all(),
     )
 
+    def to_internal_value(self, data):
+        if data.get('chronic_insertion', None) is None:
+            data['chronic_insertion'] = None
+
+        if data.get('probe_insertion', None) is None:
+            data['probe_insertion'] = None
+
+        return super(TrajectoryEstimateSerializer, self).to_internal_value(data)
+
     class Meta:
         model = TrajectoryEstimate
         fields = '__all__'

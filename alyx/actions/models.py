@@ -203,9 +203,15 @@ class Surgery(BaseAction):
                                  default=_default_surgery_location,
                                  help_text="The physical location at which the surgery was "
                                  "performed")
+    implant_weight = models.FloatField(null=False, blank=True, validators=[MinValueValidator(0)],
+                                       help_text="Implant weight in grams")
 
     class Meta:
         verbose_name_plural = "surgeries"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(implant_weight__gte=0), name="implant_weight_gte_0"),
+        ]
 
     def save(self, *args, **kwargs):
         # Issue #422.
@@ -336,6 +342,7 @@ class WaterRestriction(BaseAction):
                 self.reference_weight = w[1]
                 # makes sure the closest weighing is one week around, break if not
                 assert abs(w[0] - self.start_time) < timedelta(days=7)
+
         output = super(WaterRestriction, self).save(*args, **kwargs)
         # When creating a water restriction, the subject's protocol number should be changed to 3
         # (request by Charu in 03/2022)

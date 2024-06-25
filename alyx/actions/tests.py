@@ -7,7 +7,7 @@ from alyx import base
 from actions.water_control import to_date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
-    Notification, NotificationRule, create_notification)
+    Notification, NotificationRule, create_notification, Surgery, ProcedureType)
 from actions.notifications import check_water_administration, check_weighed
 from misc.models import LabMember, LabMembership, Lab
 from subjects.models import Subject
@@ -40,6 +40,18 @@ class WaterControlTests(TestCase):
         Lab.objects.create(name='zscore', reference_weight_pct=0, zscore_weight_pct=0.85)
         Lab.objects.create(name='rweigh', reference_weight_pct=0.85, zscore_weight_pct=0)
         Lab.objects.create(name='mixed', reference_weight_pct=0.425, zscore_weight_pct=0.425)
+        # create some surgeries to go with it (for testing implant weight in calculations)
+        date = self.start_date - datetime.timedelta(days=7)
+        surgery0 = Surgery.objects.create(subject=self.sub, implant_weight=4.56, start_time=date)
+        implant_proc, _ = ProcedureType.objects.get_or_create(name='Headplate implant')
+        surgery0.procedures.add(implant_proc.pk)
+        date = self.start_date + datetime.timedelta(days=10)
+        surgery1 = Surgery.objects.create(subject=self.sub, implant_weight=0., start_time=date)
+        date = self.start_date + datetime.timedelta(days=25)
+        surgery2 = Surgery.objects.create(subject=self.sub, implant_weight=7., start_time=date)
+        surgery2.procedures.add(implant_proc.pk)
+        self.surgeries = [surgery0, surgery1, surgery2]
+
         # Create an initial Water Restriction
         start_wr = self.start_date + datetime.timedelta(days=self.rwind)
         water_type = WaterType.objects.get(name='Hydrogel 5% Citric Acid')
@@ -68,29 +80,36 @@ class WaterControlTests(TestCase):
         self.sub.save()
         wc = self.sub.reinit_water_control()
         wc.expected_weight()
-        self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
-        self.assertAlmostEqual(self.wei[self.rwind], wc.expected_weight())
+        # expected weight should be different to reference weight as the implant weight changes
+        expected = self.wei[self.rwind] + (wc.implant_weights[1][1] - wc.implant_weights[0][1])
+        self.assertAlmostEqual(expected, wc.reference_weight())
+        self.assertAlmostEqual(expected, wc.expected_weight())
+        # test implant weight values
+        self.assertEqual([4.56, 7.0], [x[1] for x in wc.implant_weights])
+        self.assertEqual(7.0, wc.implant_weight())
+        self.assertEqual(4.56, wc.implant_weight(self.start_date))
+        self.assertEqual(4.56, wc.reference_implant_weight_at())
         # test computation on zscore weight lab alone
         self.sub.lab = Lab.objects.get(name='zscore')
         self.sub.save()
         wc = self.sub.reinit_water_control()
-        wc.expected_weight()
-        self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
         zscore = wc.zscore_weight()
+        self.assertAlmostEqual(zscore, 38.049183673469386)
+        self.assertEqual(zscore, wc.expected_weight())
         # test computation on mixed lab
         self.sub.lab = Lab.objects.get(name='mixed')
         self.sub.save()
         wc = self.sub.reinit_water_control()
-        self.assertAlmostEqual(self.wei[self.rwind], wc.reference_weight())
+        self.assertAlmostEqual(expected, wc.reference_weight())
         self.assertAlmostEqual(wc.expected_weight(), (wc.reference_weight() + zscore) / 2)
         # test that the thresholds are all above 70%
-        self.assertTrue(all([thrsh[0] > 0.4 for thrsh in wc.thresholds]))
+        self.assertTrue(all(thrsh[0] > 0.4 for thrsh in wc.thresholds))
         # if we change the reference weight of the water restriction, this should change in wc too
-        self.assertAlmostEqual(wc.reference_weight(), self.wr.reference_weight)
+        self.assertAlmostEqual(expected, wc.reference_weight())
         self.wr.reference_weight = self.wr.reference_weight + 1
         self.wr.save()
         wc = self.sub.reinit_water_control()
-        self.assertAlmostEqual(wc.reference_weight(), self.wr.reference_weight)
+        self.assertAlmostEqual(expected + 1, wc.reference_weight())
 
 
 class NotificationTests(TestCase):

@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from operator import itemgetter
 
 from one.alf.spec import QC
@@ -457,7 +457,9 @@ class WaterRequirement(APIView):
         end_date = request.query_params.get('end_date', None)
         subject = Subject.objects.get(nickname=nickname)
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
-        data = {'subject': nickname, 'implant_weight': subject.implant_weight,
+        date_str = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+        ref_iw = subject.water_control.reference_implant_weight_at(date_str)
+        data = {'subject': nickname, 'implant_weight': ref_iw,
                 'reference_weight_pct': subject.water_control.reference_weight_pct,
                 'zscore_weight_pct': subject.water_control.zscore_weight_pct,
                 'records': records}

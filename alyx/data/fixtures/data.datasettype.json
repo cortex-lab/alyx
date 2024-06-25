@@ -1008,7 +1008,7 @@
       "name": "_iblrig_micData.raw",
       "created_by": null,
       "description": "Microphone data lossless compression for ephys",
-      "filename_pattern": "_iblrig_micData.raw.flac"
+      "filename_pattern": ""
     }
   },
   {
@@ -2273,6 +2273,17 @@
       "name": "waveforms.channels",
       "created_by": null,
       "description": "Array containing the channel ids for each waveform.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "34a2f43e-e2a7-4b1a-a43f-bab07cd7e709",
+    "fields": {
+      "json": null,
+      "name": "channels.labels",
+      "created_by": null,
+      "description": "Bad channel detection outcome, 0 is good, 1 corresponds to dead or low amplitude channels, 2 corresponds to noisy channels, 3 corresponds to channels labeled as outside of the brain.",
       "filename_pattern": ""
     }
   }

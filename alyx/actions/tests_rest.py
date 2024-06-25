@@ -7,7 +7,7 @@ from alyx import base
 from alyx.base import BaseTests
 from subjects.models import Subject, Project
 from misc.models import Lab, Note, ContentType
-from actions.models import Session, WaterType, WaterAdministration
+from actions.models import Session, WaterType, WaterAdministration, Surgery, ProcedureType
 from data.models import Dataset, DatasetType
 
 
@@ -22,10 +22,13 @@ class APIActionsTests(BaseTests):
         self.lab02 = Lab.objects.create(name='awesomelab')
         self.projectX = Project.objects.create(name='projectX')
         self.projectY = Project.objects.create(name='projectY')
-        # Set an implant weight.
-        self.subject.implant_weight = 4.56
-        self.subject.save()
         self.test_protocol = 'test_passoire'
+        # Create a surgery with an implant weight.
+        self.surgery = Surgery.objects.create(
+            subject=self.subject, implant_weight=4.56, start_time=now() - timedelta(days=7))
+        implant_proc, _ = ProcedureType.objects.get_or_create(name='Headplate implant')
+        self.surgery.procedures.add(implant_proc.pk)
+        self.subject.save()
 
     def tearDown(self):
         base.DISABLE_MAIL = False
@@ -305,9 +308,9 @@ class APIActionsTests(BaseTests):
         sr = self.ar(self.client.get(reverse('surgeries-list',)))
         self.assertTrue(ns > 0)
         self.assertTrue(len(sr) == ns)
-        self.assertTrue(set(sr[0].keys()) == set(
-            ['id', 'subject', 'name', 'json', 'narrative', 'start_time', 'end_time',
-             'outcome_type', 'lab', 'location', 'users', 'procedures']))
+        self.assertTrue(set(sr[0].keys()) == {
+            'id', 'subject', 'name', 'json', 'narrative', 'start_time', 'end_time',
+            'outcome_type', 'lab', 'location', 'users', 'procedures', 'implant_weight'})
 
     def test_list_retrieve_water_restrictions(self):
         url = reverse('water-restriction-list')
