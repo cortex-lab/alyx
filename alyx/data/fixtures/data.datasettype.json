@@ -2286,5 +2286,27 @@
       "description": "Bad channel detection outcome, 0 is good, 1 corresponds to dead or low amplitude channels, 2 corresponds to noisy channels, 3 corresponds to channels labeled as outside of the brain.",
       "filename_pattern": ""
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "2a0f78ff-bcc3-4780-8b00-0cb1280850aa",
+    "fields": {
+      "json": null,
+      "name": "passingSpikes.table",
+      "created_by": null,
+      "description": "A compressed table containing only the spikes belonging to passing units, to accelerate data loading.",
+      "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "5137d09a-41b6-435f-aba5-c4a7e2b0d240",
+    "fields": {
+      "json": null,
+      "name": "rawImagingData.times",
+      "created_by": null,
+      "description": "The raw frame exposure times.",
+      "filename_pattern": ""
+    }
   }
 ]
