@@ -191,7 +191,7 @@ class ProjectAdmin(BaseAdmin):
     users_l.short_description = 'users'
 
     def sessions_count(self, obj):
-        return Session.objects.filter(project=obj).count()
+        return Session.objects.filter(projects=obj).count()
     sessions_count.short_description = '# sessions'
 
     def subjects_count(self, obj):
