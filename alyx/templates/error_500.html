@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 Internal Server Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #dc3545;
+            font-size: 2em;
+            margin-bottom: 0.5em;
+        }
+        p {
+            font-size: 1.2em;
+            margin-bottom: 1em;
+        }
+        .request {
+            background-color: #d4edda; /* Light green background */
+            color: #155724; /* Dark green text color */
+            border: 1px solid #c3e6cb; /* Green border */
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 1.0em;
+        }
+        .traceback {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.8em; /* Smaller font size for the traceback */
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.7em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>500 Internal Server Error</h1>
+        <p>Oupsy, something went wrong on our end. !</p>
+        <p>Feel free to reach out with the information below, we'll do our best to resolve the issue.</p>
+        <div class="request">
+            {{ request|safe }}
+        </div>
+        <div class="traceback">
+            {{ traceback|safe }}
+        </div>
+    </div>
+</body>
+</html>
