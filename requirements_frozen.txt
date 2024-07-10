@@ -14,7 +14,7 @@ coverage==7.5.4
 coveralls==4.0.1
 cryptography==42.0.8
 cycler==0.12.1
-Django==4.2.13
+Django==4.2.14
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.13.0
 django-autocomplete-light==3.11.0
