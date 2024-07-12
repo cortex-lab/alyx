@@ -1,7 +1,7 @@
 asgiref==3.8.1
 backports.zoneinfo==0.2.1
-boto3==1.34.136
-botocore==1.34.136
+boto3==1.34.143
+botocore==1.34.143
 certifi==2024.7.4
 cffi==1.16.0
 charset-normalizer==3.3.2
@@ -10,7 +10,7 @@ colorlog==6.8.2
 contourpy==1.1.1
 coreapi==2.3.3
 coreschema==0.0.4
-coverage==7.5.4
+coverage==7.6.0
 coveralls==4.0.1
 cryptography==42.0.8
 cycler==0.12.1
@@ -25,7 +25,7 @@ django-js-asset==2.2.0
 django-mptt==0.14.0
 django-polymorphic==3.1.0
 django-reversion==5.0.12
-django-storages==1.14.3
+django-storages==1.14.4
 django-structlog==8.1.0
 django-test-without-migrations==0.6
 djangorestframework==3.15.2
@@ -33,8 +33,8 @@ docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
 flake8==7.1.0
-fonttools==4.53.0
-globus-cli==3.28.3
+fonttools==4.53.1
+globus-cli==3.29.0
 globus-sdk==3.41.0
 iblutil==1.10.0
 idna==3.7
@@ -52,7 +52,7 @@ matplotlib==3.7.5
 mccabe==0.7.0
 numba==0.58.1
 numpy==1.24.4
-ONE-api==2.7.0
+ONE-api==2.8.0
 packaging==24.1
 pandas==2.0.3
 pillow==10.4.0
