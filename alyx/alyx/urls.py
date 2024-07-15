@@ -1,6 +1,8 @@
+import traceback
 from django.conf.urls import include
 from django.urls import path
 from django.contrib import admin
+from django.shortcuts import render
 from rest_framework.authtoken import views as authv
 from rest_framework.documentation import include_docs_urls
 
@@ -25,3 +27,11 @@ try:
     urlpatterns += [path('ibl_reports/', include('ibl_reports.urls')), ]
 except ModuleNotFoundError:
     pass
+
+
+def handler500(request):
+    ctx = {
+        'request': request.path,
+        'traceback': traceback.format_exc()
+    }
+    return render(request, 'error_500.html', ctx)
