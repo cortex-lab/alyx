@@ -782,6 +782,17 @@
   },
   {
     "model": "data.datasettype",
+    "pk": "3c44d77f-037e-4bc4-b7a7-2a7562b21c99",
+    "fields": {
+      "json": null,
+      "name": "_ibl_trials.stimOffTrigger_times",
+      "created_by": null,
+      "description": "Times of stimulus offset trigger command",
+      "filename_pattern": "_ibl_trials.stimOffTrigger_times.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
     "pk": "2aba753c-0316-44e7-ad54-b42c81a99349",
     "fields": {
       "json": null,
