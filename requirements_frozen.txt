@@ -12,7 +12,7 @@ coreapi==2.3.3
 coreschema==0.0.4
 coverage==7.6.0
 coveralls==4.0.1
-cryptography==42.0.8
+cryptography==43.0.0
 cycler==0.12.1
 Django==4.2.14
 django-admin-list-filter-dropdown==1.0.3
