@@ -286,5 +286,14 @@
   "json": null,
   "description": "This term covers:\r\n- Induction and maintenance of general/local/regional anaesthesia by use of agents and by routes suitable for the species, nature and duration of the procedure - Inhalation.\r\n- Subcutaneous injection under anesthesia\r\n- Intramuscular injection under anesthesia\r\n- Administration of substances topically to the skin or conjunctiva with anaesthesia.\r\n- Placement of head in atraumatic headholder  (via atraumatic ear and eye bars) OR Head bolt clamp to a fixation bar (head bolt already in place and fully healed)\r\n- Craniotomy\r\n- Implantation of cannula"
  }
+},
+{
+ "model": "actions.proceduretype",
+ "pk": "a00737fa-7ec1-48c1-ad7c-08529712adcb",
+ "fields": {
+  "name": "Fiber photometry",
+  "json": null,
+  "description": ""
+ }
 }
 ]
