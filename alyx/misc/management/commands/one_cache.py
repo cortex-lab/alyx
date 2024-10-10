@@ -181,11 +181,11 @@ class Command(BaseCommand):
         :param dry: If True, does not actually write to disk
         :return: A PyArrow table and the full path to the saved file
         """
-        
+
         if table is None:
             logger.warning(f'Table {name} is empty, not saving')
             return None, None
-        
+
         if not kwargs.get('dry'):
             logger.info(f'Saving table "{name}" to {self.dst_dir}...')
         scheme = urllib.parse.urlparse(self.dst_dir).scheme or 'file'
@@ -207,7 +207,8 @@ class Command(BaseCommand):
                 sessions = sessions.filter(data_dataset_session_related__tags__name=tags)
 
         if sessions.count() == 0:
-            logger.warning(f'No datasets associated with sessions found for {tags}, returning empty dataframe')
+            logger.warning(f'No datasets associated with sessions found for {tags}, '
+                           f'returning empty dataframe')
             return
 
         qc = list(sessions.values('pk', 'qc', 'extended_qc').distinct())
@@ -342,7 +343,8 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
             query = query.filter(data_dataset_session_related__tags__name=tags)
 
     if query.count() == 0:
-        logger.warning(f'No datasets associated with sessions found for {tags}, returning empty dataframe')
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
         return
 
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
@@ -399,7 +401,8 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True), session__isnull=False)
 
     if ds.count() == 0:
-        logger.warning(f'No datasets associated with sessions found for {tags}, returning empty dataframe')
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
         return
 
     # fields to keep from Dataset table
