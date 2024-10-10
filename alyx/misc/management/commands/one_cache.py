@@ -150,19 +150,22 @@ class Command(BaseCommand):
             if table.lower() == 'sessions':
                 logger.debug('Generating sessions DataFrame')
                 tbl, filename = self._save_table(generate_sessions_frame(**kwargs), table, dry=dry)
-                to_compress[filename] = tbl
+                if filename is not None:
+                    to_compress[filename] = tbl
             elif table.lower() == 'datasets':
                 logger.debug('Generating datasets DataFrame')
                 tbl, filename = self._save_table(generate_datasets_frame(**kwargs), table, dry=dry)
-                to_compress[filename] = tbl
+                if filename is not None:
+                    to_compress[filename] = tbl
             else:
                 raise ValueError(f'Unknown table "{table}"')
 
         if export_qc:
             tbl, filename = self._save_qc(dry=dry, tags=kwargs.get('tags'))
-            to_compress[filename] = tbl
+            if filename is not None:
+                to_compress[filename] = tbl
 
-        if self.compress:
+        if self.compress and len(to_compress) > 0:
             return list(self._compress_tables(to_compress))
         else:
             return list(to_compress.keys())
@@ -178,6 +181,11 @@ class Command(BaseCommand):
         :param dry: If True, does not actually write to disk
         :return: A PyArrow table and the full path to the saved file
         """
+
+        if table is None:
+            logger.warning(f'Table {name} is empty, not saving')
+            return None, None
+
         if not kwargs.get('dry'):
             logger.info(f'Saving table "{name}" to {self.dst_dir}...')
         scheme = urllib.parse.urlparse(self.dst_dir).scheme or 'file'
@@ -197,6 +205,12 @@ class Command(BaseCommand):
                 sessions = sessions.filter(data_dataset_session_related__tags__name__in=tags)
             else:
                 sessions = sessions.filter(data_dataset_session_related__tags__name=tags)
+
+        if sessions.count() == 0:
+            logger.warning(f'No datasets associated with sessions found for {tags}, '
+                           f'returning empty dataframe')
+            return
+
         qc = list(sessions.values('pk', 'qc', 'extended_qc').distinct())
         outcome_map = dict(Session.QC_CHOICES)
         for d in qc:  # replace enumeration int with string
@@ -327,6 +341,12 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
             query = query.filter(data_dataset_session_related__tags__name__in=tags)
         else:
             query = query.filter(data_dataset_session_related__tags__name=tags)
+
+    if query.count() == 0:
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
+        return
+
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
@@ -379,6 +399,11 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     # Filter out datasets that do not exist on either repository or have no associated session
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
     ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True), session__isnull=False)
+
+    if ds.count() == 0:
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
+        return
 
     # fields to keep from Dataset table
     fields = (
