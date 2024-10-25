@@ -14,12 +14,14 @@ with gzip.open(path, 'rb') as fp:
     data = json.load(fp)
 
 # Get implant weight map
-pk2iw = {r['pk']: r['fields']['implant_weight'] for r in filter(lambda r: r['model'] == 'subjects.subject', data)}
+pk2iw = {r['pk']: r['fields']['implant_weight']
+         for r in filter(lambda r: r['model'] == 'subjects.subject', data)}
 
 # Add implant weights to surgeries
 for record in filter(lambda r: r['model'] == 'actions.surgery', data):
     # Check if implant surgery
-    implant = any('implant' in p for p in record['fields'].get('procedures', [])) or 'headplate' in record['fields']['narrative']
+    implant = (any('implant' in p for p in record['fields'].get('procedures', [])) or
+               'headplate' in record['fields']['narrative'])
     # Implant weight should be subject's implant weight
     iw = pk2iw[record['fields']['subject']]
     if iw is None:  # ... or a random float rounded to 2 decimal places
@@ -33,10 +35,11 @@ for record in filter(lambda r: r['model'] == 'subjects.subject', data):
 
 # find any with multiple surgeries
 # from collections import Counter
-# counter = Counter(map(lambda r: r['fields']['subject'], filter(lambda r: r['model'] == 'actions.surgery', data)))
+# surgeries = filter(lambda r: r['model'] == 'actions.surgery', data)
+# counter = Counter(map(lambda r: r['fields']['subject'], surgeries))
 # pk, total = counter.most_common()[3]
 # assert total > 1
-# records = list(filter(lambda r: r['model'] == 'actions.surgery' and r['fields']['subject'] == pk, data))
+# recs = filter(lambda r: r['model'] == 'actions.surgery' and r['fields']['subject'] == pk, data)
 
 # Write to file
 with gzip.open(path, 'wt', encoding='UTF-8') as fp:

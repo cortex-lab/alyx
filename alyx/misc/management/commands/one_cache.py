@@ -15,7 +15,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
 from tqdm import tqdm
-from one.alf.cache import _metadata
+from one.alf.cache import _metadata, SESSIONS_COLUMNS, DATASETS_COLUMNS
 from one.util import QC_TYPE
 from one.alf.spec import QC
 from one.remote.aws import get_s3_virtual_host
@@ -32,7 +32,7 @@ from data.models import Dataset, FileRecord
 from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
-ONE_API_VERSION = '2.7'  # Minimum compatible ONE api version
+ONE_API_VERSION = '2.10'  # Minimum compatible ONE api version
 
 
 def measure_time(func):
@@ -345,7 +345,7 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
     if query.count() == 0:
         logger.warning(f'No datasets associated with sessions found for {tags}, '
                        f'returning empty dataframe')
-        return
+        return pd.DataFrame(columns=SESSIONS_COLUMNS).set_index('id')
 
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
@@ -376,7 +376,6 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     """DATASETS_COLUMNS = (
         'id',               # uuid str
         'eid',              # uuid str
-        'session_path',     # relative to the root
         'rel_path',         # relative to the session path, includes the filename
         'file_size',        # float, bytes, optional
         'hash',             # sha1/md5 str, recomputed in load function
@@ -392,7 +391,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
                        exists=True,
                        data_repository__name__startswith='aws').values('pk')
     # Fetch datasets and their related tables
-    ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
+    ds = Dataset.objects
     if tags:
         kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
         ds = ds.prefetch_related('tag').filter(**kw)
@@ -403,13 +402,14 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     if ds.count() == 0:
         logger.warning(f'No datasets associated with sessions found for {tags}, '
                        f'returning empty dataframe')
-        return
+        return (pd.DataFrame(columns=DATASETS_COLUMNS)
+                .set_index(['eid', 'id'])
+                .astype({'qc': QC_TYPE}))
 
     # fields to keep from Dataset table
     fields = (
         'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
-        'session__id', 'session__start_time__date', 'session__number',
-        'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws', 'qc'
+        'session__id', 'qc'
     )
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
 
@@ -420,14 +420,6 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
         current_qs = data.object_list
         df = pd.DataFrame.from_records(current_qs.values(*fields)).rename(fields_map, axis=1)
         df['exists'] = True
-
-        # TODO New version without this nonsense
-        # session_path
-        globus_path = df.pop('session__lab__name') + '/Subjects'
-        subject = df.pop('session__subject__nickname')
-        date = df.pop('session__start_time__date').astype(str)
-        number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
-        df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
 
         # relative_path
         revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
