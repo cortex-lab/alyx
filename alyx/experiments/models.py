@@ -109,7 +109,7 @@ class ProbeInsertion(BaseModel):
                                          verbose_name='last updated')
     datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='probe_insertion')
     chronic_insertion = models.ForeignKey(ChronicInsertion, blank=True, null=True,
-                                          on_delete=models.CASCADE, related_name='probe_insertion')
+                                          on_delete=models.SET_NULL, related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))
