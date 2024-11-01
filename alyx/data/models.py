@@ -452,7 +452,7 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        from one.alf.files import add_uuid_string
+        from one.alf.path import add_uuid_string
         return root + add_uuid_string(self.relative_path, self.dataset.pk).as_posix()
 
     def save(self, *args, **kwargs):

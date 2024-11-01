@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
-from one.alf.files import add_uuid_string, folder_parts
+from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 from one.alf.spec import QC
 
