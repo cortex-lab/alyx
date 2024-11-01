@@ -11,6 +11,7 @@ import zipfile
 import tempfile
 import os
 
+import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
@@ -351,20 +352,16 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
     df['all_projects'] = df['all_projects'].map(lambda x: ','.join(filter(None, set(x))))
+    # task_protocol & projects columns may be empty; ensure None -> ''
+    # id UUID objects -> str; not supported by parquet
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
             .rename({'start_time': 'date', 'all_projects': 'projects'}, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
-            .sort_values(['date', 'subject', 'number'], ascending=False))
+            .sort_values(['date', 'subject', 'number'], ascending=False)
+            .astype({'number': np.uint16, 'task_protocol': str, 'projects': str, 'id': str}))
     )
-    df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
-    # These columns may be empty; ensure None -> ''
-    for col in ('task_protocol', 'projects'):
-        df[col] = df[col].astype(str)
-
-    # Convert UUID objects to str: not supported by parquet
-    df['id'] = df['id'].astype(str)
     df.set_index('id', inplace=True)
 
     logger.debug(f'Final session frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
@@ -404,7 +401,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
                        f'returning empty dataframe')
         return (pd.DataFrame(columns=DATASETS_COLUMNS)
                 .set_index(['eid', 'id'])
-                .astype({'qc': QC_TYPE}))
+                .astype({'qc': QC_TYPE, 'file_size': np.uint64}))
 
     # fields to keep from Dataset table
     fields = (
@@ -418,7 +415,10 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     for i in tqdm(paginator.page_range):
         data = paginator.get_page(i)
         current_qs = data.object_list
-        df = pd.DataFrame.from_records(current_qs.values(*fields)).rename(fields_map, axis=1)
+        df = (pd.DataFrame
+              .from_records(current_qs.values(*fields))
+              .rename(fields_map, axis=1)
+              .astype({'id': str, 'eid': str, 'file_size': np.uint64}))
         df['exists'] = True
 
         # relative_path
@@ -426,8 +426,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
         zipped = zip(df.pop('collection'), revision, df.pop('name'))
         df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
 
-        # Convert UUIDs to str: not supported by parquet
-        df[['id', 'eid']] = df[['id', 'eid']].astype(str)
+        # UUIDs converted to str: not supported by parquet
         df = df.set_index(['eid', 'id'])
 
         # Convert QC enum int to pandas category
