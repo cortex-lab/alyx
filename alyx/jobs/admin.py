@@ -4,6 +4,7 @@ from django_admin_listfilter_dropdown.filters import (
     DropdownFilter, ChoiceDropdownFilter, RelatedDropdownFilter)
 
 from jobs.models import Task
+from misc.models import Lab
 from alyx.base import BaseAdmin, get_admin_url
 
 
@@ -26,8 +27,15 @@ class TaskAdmin(BaseAdmin):
     def has_change_permission(self, request, obj=None):
         if request.user.is_superuser:
             return True
-        if obj and obj.session:
-            return obj.session.lab.name in request.user.lab
+        if obj:
+            if obj.session:
+                # Check if session user or member of the same lab
+                is_session_user = obj.session.users.users.contains(request.user)
+                return is_session_user or obj.session.lab.name in request.user.lab
+            else:
+                # Check if user is member of the lab associated with the task repository
+                labs = request.user.lab_id()
+                return any(labs.filter(repositories=obj.data_repository))
         else:
             return False
 
