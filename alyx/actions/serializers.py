@@ -100,6 +100,13 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
     default_revision = serializers.CharField(source='default_dataset')
     qc = BaseSerializerEnumField(required=False)
 
+    def to_representation(self, instance):
+        """Override the default to_representation method to null the revision field."""
+        representation = super().to_representation(instance)
+        if representation.get('revision') is None:
+            representation['revision'] = ''
+        return representation
+
     class Meta:
         list_serializer_class = FilterDatasetSerializer
         model = Dataset

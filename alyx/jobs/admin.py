@@ -4,7 +4,6 @@ from django_admin_listfilter_dropdown.filters import (
     DropdownFilter, ChoiceDropdownFilter, RelatedDropdownFilter)
 
 from jobs.models import Task
-from misc.models import Lab
 from alyx.base import BaseAdmin, get_admin_url
 
 

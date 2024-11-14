@@ -386,7 +386,7 @@ class Dataset(BaseExperimentalData):
     def save(self, *args, **kwargs):
         # when a dataset is saved / created make sure the probe insertion is set in the reverse m2m
         super(Dataset, self).save(*args, **kwargs)
-        if self.collection is None:
+        if not self.collection:
             return
         self.clean_fields()  # Validate collection field
         from experiments.models import ProbeInsertion, FOV
