@@ -64,6 +64,8 @@ NB: the password above is the postgres database user password. It is used by Dja
 
 You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. username admin and password admin) and update your admin interface password.
 
+[!WARNING]  
+Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ### macOS
 
@@ -91,7 +93,8 @@ You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. us
 * To run the development server, type `python alyx/manage.py runserver`
 * Go to `http://localhost:8000/admin/`
 
-
+[!WARNING]  
+Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ## Interaction with the database
 
@@ -103,7 +106,7 @@ There are 3 main ways to interact with the database, listed below:
 | **Admin Web Page**  	| web client  	|  anyone 	| Manual way to input data in the database. This is privilegied for users needing to add/amend/correct metadata related to subjects. For the local database, this is accessible here: http://localhost:8000/admin.
 | **REST**  	|  web client 	|  anyone 	|   Programmatical way to input data, typically by acquisition software using a dedicated Alyx client [ONE](https://github.com/int-brain-lab/ONE) (Python) or [ALyx-matlab](https://github.com/cortex-lab/alyx-matlab) (Matlab).
 
-
+For detailed information on using the Alyx admin Web interface, see [this Alyx usage guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing).
 
 
 ### Create an experiment, register data and access it locally
@@ -208,4 +211,51 @@ print(local_files)
 
 We went straight to the point here, which was to create a session and register data, to go further consult the [One documentation](https://int-brain-lab.github.io/ONE/), in the section "Using one in Alyx".
 
+## Backing up the database
+See [this section](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?tab=t.0#heading=h.dibimc48a9xl) in the Alyx user guide on how to back up and restore the database.
 
+## Updating the database
+The database should be updated each time there is a new Alyx release.
+
+1. Pull the changes from GitHub
+```shell
+cd alyx/  # ensure you are within the Alyx git repository
+git stash  # stash any local changes (if required)
+git checkout master  # ensure you're on the main branch
+git pull  # fetch and merge any new code changes
+git stash pop # restore any local changes (if required)
+```
+
+2. Activate environment - install any new requirements
+```shell
+source ./alyxvenv/bin/activate
+pip install -r requirements.txt
+```
+
+3. Update the database if any scheme changes - we expect no migrations
+```shell
+cd alyx
+./manage.py makemigrations
+./manage.py migrate
+```
+
+4. If new fixtures load in the database:
+```shell
+../scripts/load-init-fixtures.sh
+```
+
+5. If new tables were added, change the postgres permissions
+```shell
+./manage.py set_db_permissions
+./manage.py set_user_permissions
+```
+
+6. If there were updates to the Django version
+```shell
+./manage.py collectstatic --no-input
+```
+
+7. Restart the Apache server
+```shell
+sudo service apache2 restart
+```

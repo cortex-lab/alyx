@@ -5,7 +5,7 @@
 
 Database for experimental neuroscience laboratories
 
-Documentation: http://alyx.readthedocs.io
+Documentation: [Installation and getting started](http://alyx.readthedocs.io), [Alyx usage guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
 
 ## Installation
@@ -16,7 +16,7 @@ this setup will work on other systems. Assumptions made are that you have sudo p
 -   installing the Python/Django environment
 -   serving a local database
 -   registering local data
--   accessing local data using [ONE]()
+-   accessing local data using [ONE](https://one.internationalbrainlab.org)
 
 ## Contribution
 
