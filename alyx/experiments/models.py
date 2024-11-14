@@ -108,8 +108,8 @@ class ProbeInsertion(BaseModel):
     auto_datetime = models.DateTimeField(auto_now=True, blank=True, null=True,
                                          verbose_name='last updated')
     datasets = models.ManyToManyField('data.Dataset', blank=True, related_name='probe_insertion')
-    chronic_insertion = models.ForeignKey(ChronicInsertion, blank=True, null=True,
-                                          on_delete=models.SET_NULL, related_name='probe_insertion')
+    chronic_insertion = models.ForeignKey(ChronicInsertion, blank=True, on_delete=models.SET_NULL,
+                                          null=True, related_name='probe_insertion')
 
     def __str__(self):
         return "%s %s" % (self.name, str(self.session))

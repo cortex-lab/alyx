@@ -11,13 +11,14 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
+from django.core import validators
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
-from alyx.base import BaseModel, modify_fields
+from alyx.base import BaseModel, modify_fields, ALF_SPEC
 from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH, DEFAULT_LAB_PK
 
 
@@ -70,7 +71,10 @@ class LabMember(AbstractUser):
 
 
 class Lab(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
+    labname_validator = validators.RegexValidator(
+        f"^{ALF_SPEC['lab']}$",
+        "Lab name must only contain letters, numbers, and underscores.")
+    name = models.CharField(max_length=255, unique=True, validators=[labname_validator])
     institution = models.CharField(max_length=255, blank=True)
     address = models.CharField(max_length=255, blank=True)
     timezone = models.CharField(

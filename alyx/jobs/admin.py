@@ -26,16 +26,19 @@ class TaskAdmin(BaseAdmin):
     def has_change_permission(self, request, obj=None):
         if request.user.is_superuser:
             return True
-        if obj:
+        if obj and obj.session:
             return obj.session.lab.name in request.user.lab
+        else:
+            return False
 
     def session_projects(self, obj):
-        if obj.session.projects is not None:
-            return obj.session.projects.name
+        session = obj.session
+        if session and session.projects is not None:
+            return session.projects.name
     session_projects.short_description = 'projects'
 
     def session_task_protocol(self, obj):
-        return obj.session.task_protocol
+        return obj.session.task_protocol if obj.session else None
     session_task_protocol.short_description = 'task_protocol'
 
     def session_str(self, obj):
