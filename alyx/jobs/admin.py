@@ -27,15 +27,25 @@ class TaskAdmin(BaseAdmin):
         if request.user.is_superuser:
             return True
         if obj:
-            return obj.session.lab.name in request.user.lab
+            if obj.session:
+                # Check if session user or member of the same lab
+                is_session_user = obj.session.users.users.contains(request.user)
+                return is_session_user or obj.session.lab.name in request.user.lab
+            else:
+                # Check if user is member of the lab associated with the task repository
+                labs = request.user.lab_id()
+                return any(labs.filter(repositories=obj.data_repository))
+        else:
+            return False
 
     def session_projects(self, obj):
-        if obj.session.projects is not None:
-            return obj.session.projects.name
+        session = obj.session
+        if session and session.projects is not None:
+            return session.projects.name
     session_projects.short_description = 'projects'
 
     def session_task_protocol(self, obj):
-        return obj.session.task_protocol
+        return obj.session.task_protocol if obj.session else None
     session_task_protocol.short_description = 'task_protocol'
 
     def session_str(self, obj):

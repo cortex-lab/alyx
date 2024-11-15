@@ -141,7 +141,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     hash = serializers.CharField(required=False, allow_null=True)
     version = serializers.CharField(required=False, allow_null=True)
     file_size = serializers.IntegerField(required=False, allow_null=True)
-    collection = serializers.CharField(required=False, allow_null=True)
+    collection = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     default_dataset = serializers.BooleanField(required=False, allow_null=True)
     public = serializers.ReadOnlyField()
     protected = serializers.ReadOnlyField()
@@ -178,7 +178,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
     def create(self, validated_data):
         # Get out some useful info
         # revision = validated_data.get('revision', None)
-        collection = validated_data.get('collection', None)
+        collection = validated_data.get('collection', '')
         name = validated_data.get('name', None)
         default = validated_data.get('default_dataset', None)
         session = validated_data.get('session', None)
@@ -212,6 +212,13 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
             validated_data['default_dataset'] = True
 
         return super(DatasetSerializer, self).create(validated_data)
+
+    def to_representation(self, instance):
+        """Override the default to_representation method to null the revision field."""
+        representation = super().to_representation(instance)
+        if representation.get('revision') is None:
+            representation['revision'] = ''
+        return representation
 
     class Meta:
         model = Dataset

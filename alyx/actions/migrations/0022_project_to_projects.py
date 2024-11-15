@@ -18,7 +18,7 @@ def project2projects(apps, schema_editor):
     sessions = Session.objects.exclude(Q(project__isnull=True) | Q(projects=F('project')))
 
     # Check query worked
-    # from one.util import ensure_list
+    # from iblutil.util import ensure_list
     # for session in sessions.values('pk', 'project', 'projects'):
     #     assert session['project'] not in ensure_list(session['projects'])
 

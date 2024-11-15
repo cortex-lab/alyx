@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
-from one.alf.files import add_uuid_string, folder_parts
+from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 from one.alf.spec import QC
 
@@ -201,7 +201,7 @@ def _get_name_collection_revision(file, rel_dir_path):
     fullpath = Path(rel_dir_path).joinpath(file)
     try:
         info = folder_parts(fullpath.parent, as_dict=True)
-        if info['revision'] is not None:
+        if info['revision']:
             path_parts = fullpath.parent.parts
             assert path_parts.index(f"#{info['revision']}#") == len(path_parts) - 1
     except AssertionError:
@@ -218,25 +218,26 @@ def _get_name_collection_revision(file, rel_dir_path):
     info['full_path'] = fullpath.as_posix()
     info['filename'] = fullpath.name
     info['rel_dir_path'] = '{subject}/{date}/{number}'.format(**info)
+    info = {k: v or '' for k, v in info.items()}
     return info, None
 
 
 def _change_default_dataset(session, collection, filename):
-    dataset = Dataset.objects.filter(session=session, collection=collection, name=filename,
-                                     default_dataset=True)
+    dataset = Dataset.objects.filter(
+        session=session, collection=collection or '', name=filename, default_dataset=True)
     if dataset.count() > 0:
         dataset.update(default_dataset=False)
 
 
 def _check_dataset_protected(session, collection, filename):
     # Order datasets by the latest revision with the original one last
-    dataset = Dataset.objects.filter(session=session, collection=collection,
-                                     name=filename).order_by(
+    dataset = Dataset.objects.filter(
+        session=session, collection=collection or '', name=filename).order_by(
         F('revision__created_datetime').desc(nulls_last=True))
     if dataset.count() == 0:
         return False, []
     else:
-        protected = any([d.is_protected for d in dataset])
+        protected = any(d.is_protected for d in dataset)
         protected_info = [{d.revision.name if d.revision else '': d.is_protected}
                           for d in dataset]
         return protected, protected_info
@@ -248,8 +249,9 @@ def _create_dataset_file_records(
         file_size=None, version=None, revision=None, default=None, qc=None):
 
     assert session is not None
+    collection = collection or ''
     revision_name = f'#{revision.name}#' if revision else ''
-    relative_path = PurePosixPath(rel_dir_path, collection or '', revision_name, filename)
+    relative_path = PurePosixPath(rel_dir_path, collection, revision_name, filename)
     dataset_type = get_dataset_type(filename, DatasetType.objects.all())
     data_format = get_data_format(filename)
     assert dataset_type
@@ -286,7 +288,7 @@ def _create_dataset_file_records(
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
     dataset.created_by = user
-    if version is not None:
+    if version:
         dataset.version = version
     """
     if a hash/filesize is provided, label the dataset with it
@@ -295,8 +297,8 @@ def _create_dataset_file_records(
     If the hash doesn't exist and/or can't be verified, assume that the dataset is patched
     """
     is_patched = True
-    if hash is not None:
-        if dataset.hash is not None:
+    if hash:
+        if dataset.hash:
             is_patched = not dataset.hash == hash
         dataset.hash = hash
     if file_size is not None:
@@ -708,8 +710,8 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
                                            data_repository__globus_is_personal=False,
                                            data_repository__name__icontains='flatiron').first()
         if fr_server is None:
-            logger.warning(str(ds.session) + '/' + (ds.collection or '') +
-                           '/' + ds.name + " doesnt exist on server - skipping")
+            logger.warning(str(ds.session) + '/' + ds.collection +
+                           '/' + ds.name + " doesn't exist on server - skipping")
             continue
         ls_server = _ls_globus(fr_server, add_uuid=True)
         # if the file is not found on the remote server, do nothing
