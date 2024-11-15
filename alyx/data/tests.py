@@ -253,14 +253,14 @@ class TestTransfers(TestCase):
             for i, repo in enumerate((repo1, repo2, repo3, repo_main)):
                 if repo.globus_is_personal is False:
                     rel_path = f'{session}/{TestManagementFiles._dataset_uuid_name(d)}'
-                    if i == 0:
-                        rel_path = 'Data2/' + rel_path
-                    if i == 1:
-                        rel_path = '/' + rel_path
                 elif repo.lab != d.session.lab:
                     continue  # Don't create file record for dataset if session lab different
                 else:
                     rel_path = f'{session}/{d.name}'
+                    if i == 0:
+                        rel_path = 'Data2/' + rel_path
+                    if i == 1:
+                        rel_path = '/' + rel_path
                 self.records.append(
                     FileRecord.objects.create(
                         relative_path=rel_path, exists=True, dataset=d, data_repository=repo)
@@ -280,7 +280,7 @@ class TestTransfers(TestCase):
         expected = {
             'lab': '', 'subject': 'subject', 'date': '2020-01-01', 'number': '001',
             'collection': '', 'revision': '', 'filename': 'ephysData.raw.ap.bin',
-            'full_path': 'subject/2020-01-01/001/ephysData.raw.ap.bin',
+            'full_path': 'Data2/subject/2020-01-01/001/ephysData.raw.ap.bin',
             'rel_dir_path': 'subject/2020-01-01/001'}
         self.assertDictEqual(info, expected)
         relative_path = relative_path.parent / 'alf' / '#2020-10-01#' / relative_path.name

@@ -119,5 +119,5 @@ class TestManagementTasks(BaseTests):
 
         # Error handling
         self.assertRaises(ValueError, self.command.handle, action='cleanup', status='NotAStatus')
-        self.assertRaises(ValueError, self.command.handle, action='cleanup', status='-1000')
+        self.assertRaises(ValueError, self.command.handle, action='cleanup', status='1000')
         self.assertRaises(ValueError, self.command.handle, action='NotAnAction')
