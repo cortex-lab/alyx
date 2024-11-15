@@ -212,50 +212,7 @@ print(local_files)
 We went straight to the point here, which was to create a session and register data, to go further consult the [One documentation](https://int-brain-lab.github.io/ONE/), in the section "Using one in Alyx".
 
 ## Backing up the database
-See [this section](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?tab=t.0#heading=h.dibimc48a9xl) in the Alyx user guide on how to back up and restore the database.
+See [this section](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?tab=t.0#heading=h.dibimc48a9xl) in the Alyx user guide on how to back up and restore the database.  There are scripts in `alyx/scripts/templates/` for exporting the database to a sql file and importing from said file.
 
 ## Updating the database
-The database should be updated each time there is a new Alyx release.
-
-1. Pull the changes from GitHub
-```shell
-cd alyx/  # ensure you are within the Alyx git repository
-git stash  # stash any local changes (if required)
-git checkout master  # ensure you're on the main branch
-git pull  # fetch and merge any new code changes
-git stash pop # restore any local changes (if required)
-```
-
-2. Activate environment - install any new requirements
-```shell
-source ./alyxvenv/bin/activate
-pip install -r requirements.txt
-```
-
-3. Update the database if any scheme changes - we expect no migrations
-```shell
-cd alyx
-./manage.py makemigrations
-./manage.py migrate
-```
-
-4. If new fixtures load in the database:
-```shell
-../scripts/load-init-fixtures.sh
-```
-
-5. If new tables were added, change the postgres permissions
-```shell
-./manage.py set_db_permissions
-./manage.py set_user_permissions
-```
-
-6. If there were updates to the Django version
-```shell
-./manage.py collectstatic --no-input
-```
-
-7. Restart the Apache server
-```shell
-sudo service apache2 restart
-```
+The database should be updated each time there is a new Alyx release.  There is an update script in `alyx/scripts/auto-update.sh`, although you may need to change the source and cd command paths.

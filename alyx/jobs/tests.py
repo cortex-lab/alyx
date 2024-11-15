@@ -1,10 +1,15 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core.management import call_command
+from datetime import datetime, timedelta
 
 from actions.models import Session
 from alyx.base import BaseTests
 from data.models import DataRepository
+from jobs.management.commands import tasks
+from jobs.models import Task
 
 
 class APISubjectsTests(BaseTests):
@@ -32,3 +37,71 @@ class APISubjectsTests(BaseTests):
                      'arguments': {'titi': 'toto', 'tata': 'tutu'}, 'data_repository': 'myrepo'}
         rep = self.post(reverse('tasks-list'), task_dict)
         self.assertEqual(rep.status_code, 201)
+
+
+class TestManagementTasks(BaseTests):
+    """Tests for the tasks management command."""
+
+    def setUp(self) -> None:
+        """Create some tasks to clean up."""
+        self.n_tasks = 100
+        self.command = tasks.Command()
+        base = datetime.today()
+        # Create equally-spaced task dates
+        date_list = [base - timedelta(days=x) for x in range(self.n_tasks)]
+        with patch('django.db.models.fields.timezone.now') as timezone_mock:
+            for i, date in enumerate(date_list):
+                timezone_mock.return_value = date
+                status = Task.STATUS_DATA_SOURCES[i % len(Task.STATUS_DATA_SOURCES)][0]
+                Task.objects.create(name=f'task_{i}', status=status)
+
+    def test_cleanup(self):
+        """Test for cleanup action."""
+        # First run in dry mode, expect submit_delete to not be called
+        n = self.n_tasks - 10
+        before_date = (datetime.today() - timedelta(days=n)).date()
+        with patch.object(self.command.stdout, 'write') as stdout_mock:
+            self.command.handle(action='cleanup', before=str(before_date), dry=True)
+            stdout_mock.assert_called()
+            self.assertIn(f'Found {10} tasks to delete', stdout_mock.call_args.args[0])
+        # All tasks should still exist
+        self.assertEqual(self.n_tasks, Task.objects.count())
+
+        # Without dry flag, tasks should be removed
+        self.command.handle(action='cleanup', before=str(before_date))
+        # All tasks should still exist
+        self.assertEqual(n, Task.objects.count())
+        self.assertEqual(0, Task.objects.filter(datetime__date__lte=before_date).count())
+
+        # With status filter as int
+        n = Task.objects.count() - Task.objects.filter(status=20).count()
+        self.command.handle(action='cleanup', status='20')
+        self.assertEqual(n, Task.objects.count())
+        self.assertEqual(0, Task.objects.filter(status=20).count())
+
+        # With status filter as string
+        n = Task.objects.count() - Task.objects.filter(status=40).count()
+        self.command.handle(action='cleanup', status='Errored')
+        self.assertEqual(n, Task.objects.count())
+        self.assertEqual(0, Task.objects.filter(status=40).count())
+
+        # With status filter as string and ~
+        n_days = self.n_tasks - 20
+        before_date = (datetime.today() - timedelta(days=n_days)).date()
+        n = Task.objects.count()
+        n -= Task.objects.exclude(status=45).filter(datetime__date__lte=before_date).count()
+        self.command.handle(action='cleanup', status='~Abandoned', before=str(before_date))
+        self.assertEqual(n, Task.objects.count())
+        n_tasks = Task.objects.exclude(status=45).filter(datetime__date__lte=before_date).count()
+        self.assertEqual(0, n_tasks)
+        self.assertTrue(Task.objects.filter(status=45, datetime__date__lte=before_date).count())
+
+        # With status filter as int and ~ with limit
+        n = Task.objects.exclude(status=60).count() - 5
+        self.command.handle(action='cleanup', status='~60', limit='5')
+        self.assertEqual(n, Task.objects.exclude(status=60).count())
+
+        # Error handling
+        self.assertRaises(ValueError, self.command.handle, action='cleanup', status='NotAStatus')
+        self.assertRaises(ValueError, self.command.handle, action='cleanup', status='-1000')
+        self.assertRaises(ValueError, self.command.handle, action='NotAnAction')
