@@ -10,6 +10,8 @@ from alyx.base import BaseTests
 from data.models import DataRepository
 from jobs.management.commands import tasks
 from jobs.models import Task
+from subjects.models import Subject
+from misc.models import Lab
 
 
 class APISubjectsTests(BaseTests):
@@ -54,6 +56,15 @@ class TestManagementTasks(BaseTests):
                 timezone_mock.return_value = date
                 status = Task.STATUS_DATA_SOURCES[i % len(Task.STATUS_DATA_SOURCES)][0]
                 Task.objects.create(name=f'task_{i}', status=status)
+        # Create a session for testing signed-off filter
+        lab = Lab.objects.create(name='lab')
+        subject = Subject.objects.create(name='586', lab=lab)
+        json_data = {'sign_off_checklist': {'sign_off_date': datetime.today().isoformat()}}
+        self.session = Session.objects.create(
+            subject=subject, number=1, json=json_data, type='Experiment')
+        t = Task.objects.first()
+        t.session = self.session
+        t.save()
 
     def test_cleanup(self):
         """Test for cleanup action."""
@@ -72,6 +83,11 @@ class TestManagementTasks(BaseTests):
         # All tasks should still exist
         self.assertEqual(n, Task.objects.count())
         self.assertEqual(0, Task.objects.filter(datetime__date__lte=before_date).count())
+
+        # With signed-off filter
+        assert (n := self.session.tasks.count()) > 0
+        self.command.handle(action='cleanup', signed_off=True)
+        self.assertEqual(0, self.session.tasks.count())
 
         # With status filter as int
         n = Task.objects.count() - Task.objects.filter(status=20).count()
