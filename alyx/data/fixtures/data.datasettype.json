@@ -1656,7 +1656,7 @@
       "json": null,
       "name": "photometry.ROIs",
       "created_by": null,
-      "description": "ROI integer for associateing with trajectory.",
+      "description": "ROI integer for associating with trajectory.",
       "filename_pattern": "*photometry.ROIs*"
     }
   },
@@ -1678,7 +1678,7 @@
       "json": null,
       "name": "fpData.raw",
       "created_by": null,
-      "description": "Raw FP data dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
+      "description": "Raw fiber photometry dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
       "filename_pattern": "_*_fpData.raw*"
     }
   },
@@ -1689,7 +1689,7 @@
       "json": null,
       "name": "fpData.channels",
       "created_by": null,
-      "description": "Frame flag value for each LED channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
+      "description": "Frame flag value for each LED fiber photometry channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
       "filename_pattern": "*fpData.channels.*"
     }
   },
@@ -2318,6 +2318,17 @@
       "created_by": null,
       "description": "The raw frame exposure times.",
       "filename_pattern": ""
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "4c86d4e1-9365-41d2-97cf-cf88c8817bc3",
+    "fields": {
+      "json": null,
+      "name": "fpData.digitalInputs",
+      "created_by": null,
+      "description": "",
+      "filename_pattern": "*digitalInputs.raw*"
     }
   }
 ]

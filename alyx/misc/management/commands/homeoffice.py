@@ -40,14 +40,29 @@ def genotyped(start_date, end_date):
     return Q(genotype_date__gte=start_date, genotype_date__lte=end_date)
 
 
+# Filters
+
+# Do not have surgery
 def not_used(query):
     return query.filter(Q(actions_surgerys__isnull=True)).distinct()
 
 
+# Have surgery
 def used(query):
     return query.filter(actions_surgerys__isnull=False).distinct()
 
 
+# Protocol 2 or 3
+def used_2_3(query):
+    return Q(protocol_number__in=['2', '3'])
+
+
+# Have water restriction
+def restricted(query):
+    return query.filter(actions_waterrestrictions__isnull=False).distinct()
+
+
+# Transgenic
 def transgenic(query):
     return query.exclude(line__nickname='C57')
 
@@ -65,14 +80,23 @@ def display(title, query, start_date=None, end_date=None):
     if start_date:
         title = title % (start_date, end_date)
     path = 'homeoffice/%s.txt' % title
+
+    # Compute sex ratio.
+    males = sum(subj.sex == 'M' for subj in query)
+    total = sum(subj.sex in ('M', 'F') for subj in query)
+    sexratio = males / total
+
     with open(path, 'w') as f:
         with redirect_stdout(f):
-            print("%s: %d subjects." % (title, len(query)))
+            print("%s: %d subjects (%.1f%% males)." % (title, len(query), sexratio * 100))
             print('\t'.join(('#   ', 'user       ', 'prot.',
                              'born     ',
                              'genotyped',
                              'died     ',
-                             'EM', 'nickname')))
+                             'EM',
+                             'nickname',
+                             'sex',
+                             )))
             for i, subj in enumerate(query):
                 print('\t'.join(('%04d' % (i + 1),
                                  '{0: <12}'.format(subj.responsible_user.username),
@@ -82,6 +106,7 @@ def display(title, query, start_date=None, end_date=None):
                                  str(subj.death_date or ' ' * 10),
                                  subj.ear_mark,
                                  subj.nickname,
+                                 subj.sex,
                                  )))
             print('\n\n')
     os.system('expand -t 4 "%s" | sponge "%s"' % (path, path))
@@ -125,3 +150,13 @@ class Command(BaseCommand):
 
         tkng = transgenic(k).exclude(genotyped('2000-01-01', '2100-01-01'))
         display("Transgenic killed and not genotyped %s - %s", tkng, start_date, end_date)
+
+        # Sex bias (cf email from Charu to Cyrille on 2024-07-23)
+        # Birth date.
+        sexbias = s.filter(born(start_date, '2100-01-01'))
+        sexbias = sexbias.filter(
+            Q(protocol_number__in=['2', '3']) |  # 1. protocol 2 or 3
+            Q(actions_surgerys__isnull=False) |  # 2. have a surgery
+            Q(actions_waterrestrictions__isnull=False)  # 3. have a water restriction
+        )
+        display("Sex bias %s - %s", sexbias, start_date, end_date)
