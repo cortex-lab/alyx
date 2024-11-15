@@ -58,7 +58,7 @@ class TestManagementTasks(BaseTests):
                 Task.objects.create(name=f'task_{i}', status=status)
         # Create a session for testing signed-off filter
         lab = Lab.objects.create(name='lab')
-        subject = Subject.objects.create(name='586', lab=lab)
+        subject = Subject.objects.create(nickname='586', lab=lab)
         json_data = {'sign_off_checklist': {'sign_off_date': datetime.today().isoformat()}}
         self.session = Session.objects.create(
             subject=subject, number=1, json=json_data, type='Experiment')

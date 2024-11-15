@@ -1,9 +1,17 @@
+import zipfile
+from pathlib import Path
 from datetime import datetime, timedelta
+import tempfile
 import unittest
 from django.test import TestCase
+from one.alf.spec import QC
+from one.alf.cache import DATASETS_COLUMNS, SESSIONS_COLUMNS
+import pandas as pd
 
 from subjects.models import Subject
 from misc.models import Housing, HousingSubject, CageType, LabMember, Lab
+from actions.models import Session
+from data.models import Dataset, DatasetType, DataRepository, FileRecord, DataFormat
 
 SKIP_ONE_CACHE = False
 try:
@@ -145,6 +153,62 @@ class HousingTests(TestCase):
 @unittest.skipIf(SKIP_ONE_CACHE, 'Missing dependencies')
 class ONECache(TestCase):
     """Tests for misc.management.commands.one_cache"""
+    fixtures = [
+        'data.datarepositorytype.json', 'data.datasettype.json',
+        'data.dataformat.json', 'misc.lab.json'
+    ]
+
+    def setUp(self):
+        self.command = one_cache.Command()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        # Create some sessions and datasets
+        lab = Lab.objects.first()
+        subject = Subject.objects.create(nickname='586', lab=lab)
+        repo = DataRepository.objects.create(
+            name='flatiron', globus_path='foo', lab=lab, globus_is_personal=True)
+        for i in range(5):
+            session = Session.objects.create(
+                subject=subject, number=i + 1, type='Experiment', task_protocol='foo', qc=QC.PASS)
+            for d in ('foo.bar.npy', 'bar.baz.bin'):
+                dtype, _ = DatasetType.objects.get_or_create(name=Path(d).stem)
+                format = DataFormat.objects.get(name=Path(d).suffix[1:])
+                dataset = Dataset.objects.create(
+                    session=session, dataset_type=dtype, collection='alf', qc=QC.PASS,
+                    name=d, data_format=format, file_size=(1024 * i) or None)
+                p = (f'{session.subject.nickname}/{session.start_time.date()}'
+                     f'/{session.number:03d}/alf/{d}')
+                FileRecord.objects.create(
+                    relative_path=p, dataset=dataset, data_repository=repo, exists=True)
+
+    def test_generate_tables(self):
+        """Test ONE cache table generation."""
+        # Check table name validation
+        self.assertRaises(ValueError, self.command.handle, verbosity=1, tables=('foo',))
+        # Check table generation
+        self.command.handle(
+            destination=str(self.tmp), compress=False, verbosity=1,
+            tables=('sessions', 'datasets')
+        )
+        self.assertCountEqual(
+            ['date_created', 'origin', 'min_api_version'], self.command.metadata)
+        tables = sorted(self.tmp.glob('*.pqt'))
+        self.assertEqual(len(tables), 2)
+        datasets, sessions = pd.read_parquet(tables[0]), pd.read_parquet(tables[1])
+        self.assertCountEqual(
+            datasets.reset_index().columns, DATASETS_COLUMNS + ('default_revision',))
+        self.assertTrue(all(datasets['rel_path'].str.startswith('alf/')))
+        self.assertCountEqual(sessions.reset_index().columns, SESSIONS_COLUMNS)
+        # Test QC and compression
+        self.command.handle(
+            destination=str(self.tmp), compress=True, verbosity=1, tables=('sessions',), qc=True)
+        zip_file = self.tmp / 'cache.zip'
+        self.assertTrue(zip_file.exists())
+        cache_info = self.tmp / 'cache_info.json'
+        self.assertTrue(cache_info.exists())
+        zip = zipfile.ZipFile(zip_file)
+        self.assertCountEqual(['sessions.pqt', 'cache_info.json', 'QC.json'], zip.namelist())
 
     def test_s3_filesystem(self):
         """Test the _s3_filesystem function"""

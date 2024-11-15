@@ -418,7 +418,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
         df = (pd.DataFrame
               .from_records(current_qs.values(*fields))
               .rename(fields_map, axis=1)
-              .astype({'id': str, 'eid': str, 'file_size': np.uint64}))
+              .astype({'id': str, 'eid': str, 'file_size': 'UInt64'}))
         df['exists'] = True
 
         # relative_path
