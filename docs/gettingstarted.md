@@ -64,6 +64,8 @@ NB: the password above is the postgres database user password. It is used by Dja
 
 You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. username admin and password admin) and update your admin interface password.
 
+[!WARNING]  
+Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ### macOS
 
@@ -91,7 +93,8 @@ You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. us
 * To run the development server, type `python alyx/manage.py runserver`
 * Go to `http://localhost:8000/admin/`
 
-
+[!WARNING]  
+Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ## Interaction with the database
 
@@ -103,7 +106,7 @@ There are 3 main ways to interact with the database, listed below:
 | **Admin Web Page**  	| web client  	|  anyone 	| Manual way to input data in the database. This is privilegied for users needing to add/amend/correct metadata related to subjects. For the local database, this is accessible here: http://localhost:8000/admin.
 | **REST**  	|  web client 	|  anyone 	|   Programmatical way to input data, typically by acquisition software using a dedicated Alyx client [ONE](https://github.com/int-brain-lab/ONE) (Python) or [ALyx-matlab](https://github.com/cortex-lab/alyx-matlab) (Matlab).
 
-
+For detailed information on using the Alyx admin Web interface, see [this Alyx usage guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing).
 
 
 ### Create an experiment, register data and access it locally
@@ -208,4 +211,8 @@ print(local_files)
 
 We went straight to the point here, which was to create a session and register data, to go further consult the [One documentation](https://int-brain-lab.github.io/ONE/), in the section "Using one in Alyx".
 
+## Backing up the database
+See [this section](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?tab=t.0#heading=h.dibimc48a9xl) in the Alyx user guide on how to back up and restore the database.  There are scripts in `alyx/scripts/templates/` for exporting the database to a sql file and importing from said file.
 
+## Updating the database
+The database should be updated each time there is a new Alyx release.  There is an update script in `alyx/scripts/auto-update.sh`, although you may need to change the source and cd command paths.

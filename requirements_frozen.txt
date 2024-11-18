@@ -1,7 +1,7 @@
 asgiref==3.8.1
 backports.zoneinfo==0.2.1
-boto3==1.35.55
-botocore==1.35.55
+boto3==1.35.62
+botocore==1.35.62
 certifi==2024.8.30
 cffi==1.17.1
 charset-normalizer==3.4.0
@@ -33,9 +33,9 @@ docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
 flake8==7.1.1
-fonttools==4.54.1
-globus-cli==3.31.0
-globus-sdk==3.45.0
+fonttools==4.55.0
+globus-cli==3.32.0
+globus-sdk==3.46.0
 iblutil==1.14.0
 idna==3.10
 importlib_metadata==8.5.0
@@ -52,8 +52,8 @@ matplotlib==3.7.5
 mccabe==0.7.0
 numba==0.58.1
 numpy==1.24.4
-ONE-api==2.11.0
-packaging==24.1
+ONE-api==2.11.1
+packaging==24.2
 pandas==2.0.3
 pillow==10.4.0
 psycopg2-binary==2.9.10
@@ -71,9 +71,9 @@ PyYAML==6.0.2
 requests==2.32.3
 s3transfer==0.10.3
 six==1.16.0
-sqlparse==0.5.1
+sqlparse==0.5.2
 structlog==24.4.0
-tomli==2.0.2
+tomli==2.1.0
 tqdm==4.67.0
 typing_extensions==4.12.2
 tzdata==2024.2

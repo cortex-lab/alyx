@@ -12,7 +12,7 @@ class TaskSerializer(serializers.ModelSerializer):
     )
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id', many=False,
-        queryset=Session.objects.all()
+        queryset=Session.objects.all(), allow_null=True
     )
     data_repository = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='name', many=False,

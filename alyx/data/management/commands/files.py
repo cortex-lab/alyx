@@ -113,7 +113,7 @@ class Command(BaseCommand):
                     "files on local server. Exiting now."))
                 return
             if before is None:
-                self.stdout.write(self.style.ERROR("Date beforeshould be specified: use the "
+                self.stdout.write(self.style.ERROR("Date before should be specified: use the "
                                                    "--before=yyyy-mm-dd flag. Exiting now."))
                 return
             dtypes = ['ephysData.raw.ap', 'ephysData.raw.lf', 'ephysData.raw.nidq',

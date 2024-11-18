@@ -251,7 +251,7 @@ class Revision(BaseModel):
                                     "Revisions must only contain letters, "
                                     "numbers, hyphens, underscores and forward slashes.")
     name = models.CharField(max_length=255, blank=True, help_text="Long name",
-                            unique=True, validators=[name_validator])
+                            unique=True, null=False, validators=[name_validator])
     description = models.CharField(max_length=1023, blank=True)
     created_datetime = models.DateTimeField(blank=True, null=True, default=timezone.now,
                                             help_text="created date")
@@ -316,19 +316,19 @@ class Dataset(BaseExperimentalData):
     md5 = models.UUIDField(blank=True, null=True,
                            help_text="MD5 hash of the data buffer")
 
-    hash = models.CharField(blank=True, null=True, max_length=64,
+    hash = models.CharField(blank=True, null=False, max_length=64,
                             help_text=("Hash of the data buffer, SHA-1 is 40 hex chars, while md5"
                                        "is 32 hex chars"))
 
     # here we usually refer to version as an algorithm version such as ibllib-1.4.2
-    version = models.CharField(blank=True, null=True, max_length=64,
+    version = models.CharField(blank=True, null=False, max_length=64,
                                help_text="version of the algorithm generating the file")
 
     # the collection comprises session sub-folders
     collection_validator = RegexValidator(f"^{ALF_SPEC['collection']}$",
                                           "Collections must only contain letters, "
                                           "numbers, hyphens, underscores and forward slashes.")
-    collection = models.CharField(blank=True, null=True, max_length=255,
+    collection = models.CharField(blank=True, null=False, max_length=255,
                                   help_text='file subcollection or subfolder',
                                   validators=[collection_validator])
 
@@ -386,7 +386,7 @@ class Dataset(BaseExperimentalData):
     def save(self, *args, **kwargs):
         # when a dataset is saved / created make sure the probe insertion is set in the reverse m2m
         super(Dataset, self).save(*args, **kwargs)
-        if self.collection is None:
+        if not self.collection:
             return
         self.clean_fields()  # Validate collection field
         from experiments.models import ProbeInsertion, FOV
@@ -452,7 +452,7 @@ class FileRecord(BaseModel):
         root = self.data_repository.data_url
         if not root:
             return None
-        from one.alf.files import add_uuid_string
+        from one.alf.path import add_uuid_string
         return root + add_uuid_string(self.relative_path, self.dataset.pk).as_posix()
 
     def save(self, *args, **kwargs):

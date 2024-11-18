@@ -407,7 +407,7 @@ class APIImagingExperimentTests(BaseTests):
         self.client.login(username='test', password='test')
         # self.session = Session.objects.first()
         lab = Lab.objects.create(name='lab')
-        subject = Subject.objects.create(name='586', lab=lab)
+        subject = Subject.objects.create(nickname='586', lab=lab)
         self.session = Session.objects.create(subject=subject, number=1)
         # need to add imaging procedure
         self.session.procedures.add(ProcedureType.objects.get_or_create(name='Imaging')[0])

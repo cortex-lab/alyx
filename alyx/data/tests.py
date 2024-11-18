@@ -1,5 +1,5 @@
 from unittest import mock
-from pathlib import Path
+from pathlib import PurePosixPath
 from uuid import uuid4
 from datetime import datetime, timedelta
 
@@ -8,12 +8,15 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.db.models import ProtectedError
+from rest_framework.response import Response
+from one.alf.path import add_uuid_string
 
 from data.management.commands import files
 from data.models import Dataset, DatasetType, Tag, Revision, DataRepository, FileRecord
 from subjects.models import Subject
 from actions.models import Session
 from misc.models import Lab
+from data import transfers
 from data.transfers import get_dataset_type
 
 
@@ -201,4 +204,105 @@ class TestManagementFiles(TestCase):
 
     @staticmethod
     def _dataset_uuid_name(dataset):
-        return f'{Path(dataset.name).stem}.{dataset.pk}{Path(dataset.name).suffix}'
+        return add_uuid_string(dataset.name, dataset.pk).as_posix()
+
+
+class TestTransfers(TestCase):
+    """Tests for the data.transfers module."""
+
+    def setUp(self):
+        """Create some data repositories and file records to clean up."""
+        # Two of these are 'large' datasets that will be removed
+        dtypes = ['ephysData.raw.ap', 'imaging.frames', 'foo.bar.baz']
+        self.dtypes = [DatasetType.objects.create(name=name) for name in dtypes]
+        # Create two labs
+        self.labs = [Lab.objects.create(name=f'lab{i}') for i in range(2)]
+        # Create four repos
+        repo1 = DataRepository.objects.create(
+            name='lab0_local0', lab=self.labs[0], globus_is_personal=True,
+            globus_endpoint_id=uuid4(), globus_path='/mnt/foo/')
+        repo2 = DataRepository.objects.create(
+            name='lab0_local1', lab=self.labs[0], globus_is_personal=True,
+            globus_endpoint_id=uuid4(), globus_path='/mnt/foo/')
+        repo3 = DataRepository.objects.create(
+            name='lab1_local', lab=self.labs[1], globus_is_personal=True,
+            globus_endpoint_id=uuid4(), globus_path='/mnt/foo/')
+        # NB: name must contain 'flatiron'!
+        repo_main = DataRepository.objects.create(
+            name='flatiron', globus_is_personal=False,
+            globus_endpoint_id=uuid4(), globus_path='/mnt/foo/')
+        # Create one session per lab
+        self.subjects = [
+            Subject.objects.create(
+                nickname=f'subject{i}', lab=lab) for i, lab in enumerate(self.labs)]
+        sessions = [Session.objects.create(
+            subject=sub, number=1, lab=lab) for lab, sub in zip(self.labs, self.subjects)]
+        # Create datasets and file records
+        self.dset_names = ['ephysData.raw.ap.bin', 'imaging.frames.tar.bz2', 'foo.bar.baz']
+        self.dsets = []
+        for session in sessions:  # for one session in each lab, create one of each dataset
+            self.dsets.extend(
+                Dataset.objects.create(name=name, session=session,
+                                       dataset_type=next(x for x in self.dtypes if x.name in name))
+                for name in self.dset_names)
+
+        # Create file record on each lab's local server and main repo
+        session = 'subject/2020-01-01/001'
+        self.records = []  # All file records
+        for d in self.dsets:
+            for i, repo in enumerate((repo1, repo2, repo3, repo_main)):
+                if repo.globus_is_personal is False:
+                    rel_path = f'{session}/{TestManagementFiles._dataset_uuid_name(d)}'
+                elif repo.lab != d.session.lab:
+                    continue  # Don't create file record for dataset if session lab different
+                else:
+                    rel_path = f'{session}/{d.name}'
+                    if i == 0:
+                        rel_path = 'Data2/' + rel_path
+                    if i == 1:
+                        rel_path = '/' + rel_path
+                self.records.append(
+                    FileRecord.objects.create(
+                        relative_path=rel_path, exists=True, dataset=d, data_repository=repo)
+                )
+
+    def test_get_absolute_path(self):
+        expected = '/mnt/foo/subject/2020-01-01/001/ephysData.raw.ap.bin'
+        self.assertEqual(expected, transfers._get_absolute_path(self.records[0]))
+        expected = '/mnt/foo/subject/2020-01-01/001/ephysData.raw.ap.bin'
+        self.assertEqual(expected, transfers._get_absolute_path(self.records[1]))
+
+    def test_get_name_collection_revision(self):
+        relative_path = PurePosixPath(self.records[0].relative_path)
+        info, resp = transfers._get_name_collection_revision(
+            relative_path.name, relative_path.parent.as_posix())
+        self.assertIsNone(resp)
+        expected = {
+            'lab': '', 'subject': 'subject', 'date': '2020-01-01', 'number': '001',
+            'collection': '', 'revision': '', 'filename': 'ephysData.raw.ap.bin',
+            'full_path': 'Data2/subject/2020-01-01/001/ephysData.raw.ap.bin',
+            'rel_dir_path': 'subject/2020-01-01/001'}
+        self.assertDictEqual(info, expected)
+        relative_path = relative_path.parent / 'alf' / '#2020-10-01#' / relative_path.name
+        expected.update(
+            {'collection': 'alf', 'revision': '2020-10-01',
+             'full_path': relative_path.as_posix()}
+        )
+        info, resp = transfers._get_name_collection_revision(
+            relative_path.name, relative_path.parent.as_posix())
+        self.assertIsNone(resp)
+        self.assertDictEqual(info, expected)
+
+        relative_path = relative_path.parent / 'invalid' / relative_path.name
+        info, resp = transfers._get_name_collection_revision(
+            relative_path.name, relative_path.parent.as_posix())
+        self.assertIsNone(info)
+        self.assertIsInstance(resp, Response)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Invalid ALF path', resp.data['detail'])
+        info, resp = transfers._get_name_collection_revision(
+            relative_path.name, 'subject/1-1-03/1/@lf')
+        self.assertIsNone(info)
+        self.assertIsInstance(resp, Response)
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Invalid ALF path', resp.data['detail'])

@@ -11,11 +11,12 @@ import zipfile
 import tempfile
 import os
 
+import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
 from tqdm import tqdm
-from one.alf.cache import _metadata
+from one.alf.cache import _metadata, SESSIONS_COLUMNS, DATASETS_COLUMNS
 from one.util import QC_TYPE
 from one.alf.spec import QC
 from one.remote.aws import get_s3_virtual_host
@@ -32,7 +33,7 @@ from data.models import Dataset, FileRecord
 from experiments.models import ProbeInsertion
 
 logger = logging.getLogger(__name__)
-ONE_API_VERSION = '2.7'  # Minimum compatible ONE api version
+ONE_API_VERSION = '2.10'  # Minimum compatible ONE api version
 
 
 def measure_time(func):
@@ -150,19 +151,22 @@ class Command(BaseCommand):
             if table.lower() == 'sessions':
                 logger.debug('Generating sessions DataFrame')
                 tbl, filename = self._save_table(generate_sessions_frame(**kwargs), table, dry=dry)
-                to_compress[filename] = tbl
+                if filename is not None:
+                    to_compress[filename] = tbl
             elif table.lower() == 'datasets':
                 logger.debug('Generating datasets DataFrame')
                 tbl, filename = self._save_table(generate_datasets_frame(**kwargs), table, dry=dry)
-                to_compress[filename] = tbl
+                if filename is not None:
+                    to_compress[filename] = tbl
             else:
                 raise ValueError(f'Unknown table "{table}"')
 
         if export_qc:
             tbl, filename = self._save_qc(dry=dry, tags=kwargs.get('tags'))
-            to_compress[filename] = tbl
+            if filename is not None:
+                to_compress[filename] = tbl
 
-        if self.compress:
+        if self.compress and len(to_compress) > 0:
             return list(self._compress_tables(to_compress))
         else:
             return list(to_compress.keys())
@@ -178,6 +182,11 @@ class Command(BaseCommand):
         :param dry: If True, does not actually write to disk
         :return: A PyArrow table and the full path to the saved file
         """
+
+        if table is None:
+            logger.warning(f'Table {name} is empty, not saving')
+            return None, None
+
         if not kwargs.get('dry'):
             logger.info(f'Saving table "{name}" to {self.dst_dir}...')
         scheme = urllib.parse.urlparse(self.dst_dir).scheme or 'file'
@@ -197,6 +206,12 @@ class Command(BaseCommand):
                 sessions = sessions.filter(data_dataset_session_related__tags__name__in=tags)
             else:
                 sessions = sessions.filter(data_dataset_session_related__tags__name=tags)
+
+        if sessions.count() == 0:
+            logger.warning(f'No datasets associated with sessions found for {tags}, '
+                           f'returning empty dataframe')
+            return
+
         qc = list(sessions.values('pk', 'qc', 'extended_qc').distinct())
         outcome_map = dict(Session.QC_CHOICES)
         for d in qc:  # replace enumeration int with string
@@ -327,24 +342,26 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
             query = query.filter(data_dataset_session_related__tags__name__in=tags)
         else:
             query = query.filter(data_dataset_session_related__tags__name=tags)
+
+    if query.count() == 0:
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
+        return pd.DataFrame(columns=SESSIONS_COLUMNS).set_index('id')
+
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
     df['all_projects'] = df['all_projects'].map(lambda x: ','.join(filter(None, set(x))))
+    # task_protocol & projects columns may be empty; ensure None -> ''
+    # id UUID objects -> str; not supported by parquet
     df = (
         (df
             .rename(lambda x: x.split('__')[0], axis=1)
             .rename({'start_time': 'date', 'all_projects': 'projects'}, axis=1)
             .dropna(subset=['number', 'date', 'subject', 'lab'])  # Remove dud or base sessions
-            .sort_values(['date', 'subject', 'number'], ascending=False))
+            .sort_values(['date', 'subject', 'number'], ascending=False)
+            .astype({'number': np.uint16, 'task_protocol': str, 'projects': str, 'id': str}))
     )
-    df['number'] = df['number'].astype(int)  # After dropping nans we can convert number to int
-    # These columns may be empty; ensure None -> ''
-    for col in ('task_protocol', 'projects'):
-        df[col] = df[col].astype(str)
-
-    # Convert UUID objects to str: not supported by parquet
-    df['id'] = df['id'].astype(str)
     df.set_index('id', inplace=True)
 
     logger.debug(f'Final session frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
@@ -356,7 +373,6 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     """DATASETS_COLUMNS = (
         'id',               # uuid str
         'eid',              # uuid str
-        'session_path',     # relative to the root
         'rel_path',         # relative to the session path, includes the filename
         'file_size',        # float, bytes, optional
         'hash',             # sha1/md5 str, recomputed in load function
@@ -372,7 +388,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
                        exists=True,
                        data_repository__name__startswith='aws').values('pk')
     # Fetch datasets and their related tables
-    ds = Dataset.objects.select_related('session', 'session__subject', 'session__lab', 'revision')
+    ds = Dataset.objects
     if tags:
         kw = {'tags__name__in' if not isinstance(tags, str) else 'tags__name': tags}
         ds = ds.prefetch_related('tag').filter(**kw)
@@ -380,11 +396,17 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     ds = ds.annotate(exists_flatiron=Exists(on_flatiron), exists_aws=Exists(on_aws))
     ds = ds.filter(Q(exists_flatiron=True) | Q(exists_aws=True), session__isnull=False)
 
+    if ds.count() == 0:
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
+        return (pd.DataFrame(columns=DATASETS_COLUMNS)
+                .set_index(['eid', 'id'])
+                .astype({'qc': QC_TYPE, 'file_size': np.uint64}))
+
     # fields to keep from Dataset table
     fields = (
         'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
-        'session__id', 'session__start_time__date', 'session__number',
-        'session__subject__nickname', 'session__lab__name', 'exists_flatiron', 'exists_aws', 'qc'
+        'session__id', 'qc'
     )
     fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
 
@@ -393,24 +415,18 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
     for i in tqdm(paginator.page_range):
         data = paginator.get_page(i)
         current_qs = data.object_list
-        df = pd.DataFrame.from_records(current_qs.values(*fields)).rename(fields_map, axis=1)
+        df = (pd.DataFrame
+              .from_records(current_qs.values(*fields))
+              .rename(fields_map, axis=1)
+              .astype({'id': str, 'eid': str, 'file_size': 'UInt64'}))
         df['exists'] = True
-
-        # TODO New version without this nonsense
-        # session_path
-        globus_path = df.pop('session__lab__name') + '/Subjects'
-        subject = df.pop('session__subject__nickname')
-        date = df.pop('session__start_time__date').astype(str)
-        number = df.pop('session__number').apply(lambda x: str(x).zfill(3))
-        df['session_path'] = globus_path.str.cat((subject, date, number), sep='/')
 
         # relative_path
         revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
         zipped = zip(df.pop('collection'), revision, df.pop('name'))
         df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
 
-        # Convert UUIDs to str: not supported by parquet
-        df[['id', 'eid']] = df[['id', 'eid']].astype(str)
+        # UUIDs converted to str: not supported by parquet
         df = df.set_index(['eid', 'id'])
 
         # Convert QC enum int to pandas category

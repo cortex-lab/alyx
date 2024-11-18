@@ -142,8 +142,8 @@ class APIDataTests(BaseTests):
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
         # Check collection and revision have been set to default values
-        self.assertEqual(r.data['revision'], None)
-        self.assertEqual(r.data['collection'], None)
+        self.assertEqual(r.data['revision'], '')
+        self.assertEqual(r.data['collection'], '')
         # Check that it has been set as the default dataset
         self.assertEqual(r.data['default_dataset'], True)
         # Check QC value is NOT_SET by default
@@ -170,7 +170,7 @@ class APIDataTests(BaseTests):
 
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)
-        self.assertEqual(r.data['revision'], None)
+        self.assertEqual(r.data['revision'], '')
         self.assertEqual(r.data['collection'], data['collection'])
         self.assertEqual(r.data['default_dataset'], True)
         self.assertEqual(r.data['qc'], 'PASS')
@@ -189,7 +189,7 @@ class APIDataTests(BaseTests):
         self.assertEqual(r['default_dataset'], False)
 
         # Make sure if you specify the default dataset flag to false it is indeed false
-        data['collection'] = None
+        data['collection'] = ''
         data['default_dataset'] = False
         r = self.post(reverse('dataset-list'), data)
         self.ar(r, 201)

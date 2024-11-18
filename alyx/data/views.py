@@ -306,7 +306,7 @@ def _make_dataset_response(dataset):
         'session_users': ','.join(_.username for _ in dataset.session.users.all()),
         'session_start_time': dataset.session.start_time,
         'collection': dataset.collection,
-        'revision': getattr(dataset.revision, 'name', None),
+        'revision': getattr(dataset.revision, 'name', ''),
         'default': dataset.default_dataset,
         'qc': dataset.qc
     }
@@ -572,7 +572,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             if resp:
                 return resp
 
-            if info['revision'] is not None:
+            if info['revision']:
                 revision, _ = Revision.objects.get_or_create(name=info['revision'])
             else:
                 revision = None
@@ -580,7 +580,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             dataset, resp = _create_dataset_file_records(
                 collection=info['collection'], rel_dir_path=info['rel_dir_path'],
                 filename=info['filename'], session=session, user=user, repositories=repositories,
-                exists_in=exists_in, hash=hash, file_size=fsize, version=version,
+                exists_in=exists_in, hash=hash or '', file_size=fsize, version=version or '',
                 revision=revision, default=default, qc=qc)
             if resp:
                 return resp

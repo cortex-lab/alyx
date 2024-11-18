@@ -186,6 +186,7 @@ class LineDropdownFilter(RelatedDropdownFilter):
 class ProjectAdmin(BaseAdmin):
     fields = ('name', 'description', 'users')
     list_display = ('name', 'subjects_count', 'sessions_count', 'users_l')
+    ordering = ('name',)
 
     def users_l(self, obj):
         return ', '.join(map(str, obj.users.all()))
