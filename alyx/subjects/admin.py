@@ -20,7 +20,7 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      )
 from actions.models import (
     Surgery, Session, OtherAction, WaterAdministration, WaterRestriction, Weighing)
-from actions.admin import SurgeryActionForm
+from actions.admin import BaseActionForm
 from misc.models import LabMember, Housing
 from misc.admin import NoteInline
 
@@ -236,7 +236,7 @@ class SurgeryInline(BaseInlineAdmin):
 
 
 class AddSurgeryInline(SurgeryInline):
-    form = SurgeryActionForm
+    form = BaseActionForm
     readonly_fields = ()
     show_change_link = False
     verbose_name = "New surgery"

@@ -203,7 +203,7 @@ class Surgery(BaseAction):
                                  default=_default_surgery_location,
                                  help_text="The physical location at which the surgery was "
                                  "performed")
-    implant_weight = models.FloatField(null=False, blank=True, validators=[MinValueValidator(0)],
+    implant_weight = models.FloatField(null=False, blank=False, validators=[MinValueValidator(0)],
                                        help_text="Implant weight in grams")
 
     class Meta:
