@@ -64,8 +64,8 @@ NB: the password above is the postgres database user password. It is used by Dja
 
 You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. username admin and password admin) and update your admin interface password.
 
-[!WARNING]  
-Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
+> [!WARNING]
+> Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ### macOS
 
@@ -93,8 +93,8 @@ Alyx is by default in debug mode, meaning it is not safe to run on the the open 
 * To run the development server, type `python alyx/manage.py runserver`
 * Go to `http://localhost:8000/admin/`
 
-[!WARNING]  
-Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
+> [!WARNING]
+> Alyx is by default in debug mode, meaning it is not safe to run on the the open Web. To run securly, open the `alyx/alyx/settings.py` file and set `DEBUG=False`. This enables https redirection (SSL certificates required) and various cross-site scripting protections. Debug mode is adequate if running Alyx on a local network or secure institute intranet.
 
 ## Interaction with the database
 
