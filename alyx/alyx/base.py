@@ -382,6 +382,7 @@ class BaseAdmin(VersionAdmin):
         # [CR 2024-03-12]
         # HACK: following a request by Charu R from cortexlab, we authorize all users in the
         # special Husbandry group to edit litters.
+        # FIXME This should be moved to the individual model admin has_change_permission methods
         husbandry = 'husbandry' in ', '.join(_.name.lower() for _ in request.user.groups.all())
         if husbandry:
             if obj.__class__.__name__ in ('Litter', 'Subject', 'BreedingPair'):

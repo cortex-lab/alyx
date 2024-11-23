@@ -26,6 +26,8 @@ class TaskAdmin(BaseAdmin):
     def has_change_permission(self, request, obj=None):
         if request.user.is_superuser:
             return True
+        if request.user.is_public_user:
+            return False
         if obj:
             if obj.session:
                 # Check if session user or member of the same lab
