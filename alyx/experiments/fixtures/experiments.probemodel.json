@@ -1,17 +1,6 @@
 [
 {
  "model": "experiments.probemodel",
- "pk": "96dccdfe-7206-4b65-bb17-0743c842acd0",
- "fields": {
-  "name": "Neuropixel 3A",
-  "json": null,
-  "probe_manufacturer": "Imec",
-  "probe_model": "3A",
-  "description": null
- }
-},
- {
- "model": "experiments.probemodel",
  "pk": "057d9a20-aaa9-4f79-8b0c-c8729b4cf160",
  "fields": {
   "name": "Neuropixel 3B2",
@@ -21,7 +10,18 @@
   "description": null
  }
 },
-  {
+{
+ "model": "experiments.probemodel",
+ "pk": "100fe998-986c-467d-aac8-a470e3a34341",
+ "fields": {
+  "name": "Neurophotometrics Fiber",
+  "json": null,
+  "probe_manufacturer": "Neurophotometrics",
+  "probe_model": "Fiber",
+  "description": null
+ }
+},
+{
  "model": "experiments.probemodel",
  "pk": "5df5182a-5113-4e37-b690-0e6cae3abc6a",
  "fields": {
@@ -30,9 +30,9 @@
   "probe_manufacturer": "Imec",
   "probe_model": "NP2.1",
   "description": null
-  }
- },
- {
+ }
+},
+{
  "model": "experiments.probemodel",
  "pk": "6f586705-13a7-4c2a-ac4a-ef58b10d9bc4",
  "fields": {
@@ -40,6 +40,17 @@
   "json": null,
   "probe_manufacturer": "Imec",
   "probe_model": "NP2.4",
+  "description": null
+ }
+},
+{
+ "model": "experiments.probemodel",
+ "pk": "96dccdfe-7206-4b65-bb17-0743c842acd0",
+ "fields": {
+  "name": "Neuropixel 3A",
+  "json": null,
+  "probe_manufacturer": "Imec",
+  "probe_model": "3A",
   "description": null
  }
 }
