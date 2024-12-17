@@ -1,8 +1,8 @@
 asgiref==3.8.1
 backports.zoneinfo==0.2.1
-boto3==1.35.71
-botocore==1.35.71
-certifi==2024.8.30
+boto3==1.35.82
+botocore==1.35.82
+certifi==2024.12.14
 cffi==1.17.1
 charset-normalizer==3.4.0
 click==8.1.7
@@ -14,7 +14,7 @@ coverage==7.6.1
 coveralls==4.0.1
 cryptography==44.0.0
 cycler==0.12.1
-Django==4.2.16
+Django==4.2.17
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.13.2
 django-autocomplete-light==3.11.0
@@ -33,7 +33,7 @@ docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
 flake8==7.1.1
-fonttools==4.55.0
+fonttools==4.55.3
 globus-cli==3.32.0
 globus-sdk==3.46.0
 iblutil==1.14.0
@@ -52,7 +52,7 @@ matplotlib==3.7.5
 mccabe==0.7.0
 numba==0.58.1
 numpy==1.24.4
-ONE-api==2.11.1
+ONE-api==2.11.2
 packaging==24.2
 pandas==2.0.3
 pillow==10.4.0
@@ -70,8 +70,8 @@ pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
 s3transfer==0.10.4
-six==1.16.0
-sqlparse==0.5.2
+six==1.17.0
+sqlparse==0.5.3
 structlog==24.4.0
 tomli==2.2.1
 tqdm==4.67.1
