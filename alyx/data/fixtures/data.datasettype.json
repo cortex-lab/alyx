@@ -2327,8 +2327,8 @@
       "json": null,
       "name": "fpData.digitalInputs",
       "created_by": null,
-      "description": "",
-      "filename_pattern": "*digitalInputs.raw*"
+      "description": "Parquet or CSV file output by Bonsai containing the synchronisation TTLs",
+      "filename_pattern": "*_fpData.digitalInputs.*"
     }
   }
 ]
