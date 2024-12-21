@@ -1077,6 +1077,17 @@
       "filename_pattern": "probes.trajectory*.json"
     }
   },
+    {
+    "model": "data.datasettype",
+    "pk": "45228157-f565-48ce-9d96-0430cebdfaf7",
+    "fields": {
+      "json": null,
+      "name": "_iblqc_ephysSaturation.samples",
+      "created_by": null,
+      "description": "A list of sample intervals exhibiting voltage saturation on the raw recordings.",
+      "filename_pattern": "_iblqc_ephysSaturation.samples.npy"
+    }
+  },
   {
     "model": "data.datasettype",
     "pk": "a02ab1c2-c881-4acc-9e3a-13c0a0c3e187",
