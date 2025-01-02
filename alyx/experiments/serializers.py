@@ -5,16 +5,22 @@ from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, 
                                 Channel, BrainRegion, ChronicInsertion, FOV, FOVLocation,
                                 ImagingType, ImagingStack)
 from data.models import DatasetType, Dataset, DataRepository, FileRecord
-from subjects.models import Subject
+from subjects.models import Subject, Project
 from misc.models import Lab
 
 
 class SessionListSerializer(serializers.ModelSerializer):
 
+    projects = serializers.SlugRelatedField(read_only=False,
+                                            slug_field='name',
+                                            queryset=Project.objects.all(),
+                                            many=True)
+
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related('subject', 'lab')
+        queryset = queryset.prefetch_related('projects')
         return queryset.order_by('-start_time')
 
     subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
@@ -22,7 +28,7 @@ class SessionListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Session
-        fields = ('subject', 'start_time', 'number', 'lab', 'id', 'task_protocol')
+        fields = ('subject', 'start_time', 'number', 'lab', 'id', 'projects', 'task_protocol')
 
 
 class TrajectoryEstimateSerializer(serializers.ModelSerializer):

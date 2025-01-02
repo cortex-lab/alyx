@@ -7,7 +7,7 @@ from django.db import transaction
 from alyx.base import BaseTests
 from actions.models import Session, ProcedureType
 from misc.models import Lab
-from subjects.models import Subject
+from subjects.models import Subject, Project
 from experiments.models import ProbeInsertion, ImagingType
 from data.models import Dataset, DatasetType, Tag
 
@@ -22,6 +22,7 @@ class APIProbeExperimentTests(BaseTests):
         self.session = Session.objects.first()
         # need to add ephys procedure
         self.session.task_protocol = 'ephys'
+        self.session.projects.add(Project.objects.get_or_create(name='brain_wide')[0])
         self.session.save()
         self.dict_insertion = {'session': str(self.session.id),
                                'name': 'probe_00',
@@ -76,6 +77,9 @@ class APIProbeExperimentTests(BaseTests):
         # test the list endpoint
         response = self.client.get(url)
         d = self.ar(response, 200)
+        self.assertIn('session_info', d[0])
+        # Ensure the session_info includes the projects as a list of names
+        self.assertCountEqual(d[0]['session_info'].get('projects', []), ['brain_wide'])
 
         # test the session filter
         urlf = url + '?&session=' + str(self.session.id) + '&name=probe_00'
@@ -112,7 +116,7 @@ class APIProbeExperimentTests(BaseTests):
         self.assertTrue(len(probe_ins) == 0)
 
         # test the project filter
-        urlf = (reverse('probeinsertion-list') + '?&project=brain_wide')
+        urlf = (reverse('probeinsertion-list') + '?&project=foobar')
         probe_ins = self.ar(self.client.get(urlf))
         self.assertTrue(len(probe_ins) == 0)
 
