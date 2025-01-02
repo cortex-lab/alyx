@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from rest_framework import serializers
 from alyx.base import BaseSerializerEnumField
 from actions.models import Session
@@ -10,21 +11,13 @@ from misc.models import Lab
 
 
 class SessionListSerializer(serializers.ModelSerializer):
-
+    """Session model serializer within ProbeInsertion and ChronicProbeInsertion serializers."""
+    subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
+    lab = serializers.SlugRelatedField(read_only=True, slug_field='name')
     projects = serializers.SlugRelatedField(read_only=False,
                                             slug_field='name',
                                             queryset=Project.objects.all(),
                                             many=True)
-
-    @staticmethod
-    def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('subject', 'lab')
-        queryset = queryset.prefetch_related('projects')
-        return queryset.order_by('-start_time')
-
-    subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
-    lab = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
     class Meta:
         model = Session
@@ -110,9 +103,13 @@ class ChronicProbeInsertionListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('session__subject__nickname')
-        return queryset
+        """Perform necessary eager loading of data to avoid horrible performance.
+
+        SessionListSerializer uses these related tables.
+        """
+        queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
+        queryset = queryset.prefetch_related('session__projects')
+        return queryset.order_by('-session__start_time')
 
     model = serializers.SlugRelatedField(read_only=True, slug_field='name')
     session_info = SessionListSerializer(read_only=True, source='session')
@@ -127,8 +124,8 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         """ Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('model', 'session')
-        queryset = queryset.prefetch_related('session__subject', 'session__lab', 'datasets')
+        queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
+        queryset = queryset.prefetch_related('session__projects', 'datasets')
         return queryset.order_by('-session__start_time')
 
     session = serializers.SlugRelatedField(
@@ -158,6 +155,14 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 
 
 class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        """ Perform necessary eager loading of data to avoid horrible performance."""
+        queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
+        queryset = queryset.prefetch_related('session__projects')
+        return queryset.order_by('-session__start_time')
+
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
         queryset=Session.objects.all(),
@@ -171,8 +176,7 @@ class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
     datasets = serializers.SerializerMethodField()
 
     def get_datasets(self, obj):
-        qs = obj.session.data_dataset_session_related.all().filter(collection__icontains=obj.name)
-
+        qs = obj.session.data_dataset_session_related.filter(collection__icontains=obj.name)
         request = self.context.get('request', None)
         dsets = ProbeInsertionDatasetsSerializer(qs, many=True, context={'request': request})
         return dsets.data
@@ -199,19 +203,17 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='probe_model',
         queryset=ProbeModel.objects.all(),
     )
-
     lab = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='name',
         queryset=Lab.objects.all(),
     )
-
     probe_insertion = serializers.SerializerMethodField()
 
     def get_probe_insertion(self, obj):
-        qs = obj.probe_insertion.all()
+        qs = ChronicProbeInsertionListSerializer.setup_eager_loading(obj.probe_insertion.all())
         request = self.context.get('request', None)
-        dsets = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
-        return dsets.data
+        ins = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
+        return ins.data
 
     class Meta:
         model = ChronicInsertion
@@ -238,7 +240,7 @@ class ChronicInsertionDetailSerializer(serializers.ModelSerializer):
     probe_insertion = serializers.SerializerMethodField()
 
     def get_probe_insertion(self, obj):
-        qs = obj.probe_insertion.all()
+        qs = ChronicProbeInsertionListSerializer.setup_eager_loading(obj.probe_insertion.all())
         request = self.context.get('request', None)
         dsets = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
         return dsets.data
@@ -303,9 +305,12 @@ class FOVSerializer(serializers.ModelSerializer):
     @staticmethod
     def setup_eager_loading(queryset):
         """Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.select_related('model', 'session')
+        queryset = queryset.select_related('imaging_type')
+        # Apply eager loading to the nested location field
+        location_qs = FOVLocationListSerializer.setup_eager_loading(FOVLocation.objects.all())
         queryset = queryset.prefetch_related(
-            'session__subject', 'session__lab', 'location', 'datasets')
+            'datasets', Prefetch('location', queryset=location_qs)
+        )
         return queryset.order_by('-session__start_time')
 
     class Meta:
@@ -319,9 +324,11 @@ class ImagingStackDetailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """Perform necessary eager loading of data to avoid horrible performance."""
-        queryset = queryset.prefetch_related('slices')
-        return queryset.order_by('slices__z__0')
+        """Perform necessary eager loading of nested slices."""
+        slice_qs = FOVSerializer.setup_eager_loading(FOV.objects.filter(stack__isnull=False))
+        queryset = queryset.prefetch_related(Prefetch('slices', queryset=slice_qs))
+        # TODO order by z values of FOVLocations where default_provenance is True
+        return queryset.order_by('slices__name')
 
     class Meta:
         model = ImagingStack
