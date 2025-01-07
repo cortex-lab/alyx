@@ -174,8 +174,8 @@ class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ChronicInsertionFilter(BaseFilterSet):
-    subject = CharFilter('session__subject__nickname')
-    lab = CharFilter('session__lab__name')
+    subject = CharFilter('subject__nickname')
+    lab = CharFilter('lab__name')
     model = CharFilter('model__name')
     probe = UUIDFilter('probe_insertion__id')
     session = UUIDFilter('probe_insertion__session__id')
