@@ -48,7 +48,6 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         slug_field='username',
         queryset=get_user_model().objects.all(),
         required=False,
-        default=serializers.CurrentUserDefault(),
     )
 
     location = serializers.SlugRelatedField(
@@ -57,7 +56,6 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         queryset=LabLocation.objects.all(),
         allow_null=True,
         required=False,
-
     )
 
     procedures = serializers.SlugRelatedField(
@@ -75,6 +73,11 @@ class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Lab.objects.all(),
         many=False,
         required=False,)
+
+    def create(self, validated_data):
+        if not validated_data.get('users'):
+            validated_data['users'] = [self.context['request'].user]
+        return super().create(validated_data)
 
 
 class LabLocationSerializer(serializers.ModelSerializer):

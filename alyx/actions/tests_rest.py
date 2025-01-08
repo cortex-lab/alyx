@@ -194,7 +194,7 @@ class APIActionsTests(BaseTests):
     def test_sessions(self):
         a_dict4json = {'String': 'this is not a JSON', 'Integer': 4, 'List': ['titi', 4]}
         ses_dict = {'subject': self.subject.nickname,
-                    'users': [self.superuser.username],
+                    'users': [self.superuser2.username],
                     'projects': [self.projectX.name, self.projectY.name],
                     'narrative': 'auto-generated-session, test',
                     'start_time': '2018-07-09T12:34:56',
@@ -223,24 +223,24 @@ class APIActionsTests(BaseTests):
         # create another session for further testing
         ses_dict['start_time'] = '2018-07-11T12:34:56'
         ses_dict['end_time'] = '2018-07-11T12:34:57'
-        ses_dict['users'] = [self.superuser.username, self.superuser2.username]
+        # should use default user when not provided
+        del ses_dict['users']
         ses_dict['lab'] = self.lab02.name
         ses_dict['n_correct_trials'] = 37
         r = self.post(reverse('session-list'), data=ses_dict)
         s2 = self.ar(r, code=201)
+        self.assertEqual(['test'], s2['users'])
         s2.pop('json')
         # Test the date range filter
         r = self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09')
         rdata = self.ar(r)
         self.assertEqual(rdata[0], s1)
-        # Test the user filter, this should return 2 sessions
+        # Test the user filter, this should return 1 session
         d = self.ar(self.client.get(reverse('session-list') + '?users=test'))
-        self.assertEqual(len(d), 2)
-        # This should return only one session
-        d = self.ar(self.client.get(reverse('session-list') + '?users=test2'))
         self.assertEqual(len(d), 1)
-        for k in d[0]:
-            self.assertEqual(d[0][k], s2[k])
+        # This should return 0 sessions
+        d = self.ar(self.client.get(reverse('session-list') + '?users=foo'))
+        self.assertEqual(len(d), 0)
         # This should return only one session
         d = self.ar(self.client.get(reverse('session-list') + '?lab=awesomelab'))
         self.assertEqual(len(d), 1)
@@ -254,7 +254,7 @@ class APIActionsTests(BaseTests):
         self.assertEqual(d[0]['url'], s2['url'])
         self.assertEqual(1, len(d))
         # test the Session serializer water admin related field
-        ses = Session.objects.get(subject=self.subject, users=self.superuser,
+        ses = Session.objects.get(subject=self.subject, users=self.superuser2,
                                   lab__name='superlab', start_time__date='2018-07-09')
         WaterAdministration.objects.create(subject=self.subject, session=ses, water_administered=1)
         d = self.ar(self.client.get(reverse('session-list') + '?date_range=2018-07-09,2018-07-09'))

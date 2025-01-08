@@ -168,6 +168,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
 
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProbeInsertion.objects.all()
+    queryset = ProbeInsertionDetailSerializer.setup_eager_loading(queryset)
     serializer_class = ProbeInsertionDetailSerializer
     permission_classes = rest_permission_classes()
 
@@ -445,6 +446,7 @@ class FOVList(generics.ListCreateAPIView):
     [===> FOV model reference](/admin/doc/models/experiments.fov)
     """
     queryset = FOV.objects.all()
+    queryset = FOVSerializer.setup_eager_loading(queryset)
     serializer_class = FOVSerializer
     permission_classes = rest_permission_classes()
     filterset_class = FOVFilter
@@ -485,6 +487,7 @@ class FOVLocationList(generics.ListCreateAPIView):
     [===> FOVLocation model reference](/admin/doc/models/experiments.fovlocation)
     """
     queryset = FOVLocation.objects.all()
+    queryset = FOVLocationListSerializer.setup_eager_loading(queryset)
     permission_classes = rest_permission_classes()
     filterset_class = FOVLocationFilter
 
@@ -499,6 +502,7 @@ class FOVLocationList(generics.ListCreateAPIView):
 
 class FOVLocationDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = FOVLocation.objects.all()
+    queryset = FOVLocationDetailSerializer.setup_eager_loading(queryset)
     serializer_class = FOVLocationDetailSerializer
     permission_classes = rest_permission_classes()
 
@@ -534,7 +538,7 @@ class ImagingStackList(generics.ListCreateAPIView):
     [===> ImagingStack model reference](/admin/doc/models/experiments.imagingstack)
     """
     queryset = ImagingStack.objects.all()
-    # serializer_class = ImagingStackListSerializer
+    queryset = ImagingStackDetailSerializer.setup_eager_loading(queryset)
     permission_classes = rest_permission_classes()
     filterset_class = ImagingStackFilter
 
@@ -550,5 +554,6 @@ class ImagingStackDetail(generics.RetrieveAPIView):
     [===> ImagingStack model reference](/admin/doc/models/experiments.imagingstack)
     """
     queryset = ImagingStack.objects.all()
+    queryset = ImagingStackDetailSerializer.setup_eager_loading(queryset)
     serializer_class = ImagingStackDetailSerializer
     permission_classes = rest_permission_classes()

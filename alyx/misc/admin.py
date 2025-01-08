@@ -9,6 +9,7 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
+from rest_framework.authtoken.models import TokenProxy
 
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
@@ -276,3 +277,4 @@ admin.site.register(Note, NoteAdmin)
 admin.site.register(CageType, CageTypeAdmin)
 admin.site.register(Enrichment, EnrichmentAdmin)
 admin.site.register(Food, FoodAdmin)
+admin.site.unregister(TokenProxy)

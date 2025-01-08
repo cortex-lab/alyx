@@ -579,7 +579,7 @@
       "name": "_iblrig_taskData.raw",
       "created_by": null,
       "description": "Data file saved by PyBpod in json serializable lines (file itself is not a json object, each line is a json object corresponding to a trial) - Training task w/ automated contrast",
-      "filename_pattern": "_iblrig_taskData.raw.*"
+      "filename_pattern": "_*_taskData.raw.*"
     }
   },
   {
@@ -589,7 +589,7 @@
       "json": null,
       "name": "passiveWhiteNoise.times",
       "created_by": null,
-      "description": "Times of white noise bursts, equivilent to the negative feedback sound during the choice world task",
+      "description": "Times of white noise bursts, equivalent to the negative feedback sound during the choice world task",
       "filename_pattern": "*passiveWhiteNoise.times.*"
     }
   },
@@ -1810,7 +1810,7 @@
       "json": null,
       "name": "subjectTrials.table",
       "created_by": null,
-      "description": "All trials data for a given subject, contains the same columns as trials.table, plus \"session\", \"session_start_time\" and \"session_number\"",
+      "description": "All trials data for a given subject, contains the same columns as _ibl_trials.table, plus additional trials data: \"goCueTrigger_times\", \"stimOnTrigger_times\", \"stimFreezeTrigger_times\", \"stimFreeze_times\", \"stimOffTrigger_times\", \"stimOff_times\", \"phase\", \"position\", \"quiescence\". The following are session meta data columns: \"session\", \"session_start_time\" and \"task_protocol\", \"protocol_number\"",
       "filename_pattern": ""
     }
   },
@@ -2338,8 +2338,19 @@
       "json": null,
       "name": "fpData.digitalInputs",
       "created_by": null,
-      "description": "",
-      "filename_pattern": "*digitalInputs.raw*"
+      "description": "Parquet or CSV file output by Bonsai containing the synchronisation TTLs.",
+      "filename_pattern": "*_fpData.digitalInputs.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "a94ba7c4-9260-4270-98c0-96030248a7b6",
+    "fields": {
+      "json": null,
+      "name": "_sp_video.times",
+      "created_by": null,
+      "description": "An array of passive video frame times, where each column represents a repeat of the video.",
+      "filename_pattern": "_sp_video.times.*"
     }
   }
 ]
