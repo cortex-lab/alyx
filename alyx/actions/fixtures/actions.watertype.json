@@ -54,5 +54,13 @@
   "json": null,
   "name": "Hydrogel"
  }
+},
+{
+ "model": "actions.watertype",
+ "pk": "dba3e45a-fb95-4a6d-9140-2b704c5b300e",
+ "fields": {
+  "json": null,
+  "name": "Water 1% Citric Acid"
+ }
 }
 ]
