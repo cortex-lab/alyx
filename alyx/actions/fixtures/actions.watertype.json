@@ -17,14 +17,6 @@
 },
 {
  "model": "actions.watertype",
- "pk": "38b53089-4b6f-4d05-a051-3befe40cdd10",
- "fields": {
-  "json": null,
-  "name": "Citric Acid Water 2%"
- }
-},
-{
- "model": "actions.watertype",
  "pk": "511feb0c-cc35-4c42-a7b9-db704833ef16",
  "fields": {
   "json": null,
