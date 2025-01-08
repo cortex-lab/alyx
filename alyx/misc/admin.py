@@ -120,7 +120,7 @@ class HasImageFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'image':
-            return queryset.filter().exclude(image__exact='')
+            return queryset.exclude(image__exact='')
         if self.value() == 'no_image':
             return queryset.filter(image__exact='')
         elif self.value is None:
