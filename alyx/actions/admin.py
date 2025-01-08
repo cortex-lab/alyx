@@ -104,6 +104,26 @@ class CreatedByListFilter(DefaultListFilter):
             return queryset.all()
 
 
+class HasNarrativeFilter(DefaultListFilter):
+    title = 'narrative'
+    parameter_name = 'narrative'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'All'),
+            ('narrative', 'Narrative'),
+            ('no_narrative', 'No narrative'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'narrative':
+            return queryset.filter().exclude(narrative__in=['', 'auto-generated session'])
+        if self.value() == 'no_narrative':
+            return queryset.filter(narrative__in=['', 'auto-generated session'])
+        elif self.value is None:
+            return queryset.all()
+
+
 def _bring_to_front(ids, id):
     if id in ids:
         ids.remove(id)
@@ -496,6 +516,7 @@ class SessionAdmin(BaseActionAdmin):
                    ('start_time', DateRangeFilter),
                    ('projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
+                   (HasNarrativeFilter),
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'projects__name', 'users__username',
                      'task_protocol', 'pk')
