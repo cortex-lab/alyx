@@ -109,12 +109,12 @@ class ImageWidgetAdmin(BaseAdmin):
 
 class HasImageFilter(DefaultListFilter):
     title = 'image'
-    parameter_name = 'image'
+    parameter_name = 'has_image'
 
     def lookups(self, request, model_admin):
         return (
             (None, 'All'),
-            ('image', 'Image'),
+            ('image', 'Has image'),
             ('no_image', 'No image'),
         )
 

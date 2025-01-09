@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib.admin import TabularInline
+from django.contrib.contenttypes.models import ContentType
 from rangefilter.filters import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
@@ -107,41 +108,48 @@ class CreatedByListFilter(DefaultListFilter):
 
 class HasNarrativeFilter(DefaultListFilter):
     title = 'narrative'
-    parameter_name = 'narrative'
+    parameter_name = 'has_narrative'
 
     def lookups(self, request, model_admin):
         return (
             (None, 'All'),
-            ('narrative', 'Narrative'),
+            ('narrative', 'Has narrative'),
             ('no_narrative', 'No narrative'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'narrative':
-            return queryset.exclude(narrative__regex=r'^(?: *|auto-generated session)$')
-        if self.value() == 'no_narrative':
-            return queryset.filter(narrative__regex=r'^(?: *|auto-generated session)$')
-        elif self.value is None:
+        if self.value is not None:
+            regex_string = r'^(?: *|auto-generated session)$'
+            if self.value() == 'narrative':
+                return queryset.exclude(narrative__regex=regex_string)
+            if self.value() == 'no_narrative':
+                return queryset.filter(narrative__regex=regex_string)
+        else:
             return queryset.all()
 
 
 class HasNoteFilter(DefaultListFilter):
     title = 'note'
-    parameter_name = 'note'
+    parameter_name = 'has_note'
 
     def lookups(self, request, model_admin):
         return (
             (None, 'All'),
-            ('note', 'Note'),
-            ('no_note', 'No note'),
+            ('notes', 'Has notes'),
+            ('no_notes', 'No notes'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'note':
-            return queryset.filter(Exists(Note.objects.filter(object_id=OuterRef('pk'))))
-        if self.value() == 'no_note':
-            return queryset.exclude(Exists(Note.objects.filter(object_id=OuterRef('pk'))))
-        elif self.value is None:
+        if self.value is not None:
+            notes_subquery = Note.objects.filter(
+                content_type=ContentType.objects.get_for_model(Session),
+                object_id=OuterRef('pk')
+            )
+            if self.value() == 'notes':
+                return queryset.filter(Exists(notes_subquery))
+            if self.value() == 'no_notes':
+                return queryset.exclude(Exists(notes_subquery))
+        else:
             return queryset.all()
         
 
