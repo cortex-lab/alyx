@@ -14,6 +14,7 @@ LOCAL_DIR = "/backups/alyx-backups"
 CMD = (f"ssh -i /home/ubuntu/.ssh/sdsc_alyx.pem -q -p 62022 -t {HOST} "
        f"'ls -s1 {FLAT_IRON_DIR}/*.sql.gz'")
 KEEP_DAYS = 2
+KEEP_YEARS = 1
 
 parser = argparse.ArgumentParser(
     description='Removes local backup files if they exist on the flatiron remote server')
@@ -36,14 +37,15 @@ files_aws = [tuple(_.decode('utf-8').strip().split(' ')) for _ in p.stdout.readl
 files_aws = {v.replace(str(LOCAL_DIR) + '/', '').replace('/', '_'): int(k) for k, v in files_aws}
 
 # Find all backups locally that are also on flatiron, with (almost) the same file size, older than
-# 7 days, and not starting the first of a month.
+# 7 days, and not starting the first of a month and are not from the last year.
 for fn in sorted(files_aws):
     if fn in sorted(files_flatiron):
         ds = r.search(fn).group(0)
         d = isoparse(ds)
         tol = 15  # size diff in blocks  <2021-08-23 increased from 12>
         if ((datetime.now() - d).days >= KEEP_DAYS and
-                abs(files_aws[fn] - files_flatiron[fn]) <= tol and d.day != 1):
+                abs(files_aws[fn] - files_flatiron[fn]) <= tol
+                and (d.day != 1 or (datetime.now().year - d.year) > KEEP_YEARS)):
             sql_file = Path(LOCAL_DIR).joinpath('%s/alyx_full.sql.gz' % ds)
             json_file = Path(LOCAL_DIR).joinpath('%s/alyx_full.json.gz' % ds)
             if sql_file.exists():
