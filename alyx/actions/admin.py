@@ -6,7 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db.models import Case, When
+from django.db.models import Case, When, Exists, OuterRef
 from django.urls import reverse
 from django.utils.html import format_html
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
@@ -15,11 +15,12 @@ from rangefilter.filters import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
-                     WaterAdministration, WaterRestriction, Weighing, WaterType,
+                     WaterAdministration, WaterRestriction, Weighing, WaterType, Session,
                      Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
+from misc.models import Note
 from subjects.models import Subject
 from .water_control import WaterControl
 from experiments.models import ProbeInsertion, FOV
@@ -116,14 +117,33 @@ class HasNarrativeFilter(DefaultListFilter):
         )
 
     def queryset(self, request, queryset):
-        regex_string = r'^(?:[ ]*|auto-generated session)$'
         if self.value() == 'narrative':
-            return queryset.exclude(narrative__regex=regex_string)
+            return queryset.exclude(narrative__regex=r'^(?: *|auto-generated session)$')
         if self.value() == 'no_narrative':
-            return queryset.filter(narrative__regex=regex_string)
+            return queryset.filter(narrative__regex=r'^(?: *|auto-generated session)$')
         elif self.value is None:
             return queryset.all()
 
+
+class HasNoteFilter(DefaultListFilter):
+    title = 'note'
+    parameter_name = 'note'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'All'),
+            ('note', 'Note'),
+            ('no_note', 'No note'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'note':
+            return queryset.filter(Exists(Note.objects.filter(object_id=OuterRef('pk'))))
+        if self.value() == 'no_note':
+            return queryset.exclude(Exists(Note.objects.filter(object_id=OuterRef('pk'))))
+        elif self.value is None:
+            return queryset.all()
+        
 
 def _bring_to_front(ids, id):
     if id in ids:
@@ -518,6 +538,7 @@ class SessionAdmin(BaseActionAdmin):
                    ('projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
                    (HasNarrativeFilter),
+                   (HasNoteFilter),
                    ]
     search_fields = ('subject__nickname', 'lab__name', 'projects__name', 'users__username',
                      'task_protocol', 'pk')
