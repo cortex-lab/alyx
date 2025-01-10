@@ -2352,5 +2352,16 @@
       "description": "An array of passive video frame times, where each column represents a repeat of the video.",
       "filename_pattern": "_sp_video.times.*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "83a5c789-43de-44cc-8bfa-4b574a82dd8d",
+    "fields": {
+      "json": null,
+      "name": "_fpData.regionImage",
+      "created_by": null,
+      "description": "the camera image of the fiber bundle of the neurophotometrics FP3002, overlayed with the named regions of interest.",
+      "filename_pattern": ""
+    }
   }
 ]
