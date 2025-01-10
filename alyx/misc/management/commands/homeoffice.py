@@ -67,6 +67,11 @@ def transgenic(query):
     return query.exclude(line__nickname='C57')
 
 
+# Actual severity
+def severity(query, severity):
+    return query.filter(actual_severity=severity)
+
+
 @contextlib.contextmanager
 def redirect_stdout(stream):
     import sys
@@ -84,7 +89,7 @@ def display(title, query, start_date=None, end_date=None):
     # Compute sex ratio.
     males = sum(subj.sex == 'M' for subj in query)
     total = sum(subj.sex in ('M', 'F') for subj in query)
-    sexratio = males / total
+    sexratio = males / (total or 1)
 
     with open(path, 'w') as f:
         with redirect_stdout(f):
@@ -150,6 +155,10 @@ class Command(BaseCommand):
 
         tkng = transgenic(k).exclude(genotyped('2000-01-01', '2100-01-01'))
         display("Transgenic killed and not genotyped %s - %s", tkng, start_date, end_date)
+
+        # Actual severity (cf ermail from Charu to Cyrille on 2025-01-07)
+        for sev in range(1, 6):
+            display("Severity " + str(sev) + " %s - %s", severity(s, sev), start_date, end_date)
 
         # Sex bias (cf email from Charu to Cyrille on 2024-07-23)
         # Birth date.
