@@ -16,7 +16,7 @@ from rangefilter.filters import DateRangeFilter
 
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
-                     WaterAdministration, WaterRestriction, Weighing, WaterType, Session,
+                     WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession
                      )
 from data.models import Dataset, FileRecord
@@ -151,7 +151,7 @@ class HasNoteFilter(DefaultListFilter):
                 return queryset.exclude(Exists(notes_subquery))
         else:
             return queryset.all()
-        
+
 
 def _bring_to_front(ids, id):
     if id in ids:

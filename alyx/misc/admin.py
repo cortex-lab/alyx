@@ -125,7 +125,7 @@ class HasImageFilter(DefaultListFilter):
             return queryset.filter(image__exact='')
         elif self.value is None:
             return queryset.all()
-        
+
 
 class NoteAdmin(ImageWidgetAdmin):
     list_display = ['user', 'date_time', 'content_object', 'text', 'image']
