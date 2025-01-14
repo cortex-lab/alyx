@@ -119,7 +119,7 @@ class HasNarrativeFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value is not None:
-            regex_string = r'^(?: *|auto-generated session)$'
+            regex_string = r'^(?:\s*|auto-generated session)$'
             if self.value() == 'narrative':
                 return queryset.exclude(narrative__regex=regex_string)
             if self.value() == 'no_narrative':
