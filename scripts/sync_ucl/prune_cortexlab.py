@@ -164,7 +164,7 @@ dfields = ('pk', 'hash')
 
 set_cortex_lab_only = cds_pk.difference(ids_pk)
 set_ibl_only = ids_pk.difference(cds_pk)
-# get the interection querysets
+# get the intersection querysets
 cqs = (Dataset
        .objects
        .using('cortexlab')
@@ -183,7 +183,7 @@ iqs = (Dataset
 
 # this is the set of pks for which there is a md5 mismatch - for all the others, do not import
 # anything by deleting many datasets from the cortexlab database
-dpk = [s[0] for s in set(cds).difference(set(ids))]
+dpk = [s[0] for s in set(cqs).difference(set(iqs))]
 Dataset.objects.using('cortexlab').exclude(pk__in=set_cortex_lab_only.union(dpk)).delete()
 
 
@@ -193,15 +193,41 @@ iqs_md5 = Dataset.objects.filter(session__lab__name='cortexlab', pk__in=dpk).ord
 
 ti = np.array(iqs_md5.values_list('auto_datetime', flat=True)).astype(np.datetime64)
 tc = np.array(cqs_md5.values_list('auto_datetime', flat=True)).astype(np.datetime64)
-# those are the indices where the autodatetime from IBL is posterior to cortexlab - do not import
+# those are the indices where the autodatetime from IBL is more recent than cortexlab - do not import
 # by deleting the datasets from the cortexlab database
 ind_ibl = np.where(ti >= tc)[0]
 pk2remove = list(np.array(iqs_md5.values_list('pk', flat=True))[ind_ibl])
 Dataset.objects.using('cortexlab').filter(pk__in=pk2remove).delete()
-# for those that will imported from UCL, set the file record status to exist=False fr the local
-# server file records
+# find the datasets that we will import from UCL
 ind_ucl = np.where(tc > ti)[0]
 pk2import = list(np.array(iqs_md5.values_list('pk', flat=True))[ind_ucl])
+
+# Remove any protected datasets from the datasets that we import
+protected = Dataset.objects.filter(pk__in=pk2import, tags__protected=True).distinct().values_list('pk', flat=True)
+pk2import = set(pk2import).difference(set(protected))
+
+# For the datasets that we are going to import from cortexlab we need to check that there are no duplicate filerecords
+# for the local server (globus_is_personal=True). Where we have duplicates we remove the cortex lab file records
+ffields = ('pk', 'data_repository', 'relative_path')
+# File records on cortexlab
+cfrs = (FileRecord
+        .objects
+        .using('cortexlab')
+        .filter(dataset__in=pk2import)
+        .order_by('dataset__pk')
+        .values_list(*ffields))
+# File records on IBL for local file server
+ifrs = (FileRecord
+        .objects.
+        filter(dataset__in=pk2import, data_repository__globus_is_personal=True)
+        .order_by('dataset__pk').values_list(*ffields))
+
+# Find frs that are duplicates
+frs2del = [s[0] for s in set(cfrs).difference(set(ifrs))]
+FileRecord.objects.using('cortexlab').filter(pk__in=frs2del).delete()
+
+# For the datasets that will imported from UCL, set the file record status on IBL alyx for all file records to exist=False
+# to re-initiate the file transfer
 FileRecord.objects.filter(dataset__in=pk2import).update(exists=False, json=None)
 
 """
