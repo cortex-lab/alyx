@@ -17,7 +17,7 @@ CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
-def fcn_import_projects():
+def fcn_import_projects(ses_ucl):
     """
     This manually imports the relatively simple projects model from the UCL database
     to the IBL database. The only linked model is the users, and a project is created
@@ -104,7 +104,7 @@ FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete(
 DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
 # here we handle the projects
-fcn_import_projects()
+fcn_import_projects(ses_ucl)
 
 # only imports users that are relevant to IBL
 # OW: I removed nick from the import so his IBL account is active but his cortexlab expired
