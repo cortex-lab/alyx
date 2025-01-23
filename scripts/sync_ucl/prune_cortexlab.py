@@ -17,6 +17,41 @@ CORTEX_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 json_file_out = '../scripts/sync_ucl/cortexlab_pruned.json'
 
 
+def fcn_import_projects():
+    """
+    This manually imports the relatively simple projects model from the UCL database
+    to the IBL database. The only linked model is the users, and a project is created
+    on IBL if it doesn't already exist.
+    :return:
+    """
+    pk_projs_ibl = list(Project.objects.values_list('pk', flat=True))
+    pk_projs_ucl = list(filter(None, flatten(ses_ucl.values_list('projects').distinct())))
+
+    for pk in pk_projs_ucl:
+        ucl_project = Project.objects.using('cortexlab').get(pk=pk)
+        # this is the equivalent of get_or_create with specifying the PK
+        alyx_project = Project.objects.using('default').filter(pk=pk)
+        if len(alyx_project) == 0:
+            Project(pk=ucl_project.pk).save(using='default')
+        alyx_project = Project.objects.using('default').get(pk=pk)
+        # here we set the project fields according to UCL one by one
+        alyx_project.name = ucl_project.name
+        alyx_project.description = ucl_project.description
+        alyx_project.json = ucl_project.json
+        ucl_users = set(ucl_project.users.all().values_list('pk', flat=True))
+        alyx_users = set(alyx_project.users.all().values_list('pk', flat=True))
+        # here we intervene only if there are users in UCL that are not in the IBL project
+        if len(ucl_users - alyx_users) > 0:
+            # here we make sure we have the intersection of users in the IBL database
+            for pk_user in alyx_users - ucl_users:
+                # create a dummy user with the IBL pk to maintain the relation
+                alyx_project.users.add(LabMember.objects.using('default').filter(pk=pk_user))
+        alyx_project.save()
+
+    # any project that is not associated with a selected session nor in the IBL projects is removed from UCL
+    Project.objects.using('cortexlab').exclude(pk__in=pk_projs_ibl + pk_projs_ucl).delete()
+
+
 # Filter for sessions containing an IBL project
 ibl_proj = Q(projects__name__icontains='ibl') | Q(projects__name='practice')
 ses = Session.objects.using('cortexlab').filter(ibl_proj)
@@ -68,14 +103,8 @@ repos = list(DataRepository.objects.all().values_list('pk', flat=True))
 FileRecord.objects.using('cortexlab').exclude(data_repository__in=repos).delete()
 DataRepository.objects.using('cortexlab').exclude(pk__in=repos).delete()
 
-# sync the datasets
-
-
-# import projects from cortexlab. remove those that don't correspond to any session
-pk_projs = list(filter(None, flatten(ses_ucl.values_list('projects').distinct())))
-pk_projs += list(Project.objects.values_list('pk', flat=True))
-
-Project.objects.using('cortexlab').exclude(pk__in=pk_projs).delete()
+# here we handle the projects
+fcn_import_projects()
 
 # only imports users that are relevant to IBL
 # OW: I removed nick from the import so his IBL account is active but his cortexlab expired
@@ -333,7 +362,7 @@ init_fixtures = ['data.dataformat',
                  'data.datarepositorytype',
                  'data.datasettype',
                  'misc.lab',
-                 #  'subjects.project',
+                 'subjects.project',
                  #  'actions.proceduretype',
                  #  'actions.watertype',
                  ]
