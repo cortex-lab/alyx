@@ -1,7 +1,7 @@
 asgiref==3.8.1
 backports.zoneinfo==0.2.1
-boto3==1.36.0
-botocore==1.36.0
+boto3==1.36.4
+botocore==1.36.4
 certifi==2024.12.14
 cffi==1.17.1
 charset-normalizer==3.4.1
@@ -33,7 +33,7 @@ docopt==0.6.2
 docutils==0.20.1
 drfdocs==0.0.11
 flake8==7.1.1
-fonttools==4.55.3
+fonttools==4.55.4
 globus-cli==3.32.0
 globus-sdk==3.46.0
 iblutil==1.14.0
@@ -69,14 +69,14 @@ python-magic==0.4.27
 pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
-s3transfer==0.11.0
+s3transfer==0.11.1
 six==1.17.0
 sqlparse==0.5.3
 structlog==25.1.0
 tomli==2.2.1
 tqdm==4.67.1
 typing_extensions==4.12.2
-tzdata==2024.2
+tzdata==2025.1
 uritemplate==4.1.1
 urllib3==1.26.20
 webdavclient3==3.14.6
