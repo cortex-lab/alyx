@@ -2352,5 +2352,16 @@
       "description": "An array of passive video frame times, where each column represents a repeat of the video.",
       "filename_pattern": "_sp_video.times.*"
     }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "4c576a86-5e73-4441-ae9e-1299356464a7",
+    "fields": {
+      "json": null,
+      "name": "clusters.labels",
+      "created_by": null,
+      "description": "Manually annotated cluster labels",
+      "filename_pattern": "*clusters.labels*.tsv"
+    }
   }
 ]
