@@ -1,9 +1,8 @@
 from datetime import timedelta, date, datetime
 from operator import itemgetter
 
-from one.alf.spec import QC
 from django.contrib.postgres.fields import JSONField
-from django.db.models import Count, Q, F, ExpressionWrapper, FloatField
+from django.db.models import Count, Q, F, ExpressionWrapper, FloatField, BooleanField
 from django.db.models.deletion import Collector
 from django_filters.rest_framework.filters import CharFilter
 from django.http import HttpResponse
@@ -15,8 +14,10 @@ import django_filters
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from one.alf.spec import QC
 
 from alyx.base import base_json_filter, BaseFilterSet, rest_permission_classes
+from data.models import Dataset
 from subjects.models import Subject
 from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
@@ -288,12 +289,24 @@ class SessionFilter(BaseActionFilter):
     def filter_datasets(self, queryset, _, value):
         # Note this may later be modified to include collections, e.g. ?datasets=alf/obj.attr.ext
         qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
-        dsets = value.split(',')
-        queryset = queryset.filter(data_dataset_session_related__name__in=dsets,
-                                   data_dataset_session_related__qc__lte=qc)
-        queryset = queryset.annotate(
-            dsets_count=Count('data_dataset_session_related', distinct=True))
-        queryset = queryset.filter(dsets_count__gte=len(dsets))
+        dataset_names = value.split(',')
+        queryset = queryset.filter(data_dataset_session_related__name__in=dataset_names)
+        dsets = Dataset.objects.filter(
+            session__in=queryset,
+            name__in=dataset_names,
+            qc__lte=qc,
+        ).annotate(
+            exists=ExpressionWrapper(
+                Q(
+                    file_records__data_repository__globus_is_personal=False,
+                    file_records__exists=True
+                ),
+                output_field=BooleanField()
+            )
+        ).filter(exists__gte=1)
+        sessions = dsets.values_list('session', flat=True).distinct().annotate(
+            dset_count=Count('name', distinct=True)).filter(dset_count__gte=len(dataset_names))
+        queryset = queryset.filter(pk__in=sessions.values_list('session')).distinct()
         return queryset
 
     def filter_dataset_qc_lte(self, queryset, _, value):
