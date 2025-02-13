@@ -12,7 +12,7 @@ on:
 
 jobs:
   run_jobs:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16
