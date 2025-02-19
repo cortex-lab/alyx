@@ -2352,5 +2352,27 @@
       "description": "An array of passive video frame times, where each column represents a repeat of the video.",
       "filename_pattern": "_sp_video.times.*"
     }
+  },
+    {
+    "model": "data.datasettype",
+    "pk": "4c576a86-5e73-4441-ae9e-1299356464a7",
+    "fields": {
+      "json": null,
+      "name": "clusters.curatedLabels",
+      "created_by": null,
+      "description": "Manually annotated cluster labels",
+      "filename_pattern": "*clusters.curatedLabels*.tsv"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "fc76b3bb-7619-4352-8a4c-aa22358d1b7c",
+    "fields": {
+      "json": null,
+      "name": "subjectSessions.table",
+      "created_by": null,
+      "description": "All session data included in the subjectTrials table for a given subject, contains the columns lab, session date, session number, task protocol and project",
+      "filename_pattern": ""
+    }
   }
 ]
