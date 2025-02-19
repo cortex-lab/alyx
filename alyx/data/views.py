@@ -115,6 +115,7 @@ class RevisionList(generics.ListCreateAPIView):
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
     permission_classes = rest_permission_classes()
+    filterset_fields = ('name',)
 
 
 class RevisionDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -128,12 +129,14 @@ class TagList(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = rest_permission_classes()
+    filterset_fields = ('name',)
 
 
 class TagDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = rest_permission_classes()
+    lookup_field = 'name'
 
 # Dataset
 # ------------------------------------------------------------------------------------------------
