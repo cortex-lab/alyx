@@ -2352,5 +2352,16 @@
       "description": "An array of passive video frame times, where each column represents a repeat of the video.",
       "filename_pattern": "_sp_video.times.*"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "21c80568-cd3d-4125-bf94-b2777ddc6eaa",
+    "fields": {
+      "json": null,
+      "name": "_sp_video.raw",
+      "created_by": null,
+      "description": "The video frames presented during the protocol.",
+      "filename_pattern": "_sp_video.raw.*"
+    }
   }
 ]
