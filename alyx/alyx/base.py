@@ -181,58 +181,28 @@ def alyx_mail(to, subject, text=''):
         return False
 
 
-ADMIN_PAGES = [('Common', ['Subjects',
-                           'Cull_subjects',
-                           'Sessions',
-                           'Ephys sessions',
-                           'Imaging sessions',
-                           'Surgeries',
-                           'Breeding pairs',
-                           'Litters',
-                           'Water administrations',
-                           'Water restrictions',
-                           'Weighings',
-                           'Subject requests',
-                           ]),
-               ('Data files',
-                ['Data repository types',
-                 'Data repositories',
-                 'Data formats',
-                 'Dataset types',
-                 'Datasets',
-                 'Downloads',
-                 'File records',
-                 'Data collections',
-                 'Time series',
-                 'Event series',
-                 'Interval series',
-                 'Tags',
-                 'Revisions'
-                 ]),
-               ('Data that changes rarely',
-                ['Lines',
-                 'Strains',
-                 'Alleles',
-                 'Sequences',
-                 'Sources',
-                 'Species',
-                 'Other actions',
-                 'Procedure types',
-                 'Water types',
-                 'Probe models',
-                 'Imaging type'
-                 ]),
-               ('Other', ['Genotype tests',
-                          'Zygosities',
-                          'Fields of view']),
-               ('IT admin', ['Tokens',
-                             'Groups',
-                             'Lab members',
-                             'Labs',
-                             'Lab locations',
-                             'Lab memberships',
-                             ]),
-               ]
+ADMIN_PAGES = [
+    ('Subject management', [
+        'Subjects', 'Subject requests', 'Cull_subjects', 'Breeding pairs', 'Litters']),
+    ('Experiments', [
+        'Sessions', 'Weighings', 'Water restrictions', 'Water administrations', 'Water types',
+        'Surgeries', 'Procedure types', 'Notes', 'Other actions', 'Projects']),
+    ('Ephys experiments', [
+        'Ephys sessions', 'Probe insertions', 'Chronic insertions', 'Probe models',
+        'Trajectory estimates', 'Channels']),
+    ('Imaging experiments', [
+        'Imaging sessions', 'Fields of view']),  # May add 'Imaging type'
+    ('Data files', [
+        'Data repository types', 'Data repositories', 'Tasks', 'Data formats', 'Dataset types',
+        'Datasets', 'File records', 'Tags', 'Revisions', 'Downloads']),
+    ('Subject genetics', [
+        'Lines', 'Strains', 'Alleles', 'Sequences', 'Sources', 'Species',
+        'Genotypes', 'Genotype tests', 'Zygosities', 'Zygosity tests']),
+    ('Subject housing', ['Cage types', 'Housings', 'Foods', 'Enrichments']),
+    ('Other', []),
+    ('Lab admin', [
+        'Groups', 'Lab members', 'Labs', 'Lab locations', 'Lab memberships']),
+]
 
 
 class Bunch(dict):
@@ -269,27 +239,32 @@ def _get_category_list(app_list):
     models_dict = {str(model['name']): model
                    for app in app_list
                    for model in app['models']}
+    # Add custom URL query params to 'Adverse effects' link
+    if 'Adverse effects' in models_dict:
+        models_dict['Adverse effects']['admin_url'] += '?alive=all'  # filter by all subjects
+
     model_to_app = {str(model['name']): str(app['name'])
                     for app in app_list
                     for model in app['models']}
     category_list = [Bunch(name=name,
                            models=[models_dict[m] for m in model_names if m in models_dict],
-                           collapsed='' if name == 'Common' else 'collapsed'
+                           collapsed='' if i < 4 else 'collapsed'  # Determine collapsed
                            )
-                     for name, model_names in order]
+                     for i, (name, model_names) in enumerate(order)]
     for model_name, app_name in model_to_app.items():
         if model_name in order_models:
             continue
         if model_name.startswith('Subject') or model_name in extra_in_common:
             category_list[0].models.append(models_dict[model_name])
         else:
-            category_list[3].models.append(models_dict[model_name])
+            category_list[-2].models.append(models_dict[model_name])
     # Add link to training view in 'Common' panel.
-    category_list[0].models.append({
+    category_list[1].models.append({
         'admin_url': reverse('training'),
         'name': 'Training view',
         'perms': {},
     })
+
     return category_list
 
 
