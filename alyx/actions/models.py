@@ -214,13 +214,16 @@ class Surgery(BaseAction):
         ]
 
     def save(self, *args, **kwargs):
-        # Issue #422.
         output = super(Surgery, self).save(*args, **kwargs)
         self.subject.set_protocol_number()
         if self.subject.actual_severity == 2:
+            # Issue #422
+            # As soon as a procedure is performed on a subject,
+            # the severity should be at least moderate (3)
             self.subject.actual_severity = 3
-        if self.outcome_type == 'a' and self.start_time:
-            self.subject.death_date = self.start_time
+
+        if self.outcome_type in ('a', 'n') and self.end_time and not self.subject.death_date:
+            self.subject.death_date = self.end_time.date()
         self.subject.save()
         return output
 

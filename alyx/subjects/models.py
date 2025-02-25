@@ -261,7 +261,7 @@ class Subject(BaseModel):
     def age_days(self):
         if (self.death_date is None and self.birth_date is not None):
             # subject still alive
-            age = datetime.utcnow().date() - self.birth_date
+            age = datetime.now(timezone.utc).date() - self.birth_date
         elif (self.death_date is not None and self.birth_date is not None):
             # subject is dead
             age = self.death_date - self.birth_date
@@ -369,6 +369,7 @@ class Subject(BaseModel):
         # Save the reduced date.
         if self.reduced and _has_field_changed(self, 'reduced'):
             self.reduced_date = django.utils.timezone.now().date()
+        self.reduced = self.reduced_date is not None
         # Update subject request.
         if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and

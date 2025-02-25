@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import logging
 from operator import attrgetter
 import os.path as op
@@ -14,7 +14,7 @@ from django.test.client import RequestFactory
 
 from .admin import mysite
 from subjects.models import Subject
-from actions.models import Cull, CullMethod, WaterRestriction
+from actions.models import Cull, CullMethod, WaterRestriction, Surgery
 from misc.models import Lab
 
 logger = logging.getLogger(__file__)
@@ -249,14 +249,18 @@ class ModelAdminTests(TestCase, metaclass=MyTestsMeta):
         assert a.zygosity == 2
 
 
-class SubjectProtocolNumber(TestCase):
+class SubjectSurgery(TestCase):
+    """Test subject surgery interactions.
 
+    When a surgery is saved, the subject should be modified in a few ways.
+    """
     def setUp(self):
         self.lab = Lab.objects.create(name='awesomelab')
-        self.sub = Subject.objects.create(nickname='lawes', lab=self.lab, birth_date='2019-01-01')
+        self.sub = Subject.objects.create(
+            nickname='lawes', lab=self.lab, birth_date=date(2019, 1, 1))
 
     def test_protocol_number(self):
-        from actions.models import Surgery
+        """Test that the protocol number is incremented when a surgery is created."""
         assert self.sub.protocol_number == '1'
         # after a surgery protocol number goes to 2
         self.surgery = Surgery.objects.create(
@@ -271,6 +275,49 @@ class SubjectProtocolNumber(TestCase):
         assert self.sub.protocol_number == '2'
         self.surgery.delete()
         assert self.sub.protocol_number == '1'
+
+    def test_actual_severity(self):
+        """Test that the actual severity is increased when a surgery is created."""
+        self.sub.actual_severity = 1
+        self.sub.save()
+
+        # Severity should not be increased unless it was mild (2)
+        surgery = Surgery.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0), implant_weight=0.)
+        self.assertEqual(1, self.sub.actual_severity)
+        surgery.delete()
+
+        # Severity should be increased if it was mild (2)
+        self.sub.actual_severity = 2
+        self.sub.save()
+        surgery = Surgery.objects.create(
+            subject=self.sub, start_time=datetime(2019, 1, 1, 12, 0, 0), implant_weight=0.)
+        self.assertEqual(3, self.sub.actual_severity)
+
+    def test_acute_non_recovery(self):
+        """Test that the subject is culled after non-recovery surgeries."""
+        # When a recovery surgery is created, the subject should not be culled.
+        kwargs = {
+            'subject': self.sub, 'implant_weight': 0.,
+            'start_time': datetime(2019, 1, 1, 12, 0, 0),
+        }
+        surgery = Surgery.objects.create(
+            outcome_type='r', end_time=datetime(2019, 1, 1, 13, 0, 0), **kwargs)
+        self.assertFalse(hasattr(self.sub, 'cull'))
+        surgery.delete()
+
+        # When a non-recovery surgery is created with an end time,
+        # the subject should be culled with the surgery end time.
+        for outcome in ('n', 'a'):
+            with self.subTest(outcome_type=outcome):
+                surgery = Surgery.objects.create(outcome_type=outcome, **kwargs)
+                self.assertFalse(hasattr(self.sub, 'cull'))
+                surgery.end_time = datetime(2019, 1, 1, 13, 0, 0)
+                surgery.save()
+                self.assertTrue(hasattr(self.sub, 'cull'))
+                self.assertEqual(self.sub.death_date, surgery.end_time.date())
+                surgery.delete()
+                self.sub.cull.delete()
 
 
 class SubjectCullTests(TestCase):
