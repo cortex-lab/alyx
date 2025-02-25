@@ -193,6 +193,28 @@ class BaseActionAdmin(BaseAdmin):
         super(BaseActionAdmin, self).save_model(request, obj, form, change)
 
 
+class OtherActionAdmin(BaseActionAdmin):
+    list_display = ['subject_l', 'start_time', 'procedures_l', 'users_l', 'narrative', 'projects']
+    list_select_related = ('subject',)
+    ordering = ('-start_time', 'subject__nickname')
+    search_fields = ['subject__nickname', 'subject__projects__name']
+    list_filter = [ResponsibleUserListFilter,
+                   ('subject', RelatedDropdownFilter),
+                   ('users', RelatedDropdownFilter),
+                   ('start_time', DateRangeFilter),
+                   ('end_time', DateRangeFilter),
+                   ]
+
+    def users_l(self, obj):
+        return ', '.join(map(str, obj.users.all()))
+
+    def procedures_l(self, obj):
+        return ', '.join(map(str, obj.procedures.all()))
+
+    users_l.short_description = 'users'
+    procedures_l.short_description = 'proformed procedures'
+
+
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
     ordering = ['name']
@@ -670,7 +692,7 @@ admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 admin.site.register(Session, SessionAdmin)
 admin.site.register(EphysSession, EphysSessionAdmin)
 admin.site.register(ImagingSession, ImagingSessionAdmin)
-admin.site.register(OtherAction, BaseActionAdmin)
+admin.site.register(OtherAction, OtherActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
 admin.site.register(Surgery, SurgeryAdmin)
