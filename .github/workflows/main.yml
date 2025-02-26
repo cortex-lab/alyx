@@ -12,10 +12,10 @@ on:
 
 jobs:
   run_jobs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:13
+        image: postgres:16
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: postgres
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.12'
 
       - name: Checkout branch
         uses: actions/checkout@v3

@@ -18,7 +18,7 @@
       "name": "spikes.clusters",
       "created_by": null,
       "description": "[nspi]. Cluster assignments for each spike (integers counting from 0).",
-      "filename_pattern": "spikes.clusters*.npy"
+      "filename_pattern": "*spikes.clusters*.npy"
     }
   },
   {
@@ -62,7 +62,7 @@
       "name": "spikes.times",
       "created_by": null,
       "description": "[nspi]. Times of spikes (seconds, relative to experiment onset). Note this includes spikes from all probes, merged together",
-      "filename_pattern": "spikes.times*.npy"
+      "filename_pattern": "*spikes.times*.npy"
     }
   },
   {
@@ -73,7 +73,7 @@
       "name": "spikes.samples",
       "created_by": null,
       "description": "[nspi]. Sample index of spikes in their own electrophysiology binary file.",
-      "filename_pattern": "spikes.samples*.npy"
+      "filename_pattern": "*spikes.samples*.npy"
     }
   },
   {
@@ -106,7 +106,7 @@
       "name": "clusters.uuids",
       "created_by": null,
       "description": "Unique identifier assigned to each cluster when ALF files created and during manual curation.",
-      "filename_pattern": "clusters.uuids*.csv"
+      "filename_pattern": "*clusters.uuids*.csv"
     }
   },
   {
@@ -117,7 +117,7 @@
       "name": "clusters.amps",
       "created_by": null,
       "description": "Mean amplitude of each cluster (V)",
-      "filename_pattern": "clusters.amps*.npy"
+      "filename_pattern": "*clusters.amps*.npy"
     }
   },
   {
@@ -370,7 +370,7 @@
       "name": "spikes.amps",
       "created_by": null,
       "description": "[nspi]. Amplitude of each spike (V)",
-      "filename_pattern": "spikes.amps*.npy"
+      "filename_pattern": "*spikes.amps*.npy"
     }
   },
   {
@@ -381,7 +381,7 @@
       "name": "clusters.metrics",
       "created_by": null,
       "description": "Quality control metrics at the cluster level. Fields may vary.",
-      "filename_pattern": "clusters.metrics*.pqt"
+      "filename_pattern": "*clusters.metrics*.pqt"
     }
   },
   {
@@ -392,7 +392,7 @@
       "name": "clusters.waveformsChannels",
       "created_by": null,
       "description": "Index of channels that are stored for each cluster waveform. Sorted by increasing distance from the maximum amplitude channel.",
-      "filename_pattern": "clusters.waveformsChannels*.npy"
+      "filename_pattern": "*clusters.waveformsChannels*.npy"
     }
   },
   {
@@ -403,7 +403,7 @@
       "name": "clusters.waveforms",
       "created_by": null,
       "description": "Waveform from spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
-      "filename_pattern": "clusters.waveforms.npy"
+      "filename_pattern": "*clusters.waveforms.npy"
     }
   },
   {
@@ -414,7 +414,7 @@
       "name": "clusters.peakToTrough",
       "created_by": null,
       "description": "Waveforms length in ms",
-      "filename_pattern": "clusters.peakToTrough*.npy"
+      "filename_pattern": "*clusters.peakToTrough*.npy"
     }
   },
   {
@@ -469,7 +469,7 @@
       "name": "channels.rawInd",
       "created_by": null,
       "description": "[nch] Each channel's row in its home file (look up via probes.rawFileName), counting from zero. Note some rows don't have a channel, for example if they were sync pulses",
-      "filename_pattern": "channels.rawInd*.npy"
+      "filename_pattern": "*channels.rawInd*.npy"
     }
   },
   {
@@ -678,7 +678,7 @@
       "name": "clusters.depths",
       "created_by": null,
       "description": "[nc] Depth of mean cluster waveform on probe (\u00b5m). 0 means deepest site, positive means above this.",
-      "filename_pattern": "clusters.depths*.npy"
+      "filename_pattern": "*clusters.depths*.npy"
     }
   },
   {
@@ -700,7 +700,7 @@
       "name": "spikes.depths",
       "created_by": null,
       "description": "[nspi]. Depth along probe of each spike (\u00b5m; computed from waveform center of mass). 0 means deepest site, positive means above this",
-      "filename_pattern": "spikes.depths*.npy"
+      "filename_pattern": "*spikes.depths*.npy"
     }
   },
   {
@@ -744,7 +744,7 @@
       "name": "clusters.channels",
       "created_by": null,
       "description": "Channel which has the largest amplitude for this cluster. Note this counts all channels in the whole recording (starting from zero), rather than just the channels on this cluster's home probe - so if you want to find this cluster's brain location, it would be channels.brainLocation[clusters.peakChannel[i],:]",
-      "filename_pattern": "clusters.channels*.npy"
+      "filename_pattern": "*clusters.channels*.npy"
     }
   },
   {
@@ -898,7 +898,7 @@
       "name": "channels.probes",
       "created_by": null,
       "description": "Probe assignments for each channel (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-      "filename_pattern": "channels.probes*.npy"
+      "filename_pattern": "*channels.probes*.npy"
     }
   },
   {
@@ -909,7 +909,7 @@
       "name": "clusters.probes",
       "created_by": null,
       "description": "Probe assignments for each cluster (integers counting from 0). Can be used as direct indexing for the probes.* attributes.",
-      "filename_pattern": "clusters.probes*.npy"
+      "filename_pattern": "*clusters.probes*.npy"
     }
   },
   {
@@ -920,7 +920,7 @@
       "name": "spikes.templates",
       "created_by": null,
       "description": "Detection template assignment for each spike (integers counting from 0). Can be used as direct indexing of the templates.* attributes.",
-      "filename_pattern": "spikes.templates*.npy"
+      "filename_pattern": "*spikes.templates*.npy"
     }
   },
   {
@@ -931,7 +931,7 @@
       "name": "channels.localCoordinates",
       "created_by": null,
       "description": "relative to probe coordinate system (µm): x (first) dimension is on the width of the shank while (y) is the depth where 0 is the deepest site, and positive above this.",
-      "filename_pattern": "channels.localCoordinates*.npy"
+      "filename_pattern": "*channels.localCoordinates*.npy"
     }
   },
   {
@@ -1030,7 +1030,7 @@
       "name": "templates.waveformsChannels",
       "created_by": null,
       "description": "Index of channels that are stored for each template. Sorted by increasing distance from the maximum amplitude channel.",
-      "filename_pattern": "templates.waveformsChannels.npy"
+      "filename_pattern": "*templates.waveformsChannels.npy"
     }
   },
   {
@@ -1041,7 +1041,7 @@
       "name": "templates.waveforms",
       "created_by": null,
       "description": "Waveform of automatic spike sorting templates (stored as a sparse array, only for a subset of channels closest to the peak channel)",
-      "filename_pattern": "templates.waveforms.npy"
+      "filename_pattern": "*templates.waveforms.npy"
     }
   },
   {
@@ -1052,7 +1052,7 @@
       "name": "templates.amps",
       "created_by": null,
       "description": "Average peak/trough amplitude of templates",
-      "filename_pattern": "templates.amps.npy"
+      "filename_pattern": "*templates.amps.npy"
     }
   },
   {
@@ -1228,7 +1228,7 @@
       "name": "clusters.brainLocationIds_ccf_2017",
       "created_by": null,
       "description": "Brain location id of clusters following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
-      "filename_pattern": "clusters.brainLocationIds*.npy"
+      "filename_pattern": "*clusters.brainLocationIds*.npy"
     }
   },
   {
@@ -1239,7 +1239,7 @@
       "name": "clusters.brainLocationAcronyms_ccf_2017",
       "created_by": null,
       "description": "Brain location acronym of clusters following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
-      "filename_pattern": "clusters.brainLocationAcronyms*.npy"
+      "filename_pattern": "*clusters.brainLocationAcronyms*.npy"
     }
   },
   {
@@ -1250,7 +1250,7 @@
       "name": "clusters.mlapdv",
       "created_by": null,
       "description": "3d location of the cluster relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um)",
-      "filename_pattern": "clusters.mlapdv.npy"
+      "filename_pattern": "*clusters.mlapdv.npy"
     }
   },
   {
@@ -1261,7 +1261,7 @@
       "name": "channels.brainLocationIds_ccf_2017",
       "created_by": null,
       "description": "Brain location id of channels following ephys alignment obtained from 25um resolution 2017 Allen Common Coordinate Framework",
-      "filename_pattern": "channels.brainLocationIds*.npy"
+      "filename_pattern": "*channels.brainLocationIds*.npy"
     }
   },
   {
@@ -1272,7 +1272,7 @@
       "name": "channels.mlapdv",
       "created_by": null,
       "description": "3d location of the channels relative to bregma following ephys alignment - mediolateral; anterior-posterior; dorsoventral coordinates (um)",
-      "filename_pattern": "channels.mlapdv.npy"
+      "filename_pattern": "*channels.mlapdv.npy"
     }
   },
   {
@@ -2362,6 +2362,28 @@
       "created_by": null,
       "description": "The video frames presented during the protocol.",
       "filename_pattern": "_sp_video.raw.*"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "4c576a86-5e73-4441-ae9e-1299356464a7",
+    "fields": {
+      "json": null,
+      "name": "clusters.curatedLabels",
+      "created_by": null,
+      "description": "Manually annotated cluster labels",
+      "filename_pattern": "*clusters.curatedLabels*.tsv"
+    }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "fc76b3bb-7619-4352-8a4c-aa22358d1b7c",
+    "fields": {
+      "json": null,
+      "name": "subjectSessions.table",
+      "created_by": null,
+      "description": "All session data included in the subjectTrials table for a given subject, contains the columns lab, session date, session number, task protocol and project",
+      "filename_pattern": ""
     }
   }
 ]

@@ -26,6 +26,7 @@ psycopg2-binary
 python-dateutil
 python-magic
 pytz
+setuptools
 structlog>=21.5.0
 webdavclient3
 ONE-api>=2.11
