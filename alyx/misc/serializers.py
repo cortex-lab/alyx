@@ -60,7 +60,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ('id', 'username', 'email', 'subjects_responsible', 'lab', 'allowed_users', 'is_stock_manager')
+        fields = (
+            'id', 'username', 'email', 'subjects_responsible',
+            'lab', 'allowed_users', 'is_stock_manager'
+        )
 
 
 class LabSerializer(serializers.HyperlinkedModelSerializer):
