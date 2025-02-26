@@ -105,6 +105,8 @@ class WaterAdministration(BaseModel):
                 self.water_type = wr.water_type
             else:
                 self.water_type = WaterType.objects.get(pk=_default_water_type())
+        if (death_date := self.subject.death_date) and self.date_time.date() > death_date:
+            raise ValueError('Water administration date after death date')
         return super(WaterAdministration, self).save(*args, **kwargs)
 
     def expected(self):
