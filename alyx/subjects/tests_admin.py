@@ -3,35 +3,20 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock
 
 from django.test import TestCase
-from django.test import Client
 from django.contrib.admin.sites import AdminSite
 
-from misc.models import LabMember, Lab
+from alyx.test_base import setup_admin_subject_user
+from misc.models import LabMember
 from subjects.models import Subject
 from actions.models import Cull, CullMethod, CullReason
-from misc.management.commands.set_user_permissions import Command
 from subjects.admin import CullForm, SubjectAdmin
-
-
-def setup(obj):
-    obj.client = Client()
-    obj.user = LabMember.objects.create_user(
-        username='foo', password='bar123', email='foo@example.com')
-    obj.user.is_staff = obj.user.is_active = True  # for change permissions
-    obj.user.save()
-
-    Command().handle()  # set user group permissions
-    obj.client.login(username='foo', password='bar123')
-    obj.lab = Lab.objects.get(name='cortexlab')
-    obj.subject = Subject.objects.create(
-        nickname='aQt', birth_date=date(2025, 1, 1), lab=obj.lab, actual_severity=2)
 
 
 class TestSubjectCullForm(TestCase):
     fixtures = ['misc.lab.json']
 
     def setUp(self):
-        setup(self)
+        setup_admin_subject_user(self)
         self.cull_methods = [CullMethod.objects.create(name=f'method{i}') for i in range(0, 2)]
         self.cull_reasons = [CullReason.objects.create(name=f'reason{i}') for i in range(0, 2)]
 
@@ -66,7 +51,7 @@ class TestSubjectAdminForm(TestCase):
     fixtures = ['misc.lab.json']
 
     def setUp(self):
-        setup(self)
+        setup_admin_subject_user(self)
         self.site = AdminSite()
         self.subject_admin = SubjectAdmin(Subject, self.site)
         self.request = MagicMock()

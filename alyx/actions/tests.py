@@ -113,6 +113,29 @@ class WaterControlTests(TestCase):
         wc = self.sub.reinit_water_control()
         self.assertAlmostEqual(expected + 1, wc.reference_weight())
 
+    def test_water_administration_validation(self):
+        """Check that water administration date is before death date."""
+        # Without a date of death, the water administration should be created without error
+        assert self.sub.death_date is None
+        WaterAdministration.objects.create(
+            water_administered=1.02,
+            subject=self.sub,
+            date_time=datetime.datetime.now())
+        # If we set a death date, the water administration should not be created
+        self.sub.death_date = datetime.date.today()
+        self.sub.save()
+        with self.assertRaises(ValueError) as e:
+            WaterAdministration.objects.create(
+                water_administered=1.02,
+                subject=self.sub,
+                date_time=datetime.datetime.now() + datetime.timedelta(days=1))
+        self.assertIn('Water administration date after death date', str(e.exception))
+        # If before the death date, the water administration should be created
+        WaterAdministration.objects.create(
+            water_administered=1.02,
+            subject=self.sub,
+            date_time=datetime.datetime.now() - datetime.timedelta(days=1))
+
 
 class NotificationTests(TestCase):
     def setUp(self):
