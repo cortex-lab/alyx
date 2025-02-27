@@ -242,6 +242,28 @@ class BaseActionAdmin(BaseAdmin):
         super(BaseActionAdmin, self).save_model(request, obj, form, change)
 
 
+class OtherActionAdmin(BaseActionAdmin):
+    list_display = ['subject_l', 'start_time', 'procedures_l', 'users_l', 'narrative', 'projects']
+    list_select_related = ('subject',)
+    ordering = ('-start_time', 'subject__nickname')
+    search_fields = ['subject__nickname', 'subject__projects__name']
+    list_filter = [ResponsibleUserListFilter,
+                   ('subject', RelatedDropdownFilter),
+                   ('users', RelatedDropdownFilter),
+                   ('start_time', DateRangeFilter),
+                   ('end_time', DateRangeFilter),
+                   ]
+
+    def users_l(self, obj):
+        return ', '.join(map(str, obj.users.all()))
+
+    def procedures_l(self, obj):
+        return ', '.join(map(str, obj.procedures.all()))
+
+    users_l.short_description = 'users'
+    procedures_l.short_description = 'proformed procedures'
+
+
 class ProcedureTypeAdmin(BaseActionAdmin):
     fields = ['name', 'description']
     ordering = ['name']
@@ -250,17 +272,21 @@ class ProcedureTypeAdmin(BaseActionAdmin):
 class WaterAdministrationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(WaterAdministrationForm, self).__init__(*args, **kwargs)
-        # Only show subjects that are on water restriction.
-        ids = [wr.subject.pk
-               for wr in WaterRestriction.objects.filter(start_time__isnull=False,
-                                                         end_time__isnull=True).
-               order_by('subject__nickname')]
+        # Show subjects that are on water restriction first.
+        qs = (WaterRestriction
+              .objects
+              .select_related('subject')
+              .filter(
+                  start_time__isnull=False, end_time__isnull=True, subject__death_date__isnull=True
+              )
+              .order_by('subject__nickname'))
+        ids = list(qs.values_list('subject', flat=True))
         if getattr(self, 'last_subject_id', None):
-            ids += [self.last_subject_id]
+            ids = [self.last_subject_id] + ids
         # These ids first in the list of subjects, if any ids
         if not self.fields:
             return
-        elif ids:
+        if ids:
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
             subjects = Subject.objects.order_by(preserved, 'nickname')
         else:
@@ -269,6 +295,15 @@ class WaterAdministrationForm(forms.ModelForm):
         self.fields['subject'].queryset = self.current_user.get_allowed_subjects(subjects)
         self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
         self.fields['water_administered'].widget.attrs.update({'autofocus': 'autofocus'})
+
+    def clean(self):
+        cleaned_data = super(WaterAdministrationForm, self).clean()
+        if cleaned_data['subject']:
+            death_date = cleaned_data['subject'].death_date
+            date_time = cleaned_data['date_time']
+            if death_date and date_time and death_date < date_time.date():
+                self.add_error('date_time', 'Date must be before subject death date.')
+        return cleaned_data
 
 
 class WaterAdministrationAdmin(BaseActionAdmin):
@@ -435,7 +470,21 @@ class WeighingForm(BaseActionForm):
     def __init__(self, *args, **kwargs):
         super(WeighingForm, self).__init__(*args, **kwargs)
         if 'subject' in self.fields:
-            self.fields['subject'].queryset = self.current_user.get_allowed_subjects()
+            # Order by alive subjects first
+            ids = list(Subject
+                       .objects
+                       .filter(death_date__isnull=True)
+                       .order_by('nickname')
+                       .only('pk')
+                       .values_list('pk', flat=True))
+        # These ids first in the list of subjects, if any ids
+        if ids:
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            subjects = Subject.objects.order_by(preserved, 'nickname')
+        else:
+            subjects = Subject.objects.order_by('nickname')
+        self.fields['subject'].queryset = self.current_user.get_allowed_subjects(subjects)
+
         if self.fields.keys():
             self.fields['weight'].widget.attrs.update({'autofocus': 'autofocus'})
 
@@ -721,7 +770,7 @@ admin.site.register(WaterRestriction, WaterRestrictionAdmin)
 admin.site.register(Session, SessionAdmin)
 admin.site.register(EphysSession, EphysSessionAdmin)
 admin.site.register(ImagingSession, ImagingSessionAdmin)
-admin.site.register(OtherAction, BaseActionAdmin)
+admin.site.register(OtherAction, OtherActionAdmin)
 admin.site.register(VirusInjection, BaseActionAdmin)
 
 admin.site.register(Surgery, SurgeryAdmin)

@@ -19,24 +19,24 @@ from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence,
                      Project,
                      )
 from actions.models import (
-    Surgery, Session, OtherAction, WaterAdministration, WaterRestriction, Weighing)
+    Surgery, Session, OtherAction, WaterAdministration, WaterRestriction, Weighing, Cull)
 from actions.admin import BaseActionForm
 from misc.models import LabMember, Housing
 from misc.admin import NoteInline
 
 
 # Utility functions
-# ------------------------------------------------------------------------------------------------
+# -----------------
 
 def create_modeladmin(modeladmin, model, name=None):
     # http://stackoverflow.com/a/2228821/1595060
-    name = name.replace(' ', '_')
-
     class Meta:
         proxy = True
         app_label = model._meta.app_label
     attrs = {'__module__': '', 'Meta': Meta}
-    newmodel = type(name, (model,), attrs)
+    # For the url to be generated correctly (no spaces), the name of the model must be camel case
+    model_name = name.title().replace(' ', '')
+    newmodel = type(model_name, (model,), attrs)
     newmodel.Meta.verbose_name_plural = name
     admin.site.register(newmodel, modeladmin)
     return modeladmin
@@ -280,13 +280,54 @@ class SessionInline(BaseInlineAdmin):
 class OtherActionInline(BaseInlineAdmin):
     model = OtherAction
     extra = 1
-    fields = ['procedures', 'narrative', 'start_time',
-              'users', 'location']
+    fields = ['procedures', 'narrative', 'start_time', 'users', 'location']
     classes = ['collapse']
     ordering = ('-start_time',)
 
 
+class CullForm(forms.ModelForm):
+
+    class Meta:
+        model = Cull
+        fields = ['user', 'date', 'cull_method', 'cull_reason', 'description']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['date'].help_text = \
+            'When adding a cull don\'t forget to update actual severity'
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Validate that outcomes are dated reasonably
+        cull_date = cleaned_data.get('date')
+        if subject := getattr(self.instance, 'subject', None):
+            if birth_date := subject.birth_date:
+                if cull_date and cull_date < birth_date:
+                    self.add_error('date', 'Cull date must be after birth date.')
+
+        return cleaned_data
+
+
+class CullInline(BaseInlineAdmin):
+    model = Cull
+    form = CullForm
+    extra = 1
+    max_num = 1
+    can_delete = False
+    readonly_fields = []
+    verbose_name = 'Cull'
+    verbose_name_plural = 'Culls'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Logged-in user by default.
+        if db_field.name == 'user':
+            kwargs['initial'] = request.user
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 class SubjectForm(forms.ModelForm):
+
     def __init__(self, *args, **kwargs):
         # NOTE: Retrieve the request, passed by ModelAdmin.get_form()
         self.request = kwargs.pop('request', None)
@@ -303,6 +344,7 @@ class SubjectForm(forms.ModelForm):
             )
 
     def clean_responsible_user(self):
+        """Ensure responsible user is not changed by unauthorized users."""
         old_ru = self.instance.responsible_user
         new_ru = self.cleaned_data['responsible_user']
         logged = self.request.user
@@ -314,6 +356,33 @@ class SubjectForm(forms.ModelForm):
                 raise forms.ValidationError("You are not allowed to change the responsible user.")
         return new_ru
 
+    def clean_reduced_date(self):
+        """Ensure reduced date is after birth date and cull date."""
+        if not (reduced_date := self.cleaned_data.get('reduced_date')):
+            return
+        if (birth_date := self.instance.birth_date) and reduced_date < birth_date:
+            raise forms.ValidationError('Reduced date must be after birth date.')
+        has_cull = hasattr(self.instance, 'cull')
+        if has_cull and (cull_date := self.instance.cull.date) and reduced_date < cull_date:
+            raise forms.ValidationError('Reduced date must be after cull date.')
+
+        return reduced_date
+
+    def clean_actual_severity(self):
+        """Ensure actual severity set when adding cull.
+
+        If a cull has just been added but not yet saved, check that the user has also set the
+        actual_severity field.  This ensures that the user has set the severity without causing
+        issues for historical subjects that have culls but no actual severity.
+        """
+        actual_severity = self.cleaned_data.get('actual_severity')
+        has_cull = hasattr(self.instance, 'cull')
+        adding_cull = self.request.POST['cull-0-date'] and not has_cull
+        if adding_cull and not actual_severity:
+            raise forms.ValidationError(
+                'Actual severity field must not be null when adding a cull.')
+        return actual_severity
+
 
 class SubjectAdmin(BaseAdmin):
     HOUSING_FIELDS = ('housing_l', 'cage_name', 'cage_type', 'light_cycle', 'enrichment',
@@ -322,11 +391,7 @@ class SubjectAdmin(BaseAdmin):
         ('SUBJECT', {'fields': ('nickname', 'sex', 'birth_date', 'age_days', 'responsible_user',
                                 'request', 'wean_date',
                                 ('to_be_genotyped', 'genotype_date',),
-                                ('death_date', 'to_be_culled'),
-                                ('reduced_date', 'reduced'),
-                                ('cull_', 'cull_reason_'),
-                                'ear_mark',
-                                'protocol_number', 'description',
+                                'ear_mark', 'protocol_number', 'description', 'adverse_effects',
                                 'lab', 'projects', 'json', 'subject_history')}),
         ('HOUSING (read-only, edit widget at the bottom of the page)',
          {'fields': HOUSING_FIELDS, 'classes': ('extrapretty',), }),
@@ -334,9 +399,6 @@ class SubjectAdmin(BaseAdmin):
                                 'cage', 'cage_changes',),
                      'classes': ('collapse',),
                      }),
-        ('OUTCOMES', {'fields': ('cull_method', 'adverse_effects', 'actual_severity'),
-                      'classes': ('collapse',),
-                      }),
         ('WEIGHINGS/WATER', {'fields': ('current_weight',
                                         'current_implant_weight',
                                         'reference_weight',
@@ -350,11 +412,14 @@ class SubjectAdmin(BaseAdmin):
                                         ),
                              'classes': ('collapse',),
                              }),
+        ('OUTCOME', {'fields': ('actual_severity', ('death_date', 'to_be_culled'), 'reduced_date'),
+                     'classes': ('collapse',),
+                     }),
     )
 
     list_display = ['nickname', 'weight_percent', 'birth_date', 'sex_l', 'alive', 'session_count',
                     'responsible_user', 'lab', 'description',
-                    'project_l',  # 'session_projects_l',
+                    'project_l',
                     'ear_mark_', 'line_l', 'litter_l', 'zygosities', 'cage', 'breeding_pair_l',
                     ]
     search_fields = ['nickname',
@@ -367,9 +432,9 @@ class SubjectAdmin(BaseAdmin):
                      ]
     readonly_fields = ('age_days', 'zygosities', 'subject_history',
                        'breeding_pair_l', 'litter_l', 'line_l',
-                       'cage_changes', 'cull_', 'cull_reason_',
+                       'cage_changes',
                        'death_date',
-                       ) + fieldsets[4][1]['fields'] + HOUSING_FIELDS  # water read only fields
+                       ) + fieldsets[3][1]['fields'] + HOUSING_FIELDS  # water read only fields
     ordering = ['-birth_date', '-nickname']
     list_editable = []
     list_filter = [ResponsibleUserListFilter,
@@ -380,13 +445,14 @@ class SubjectAdmin(BaseAdmin):
                    ('line', LineDropdownFilter),
                    ]
     form = SubjectForm
-    inlines = [ZygosityInline, GenotypeTestInline,
+    inlines = [CullInline,
+               ZygosityInline, GenotypeTestInline,
                SurgeryInline,
                AddSurgeryInline,
                SessionInline,
-               OtherActionInline,
                NoteInline,
                HousingInline,
+               OtherActionInline,
                ]
 
     def get_queryset(self, request):
@@ -439,18 +505,6 @@ class SubjectAdmin(BaseAdmin):
         return format_html('<a href="{url}">{breeding_pair}</a>',
                            breeding_pair=bp or '-', url=url)
     breeding_pair_l.short_description = 'BP'
-
-    def cull_reason_(self, obj):
-        if hasattr(obj, 'cull'):
-            return obj.cull.cull_reason
-    cull_reason_.short_description = 'cull reason'
-
-    def cull_(self, obj):
-        if not hasattr(obj, 'cull'):
-            return
-        url = get_admin_url(obj.cull)
-        return format_html('<a href="{url}">{cull}</a>', cull=obj.cull or '-', url=url)
-    cull_.short_description = 'cull object'
 
     def housing_l(self, obj):
         url = get_admin_url(obj.housing)
@@ -1194,7 +1248,8 @@ class SubjectInlineNonEditable(SubjectInline):
 class SubjectRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SubjectRequestForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
+        if 'user' in self.fields:
+            self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
 
 
 class SubjectRequestAdmin(BaseAdmin):
@@ -1441,14 +1496,12 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'to_be_culled', 'birth_date', 'death_date', 'sex_f', 'ear_mark',
-                    'line', 'zygosities', 'cage', 'responsible_user', 'reduced', 'cull_l']
+    list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced', 'sex_f', 'ear_mark',
+                    'cage', 'zygosities', 'birth_date', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
-                   ZygosityFilter,
-                   ('line', LineDropdownFilter),
-                   ]
+                   ZygosityFilter]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 
     ordering = ['-birth_date', '-nickname']
