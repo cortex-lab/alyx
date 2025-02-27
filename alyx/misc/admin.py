@@ -9,7 +9,9 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rest_framework.authtoken.models import TokenProxy
+from rangefilter.filters import DateRangeFilter
 
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
@@ -105,9 +107,34 @@ class ImageWidgetAdmin(BaseAdmin):
         return super(ImageWidgetAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
 
+class HasImageFilter(DefaultListFilter):
+    title = 'image'
+    parameter_name = 'has_image'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, 'All'),
+            ('image', 'Has image'),
+            ('no_image', 'No image'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'image':
+            return queryset.exclude(image__exact='')
+        if self.value() == 'no_image':
+            return queryset.filter(image__exact='')
+        elif self.value is None:
+            return queryset.all()
+
+
 class NoteAdmin(ImageWidgetAdmin):
     list_display = ['user', 'date_time', 'content_object', 'text', 'image']
     list_display_links = ['date_time']
+    list_filter = [('user', RelatedDropdownFilter),
+                   ('date_time', DateRangeFilter),
+                   ('content_type', RelatedDropdownFilter),
+                   (HasImageFilter),
+                   ]
     image_fields = ['image']
     fields = ['user', 'date_time', 'text', 'image', 'content_type', 'object_id']
     ordering = ('-date_time',)
