@@ -1248,7 +1248,8 @@ class SubjectInlineNonEditable(SubjectInline):
 class SubjectRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SubjectRequestForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
+        if 'user' in self.fields:
+            self.fields['user'].queryset = get_user_model().objects.all().order_by('username')
 
 
 class SubjectRequestAdmin(BaseAdmin):
