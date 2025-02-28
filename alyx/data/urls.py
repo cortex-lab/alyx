@@ -46,7 +46,7 @@ urlpatterns = [
     path('tags', dv.TagList.as_view(),
          name="tag-list"),
 
-    path('tags/<uuid:pk>', dv.TagDetail.as_view(),
+    path('tags/<str:name>', dv.TagDetail.as_view(),
          name="tag-detail"),
 
     path('datasets', dv.DatasetList.as_view(),
