@@ -197,7 +197,7 @@ class ONECache(TestCase):
         self.assertEqual(len(tables), 2)
         datasets, sessions = pd.read_parquet(tables[0]), pd.read_parquet(tables[1])
         self.assertCountEqual(
-            datasets.reset_index().columns, DATASETS_COLUMNS + ('default_revision',))
+            datasets.reset_index().columns, (*DATASETS_COLUMNS, 'default_revision'))
         self.assertTrue(all(datasets['rel_path'].str.startswith('alf/')))
         self.assertCountEqual(sessions.reset_index().columns, SESSIONS_COLUMNS)
         # Test QC and compression
