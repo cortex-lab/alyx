@@ -46,9 +46,9 @@ class TestManagementTasks(BaseTests):
         """Create some tasks to clean up."""
         self.n_tasks = 100
         self.command = tasks.Command()
-        base = datetime.today()
+        self.base = datetime(2024, 1, 1)
         # Create equally-spaced task dates
-        date_list = [base - timedelta(days=x) for x in range(self.n_tasks)]
+        date_list = [self.base - timedelta(days=x) for x in range(self.n_tasks)]
         with patch('django.db.models.fields.timezone.now') as timezone_mock:
             for i, date in enumerate(date_list):
                 timezone_mock.return_value = date
@@ -57,7 +57,7 @@ class TestManagementTasks(BaseTests):
         # Create a session for testing signed-off filter
         lab = Lab.objects.create(name='lab')
         subject = Subject.objects.create(nickname='586', lab=lab)
-        json_data = {'sign_off_checklist': {'sign_off_date': datetime.today().isoformat()}}
+        json_data = {'sign_off_checklist': {'sign_off_date': self.base.isoformat()}}
         self.session = Session.objects.create(
             subject=subject, number=1, json=json_data, type='Experiment')
         t = Task.objects.first()
@@ -68,7 +68,7 @@ class TestManagementTasks(BaseTests):
         """Test for cleanup action."""
         # First run in dry mode, expect submit_delete to not be called
         n = self.n_tasks - 10
-        before_date = (datetime.today() - timedelta(days=n)).date()
+        before_date = (self.base - timedelta(days=n)).date()
         with patch.object(self.command.stdout, 'write') as stdout_mock:
             self.command.handle(action='cleanup', before=str(before_date), dry=True)
             stdout_mock.assert_called()
@@ -101,7 +101,7 @@ class TestManagementTasks(BaseTests):
 
         # With status filter as string and ~
         n_days = self.n_tasks - 20
-        before_date = (datetime.today() - timedelta(days=n_days)).date()
+        before_date = (self.base - timedelta(days=n_days)).date()
         n = Task.objects.count()
         n -= Task.objects.exclude(status=45).filter(datetime__date__lte=before_date).count()
         self.command.handle(action='cleanup', status='~Abandoned', before=str(before_date))

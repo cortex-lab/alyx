@@ -1712,7 +1712,7 @@
       "name": "imaging.frames",
       "created_by": null,
       "description": "Raw frame images with the dimensions [nframes, nx, ny(, nchannels)]. Note that depending on modality, multiple planes and channels may be stitched together and/or presented in a different order.",
-      "filename_pattern": "imaging.frames*"
+      "filename_pattern": ""
     }
   },
   {

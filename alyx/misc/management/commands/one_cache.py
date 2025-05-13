@@ -16,8 +16,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow as pa
 from tqdm import tqdm
-from one.alf.cache import _metadata, SESSIONS_COLUMNS, DATASETS_COLUMNS
-from one.util import QC_TYPE
+from one.alf.cache import _metadata, SESSIONS_COLUMNS, DATASETS_COLUMNS, QC_TYPE
 from one.alf.spec import QC
 from one.remote.aws import get_s3_virtual_host
 
