@@ -5,30 +5,27 @@
 
 Database for experimental neuroscience laboratories
 
-Documentation: [Installation and getting started](http://alyx.readthedocs.io), [Alyx usage guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
+[Documentation](https://alyx.readthedocs.io)
+
+[Alyx Experimenter Guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
 
 ## Installation
-Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recommended. There are no guarantees that 
-this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 
-[The getting started](docs/gettingstarted.md) section of the documentation details the steps for 
+[The getting started](https://alyx.readthedocs.io/en/latest/gettingstarted.html) section of the documentation details the steps for 
 -   installing the Python/Django environment
--   serving a local database
+-   running the app with a development server
 -   registering local data
 -   accessing local data using [ONE](https://one.internationalbrainlab.org)
+
+More complex deployments scenarios using web servers and Cloud applications are in the [how-to guides section of the documtentaiton](docs/how-to-guides)
 
 ## Contribution
 
 * Development happens on the **dev** branch
 * alyx is sync with the **master** branch
 * alyx-dev is sync with the **dev** branch
-* Migrations files are provided by the repository
+* Migrations files are always provided by the repository
 * Continuous integration is setup, to run tests locally:
     - `./manage.py test -n` test without migrations (faster)
     - `./manage.py test` test with migrations (recommended if model changes)
-    - NB: When running tests ensure `DEBUG = True` in the settings.py file (specifically `SECURE_SSL_REDIRECT = True` causes REST tests to fail)
-
-```shell
-./manage.py test -n
-```
