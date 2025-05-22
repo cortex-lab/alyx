@@ -26,6 +26,23 @@ More complex deployments scenarios using web servers and Cloud applications are 
 * alyx is sync with the **master** branch
 * alyx-dev is sync with the **dev** branch
 * Migrations files are always provided by the repository
-* Continuous integration is setup, to run tests locally:
+
+### Running tests
+
+Continuous integration is setup. But before submitting a PR or commit,the tests can run locally.
     - `./manage.py test -n` test without migrations (faster)
     - `./manage.py test` test with migrations (recommended if model changes)
+
+### Documentation contribution guide
+
+#### Dependencies
+```
+pip install myst-parser sphinx_rtd_theme sphinx-autobuild
+```
+
+#### Build documentation locally
+
+From the root of the repository.
+````shell
+sphinx-autobuild -b html ./docs ./docs/_build/ --port 8700
+````

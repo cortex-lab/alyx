@@ -1,5 +1,5 @@
 
-# Apache Site Configuration
+# Deployments how-to's
 
 If the database needs to be served on the web, one tested solution is to use an apache web server.
 
