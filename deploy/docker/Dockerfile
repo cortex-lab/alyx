@@ -5,8 +5,8 @@ COPY settings_lab-deploy.py /var/www/alyx/alyx/alyx/settings_lab.py
 
 ARG alyx_branch=deploy
 
-RUN git -C /var/www/alyx pull origin ${alyx_branch}
-RUN git -C /var/www/alyx checkout origin/${alyx_branch}
+RUN git -C /var/www/alyx fetch origin ${alyx_branch}
+RUN git -C /var/www/alyx checkout -B ${alyx_branch} origin/${alyx_branch}
 RUN git -C /home/iblalyx checkout -b deploy
 
 RUN pip install -r /var/www/alyx/requirements.txt
