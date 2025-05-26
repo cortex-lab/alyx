@@ -22,6 +22,7 @@ globus-sdk
 gunicorn
 markdown
 matplotlib
+ONE-api>=3.0
 pillow
 psycopg2-binary
 python-dateutil
@@ -30,4 +31,4 @@ pytz
 setuptools
 structlog>=21.5.0
 webdavclient3
-ONE-api>=3.0
+whitenoise

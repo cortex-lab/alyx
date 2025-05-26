@@ -7,7 +7,7 @@ services:
     env_file: ./.env.local
     command: >
       bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
-               gunicorn --workers 2 -b 0.0.0.0:8000"
+               gunicorn --workers 2 -b 0.0.0.0:8000 alyx.gunicorn_wsgi:application"
     restart: always
     volumes:
       - /var/log/apache2:/var/log/apache2

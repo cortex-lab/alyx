@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir dj-database-url
 
 # create reports application
-RUN git clone --branch deploy https://github.com/int-brain-lab/iblalyx.git /home/iblalyx \
+RUN git clone --branch main https://github.com/int-brain-lab/iblalyx.git /home/iblalyx \
     && ln -s /home/iblalyx/management/ibl_reports /var/www/alyx/alyx/ibl_reports \
     && ln -s /home/iblalyx/management/ibl_reports/templates /var/www/alyx/alyx/templates/ibl_reports \
     && pip install --no-cache-dir -r /home/iblalyx/requirements.txt

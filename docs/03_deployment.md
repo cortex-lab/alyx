@@ -10,13 +10,25 @@ If the database needs to be served on the web, one tested solution is to use an 
 ### Building the docker containers
 
 We have built our images on top of the apache2 images as it is the webserver we currently use. 
-However those images are suitable for use with different servers such as gunicorn.
+However as shown in the getting started section, those images are suitable for use with different servers such as gunicorn.
 
 ```shell
-DOCKER_BUILD_PATH=./alyx/deploy/docker/
-cd $DOCKER_BUILD_PATH
-docker buildx build . --platform linux/amd64 --tag internationalbrainlab/alyx_apache_base:latest -f ./Dockerfile_base
-docker buildx build . --platform linux/amd64 --tag internationalbrainlab/alyx_apache:latest -f ./Dockerfile --no-cache
+# need to be in the build folder to copy some apache settings
+cd ./alyx/deploy/docker/
+
+# builds the base container
+docker buildx build . \
+  --platform linux/amd64 \
+  --tag internationalbrainlab/alyx_apache_base:latest \
+  -f ./Dockerfile_base
+
+# builds the top layer
+docker buildx build . \
+  --platform linux/amd64 \
+  --tag internationalbrainlab/alyx_apache:latest \
+  -f ./Dockerfile \
+  --build-arg alyx_branch=deploy \
+  --no-cache
 ```
 
 ```shell
