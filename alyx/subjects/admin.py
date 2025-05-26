@@ -1497,11 +1497,12 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 class CullMiceAdmin(SubjectAdmin):
     list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced', 'sex_f', 'ear_mark',
-                    'cage', 'zygosities', 'birth_date', 'cull_l']
+                    'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
-                   ZygosityFilter]
+                   ZygosityFilter,
+                   ('line', LineDropdownFilter)]
     list_editable = ['death_date', 'to_be_culled', 'reduced']
 
     ordering = ['-birth_date', '-nickname']
