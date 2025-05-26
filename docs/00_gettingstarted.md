@@ -1,12 +1,25 @@
 # Getting Started
 
-The example details how to
-1. install a local instance of Alyx
+Minimal working example of how to:
+1. install a containerized version of Alyx + PostgreSQL
 2. initialize it with the fixtures
 3. register some local data to it
 4. using the ONE-api, load the registered data
 
-Requirements: this tutorial works on Linux as it relies on installing postgres and Django.
+## Install a containerized version of Alyx + postgreSQL 
+Requirements: 
+- git
+- docker
+
+```shell
+cd ./deploy
+
+```
+
+
+
+
+## Install a development version of Alyx
 
 The `setup.py` script sets up postgres (it creates the database and postgres user), it creates the settings files
 -   `alyx/alyx/settings_secret.py`
@@ -15,9 +28,6 @@ The `setup.py` script sets up postgres (it creates the database and postgres use
 
 
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
-
-
-## Install a local instance of Alyx
 
 ### Ubuntu or Debian based Linux
 Go to the directory of your choice (for example: `/var/www/alyx-local`) and follow the installation guide

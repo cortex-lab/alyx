@@ -19,6 +19,7 @@ drfdocs
 flake8
 globus-cli
 globus-sdk
+gunicorn
 markdown
 matplotlib
 pillow

@@ -1,10 +1,10 @@
 <VirtualHost *:80>
-    ServerName openalyx.internationalbrainlab.org
-    Redirect permanent / https://openalyx.internationalbrainlab.org/
+    ServerName ${APACHE_SERVER_NAME}
+    Redirect permanent / https://${APACHE_SERVER_NAME}/
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName openalyx.internationalbrainlab.org
+    ServerName ${APACHE_SERVER_NAME}
     ServerAdmin webmaster@internationalbrainlab.org
     DocumentRoot /var/www/alyx
 
@@ -12,7 +12,6 @@
         <Files wsgi.py>
             Require all granted
         </Files>
-        Include /etc/apache2/sites-available/ip_whitelist.conf
     </Directory>
 
     Alias /static/ /var/www/alyx/alyx/static/
@@ -43,10 +42,4 @@
     SSLHonorCipherOrder     on
     SSLCompression          off
     SSLOptions +StrictRequire
-
-    # Configurations for easy maintenance mode
-    RewriteEngine On
-    RewriteCond %{ENV:REDIRECT_STATUS} !=503
-    RewriteCond "/var/www/alyx/maintenance.trigger" -f
-    RewriteRule ^(.*)$ /$1 [R=503,L]
 </VirtualHost>
