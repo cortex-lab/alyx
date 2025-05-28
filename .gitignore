@@ -1,5 +1,17 @@
 # environment files for deployments
 deploy/.env*
+# all of the iblreports sym links
+alyx/data/management/commands/*ibl*
+alyx/data/management/commands/sync_patcher.py
+alyx/ibl_reports
+alyx/templates/ibl_reports
+# setting files
+alyx/alyx/settings_secret.py
+alyx/alyx/settings_lab.py
+alyx/alyx/settings.py
+alyx/static/*/*
+scripts/deployment_examples/docker-apache/settings*
+
 # other
 *.pyc
 .DS_Store
@@ -27,14 +39,6 @@ build
 .cache/
 alyx/alyx_full.sql.gz
 .vscode/
-alyx/data/management/commands/*ibl*
-alyx/ibl_reports
-alyx/templates/ibl_reports
-alyx/alyx/settings_secret.py
-alyx/alyx/settings_lab.py
-alyx/alyx/settings.py
-alyx/static/*/*
-scripts/deployment_examples/docker-apache/settings*
 
 alyx/.idea/
 
