@@ -6,10 +6,11 @@ If the database needs to be served on the web, one tested solution is to use an 
 
 ## Install a development version of Alyx
 
-The `setup.py` script sets up postgres (it creates the database and postgres user), it creates the settings files
--   `alyx/alyx/settings_secret.py`
--   `alyx/alyx/settings_lab.py`
--   `alyx/alyx/settings.py`
+TODO: change settings.py to populate env file and link the following settings files
+```shell
+cp ./deploy/docker/settings-deploy.py alyx/alyx/settings.py
+cp ./deploy/docker/settings_lab-deploy.py alyx/alyx/settings_lab.py
+```
 
 
 Note that the postgres username and password are distinct from Alyx (Django) users and password. There is only one postgres user that is only used locally for maintenance task or by Django.
