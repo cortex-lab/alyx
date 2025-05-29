@@ -11,10 +11,20 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 import os
 import json
 import dj_database_url
+import logging
+import dotenv
 import structlog
-
 from pathlib import Path
+
 from django.conf.locale.en import formats as en_formats
+
+_logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).parents[1]  # '/var/www/alyx/alyx'
+dotenv_path = BASE_DIR.joinpath('alyx', '.env')
+if dotenv_path.exists():
+    _logger.warning(f'environment file found: {dotenv_path}')
+    dotenv.load_dotenv(dotenv_path=dotenv_path)
 
 # Lab-specific settings
 try:
@@ -200,9 +210,29 @@ EMAIL_HOST_PASSWORD = 'UnbreakablePassword'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
+STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
+STATIC_URL = '/static/'
+
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('uploaded'))
+MEDIA_URL = '/uploaded/'
+UPLOADED_IMAGE_WIDTH = 800
+
+# The location for saving and/or serving the cache tables.
+# May be a local path, http address or s3 uri (i.e. s3://)
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('uploaded'))
+
 # storage configurations
 STORAGES = {
-    "default": {
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+if MEDIA_ROOT.startswith('https://') and '.s3.' in MEDIA_ROOT:
+    STORAGES['default'] = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+else:
+    _logger.warning('S3 backend enabled for uploads and tables')
+    STORAGES['default'] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             'bucket_name': 'alyx-uploaded',
@@ -210,20 +240,4 @@ STORAGES = {
             'region_name': 'eu-west-2',
             'addressing_style': 'virtual',
         },
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
-
-STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
-STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('uploaded'))
-MEDIA_URL = '/uploaded/'
-# The location for saving and/or serving the cache tables.
-# May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('uploaded'))
-
-
-UPLOADED_IMAGE_WIDTH = 800
+    }

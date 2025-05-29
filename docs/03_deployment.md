@@ -118,11 +118,6 @@ docker buildx build . \
   --no-cache
 ```
 
-```shell
-docker image push internationalbrainlab/alyx_apache_base:latest
-docker image push internationalbrainlab/alyx_apache:latest
-```
-
 ### Apache webserver and interaction with wsgi
 
 Put the [site configuration](_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`

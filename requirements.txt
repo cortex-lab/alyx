@@ -15,6 +15,7 @@ django-structlog
 django-test-without-migrations
 djangorestframework
 docutils
+dotenv
 drfdocs
 flake8
 globus-cli

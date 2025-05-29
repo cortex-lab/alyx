@@ -1,5 +1,5 @@
 # environment files for deployments
-deploy/.env*
+.env*
 # all of the iblreports sym links
 alyx/data/management/commands/*ibl*
 alyx/data/management/commands/sync_patcher.py
