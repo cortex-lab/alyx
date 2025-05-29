@@ -24,7 +24,7 @@ docker compose -f docker-compose-postgres-gunicorn.yaml up --detach
 ```
 
 Now this has started Alyx as a local service, with an empty database as a backend. So the very first time,
-if we want connect to the appication, we need to
+if we want connect to the application, we need to
 - create the database empty table structure
 - create a super user that will be the administrator
 - load the "fixtures": this is the common set of database tables and record for all Alyx databases
@@ -40,7 +40,7 @@ docker exec -it alyx_apache /var/www/alyx/scripts/load-init-fixtures.sh
 docker exec -it alyx_apache python manage.py createsuperuser
 ```
 
-You can now visit the Alyx interfact in your web browser at [http://localhost:8000](http://localhost:8000)
+You can now visit the Alyx interface in your web browser at [http://localhost:8000](http://localhost:8000)
 
 This is it ! In the next session, we will see how to register experiments and datasets on this database from a local python environment.
 
