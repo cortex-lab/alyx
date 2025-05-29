@@ -315,7 +315,7 @@ class FOVSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FOV
-        exclude = ('json',)
+        fields = '__all__'
 
 
 class ImagingStackDetailSerializer(serializers.ModelSerializer):
