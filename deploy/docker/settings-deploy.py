@@ -213,13 +213,13 @@ EMAIL_USE_TLS = True
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('uploaded'))
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('media'))
 MEDIA_URL = '/uploaded/'
 UPLOADED_IMAGE_WIDTH = 800
 
 # The location for saving and/or serving the cache tables.
 # May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('uploaded'))
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('media'))
 
 # storage configurations
 STORAGES = {
@@ -228,9 +228,7 @@ STORAGES = {
     },
 }
 
-if MEDIA_ROOT.startswith('https://') and '.s3.' in MEDIA_ROOT:
-    STORAGES['default'] = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
-else:
+if str(MEDIA_ROOT).startswith('https://') and '.s3.' in str(MEDIA_ROOT):
     _logger.warning('S3 backend enabled for uploads and tables')
     STORAGES['default'] = {
         "BACKEND": "storages.backends.s3.S3Storage",
@@ -241,3 +239,5 @@ else:
             'addressing_style': 'virtual',
         },
     }
+else:
+    STORAGES['default'] = {"BACKEND": "django.core.files.storage.FileSystemStorage"}

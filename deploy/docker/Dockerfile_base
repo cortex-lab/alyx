@@ -63,6 +63,8 @@ RUN mkdir -p ${APACHE_LOG_DIR} \
 COPY apache-conf-alyx /etc/apache2/apache2.conf
 COPY 000-default-conf-alyx /etc/apache2/sites-available/000-default.conf
 
+RUN chmod chown www-data:www-data -fR /var/www/alyx/alyx/media
+
 RUN a2enmod rewrite
 RUN a2enmod ssl
 RUN a2enmod wsgi
