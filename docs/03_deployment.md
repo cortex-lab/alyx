@@ -31,15 +31,16 @@ python manage.py collectstatic --noinput
 python manage.py check
 python manage.py migrate
 ../scripts/load-init-fixtures.sh
+python manage.py createsuperuser
 
 python manage.py runserver
 ```
 NB: the password above is the postgres database user password. It is used by Django only to connect to the database, and is distinct from any user password on admin website.
 
-You can then visit http://localhost:8000/admin, connect as `admin:admin` (ie. username admin and password admin) and update your admin interface password.
-## Advanced topics
+You can then visit http://localhost:8000/admin, connect with your superuser credentials.
 
-### Building the docker containers
+
+## Building the docker containers
 
 We have built our images on top of the apache2 images as it is the webserver we currently use. 
 However as shown in the getting started section, those images are suitable for use with different servers such as gunicorn.
@@ -62,6 +63,9 @@ docker buildx build . \
   --build-arg alyx_branch=deploy \
   --no-cache
 ```
+
+## Advanced topics
+
 
 ### Apache webserver and interaction with wsgi
 
