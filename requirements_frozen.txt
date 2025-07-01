@@ -52,7 +52,7 @@ numpy==2.2.6
 ONE-api==3.1.1
 packaging==25.0
 pandas==2.2.3
-pillow==11.2.1
+pillow==11.3.0
 psycopg2-binary==2.9.10
 pyarrow==20.0.0
 pycodestyle==2.13.0
