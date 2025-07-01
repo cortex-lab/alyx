@@ -6,7 +6,7 @@
 <IfModule mod_ssl.c>
     <VirtualHost *:443>
         ServerName ${APACHE_SERVER_NAME}
-        ServerAdmin webmaster@internationalbrainlab.org
+        ServerAdmin ${APACHE_SERVER_ADMIN}
         DocumentRoot /var/www/alyx
     
         <Directory /var/www/alyx/alyx/alyx>
