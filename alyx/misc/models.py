@@ -71,6 +71,12 @@ class LabMember(AbstractUser):
 
 
 class Lab(BaseModel):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['timezone'].initial = TIME_ZONE
+
     labname_validator = validators.RegexValidator(
         f"^{ALF_SPEC['lab']}$",
         "Lab name must only contain letters, numbers, and underscores.")
@@ -78,7 +84,7 @@ class Lab(BaseModel):
     institution = models.CharField(max_length=255, blank=True)
     address = models.CharField(max_length=255, blank=True)
     timezone = models.CharField(
-        max_length=64, blank=True, default=TIME_ZONE,
+        max_length=64, blank=True,
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
