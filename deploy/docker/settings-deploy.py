@@ -34,9 +34,9 @@ except ImportError:
 
 # %% Databases
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-# the database details are provided in the form of an URL. The Url looks like::
-# "postgres://${POSTGRES_DB}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-database_url = f"postgres://{os.getenv('POSTGRES_DB')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+# the database details are provided in the form of an URL. The URL looks like::
+# "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
+database_url = f"postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 DATABASES = {"default": dj_database_url.parse(database_url)}
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
@@ -213,13 +213,13 @@ EMAIL_USE_TLS = True
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('media'))
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('uploaded'))
 MEDIA_URL = '/uploaded/'
 UPLOADED_IMAGE_WIDTH = 800
 
 # The location for saving and/or serving the cache tables.
 # May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('media'))
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('uploaded'))
 
 # storage configurations
 STORAGES = {

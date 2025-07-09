@@ -7,8 +7,8 @@ ARG alyx_branch=deploy
 
 RUN git -C /var/www/alyx fetch origin ${alyx_branch}
 RUN git -C /var/www/alyx checkout -B ${alyx_branch} origin/${alyx_branch}
-RUN git -C /home/iblalyx fetch origin deploy
-RUN git -C /home/iblalyx checkout -B deploy origin/deploy
+RUN git -C /home/iblalyx fetch origin ${alyx_branch}
+RUN git -C /home/iblalyx checkout -B ${alyx_branch} origin/${alyx_branch}
 
 RUN pip install -r /var/www/alyx/requirements.txt
 

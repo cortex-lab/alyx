@@ -387,7 +387,7 @@ NOTIFICATION_MIN_DELAYS = {
 
 def delay_since_last_notification(notification_type, title, subject):
     """Return the delay since the last notification corresponding to the given
-    type, title, subject, in seconds, wheter it was actually sent or not."""
+    type, title, subject, in seconds, whether it was actually sent or not."""
     last_notif = Notification.objects.filter(
         notification_type=notification_type,
         title=title,
