@@ -55,6 +55,7 @@ jobs:
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/docker/settings-deploy.py  alyx/settings.py
+          cp ../deploy/docker/settings_lab-deploy.py  alyx/settings_lab.py
           python manage.py collectstatic --noinput --link
           coverage run manage.py test -n
           coveralls --service=github
