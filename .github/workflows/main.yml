@@ -49,11 +49,11 @@ jobs:
 
       - name: Run tests
         run: |
-          sudo mkdir -p /var/log/alyx; sudo chmod -fR 666 /var/log/alyx
+          sudo mkdir /var/log/alyx
+          sudo touch /var/log/alyx/django.log
+          sudo chmod 666 /var/log/alyx/django.log
           cd alyx
-          cp ./alyx/environment_template.env ./alyx/.env
-          cp ../deploy/docker/settings-deploy.py  alyx/settings.py
-          cp ../deploy/docker/settings_lab-deploy.py  alyx/settings_lab.py
+          cp alyx/settings_ci.py alyx/settings.py
           python manage.py collectstatic --noinput --link
           coverage run manage.py test -n
           coveralls --service=github
@@ -61,8 +61,6 @@ jobs:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APACHE_LOG_DIR: /var/log/alyx
-          POSTGRES_HOST: localhost
       - name: Flake
         run: |
           cd alyx
