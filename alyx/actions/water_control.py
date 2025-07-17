@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 from dateutil.rrule import HOURLY
 import functools
 import io
-import structlog
+import logging
 from operator import attrgetter, itemgetter
 import os.path as op
 
@@ -17,7 +17,7 @@ import django.utils.timezone
 import numpy as np
 
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 PALETTE = {

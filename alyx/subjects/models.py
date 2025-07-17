@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-import structlog
+import logging
 from operator import attrgetter
 import urllib
 
@@ -18,7 +18,7 @@ from actions.water_control import water_control
 from actions.models import Surgery
 from misc.models import Lab, default_lab, Housing
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # Zygosity constants
@@ -68,8 +68,8 @@ def save_old_fields(obj, fields):
             continue
         if field not in d:
             d[field] = []
-        l = d[field]
-        l.append({'date_time': date_time, 'value': obj._original_fields[field]})
+        list_field = d[field]
+        list_field.append({'date_time': date_time, 'value': obj._original_fields[field]})
         # Update the new value.
         # obj._original_fields[field] = v
         # Set the object's JSON if necessary.

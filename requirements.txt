@@ -1,12 +1,13 @@
 boto3
 colorlog
-coreapi
-django>=4.0.6
+coreapi  # TODO coreapi deprecated #929
+legacy-cgi;python_version>="3.13"  # TODO needs to be removed with coreapi deprecated #929
+django>=5.2.2
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
 django-cleanup
-django-filter>=23.5
+django-filter==24.3  # TODO incompatibility with coreapi that provides schemas for the /docs endpoint #929
 django-mptt
 django-polymorphic>=3.0.0
 django-reversion>=3.0.8
@@ -14,19 +15,25 @@ django-storages
 django-structlog
 django-test-without-migrations
 djangorestframework
+dj_database_url
 docutils
+dotenv
 drfdocs
 flake8
 globus-cli
 globus-sdk
+gunicorn
+ipython
 markdown
 matplotlib
-pillow
+ONE-api>=3.0
+pillow>=11.3.0
 psycopg2-binary
 python-dateutil
 python-magic
 pytz
+requests>=2.32.4
 setuptools
-structlog>=21.5.0
+urllib3>=2.5.0
 webdavclient3
-ONE-api>=3.0
+whitenoise

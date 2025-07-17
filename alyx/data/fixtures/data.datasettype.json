@@ -1,17 +1,6 @@
 [
   {
     "model": "data.datasettype",
-    "pk": "02492ac1-d2a5-4ca9-b545-a9a18fbbc31b",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_VideoCodeFiles.raw",
-      "created_by": null,
-      "description": "",
-      "filename_pattern": "_iblrig_VideoCodeFiles.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "07260296-4fab-4725-89e5-c9e0f735201a",
     "fields": {
       "json": null,
@@ -19,39 +8,6 @@
       "created_by": null,
       "description": "[nspi]. Cluster assignments for each spike (integers counting from 0).",
       "filename_pattern": "*spikes.clusters*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "076dffde-7c7e-4636-99f1-3ae6e9d0fd4f",
-    "fields": {
-      "json": null,
-      "name": "_ibl_lickPiezo.timestamps",
-      "created_by": null,
-      "description": "Timestamps for lick trace timeseries: 2 column array giving sample number and time in seconds",
-      "filename_pattern": "_ibl_lickPiezo.timestamps.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "07aea4a4-189c-46f7-867d-8179561caf94",
-    "fields": {
-      "json": null,
-      "name": "passiveTrials.included",
-      "created_by": null,
-      "description": "boolean suggesting which trials to include in analysis, chosen at experimenter discretion, e.g. by excluding the block of incorrect trials at the end of the session when the mouse has stopped",
-      "filename_pattern": "*passiveTrials.included.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "0c635fca-650e-45c9-8e23-b22fe1f6e60e",
-    "fields": {
-      "json": null,
-      "name": "passiveTrials.stimOn_times",
-      "created_by": null,
-      "description": "Times of stimulus onset in absolute seconds",
-      "filename_pattern": "*passiveTrials.stimOn_times.*"
     }
   },
   {
@@ -74,28 +30,6 @@
       "created_by": null,
       "description": "[nspi]. Sample index of spikes in their own electrophysiology binary file.",
       "filename_pattern": "*spikes.samples*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "156b266c-abc8-416d-96d4-db85fd232909",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_matParameters.raw",
-      "created_by": null,
-      "description": "Parameter structure used for the task in Matlab format.",
-      "filename_pattern": "_rigbox_matParameters.raw.mat"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "26e731af-67a7-4be0-9dbc-c25eb153da31",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_taskSettings.raw",
-      "created_by": null,
-      "description": "Metadata/Settings json (only one line). All information about the task, user, subject, contrasts, gain etc are included. (We should have a link with the structure of it somewhere)",
-      "filename_pattern": "_iblrig_taskSettings.raw.*"
     }
   },
   {
@@ -133,149 +67,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "2a9092b0-c9fc-4740-bb43-28b254e3386e",
-    "fields": {
-      "json": null,
-      "name": "trials.feedbackType",
-      "created_by": null,
-      "description": "Whether feedback is positive or negative in choiceworld (-1 for negative, +1 for positive)",
-      "filename_pattern": "*trials.feedbackType.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "30717938-d036-40de-942f-b3dfe0c39c3b",
-    "fields": {
-      "json": null,
-      "name": "trials.rewardVolume",
-      "created_by": null,
-      "description": "volume of reward given each trial in \u00b5l",
-      "filename_pattern": "*trials.rewardVolume.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "33a5fc59-83ce-4671-a4f0-a1ad0ef53f28",
-    "fields": {
-      "json": null,
-      "name": "_ibl_lickPiezo.raw",
-      "created_by": null,
-      "description": "Raw lick trace (1 column array",
-      "filename_pattern": "_ibl_lickPiezo.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "361ca040-16e5-45d8-8486-ba8d19538452",
-    "fields": {
-      "json": null,
-      "name": "passiveBeeps.times",
-      "created_by": null,
-      "description": "Times of the beep, equivilent to the go cue during the choice world task",
-      "filename_pattern": "*passiveBeeps.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "378aa050-4924-4a9b-9fe7-b7cf86dff93f",
-    "fields": {
-      "json": null,
-      "name": "trials.choice",
-      "created_by": null,
-      "description": "which choice was made in choiceworld: -1 (turn CCW), +1 (turn CW), or 0 (nogo)",
-      "filename_pattern": "*trials.choice.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "389b2a23-d032-4909-9ad1-c59903718daf",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_timeLine.raw",
-      "created_by": null,
-      "description": "",
-      "filename_pattern": "_rigbox_timeLine.raw.mat"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "4cd7dcc9-62c1-4471-afa7-60544fc7e1ff",
-    "fields": {
-      "json": null,
-      "name": "trials.repNum",
-      "created_by": null,
-      "description": "the repetition number of the trial, i.e. how many trials have been repeated on this side (counting from 1)",
-      "filename_pattern": "*trials.repNum.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "54c9a39c-665c-4cf6-b06c-d7f18dae1e78",
-    "fields": {
-      "json": null,
-      "name": "wheel.position",
-      "created_by": null,
-      "description": "Absolute position of wheel.",
-      "filename_pattern": "*wheel.position.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "5df90bef-df4f-4850-92b4-f0e43d619a0a",
-    "fields": {
-      "json": null,
-      "name": "trials.response_times",
-      "created_by": null,
-      "description": "Time of \"response\" in choiceworld- in absolute seconds, rather than relative to trial onset. This is when one of the three possible choices is registered in software, will not be the same as when the mouse's movement to generate that response begins.",
-      "filename_pattern": "*trials.response_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "62998630-0d69-45c1-9c5e-c74a1a509fb1",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_encoderEvents.raw",
-      "created_by": null,
-      "description": "Data file saved from Bonsai (Event, RE timestamp, Source, data, Bonsai Timestamp) - Each row is an event sent from the state machine (1, 2, 3 - stim off, on close loop)",
-      "filename_pattern": "_iblrig_encoderEvents.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "63ea5aaa-1b51-4378-b515-2b6ec0502e05",
-    "fields": {
-      "json": null,
-      "name": "trials.goCueTrigger_times",
-      "created_by": null,
-      "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset NOTE: this is the time the trigger command is sent by Bpod",
-      "filename_pattern": "_ibl_trials.goCueTrigger_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "678a7e65-1dd1-4bff-b8c9-508e1f3a1cdc",
-    "fields": {
-      "json": null,
-      "name": "trials.intervals",
-      "created_by": null,
-      "description": "2 column array giving each trials start (i.e. beginning of quiescent period) and stop (i.e. end of iti) times of trials in universal seconds",
-      "filename_pattern": "*trials.intervals*.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "6e2913bc-6591-457c-a4e1-df86d96298b4",
-    "fields": {
-      "json": null,
-      "name": "sparseNoise.times",
-      "created_by": null,
-      "description": "times of those stimulus squares appeared in universal seconds",
-      "filename_pattern": "*sparseNoise.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "71ba1629-fec2-4984-a97d-228ca14a68ab",
     "fields": {
       "json": null,
@@ -287,50 +78,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "79f7f786-f77a-4e80-97a5-65f68264049e",
-    "fields": {
-      "json": null,
-      "name": "trials.stimOff_times",
-      "created_by": null,
-      "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
-      "filename_pattern": "*trials.stimOff_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "72344745-c248-45e5-bf73-a9329c1720d2",
-    "fields": {
-      "json": null,
-      "name": "trials.stimOn_times",
-      "created_by": null,
-      "description": "Times of stimuli in choiceworld - in absolute seconds, rather than relative to trial onset",
-      "filename_pattern": "*trials.stimOn_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "72d9e4b1-295a-4698-bca7-650e7a62a330",
-    "fields": {
-      "json": null,
-      "name": "passiveValveClicks.times",
-      "created_by": null,
-      "description": "Times of valve opening during passive trial presentation",
-      "filename_pattern": "*passiveValveClicks.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "74c0120c-7515-478f-9725-53d587d86c49",
-    "fields": {
-      "json": null,
-      "name": "wheel.timestamps",
-      "created_by": null,
-      "description": "Timestamps for wheel timeseries",
-      "filename_pattern": "*wheel.times*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "7a1a4c65-ab7a-4a26-b610-a5bf22b1f106",
     "fields": {
       "json": null,
@@ -338,28 +85,6 @@
       "created_by": null,
       "description": "[nsync]Times of sync pulses, seconds relative to ephys start",
       "filename_pattern": "_spikeglx_sync.times*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "81ea14a9-1512-4c1c-94e3-ccb7b42f6755",
-    "fields": {
-      "json": null,
-      "name": "wheelMoves.type",
-      "created_by": null,
-      "description": "string array containing classified type of movement ('CW', 'CCW', 'Flinch', 'Other')",
-      "filename_pattern": "*wheelMoves.type.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "83c45a9b-3e78-460f-a035-cb00cf4f9709",
-    "fields": {
-      "json": null,
-      "name": "passiveNoise.intervals",
-      "created_by": null,
-      "description": "2 column array giving each passive noise trial's start (i.e. beginning of quiescent period) and stop (i.e. end of iti) times of trials in universal seconds",
-      "filename_pattern": "*passiveNoise.intervals.*"
     }
   },
   {
@@ -419,39 +144,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "8d9e3083-9cb5-4f21-b945-cd445772d7a7",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_ambientSensorData.raw",
-      "created_by": null,
-      "description": "Temperature and humidity from sensor in rig",
-      "filename_pattern": "_iblrig_ambientSensorData.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "8e896348-e852-49ec-b195-be56af9c0180",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_jsonParameters.raw",
-      "created_by": null,
-      "description": "Parameter structure used for the task in Json format.",
-      "filename_pattern": "_rigbox_jsonParameters.raw.json"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "91aec5d6-a10a-41e8-abcd-fbd7bacf69e3",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_codeFiles.raw",
-      "created_by": null,
-      "description": "Zip of Gabor2D and basicChoiceWorld code folders that generated the data",
-      "filename_pattern": "_iblrig_codeFiles.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "9295f7a4-dd1b-440e-8ad0-53223aebab81",
     "fields": {
       "json": null,
@@ -474,138 +166,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "979f9f7c-7d67-48d5-9042-a9000a8e66a2",
-    "fields": {
-      "json": null,
-      "name": "trials.contrastLeft",
-      "created_by": null,
-      "description": "contrast of left-side stimulus (0...1) nan if trial is on other side",
-      "filename_pattern": "*trials.contrastLeft.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "9b929d17-bd42-459d-a604-b4251d847da8",
-    "fields": {
-      "json": null,
-      "name": "passiveTrials.contrastLeft",
-      "created_by": null,
-      "description": "contrast of left-side stimulus (0...1)",
-      "filename_pattern": "*passiveTrials.contrastLeft.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "9d44dc73-67cd-4de7-b115-7d25723bc0da",
-    "fields": {
-      "json": null,
-      "name": "trials.contrastRight",
-      "created_by": null,
-      "description": "contrast of right-side stimulus (0...1) nan if trial is on other side",
-      "filename_pattern": "*trials.contrastRight.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "9d9f66f2-a783-46a7-ad03-1cad8aa7b4ab",
-    "fields": {
-      "json": null,
-      "name": "extraRewards.times",
-      "created_by": null,
-      "description": "Times of extra rewards",
-      "filename_pattern": "*extraRewards.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a5ef4d78-e667-4e85-9fd7-141ae5ad3ae9",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_encoderTrialInfo.raw",
-      "created_by": null,
-      "description": "Raw trial data sent at beginning of trial from Bpod to Bonsai (TrialNum, init position of stim, stim_contrast, stim_freq, stim_angle, stim_gain, stim_sigma/size, Bonsai timestamp),",
-      "filename_pattern": "_iblrig_encoderTrialInfo.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a60425e9-c5ab-4827-88a3-79b4eb68f989",
-    "fields": {
-      "json": null,
-      "name": "trials.feedback_times",
-      "created_by": null,
-      "description": "Time of feedback delivery (reward or not) in choiceworld - in absolute seconds, rather than relative to trial onset",
-      "filename_pattern": "*trials.feedback_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "b5ec79de-9c9e-4009-8892-10aa2ddb9638",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_Camera.timestamps",
-      "created_by": null,
-      "description": "",
-      "filename_pattern": "_iblrig_*Camera.*timestamps.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "b73caa77-3e26-44a4-9809-b0885b47e77e",
-    "fields": {
-      "json": null,
-      "name": "passiveTrials.contrastRight",
-      "created_by": null,
-      "description": "contrast of right-side stimulus (0...1)",
-      "filename_pattern": "*passiveTrials.contrastRight.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "b7fe7846-731e-407c-8187-d2cfa3978587",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_block.raw",
-      "created_by": null,
-      "description": "File containing the session data, unparsed in Matlab format.",
-      "filename_pattern": "_rigbox_block.raw.mat"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "b9898fac-8106-4db4-99a4-f81f6a53fc57",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_taskData.raw",
-      "created_by": null,
-      "description": "Data file saved by PyBpod in json serializable lines (file itself is not a json object, each line is a json object corresponding to a trial) - Training task w/ automated contrast",
-      "filename_pattern": "_*_taskData.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "cbf4b6b1-9202-4468-bd65-22df1713ae60",
-    "fields": {
-      "json": null,
-      "name": "passiveWhiteNoise.times",
-      "created_by": null,
-      "description": "Times of white noise bursts, equivalent to the negative feedback sound during the choice world task",
-      "filename_pattern": "*passiveWhiteNoise.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "cecb16be-781f-4859-bfb9-47406bdb1724",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_hardwareInfo.raw",
-      "created_by": null,
-      "description": "Hardware configuration used for the task, json format",
-      "filename_pattern": "_rigbox_hardwareInfo.raw.json"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "cff89747-45ad-4538-a32c-4a47ee26e36c",
     "fields": {
       "json": null,
@@ -613,61 +173,6 @@
       "created_by": null,
       "description": "[nsync]. Polarity of front: 1: rising, -1 falling",
       "filename_pattern": "_spikeglx_sync.polarities*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "d6584a34-f9dd-4870-ac02-0feb50fdf5f6",
-    "fields": {
-      "json": null,
-      "name": "trials.included",
-      "created_by": null,
-      "description": "boolean suggesting which trials to include in analysis, chosen at experimenter discretion, e.g. by excluding the block of incorrect trials at the end of the session when the mouse has stopped",
-      "filename_pattern": "*trials.included.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "dea53510-d3e0-4b94-9739-2fe548a6f898",
-    "fields": {
-      "json": null,
-      "name": "wheelMoves.intervals",
-      "created_by": null,
-      "description": "2 column array with onset and offset times of detected wheel movements in seconds",
-      "filename_pattern": "*wheelMoves.intervals.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a66e41a2-09b8-4761-9fbb-5fe5168cc088",
-    "fields": {
-      "json": null,
-      "name": "wheelMoves.peakAmplitude",
-      "created_by": null,
-      "description": "amplitude of the wheel move",
-      "filename_pattern": "*wheelMoves.peakAmplitude.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "e0c77fba-1e8d-435a-b57e-b33c867ede83",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_encoderPositions.raw",
-      "created_by": null,
-      "description": "Data file saved from Bonsai (Position, RE timestamp, Position, Bonsai Timestamp) - Each row is a position change of the RE",
-      "filename_pattern": "_iblrig_encoderPositions.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "e1542d34-9618-4369-aab7-0489484f6a12",
-    "fields": {
-      "json": null,
-      "name": "wheel.velocity",
-      "created_by": null,
-      "description": "Signed velocity of wheel",
-      "filename_pattern": "*wheel.velocity.*"
     }
   },
   {
@@ -683,17 +188,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "e40899d0-a883-40ac-8214-344bcf249d09",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_Camera.raw",
-      "created_by": null,
-      "description": "",
-      "filename_pattern": "_iblrig_*Camera.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "e6c22fe1-52b8-4a3d-adb0-1603d2fa7fec",
     "fields": {
       "json": null,
@@ -701,39 +195,6 @@
       "created_by": null,
       "description": "[nspi]. Depth along probe of each spike (\u00b5m; computed from waveform center of mass). 0 means deepest site, positive means above this",
       "filename_pattern": "*spikes.depths*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "f7dbfad8-1cfc-459e-874f-4065cf9def86",
-    "fields": {
-      "json": null,
-      "name": "trials.goCue_times",
-      "created_by": null,
-      "description": "Time of go cues in choiceworld - in absolute seconds, rather than relative to trial onset",
-      "filename_pattern": "*trials.goCue_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "921d2a34-9bcf-430f-a762-2f4051902e56",
-    "fields": {
-      "json": null,
-      "name": "trials.firstMovement_times",
-      "created_by": null,
-      "description": "Movement onset (absolute from session start) extracted from the rotary encoder ",
-      "filename_pattern": "*trials.firstMovement_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "fd0654a6-9d26-4e04-99cc-6608e9621684",
-    "fields": {
-      "json": null,
-      "name": "_rigbox_code.raw",
-      "created_by": null,
-      "description": "Copy  of the expDef.m code file used for the session",
-      "filename_pattern": "_rigbox_code.raw.m"
     }
   },
   {
@@ -756,39 +217,6 @@
       "created_by": null,
       "description": "Raw DLC output for Camera as numpy array",
       "filename_pattern": "*camera.dlc.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "acb644d5-05a6-41b0-8f4e-b290d0b7a9cc",
-    "fields": {
-      "json": null,
-      "name": "_ibl_trials.quiescencePeriod",
-      "created_by": null,
-      "description": "At the beginning of each trial, the mouse must not move the wheel for a fixed, “quiescent” period for the trial to continue. The quiescence period is the duration of this period in seconds.",
-      "filename_pattern": "_ibl_trials.quiescencePeriod.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "7e27c540-e61d-401f-b774-54d573886a6c",
-    "fields": {
-      "json": null,
-      "name": "_ibl_trials.stimOnTrigger_times",
-      "created_by": null,
-      "description": "Times of stimulus onset trigger command",
-      "filename_pattern": "_ibl_trials.stimOnTrigger_times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "3c44d77f-037e-4bc4-b7a7-2a7562b21c99",
-    "fields": {
-      "json": null,
-      "name": "_ibl_trials.stimOffTrigger_times",
-      "created_by": null,
-      "description": "Times of stimulus offset trigger command",
-      "filename_pattern": "_ibl_trials.stimOffTrigger_times.*"
     }
   },
   {
@@ -881,17 +309,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "41068334-1826-42ee-a09a-759d907dd0cf",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_RFMapStim.raw",
-      "created_by": null,
-      "description": "Passive Visual stimulus raw information",
-      "filename_pattern": "_iblrig_RFMapStim.raw.bin"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "6e777a97-f1f4-4cab-8c57-80ef5c7c7841",
     "fields": {
       "json": null,
@@ -936,28 +353,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "d3547560-7cd3-48e6-903c-427317a06a3b",
-    "fields": {
-      "json": null,
-      "name": "_ibl_log.info",
-      "created_by": null,
-      "description": "Log File for normal job completion",
-      "filename_pattern": "_ibl_log.info*.log"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "86f168dc-5a37-4e67-adfe-353cf6aed751",
-    "fields": {
-      "json": null,
-      "name": "_ibl_log.error",
-      "created_by": null,
-      "description": "Log File for errored job",
-      "filename_pattern": "_ibl_log.error*.log"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "8f36fa46-3fbc-4921-be8d-89f838c4ec42",
     "fields": {
       "json": null,
@@ -965,61 +360,6 @@
       "created_by": null,
       "description": "Synchronized time stamps for camera",
       "filename_pattern": "*camera.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "5ec9b957-d0b8-4343-8d32-e2bc40ce4c5d",
-    "fields": {
-      "json": null,
-      "name": "audioOnsetGoCue.times_mic",
-      "created_by": null,
-      "description": "GoCue Times extracted from microphone data (s)",
-      "filename_pattern": "_iblmic_audioOnsetGoCue.times_mic.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "cad0b10e-ff17-4f31-a2d0-1be0de95b2d6",
-    "fields": {
-      "json": null,
-      "name": "_iblmic_audioSpectrogram.frequencies",
-      "created_by": null,
-      "description": "Frequency scale of audio spectrogram from microphone (Hz)",
-      "filename_pattern": "_iblmic_audioSpectrogram.frequencies.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "d9d99abc-f14a-47c2-b61a-91efba29956a",
-    "fields": {
-      "json": null,
-      "name": "_iblmic_audioSpectrogram.power",
-      "created_by": null,
-      "description": "Audio spectrogram from microphone, power",
-      "filename_pattern": "_iblmic_audioSpectrogram.power.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "bed4e73c-8843-4fbe-8e6b-eb2d8cda5d8b",
-    "fields": {
-      "json": null,
-      "name": "_iblmic_audioSpectrogram.times_mic",
-      "created_by": null,
-      "description": "Frequency scale of audio spectrogram from microphone (s)",
-      "filename_pattern": "_iblmic_audioSpectrogram.times*.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "288b8f91-78b3-42bb-b90e-8bb2c82a35c9",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_micData.raw",
-      "created_by": null,
-      "description": "Microphone data lossless compression for ephys",
-      "filename_pattern": ""
     }
   },
   {
@@ -1077,72 +417,6 @@
       "filename_pattern": "probes.trajectory*.json"
     }
   },
-    {
-    "model": "data.datasettype",
-    "pk": "45228157-f565-48ce-9d96-0430cebdfaf7",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysSaturation.samples",
-      "created_by": null,
-      "description": "A list of sample intervals exhibiting voltage saturation on the raw recordings.",
-      "filename_pattern": "_iblqc_ephysSaturation.samples.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a02ab1c2-c881-4acc-9e3a-13c0a0c3e187",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysTimeRms.timestamps",
-      "created_by": null,
-      "description": "Time scale for the RMS amplitude as a function of time, relative to the raw binary ephys file (s)",
-      "filename_pattern": "_iblqc_ephysTimeRms*.timestamps.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "374e0fc2-58be-4670-b238-a43f82aae8a4",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysTimeRms.rms",
-      "created_by": null,
-      "description": "RMS amplitude as a function of time (V)",
-      "filename_pattern": "_iblqc_ephysTimeRms*.rms.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "c29a238f-95a4-4081-9ef2-7d0e0b225f20",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_stimPositionScreen.raw",
-      "created_by": null,
-      "description": "CSV file with 3 columns, CONTRAST [0->1], STIM_POSITION [visual deg], TIMESTAMP [isostandard] (saves stim positions and contrast every time they change)",
-      "filename_pattern": "_iblrig_stimPositionScreen.raw.csv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "aced686b-6d9e-4094-bb3a-8e8a198cae28",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysSpectralDensity.freqs",
-      "created_by": null,
-      "description": "Frequency scale for the spectrogram (Hz)",
-      "filename_pattern": "_iblqc_ephysSpectralDensity*.freqs.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "e61ce46e-0412-4edc-8c38-50a5c60e3ee4",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysSpectralDensity.power",
-      "created_by": null,
-      "description": "Spectral Density for all channels (V**2/Hz)",
-      "filename_pattern": "_iblqc_ephysSpectralDensity*.power.npy"
-    }
-  },
   {
     "model": "data.datasettype",
     "pk": "6de900a3-20b4-4e73-be57-8e63bbfa73b5",
@@ -1185,39 +459,6 @@
       "created_by": null,
       "description": "Sample waveforms, [nspikes, nsamples, nchannelsmax]",
       "filename_pattern": "_phy_spikes_subset.waveforms.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "73ecfa96-b913-4807-ad35-e2c67f4ed01e",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_syncSquareUpdate.raw",
-      "created_by": null,
-      "description": "Timestamped sync square update commands",
-      "filename_pattern": "_iblrig_syncSquareUpdate.raw.csv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a45137ea-d4bf-444d-aa83-d29950195cde",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_Camera.frame_counter",
-      "created_by": null,
-      "description": "Frame counter value from camera for each frame",
-      "filename_pattern": "_iblrig_*Camera.frame_counter.bin"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "28554b3d-e4c7-47ac-b247-4ba31a994332",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_Camera.GPIO",
-      "created_by": null,
-      "description": "GPIO pin state for each camera frame",
-      "filename_pattern": "_iblrig_*Camera.GPIO.bin"
     }
   },
   {
@@ -1277,83 +518,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "efdf0ab6-1d56-4936-9f4f-242113d215e1",
-    "fields": {
-      "json": null,
-      "name": "_ibl_passivePeriods.intervalsTable",
-      "created_by": null,
-      "description": "Table of times for different passiveCW periode: columns = ['passiveProtocol', 'spontaneousActivity', 'RFM', 'taskReplay'], lines = ['start', 'stop']",
-      "filename_pattern": "_ibl_passivePeriods.intervalsTable*.csv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "647ecd82-d357-434c-a921-6670f849606d",
-    "fields": {
-      "json": null,
-      "name": "_ibl_passiveRFM.times",
-      "created_by": null,
-      "description": "Times of all frames presented during the receptive field mapping period",
-      "filename_pattern": "_ibl_passiveRFM.times*.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "4375f1a9-8465-4ef1-86b0-8d51b373a38b",
-    "fields": {
-      "json": null,
-      "name": "_ibl_passiveGabor.table",
-      "created_by": null,
-      "description": "Gabor patch presentations table: columns = [start, stop, position, contrast, phase], lines = nPresentations (180)",
-      "filename_pattern": "_ibl_passiveGabor.table*.csv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "ea4cb820-2f13-48b2-9695-cbc927e2fa3a",
-    "fields": {
-      "json": null,
-      "name": "_ibl_passiveStims.table",
-      "created_by": null,
-      "description": "All other stimuli times: columns = [valveOn, valveOff, toneOn, toneOff, noiseOn, noiseOff], lines = nStims = 40",
-      "filename_pattern": "_ibl_passiveStims.table*.csv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "5d6c5026-31ec-45c8-8f37-f1304c360fb3",
-    "fields": {
-      "json": null,
-      "name": "_ibl_trials.laserIntervals",
-      "created_by": null,
-      "description": "Time in seconds, relative to the session start, of the onset and offset of the laser stimulation.",
-      "filename_pattern": "_ibl_trials.laserIntervals.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "2be5a2b1-4f52-4570-a2ac-3412dde50cc3",
-    "fields": {
-      "json": null,
-      "name": "_ibl_trials.laserStimulation",
-      "created_by": null,
-      "description": "Whether or not the laser was actuating during the trial (outcome): 0:no laser, 1: laser, np.nan: no info",
-      "filename_pattern": "_ibl_trials.laserStimulation.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "426d3490-e0d6-4a49-91fc-39eeed279475",
-    "fields": {
-      "json": null,
-      "name": "trials.laserProbability",
-      "created_by": null,
-      "description": "Probability of stimulation to be turned on within the trial",
-      "filename_pattern": "_*_trials.laserProbability.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "272873c9-7c77-4bdf-8401-f31eb3fc5369",
     "fields": {
       "json": null,
@@ -1361,39 +525,6 @@
       "created_by": null,
       "description": "Spike sorting output from kilosort",
       "filename_pattern": "_kilosort_raw.output*.tar"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "9ded820c-130d-4193-b279-ba167043acde",
-    "fields": {
-      "json": null,
-      "name": "camera.ROIMotionEnergy",
-      "created_by": null,
-      "description": "Motion energy across camera frames calculated within ROI (motionEnergy.position)",
-      "filename_pattern": "*Camera.ROIMotionEnergy.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "29f23be7-2cbc-4b53-a675-90c626e06d65",
-    "fields": {
-      "json": null,
-      "name": "ROIMotionEnergy.position",
-      "created_by": null,
-      "description": "Coordinates of the ROI in which camera.motionEnergy is calculated",
-      "filename_pattern": "*ROIMotionEnergy.position.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "eb61ea65-870a-4ca8-9703-c7c595284ba4",
-    "fields": {
-      "json": null,
-      "name": "_iblrig_Camera.frameData",
-      "created_by": null,
-      "description": "Table containing Timestamp, embeddedTimeStamp, embeddedFrameCounter, embeddedGPIOPinState for each video frame",
-      "filename_pattern": "_iblrig_*Camera.frameData.*"
     }
   },
   {
@@ -1427,50 +558,6 @@
       "created_by": null,
       "description": "Time of the probe corresponding to each of the drift matrix row (secs)",
       "filename_pattern": "drift.times.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "2c56c793-c3ac-4968-9798-f31a6453c105",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysChannels.RMS",
-      "created_by": null,
-      "description": "Median RMS per channel from samples of raw [nch, 0] and destriped [nch, 1] ephys data.",
-      "filename_pattern": "_iblqc_ephysChannels.*RMS.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "935a4f55-4a9b-49c5-8898-661559b3616a",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysChannels.rawSpikeRates",
-      "created_by": null,
-      "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
-      "filename_pattern": "_iblqc_ephysChannels.*rawSpikeRates.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "49adb321-17d3-43e5-8cf6-672236b0c345",
-    "fields": {
-      "json": null,
-      "name": "camera.features",
-      "created_by": null,
-      "description": "Contains features calculated from DLC traces, currently pupilDiameter_raw, pupilDiameter_smooth",
-      "filename_pattern": "*camera.features.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "1fd9c881-0c02-468a-ab0a-8974170bd875",
-    "fields": {
-      "json": null,
-      "name": "_iblqc_ephysChannels.labels",
-      "created_by": null,
-      "description": "Raw spike rate per channel without clustering or collision handling - for early stages QC purposes. [Hz]",
-      "filename_pattern": "_iblqc_ephysChannels.*labels.*"
     }
   },
   {
@@ -1618,28 +705,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "c634bb4d-a152-4e6f-930d-516957b433e6",
-    "fields": {
-      "json": null,
-      "name": "trials.table",
-      "created_by": null,
-      "description": "A table of trial events, one per trial. Events include: intervals, goCue_times, response_times, choice, stimOn_times, contrastLeft, contrastRight, feedback_times, feedbackType, rewardVolume, probabilityLeft, firstMovement_times",
-      "filename_pattern": "*trials.table*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "fa05d8a7-5ce5-42a6-9941-69ffe3acc1c1",
-    "fields": {
-      "json": null,
-      "name": "trials.probabilityRewardLeft",
-      "created_by": null,
-      "description": "probability of a left response (i.e. CW turn) being rewarded. The probability of the right response being rewarded is 1-probabilityRewardLeft. The two probabilities are sampled independently therefore both sides may or may not be rewarded.",
-      "filename_pattern": "*trials.probabilityRewardLeft.npy"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "944889c0-5b5d-4ca3-b4df-740ef441135f",
     "fields": {
       "json": null,
@@ -1680,28 +745,6 @@
       "created_by": null,
       "description": "Extracted brainlocation after histology per ROI.",
       "filename_pattern": "*photometryFibers.brainLocationAcronyms_ccf_2017*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "6a396eaa-7358-4df2-a793-b0aa6fe611ba",
-    "fields": {
-      "json": null,
-      "name": "fpData.raw",
-      "created_by": null,
-      "description": "Raw fiber photometry dataframe containing fluorescence data for every active channel (max: isosbestic, red and green) as well as information of coactive components with each frame (E.g TTL syncing pulse).",
-      "filename_pattern": "_*_fpData.raw*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "9f117025-7dc7-4f9e-883c-c6caee7166cd",
-    "fields": {
-      "json": null,
-      "name": "fpData.channels",
-      "created_by": null,
-      "description": "Frame flag value for each LED fiber photometry channel [OFF, L415, L470, L560].  Each row corresponds to a different labelled condition.  See user manual at https://neurophotometrics.com/documentation",
-      "filename_pattern": "*fpData.channels.*"
     }
   },
   {
@@ -1790,72 +833,6 @@
       "created_by": null,
       "description": "A map of the channel IDs and their corresponding device label, e.g. {ai1: bpod}.",
       "filename_pattern": "_*_DAQdata.wiring*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "57316c04-1a39-425e-908c-5c5897475fcb",
-    "fields": {
-      "json": null,
-      "name": "_ibl_experiment.description",
-      "created_by": null,
-      "description": "A list of acquisition devices and behaviour protocols, along with the data and sync file location.  The root keys are (devices, sync, task, procedures).",
-      "filename_pattern": "_*_experiment.description.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "e0614a49-8f18-46b1-a4d9-0710a080fd8d",
-    "fields": {
-      "json": null,
-      "name": "subjectTrials.table",
-      "created_by": null,
-      "description": "All trials data for a given subject, contains the same columns as _ibl_trials.table, plus additional trials data: \"goCueTrigger_times\", \"stimOnTrigger_times\", \"stimFreezeTrigger_times\", \"stimFreeze_times\", \"stimOffTrigger_times\", \"stimOff_times\", \"phase\", \"position\", \"quiescence\". The following are session meta data columns: \"session\", \"session_start_time\" and \"task_protocol\", \"protocol_number\"",
-      "filename_pattern": ""
-    }
-  },
-    {
-    "model": "data.datasettype",
-    "pk": "4cb6bc06-a549-4ab6-9ac0-7e28a4f29d32",
-    "fields": {
-      "json": null,
-      "name": "subjectTraining.table",
-      "created_by": null,
-      "description": "Overview of training status for subject, date and session at which the subject reached different training criterion",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "479ea451-e7d5-413a-8dc1-e8eb44e5afc2",
-    "fields": {
-      "json": null,
-      "name": "videoTracking.trainingDataPaw",
-      "created_by": null,
-      "description": "Manual labels of the paws for training pose estimation algorithms. Contains csv files with labels, frame images and short video snippets from various sessions",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "4ef9e5ed-c132-4329-a9b0-63260c26ccac",
-    "fields": {
-      "json": null,
-      "name": "videoTracking.trainingDataPupil",
-      "created_by": null,
-      "description": "Manual labels of the pupils for training pose estimation algorithms. Contains csv files with labels, frame images and short video snippets from various sessions",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "bb1add37-910b-4153-bd50-53dc5c9bf77a",
-    "fields": {
-      "json": null,
-      "name": "camera.lightningPose",
-      "created_by": null,
-      "description": "Dataframe with coordinates of body parts as estimated by Lightning Pose algorithm",
-      "filename_pattern": "*camera.lightningPose.*"
     }
   },
   {
@@ -2058,67 +1035,12 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "a5caf8ae-46f9-4755-8366-171f26bff278",
-    "fields": {
-      "json": null,
-      "name": "_timeline_softwareEvents.log",
-      "created_by": null,
-      "description": "A table of software events in DAQ time, one row per event. Columns include 'time', 'name', and 'info'.",
-      "filename_pattern": "_timeline_softwareEvents.log.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "23185e3e-4d4c-463b-a74b-8e69869ecec8",
     "fields": {
       "json": null,
       "name": "referenceImage.raw",
       "created_by": null,
       "description": "A fullfield multiphoton imaging picture for use in histology alignment.",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
-    "fields": {
-      "json": null,
-      "name": "_ibl_clusters.table",
-      "created_by": null,
-      "description": "Aggregate of several sessions clusters in a recapitulative table",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "ce9888a5-d808-4988-918f-3bcb83b6302a",
-    "fields": {
-      "json": null,
-      "name": "_ibl_projectClusters.table",
-      "created_by": null,
-      "description": "Aggregate of several sessions clusters in a recapitulative table",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "d49b5321-f970-470a-98a6-4a62e1abc422",
-    "fields": {
-      "json": null,
-      "name": "_ibl_projectChannels.table",
-      "created_by": null,
-      "description": "Aggregate of several sessions channels in a recapitulative table",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "d53892ab-7576-48ed-92d0-8a1fcd5cc36d",
-    "fields": {
-      "json": null,
-      "name": "_ibl_projectEphysFeatures.table",
-      "created_by": null,
-      "description": "Aggregate of channel based electrophysiology features in a recapitualive table",
       "filename_pattern": ""
     }
   },
@@ -2212,17 +1134,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "77ea3095-c8d8-4db7-893c-a699d7efec48",
-    "fields": {
-      "json": null,
-      "name": "_ibl_rawImagingData.meta",
-      "created_by": null,
-      "description": "Image meta-data listing the depths and dimensions of each field of view, acquisition parameters, channels, and the MLAP coordinates of the imaging window center.",
-      "filename_pattern": "_*_rawImagingData.meta*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "289cb419-274f-4699-ac43-7612de07382e",
     "fields": {
       "json": null,
@@ -2241,17 +1152,6 @@
       "created_by": null,
       "description": "Look up table from photometry ROI, to fiber name registered in the database and Allen brain location",
       "filename_pattern": "*photometryROI.locations*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "140cd2a9-91c1-45ee-9d19-77e8d39abb5f",
-    "fields": {
-      "json": null,
-      "name": "laserStimulation.intervals",
-      "created_by": null,
-      "description": "The start and end times of the laser stimulation period.",
-      "filename_pattern": ""
     }
   },
   {
@@ -2311,17 +1211,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "2a0f78ff-bcc3-4780-8b00-0cb1280850aa",
-    "fields": {
-      "json": null,
-      "name": "passingSpikes.table",
-      "created_by": null,
-      "description": "A compressed table containing only the spikes belonging to passing units, to accelerate data loading.",
-      "filename_pattern": ""
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "5137d09a-41b6-435f-aba5-c4a7e2b0d240",
     "fields": {
       "json": null,
@@ -2333,39 +1222,6 @@
   },
   {
     "model": "data.datasettype",
-    "pk": "4c86d4e1-9365-41d2-97cf-cf88c8817bc3",
-    "fields": {
-      "json": null,
-      "name": "fpData.digitalInputs",
-      "created_by": null,
-      "description": "Parquet or CSV file output by Bonsai containing the synchronisation TTLs.",
-      "filename_pattern": "*_fpData.digitalInputs.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a94ba7c4-9260-4270-98c0-96030248a7b6",
-    "fields": {
-      "json": null,
-      "name": "_sp_video.times",
-      "created_by": null,
-      "description": "An array of passive video frame times, where each column represents a repeat of the video.",
-      "filename_pattern": "_sp_video.times.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "21c80568-cd3d-4125-bf94-b2777ddc6eaa",
-    "fields": {
-      "json": null,
-      "name": "_sp_video.raw",
-      "created_by": null,
-      "description": "The video frames presented during the protocol.",
-      "filename_pattern": "_sp_video.raw.*"
-    }
-  },
-  {
-    "model": "data.datasettype",
     "pk": "4c576a86-5e73-4441-ae9e-1299356464a7",
     "fields": {
       "json": null,
@@ -2373,17 +1229,6 @@
       "created_by": null,
       "description": "Manually annotated cluster labels",
       "filename_pattern": "*clusters.curatedLabels*.tsv"
-    }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "fc76b3bb-7619-4352-8a4c-aa22358d1b7c",
-    "fields": {
-      "json": null,
-      "name": "subjectSessions.table",
-      "created_by": null,
-      "description": "All session data included in the subjectTrials table for a given subject, contains the columns lab, session date, session number, task protocol and project",
-      "filename_pattern": ""
     }
   }
 ]
