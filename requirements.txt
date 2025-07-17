@@ -23,6 +23,7 @@ flake8
 globus-cli
 globus-sdk
 gunicorn
+ipython
 markdown
 matplotlib
 ONE-api>=3.0
@@ -33,7 +34,6 @@ python-magic
 pytz
 requests>=2.32.4
 setuptools
-structlog>=21.5.0
 urllib3>=2.5.0
 webdavclient3
 whitenoise

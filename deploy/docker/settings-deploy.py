@@ -13,7 +13,6 @@ import json
 import dj_database_url
 import logging
 import dotenv
-import structlog
 from pathlib import Path
 
 from django.conf.locale.en import formats as en_formats
@@ -74,10 +73,6 @@ LOGGING = {
                 'CRITICAL': 'bold_red',
             },
         },
-        'json_formatter': {
-            '()': structlog.stdlib.ProcessorFormatter,
-            'processor': structlog.processors.JSONRenderer(),
-        },
     },
     'handlers': {
         'file': {
@@ -94,7 +89,7 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,
         },
@@ -113,7 +108,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
 if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
     ALLOWED_HOSTS.append(web_host)
-CSRF_TRUSTED_ORIGINS = [f"http://{web_host}", f"https://{web_host}", f"https://*.internationalbrainlab.org"]
+CSRF_TRUSTED_ORIGINS = [f"http://{web_host}", f"https://{web_host}", "https://*.internationalbrainlab.org"]
 CSRF_COOKIE_SECURE = True
 
 
@@ -155,7 +150,6 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'alyx.base.QueryPrintingMiddleware',
-    'django_structlog.middlewares.RequestMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'
@@ -213,13 +207,13 @@ EMAIL_USE_TLS = True
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('uploaded'))
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR.joinpath('uploaded')))
 MEDIA_URL = '/uploaded/'
 UPLOADED_IMAGE_WIDTH = 800
 
 # The location for saving and/or serving the cache tables.
 # May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('uploaded'))
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', str(BASE_DIR.joinpath('uploaded')))
 
 # storage configurations
 STORAGES = {
@@ -228,7 +222,7 @@ STORAGES = {
     },
 }
 
-if str(MEDIA_ROOT).startswith('https://') and '.s3.' in str(MEDIA_ROOT):
+if MEDIA_ROOT.startswith('https://') and '.s3.' in MEDIA_ROOT:
     _logger.warning('S3 backend enabled for uploads and tables')
     STORAGES['default'] = {
         "BACKEND": "storages.backends.s3.S3Storage",
