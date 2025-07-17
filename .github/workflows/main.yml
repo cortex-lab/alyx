@@ -53,7 +53,8 @@ jobs:
           sudo touch /var/log/alyx/django.log
           sudo chmod 666 /var/log/alyx/django.log
           cd alyx
-          cp alyx/settings_ci.py alyx/settings.py
+          cp ./alyx/environment_template.env ./alyx/.env
+          cp ../deploy/docker/settings-deploy.py  alyx/settings.py
           python manage.py collectstatic --noinput --link
           coverage run manage.py test -n
           coveralls --service=github
