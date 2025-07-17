@@ -12,6 +12,9 @@ alyx/alyx/settings.py
 alyx/static/*/*
 scripts/deployment_examples/docker-apache/settings*
 
+# package if installed
+alyx/alyx.egg-info
+
 # other
 *.pyc
 .DS_Store
