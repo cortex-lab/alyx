@@ -49,8 +49,8 @@ jobs:
 
       - name: Run tests
         run: |
-          sudo touch /var/log/alyx.log; sudo chmod 666 /var/log/alyx.log
-          sudo touch /var/log/alyx_json.log; sudo chmod 666 /var/log/alyx_json.log
+          sudo mkdir -p /var/log/apache2
+          sudo touch /var/log/apache2/django.log
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/docker/settings-deploy.py  alyx/settings.py
