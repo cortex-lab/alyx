@@ -51,6 +51,7 @@ jobs:
         run: |
           sudo mkdir -p /var/log/apache2
           sudo touch /var/log/apache2/django.log
+          sudo chmod 666 /var/log/apache2/django.log
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/docker/settings-deploy.py  alyx/settings.py
