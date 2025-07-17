@@ -2,7 +2,7 @@ boto3
 colorlog
 coreapi  # TODO coreapi deprecated #929
 legacy-cgi;python_version>="3.13"  # TODO needs to be removed with coreapi deprecated #929
-django>=4.0.6
+django>=5.2.2
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light

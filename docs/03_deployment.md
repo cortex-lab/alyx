@@ -24,15 +24,22 @@ APACHE_LOG_DIR=/Users/olivier/scratch/alyxlogs
 POSTGRES_HOST=localhost
 ```
 
+First we will start the docker service containing the database and make sure we can connect to it using the current `.env` settings.
+The `showmigrations` command will fail if the database is not available.
 ```shell
 docker compose -f ./deploy/docker-compose-postgres.yaml up -d
 cd alyx
+python manage.py showmigrations
+```
+
+Next we can start collecting the static files, migrating the database, setup the minimum amount of data and create a superuser.
+
+```shell
 python manage.py collectstatic --noinput
 python manage.py check
 python manage.py migrate
 ../scripts/load-init-fixtures.sh
 python manage.py createsuperuser
-
 python manage.py runserver
 ```
 NB: the password above is the postgres database user password. It is used by Django only to connect to the database, and is distinct from any user password on admin website.
