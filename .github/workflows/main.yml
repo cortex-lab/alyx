@@ -49,9 +49,7 @@ jobs:
 
       - name: Run tests
         run: |
-          sudo mkdir -p /var/log/apache2
-          sudo touch /var/log/apache2/django.log
-          sudo chmod 666 /var/log/apache2/django.log
+          sudo touch /var/log/alyx.log; sudo chmod 666 /var/log/alyx.log
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/docker/settings-deploy.py  alyx/settings.py
@@ -63,6 +61,8 @@ jobs:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APACHE_LOG_DIR: /var/log/alyx.log
+          POSTGRES_HOST: localhost
       - name: Flake
         run: |
           cd alyx
