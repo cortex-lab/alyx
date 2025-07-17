@@ -63,6 +63,8 @@ jobs:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APACHE_LOG_DIR: /var/log/alyx
+          POSTGRES_HOST: localhost
       - name: Flake
         run: |
           cd alyx
