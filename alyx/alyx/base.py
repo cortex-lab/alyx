@@ -211,8 +211,8 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+def flatten(liste):
+    return [item for sublist in liste for item in sublist]
 
 
 def _show_change(date_time, old, new):

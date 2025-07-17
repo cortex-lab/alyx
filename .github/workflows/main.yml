@@ -47,6 +47,11 @@ jobs:
         env:
           PIP_USE_MIRRORS: true
 
+      - name: Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: "./alyx"
+
       - name: Run tests
         run: |
           sudo mkdir /var/log/alyx
@@ -65,35 +70,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APACHE_LOG_DIR: /var/log/alyx
           POSTGRES_HOST: localhost
-      - name: Flake
-        run: |
-          cd alyx
-          flake8 .
-
-      - name: Generate new requirements_frozen.txt if needed
-        # Only runs when branch pushed to directly OR when a PR is merged
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          pip freeze > requirements_frozen_temp.txt
-          if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
-            echo "requirements_frozen.txt unchanged"
-            rm requirements_frozen_temp.txt
-            echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
-          else
-            echo "requirements_frozen.txt is different, git push needed"
-            mv requirements_frozen_temp.txt requirements_frozen.txt
-            echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
-          fi
-
-      - name: Setup git/commit/push for requirements_frozen.txt if needed
-        # Only runs when requirements_frozen.txt is updated
-        if: env.GIT_PUSH_NEEDED == 'true'
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add requirements_frozen.txt
-          git commit -m "GitHub Actions generated requirements_frozen.txt"
-          git push
 
       # Docker steps only run when master branch pushed to directly OR when a PR is merged
       - name: Set Docker conditional value if needed

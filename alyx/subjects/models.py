@@ -68,8 +68,8 @@ def save_old_fields(obj, fields):
             continue
         if field not in d:
             d[field] = []
-        l = d[field]
-        l.append({'date_time': date_time, 'value': obj._original_fields[field]})
+        list_field = d[field]
+        list_field.append({'date_time': date_time, 'value': obj._original_fields[field]})
         # Update the new value.
         # obj._original_fields[field] = v
         # Set the object's JSON if necessary.

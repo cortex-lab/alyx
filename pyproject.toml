@@ -34,3 +34,12 @@ version = {attr = "alyx.__version__"}
 [tool.setuptools]
 include-package-data = true
 package-dir = {"" = "alyx"}  # This would map the root package to the src directory
+
+[tool.ruff]
+exclude = [
+    "migrations",
+    ".venv",
+]
+indent-width = 4
+line-length = 99
+target-version = "py312"

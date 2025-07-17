@@ -26,9 +26,9 @@ def _create_missing_file_records_main_globus(dry_run=False, lab=None):
         labs = Lab.objects.filter(name=lab)
     else:
         labs = Lab.objects.all()
-    for l in labs:
-        repos = l.repositories.filter(globus_is_personal=False)
-        dsets = Dataset.objects.filter(session__lab=l)
+    for lab in labs:
+        repos = lab.repositories.filter(globus_is_personal=False)
+        dsets = Dataset.objects.filter(session__lab=lab)
         for r in repos:
             dsr = dsets.annotate(rep_count=Count('file_records',
                                                  filter=Q(file_records__data_repository=r)))
