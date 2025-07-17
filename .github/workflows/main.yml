@@ -46,12 +46,9 @@ jobs:
           pip install coverage coveralls pyarrow pandas  # for one_cache tests
         env:
           PIP_USE_MIRRORS: true
-
       - name: Ruff
-        uses: astral-sh/ruff-action@v3
-        with:
-          src: "./alyx"
-
+        run: |
+          ruff check ./alyx
       - name: Run tests
         run: |
           sudo mkdir /var/log/alyx
