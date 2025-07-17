@@ -49,7 +49,7 @@ jobs:
 
       - name: Run tests
         run: |
-          sudo mdir -p /var/log/alyx; sudo chmod -fR 666 /var/log/alyx
+          sudo mkdir -p /var/log/alyx; sudo chmod -fR 666 /var/log/alyx
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/docker/settings-deploy.py  alyx/settings.py
