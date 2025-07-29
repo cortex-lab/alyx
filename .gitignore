@@ -11,6 +11,8 @@ alyx/alyx/settings_lab.py
 alyx/alyx/settings.py
 alyx/static/*/*
 scripts/deployment_examples/docker-apache/settings*
+# this is a custom lab settings to be provided by the user rebuilding the head docker
+deploy/docker/settings_lab-user.py
 
 # package if installed
 alyx/alyx.egg-info

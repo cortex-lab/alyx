@@ -2,6 +2,7 @@ FROM internationalbrainlab/alyx_apache_base:latest
 
 COPY settings-deploy.py /var/www/alyx/alyx/alyx/settings.py
 COPY settings_lab-deploy.py /var/www/alyx/alyx/alyx/settings_lab.py
+COPY settings_lab-user.py* /var/www/alyx/alyx/alyx/settings_lab.py
 
 ARG alyx_branch=deploy
 
