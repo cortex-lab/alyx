@@ -4,7 +4,7 @@ services:
     container_name: alyx_apache
     ports:
       - "8000:8000"
-    env_file: ../alyx/alyx/.env
+    env_file: ../alyx/alyx/.env_local
     command: >
       bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
                gunicorn --workers 2 -b 0.0.0.0:8000 alyx.gunicorn_wsgi:application"
@@ -18,7 +18,7 @@ services:
   postgres:
     image: postgres:17
     container_name: alyx_postgres
-    env_file: ../alyx/alyx/.env
+    env_file: ../alyx/alyx/.env_local
     volumes:
       - alyx_postgres:/var/lib/postgresql/data
     expose:
