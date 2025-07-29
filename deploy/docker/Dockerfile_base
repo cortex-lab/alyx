@@ -64,7 +64,8 @@ COPY apache-conf-alyx /etc/apache2/apache2.conf
 COPY 000-default-conf-alyx /etc/apache2/sites-available/000-default.conf
 
 # This should be the same as MEDIA_ROOT in settings-deploy.py (c.f. optional env var DJANGO_MEDIA_ROOT)
-RUN chmod chown www-data:www-data -fR /var/www/alyx/alyx/uploaded
+RUN mkdir /var/www/alyx/alyx/media
+RUN chown www-data:www-data -fR /var/www/alyx/alyx/media
 
 RUN a2enmod rewrite
 RUN a2enmod ssl

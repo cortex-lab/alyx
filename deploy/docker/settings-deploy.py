@@ -26,10 +26,7 @@ if dotenv_path.exists():
     dotenv.load_dotenv(dotenv_path=dotenv_path)
 
 # Lab-specific settings
-try:
-    from .settings_lab import *  # noqa
-except ImportError:
-    from .settings_lab_template import *  # noqa
+from .settings_lab import *  # noqa
 
 # %% Databases
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
