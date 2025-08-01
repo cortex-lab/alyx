@@ -42,8 +42,8 @@ def pad(s):
     return re.sub(r'\_([0-9]+)$', lambda m: '_%04d' % int(m.group(1)), s)
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+def flatten(line):
+    return [item for sublist in line for item in sublist]
 
 
 def get_username(initials):
@@ -72,8 +72,8 @@ def parse(date_str, time=False):
         return ''
     try:
         ret = parse_(date_str)
-    except:
-        logger.warn("Could not parse date %s.", date_str)
+    except Exception:
+        logger.warning("Could not parse date %s.", date_str)
         return ''
     if not time:
         return ret.strftime("%Y-%m-%d")
@@ -120,11 +120,11 @@ def sheet_to_table(wks, header_line=0, first_line=2):
     table = []
     headers = rows[header_line]
     for row in rows[first_line:]:
-        l = {headers[i].strip(): row[i].strip() for i in range(len(headers))}
+        line = {headers[i].strip(): row[i].strip() for i in range(len(headers))}
         # Empty line = end of table.
-        if all(_ == '' for _ in l.values()):
+        if all(_ == '' for _ in line.values()):
             break
-        table.append(Bunch(l))
+        table.append(Bunch(line))
     return table
 
 
@@ -366,9 +366,9 @@ class GoogleSheetImporter(object):
     def _get_line(self, line):
         out = self.lines.get(line, None)
         if not out:
-            for l in self.lines.values():
-                if l.auto_name == line:
-                    return l
+            for line in self.lines.values():
+                if line.auto_name == line:
+                    return line
         return out
 
     def _get_litters(self, subjects):

@@ -1,3 +1,23 @@
+# environment files for deployments
+.env*
+# all of the iblreports sym links
+alyx/data/management/commands/*ibl*
+alyx/data/management/commands/sync_patcher.py
+alyx/ibl_reports
+alyx/templates/ibl_reports
+# setting files
+alyx/alyx/settings_secret.py
+alyx/alyx/settings_lab.py
+alyx/alyx/settings.py
+alyx/static/*/*
+scripts/deployment_examples/docker-apache/settings*
+# this is a custom lab settings to be provided by the user rebuilding the head docker
+deploy/docker/settings_lab-user.py
+
+# package if installed
+alyx/alyx.egg-info
+
+# other
 *.pyc
 .DS_Store
 *~
@@ -24,14 +44,6 @@ build
 .cache/
 alyx/alyx_full.sql.gz
 .vscode/
-alyx/data/management/commands/*ibl*
-alyx/ibl_reports
-alyx/templates/ibl_reports
-alyx/alyx/settings_secret.py
-alyx/alyx/settings_lab.py
-alyx/alyx/settings.py
-alyx/static/*/*
-scripts/deployment_examples/docker-apache/settings*
 
 alyx/.idea/
 

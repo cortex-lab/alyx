@@ -1,4 +1,4 @@
-import structlog
+import logging
 from textwrap import dedent
 
 from django.utils import timezone
@@ -6,7 +6,7 @@ from django.utils import timezone
 from actions.models import create_notification
 
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def responsible_user_changed(subject, old_user, new_user):

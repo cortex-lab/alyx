@@ -289,7 +289,7 @@ class TestTransfers(object):
         ls_local = self.gtc.operation_ls(self.local_endpoint_id,
                                          path=str(Path(exp_files[0]).parent))
         ls_files = [ls['name'] for ls in ls_local['DATA']]
-        assert not Path(exp_files[0]).name in ls_files
+        assert Path(exp_files[0]).name not in ls_files
 
         dsets_to_del = Dataset.objects.filter(session__lab__name=self.lab_name,
                                               name='spikes.times.npy')

@@ -1,5 +1,5 @@
 import json
-import structlog
+import logging
 import os
 import os.path as op
 from polymorphic.models import PolymorphicModel
@@ -30,7 +30,7 @@ from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 from alyx import __version__ as version
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 DATA_DIR = op.abspath(op.join(op.dirname(__file__), '../../data'))
 DISABLE_MAIL = False  # used for testing
@@ -211,8 +211,8 @@ class Bunch(dict):
         self.__dict__ = self
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+def flatten(liste):
+    return [item for sublist in liste for item in sublist]
 
 
 def _show_change(date_time, old, new):

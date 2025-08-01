@@ -1,4 +1,4 @@
-import structlog
+import logging
 import re
 
 from django.contrib.auth import get_user_model
@@ -37,7 +37,7 @@ from .transfers import (_get_session, _get_repositories_for_labs,
                         _create_dataset_file_records, bulk_sync, _check_dataset_protected,
                         _get_name_collection_revision)
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------

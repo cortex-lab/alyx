@@ -1,7 +1,7 @@
 from datetime import timedelta
 from math import inf
 
-import structlog
+import logging
 from one.alf.spec import QC
 
 from django.conf import settings
@@ -13,7 +13,7 @@ from alyx.base import BaseModel, modify_fields, alyx_mail, BaseManager
 from misc.models import Lab, LabLocation, LabMember, Note
 
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _default_water_type():
@@ -387,7 +387,7 @@ NOTIFICATION_MIN_DELAYS = {
 
 def delay_since_last_notification(notification_type, title, subject):
     """Return the delay since the last notification corresponding to the given
-    type, title, subject, in seconds, wheter it was actually sent or not."""
+    type, title, subject, in seconds, whether it was actually sent or not."""
     last_notif = Notification.objects.filter(
         notification_type=notification_type,
         title=title,

@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
         if options.get('migrate_rules'):
             from subjects.zygosities import ZYGOSITY_RULES
-            for l, a, rules in ZYGOSITY_RULES:
+            for line, a, rules in ZYGOSITY_RULES:
                 for rule in rules:
                     r = _parse_rule(rule)
                     zygosity = ZYGOSITY_SYMBOLS.index(r.pop('res'))
@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     seq0 = k[0]
                     res0 = r[seq0]
                     kwargs = dict(
-                        line=Line.objects.get(nickname=l),
+                        line=Line.objects.get(nickname=line),
                         allele=Allele.objects.get(nickname=a),
                         sequence0=Sequence.objects.get_or_create(name=seq0)[0],
                         sequence0_result=res0,

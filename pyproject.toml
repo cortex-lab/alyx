@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alyx"
+description = "Database for experimental neuroscience laboratories"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "IBL staff", email = "info@internationalbrainlab.org"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dynamic = ["dependencies", "version"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/cortex-lab/alyx"
+"Documentation" = "https://alyx.readthedocs.io/en/latest"
+"ChangeLog" = "https://github.com/cortex-lab/alyx/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/cortex-lab/alyx/issues"
+"Example" = "https://test.alyx.internationalbrainlab.org/admin/login/?next=/admin/"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {attr = "alyx.__version__"}
+
+[tool.setuptools]
+include-package-data = true
+package-dir = {"" = "alyx"}  # This would map the root package to the src directory
+
+[tool.ruff]
+exclude = [
+    "migrations",
+    ".venv",
+]
+indent-width = 4
+line-length = 99
+target-version = "py312"

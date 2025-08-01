@@ -1,4 +1,4 @@
-import structlog
+import logging
 from one.alf.spec import QC
 
 from django.core.validators import RegexValidator
@@ -11,7 +11,7 @@ from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
 from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet, ALF_SPEC
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _related_string(field):
