@@ -1,10 +1,12 @@
 
 # Deployments how-to's guides
 
-If the database needs to be served on the web, one tested solution is to use an apache web server.
+For a simple deployment using a containerized version of Alyx interacting with a containerized database, refer to the how-to guide.
+
+For running alyx directly on the host machine, follow the instructions below.
 
 
-## Install a development version of Alyx
+## Install a development version of Alyx on the host machine
 
 Copy the settings files from the deploy folder inside of the alyx project. Those files are ignored by git.
 

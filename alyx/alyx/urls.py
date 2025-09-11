@@ -4,7 +4,8 @@ from django.urls import path
 from django.contrib import admin
 from django.shortcuts import render
 from rest_framework.authtoken import views as authv
-from rest_framework.documentation import include_docs_urls
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
+
 
 admin.site.site_header = 'Alyx'
 
@@ -19,7 +20,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('auth-token', authv.obtain_auth_token),
-    path('docs/', include_docs_urls(title='Alyx REST API documentation')),
+    # YOUR PATTERNS
+    path('api/schema', SpectacularAPIView.as_view(), name='schema'),
+    path('docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 # this is an optional app

@@ -32,7 +32,7 @@ from .settings_lab import *  # noqa
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # the database details are provided in the form of an URL. The URL looks like::
 # "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
-database_url = f"postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+database_url = f"postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"  # noqa
 DATABASES = {"default": dj_database_url.parse(database_url)}
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
@@ -105,7 +105,8 @@ DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
 if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
     ALLOWED_HOSTS.append(web_host)
-CSRF_TRUSTED_ORIGINS = [f"http://{web_host}", f"https://{web_host}", "https://*.internationalbrainlab.org"]
+CSRF_TRUSTED_ORIGINS = [
+    f"http://{web_host}", f"https://{web_host}", "https://*.internationalbrainlab.org"]
 CSRF_COOKIE_SECURE = True
 
 
@@ -134,6 +135,7 @@ INSTALLED_APPS = (
     'experiments',
     'jobs',
     'subjects',
+    'drf_spectacular',
     'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
@@ -185,7 +187,7 @@ REST_FRAMEWORK = {
     'STRICT_JSON': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,
 }
 
