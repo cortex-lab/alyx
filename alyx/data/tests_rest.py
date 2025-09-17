@@ -324,6 +324,26 @@ class APIDataTests(BaseTests):
         # the dataset already exists and results in a 500 integrity error
         # self.ar(self.post(reverse('register-file'), data), 500)
 
+        # Test projects lab alias
+        r_ = {'created_by': 'test',
+              'path': '01228d/2018-01-01/002',
+              'filenames': ['alf/titi/a.d.e1'],
+              'hashes': ['4de9d239cd78c77c9cc7660220cb7673'],
+              'filesizes': [2264],
+              'name': 'dra1',
+              'exists': False,
+              'server_only': False,
+              'default': True,
+              'versions': ['3.3.0'],
+              'check_protected': True,
+              'labs': 'laba,',
+              'projects': 'labb'
+              }
+        r = self.client.post(reverse('register-file'), r_)
+        self.ar(r, 201)
+        expected = {'dra2', 'dra1', 'drb2', 'drb1'}
+        self.assertEqual(expected, set(x['data_repository'] for x in r.data[0]['file_records']))
+
     def test_register_files_hostname(self):
         # this is old use case where we register one dataset according to the hostname, no need
         # for a lab in this case. NB the reverse doesn't work with lists while the true endpoint

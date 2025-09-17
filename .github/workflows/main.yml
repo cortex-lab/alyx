@@ -46,13 +46,18 @@ jobs:
           pip install coverage coveralls pyarrow pandas  # for one_cache tests
         env:
           PIP_USE_MIRRORS: true
-
+      - name: Ruff
+        run: |
+          ruff check ./alyx
       - name: Run tests
         run: |
-          sudo touch /var/log/alyx.log; sudo chmod 666 /var/log/alyx.log
-          sudo touch /var/log/alyx_json.log; sudo chmod 666 /var/log/alyx_json.log
+          sudo mkdir /var/log/alyx
+          sudo touch /var/log/alyx/django.log
+          sudo chmod 666 /var/log/alyx/django.log
           cd alyx
-          cp alyx/settings_ci.py alyx/settings.py
+          cp ./alyx/environment_template.env ./alyx/.env
+          cp ../deploy/docker/settings-deploy.py  alyx/settings.py
+          cp ../deploy/docker/settings_lab-deploy.py  alyx/settings_lab.py
           python manage.py collectstatic --noinput --link
           coverage run manage.py test -n
           coveralls --service=github
@@ -60,35 +65,8 @@ jobs:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Flake
-        run: |
-          cd alyx
-          flake8 .
-
-      - name: Generate new requirements_frozen.txt if needed
-        # Only runs when branch pushed to directly OR when a PR is merged
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          pip freeze > requirements_frozen_temp.txt
-          if diff requirements_frozen.txt requirements_frozen_temp.txt > /dev/null; then
-            echo "requirements_frozen.txt unchanged"
-            rm requirements_frozen_temp.txt
-            echo "GIT_PUSH_NEEDED=false" >> "$GITHUB_ENV"
-          else
-            echo "requirements_frozen.txt is different, git push needed"
-            mv requirements_frozen_temp.txt requirements_frozen.txt
-            echo "GIT_PUSH_NEEDED=true" >> "$GITHUB_ENV"
-          fi
-
-      - name: Setup git/commit/push for requirements_frozen.txt if needed
-        # Only runs when requirements_frozen.txt is updated
-        if: env.GIT_PUSH_NEEDED == 'true'
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add requirements_frozen.txt
-          git commit -m "GitHub Actions generated requirements_frozen.txt"
-          git push
+          APACHE_LOG_DIR: /var/log/alyx
+          POSTGRES_HOST: localhost
 
       # Docker steps only run when master branch pushed to directly OR when a PR is merged
       - name: Set Docker conditional value if needed

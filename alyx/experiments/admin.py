@@ -163,16 +163,16 @@ class FOVLocationInline(TabularInline):
 
     @staticmethod
     def _y(obj):
-        return ', '.join(map('{:.1f}'.format, obj.x))
+        return ', '.join(map('{:.1f}'.format, obj.y))
 
     @staticmethod
     def _z(obj):
-        return ', '.join(map('{:.1f}'.format, obj.x))
+        return ', '.join(map('{:.1f}'.format, obj.z))
 
 
 class FOVInline(BaseAdmin):
     ordering = ('-session__start_time',)
-    exclude = ('session', 'datasets', 'json')
+    exclude = ('session', 'datasets')
     readonly_fields = ('id', '_session', '_datasets')
     list_display = ('name', '_subject', '_session', 'imaging_type')
     list_display_links = ('name', '_subject', '_session',)

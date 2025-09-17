@@ -164,6 +164,3 @@ texinfo_documents = [
      author, 'Alyx', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-# -- Extension configuration -------------------------------------------------

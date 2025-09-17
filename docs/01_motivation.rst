@@ -1,5 +1,17 @@
-Design considerations
+History and Rationale of Alyx
 =====================================
+
+Previous standardisation efforts, as well as current data organisation methods used in laboratories, have several drawbacks. Most recently, the `Neurodata Without Borders`_ project has worked to standardise a format for all experimental neurophysiology data. Alyx builds on this work and adds a number of key advantages:
+
+Alyx focuses on **metadata**, storing only references to the experimental data. This leaves the choice of experimental data format to the user. The experiments meta-data are embodied in a relational database, making it **scalable** and **searchable**.
+
+.. _Neurodata Without Borders: https://neurodatawithoutborders.github.io/
+
+Searchability
+------------------------------------
+To use data, one has to first find the data. Alyx allows a user to quickly and simply search a database of neurophysiology experiments to find that needed for their scientific question. The search could run over all data collected in the user’s own lab, or all the shared data in the world.
+
+
 
 Metadata vs bulk data
 ------------------------------------
@@ -16,7 +28,7 @@ It is impossible to predict the metadata users will want to store for their expe
 
 Unique identifiers
 ------------------------------------
-Databases identify each entry in a table with a “primary key”. As primary keys, we give each entry in a table (e.g. a subject, a lab, an experiment, or a neuron) a “GUID” – a random 128-bit number – which makes the chance of key duplication vanishingly small, even if this schema were used to store all the world’s neuroscience data. This GUID is assigned when the item is first added to the database (e.g. when a web form is filled in for an experiment; after spike sorting; etc.). The use of GUIDs allows users to copy or transfer their data to centralized stores with negligible danger of ID clash.
+Databases identify each entry in a table with a “primary key”. As primary keys, we give each entry in a table (e.g. a subject, a lab, an experiment, or a neuron) a “GUID” – a random 128-bit number – which makes the chance of key duplication vanishingly small, even if this schema were used to store all the world’s neuroscience data. This GUID is assigned when the item is first added to the database (e.g. when a web form is filled in for an experiment; after spike sorting; etc.). The use of GUIDs allows users to copy or transfer their data to centralized stores with infinitesimal danger of ID clash.
 
 API and webform access
 ------------------------------------
@@ -26,4 +38,4 @@ Initially, only the data which is likely to be accessed programmatically is made
 
 Sharing
 ------------------------------------
-This system was originally designed to be used within a single lab, as an “electronic lab notebook” that keeps track of the experiments performed and datasets produced. It can also be used by multi-lab collaborations, and is now used for data management by the International Brain Lab. 
+This system was originally designed to be used within a single lab, as an “electronic lab notebook” that keeps track of the experiments performed and datasets produced. It can also be used by multi-lab collaborations, and is now used for data management by the International Brain Lab.
