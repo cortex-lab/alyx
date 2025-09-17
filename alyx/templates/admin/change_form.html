@@ -74,6 +74,7 @@ $(window).on("load", function() {
 
 // Narrative templates
 $(window).on("load", function() {
+    if (!"{{ narrative_templates }}".length) { return; }
     var templates = JSON.parse(atob("{{ narrative_templates }}"));
     $("select[name='procedures']").on("change", function (e) {
        // Do nothing if the narrative is already filled.
