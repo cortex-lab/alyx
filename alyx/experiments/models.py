@@ -1,4 +1,4 @@
-import structlog
+import logging
 import uuid
 
 from django.db import models
@@ -13,7 +13,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from alyx.base import BaseModel, BaseManager
 from actions.models import ChronicRecording
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 X_HELP_TEXT = ("brain surface medio-lateral coordinate (um) of"
                "the insertion, right +, relative to Bregma")

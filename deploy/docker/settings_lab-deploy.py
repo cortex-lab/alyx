@@ -1,17 +1,16 @@
+import os
 from textwrap import dedent
 
-# ALYX-SPECIFIC
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Europe/London'  # NB: Changing the timezone here requires migrations
-GLOBUS_CLIENT_ID = '525cc543-8ccb-4d11-8036-af332da5eafd'
+TIME_ZONE = 'Europe/London'
+GLOBUS_CLIENT_ID = os.getenv('GLOBUS_CLIENT_ID')
 SUBJECT_REQUEST_EMAIL_FROM = 'alyx@internationalbrainlab.org'
 DEFAULT_SOURCE = 'IBL'
 DEFAULT_PROTOCOL = '1'
 SUPERUSERS = ('root',)
 STOCK_MANAGERS = ('root',)
-WEIGHT_THRESHOLD = 0.8  # Absolute minimum weight threshold (red line in plots)
-DEFAULT_LAB_NAME = 'defaultlab'
+WEIGHT_THRESHOLD = 0.75
+DEFAULT_LAB_NAME = 'cortexlab'
 WATER_RESTRICTIONS_EDITABLE = False  # if set to True, all users can edit water restrictions
 DEFAULT_LAB_PK = '4027da48-7be3-43ec-a222-f75dffe36872'
 SESSION_REPO_URL = \

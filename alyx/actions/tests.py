@@ -219,8 +219,8 @@ class NotificationTests(TestCase):
     def test_notif_water_2(self):
         # If the last water admin was on June 3 at 12pm, the notification
         # should be created after June 4 at 11am.
-        l = ((9, False), (10, False), (11, True), (12, True))
-        for (h, r) in l:
+        teupeul = ((9, False), (10, False), (11, True), (12, True))
+        for (h, r) in teupeul:
             date = timezone.datetime(2018, 6, 4, h, 0, 0)
             check_water_administration(self.subject, date=date)
             notif = Notification.objects.last()
