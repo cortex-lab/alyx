@@ -4,7 +4,8 @@ from django.urls import path
 from django.contrib import admin
 from django.shortcuts import render
 from rest_framework.authtoken import views as authv
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
+from drf_spectacular.views import SpectacularAPIView
+from alyx.views import SpectacularRedocViewCoreAPIDeprecation
 
 
 admin.site.site_header = 'Alyx'
@@ -22,7 +23,7 @@ urlpatterns = [
     path('auth-token', authv.obtain_auth_token),
     # YOUR PATTERNS
     path('api/schema', SpectacularAPIView.as_view(), name='schema'),
-    path('docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('docs/', SpectacularRedocViewCoreAPIDeprecation.as_view(url_name='schema'), name='redoc'),
 ]
 
 # this is an optional app
@@ -31,10 +32,11 @@ try:
 except ModuleNotFoundError:
     pass
 
-
 def handler500(request):
     ctx = {
         'request': request.path,
         'traceback': traceback.format_exc()
     }
     return render(request, 'error_500.html', ctx)
+
+
