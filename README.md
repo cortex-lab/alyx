@@ -27,6 +27,14 @@ More complex deployments scenarios using web servers and Cloud applications are 
 * alyx-dev is sync with the **dev** branch
 * Migrations files are always provided by the repository
 
+Contribution checklist:
+- [ ] lint using ruff `ruff check .` at the root of the repository
+- [ ] tests pass (see below how to run tests)
+- [ ] migrations are provided with the commit
+- [ ] update version number in `./alyx/alyx/__init__.py`
+- [ ] update `CHANGELOG.md`
+
+
 ### Running tests
 
 Continuous integration is setup. But before submitting a PR or commit,the tests can run locally.
