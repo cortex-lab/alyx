@@ -836,10 +836,12 @@ class BreedingPairFilter(DefaultListFilter):
             return queryset.all()
 
 
-def _bp_subjects(line, sex):
+def _bp_subjects(line, sex, current_subject=None):
     # All alive subjects of the given sex.
     qs = Subject.objects.filter(
-        sex=sex, responsible_user__is_stock_manager=True, cull__isnull=True)
+        Q(sex=sex, responsible_user__is_stock_manager=True, cull__isnull=True) |
+        Q(pk=getattr(current_subject, 'id', None))
+    )
     qs = qs.order_by('nickname')
     ids = [item.id for item in qs]
     if ids:
@@ -876,7 +878,7 @@ class BreedingPairAdminForm(forms.ModelForm):
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
             if w in self.fields:
-                self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
+                self.fields[w].queryset = _bp_subjects(self.instance.line, sex, getattr(self.instance, w))
 
     def save(self, commit=True):
         cage = self.cleaned_data.get('cage')
@@ -1076,7 +1078,7 @@ class BreedingPairInline(BaseInlineAdmin):
             return field
         if db_field.name in ('father', 'mother1', 'mother2'):
             sex = 'M' if db_field.name == 'father' else 'F'
-            field.queryset = _bp_subjects(obj, sex)
+            field.queryset = _bp_subjects(obj, sex, getattr(obj, db_field.name))
         return field
 
 
