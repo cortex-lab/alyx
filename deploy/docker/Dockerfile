@@ -4,12 +4,13 @@ COPY settings-deploy.py /var/www/alyx/alyx/alyx/settings.py
 COPY settings_lab-deploy.py /var/www/alyx/alyx/alyx/settings_lab.py
 COPY settings_lab-user.py* /var/www/alyx/alyx/alyx/settings_lab.py
 
-ARG alyx_branch=deploy
+ARG alyx_branch=dev
+ARG iblalyx_branch=deploy
 
 RUN git -C /var/www/alyx fetch origin ${alyx_branch}
 RUN git -C /var/www/alyx checkout -B ${alyx_branch} origin/${alyx_branch}
-RUN git -C /home/iblalyx fetch origin ${alyx_branch}
-RUN git -C /home/iblalyx checkout -B ${alyx_branch} origin/${alyx_branch}
+RUN git -C /home/iblalyx fetch origin ${iblalyx_branch}
+RUN git -C /home/iblalyx checkout -B ${iblalyx_branch} origin/${iblalyx_branch}
 
 RUN pip install -r /var/www/alyx/requirements.txt
 
