@@ -42,7 +42,6 @@ class TestBreedingPairAdmin(TestCase):
         self.assertTrue(form_instance.is_valid())
         # the form is still valid once the father is culled: it can´t  be set on a new breeding pair,
         # but it can remain on this one and the form is valid
-        # but it can remain on this one and the form is valid
         Cull(subject=father, user=lab_member_stock_manager, date=date(2025, 6, 1))
         father.save()
         form_instance = BreedingPairAdminForm(data=form_data, instance=breeding_pair)
