@@ -45,7 +45,7 @@ def fcn_import_projects(ses_ucl):
             # here we make sure we have the intersection of users in the IBL database
             for pk_user in alyx_users - ucl_users:
                 # create a dummy user with the IBL pk to maintain the relation
-                alyx_project.users.add(LabMember.objects.using('default').filter(pk=pk_user))
+                alyx_project.users.add(LabMember.objects.using('default').get(pk=pk_user))
         alyx_project.save()
 
     # any project that is not associated with a selected session nor in the IBL projects is removed from UCL
