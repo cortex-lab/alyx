@@ -1,3 +1,5 @@
+import uuid
+
 from django import forms
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
@@ -836,10 +838,12 @@ class BreedingPairFilter(DefaultListFilter):
             return queryset.all()
 
 
-def _bp_subjects(line, sex):
+def _bp_subjects(line, sex, current_subjects=None):
     # All alive subjects of the given sex.
     qs = Subject.objects.filter(
-        sex=sex, responsible_user__is_stock_manager=True, cull__isnull=True)
+        Q(sex=sex, responsible_user__is_stock_manager=True, cull__isnull=True) |
+        Q(pk__in=[current_subjects] if isinstance(current_subjects, uuid.UUID) else []),
+    )
     qs = qs.order_by('nickname')
     ids = [item.id for item in qs]
     if ids:
@@ -876,7 +880,9 @@ class BreedingPairAdminForm(forms.ModelForm):
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
             if w in self.fields:
-                self.fields[w].queryset = _bp_subjects(self.instance.line, sex)
+                self.fields[w].queryset = _bp_subjects(
+                    self.instance.line, sex, current_subjects=
+                    getattr(getattr(self.instance, w), 'id', None))
 
     def save(self, commit=True):
         cage = self.cleaned_data.get('cage')
@@ -1076,7 +1082,7 @@ class BreedingPairInline(BaseInlineAdmin):
             return field
         if db_field.name in ('father', 'mother1', 'mother2'):
             sex = 'M' if db_field.name == 'father' else 'F'
-            field.queryset = _bp_subjects(obj, sex)
+            field.queryset = _bp_subjects(obj, sex, BreedingPair.objects.filter(line=obj).values_list(f'{db_field.name}__pk'))
         return field
 
 
