@@ -71,12 +71,6 @@ class LabMember(AbstractUser):
 
 
 class Lab(BaseModel):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.instance.pk:
-            self.fields['timezone'].initial = TIME_ZONE
-
     labname_validator = validators.RegexValidator(
         f"^{ALF_SPEC['lab']}$",
         "Lab name must only contain letters, numbers, and underscores.")
@@ -111,6 +105,10 @@ class Lab(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, timezone=None, **kwargs):
+        self.timezone = timezone or self.timezone or TIME_ZONE
+        super().save(*args, **kwargs)
 
 
 class LabMembership(BaseModel):
