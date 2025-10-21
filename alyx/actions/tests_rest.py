@@ -548,15 +548,15 @@ class APIActionsTests(APIActionsBaseTests):
     def test_list_retrieve_lab_locations(self):
         # test list
         url = reverse("location-list")
-        l = self.ar(self.client.get(url))
-        self.assertTrue(len(l) > 0)
-        self.assertEqual(set(l[0].keys()), {"name", "json", "lab"})
+        reponse = self.ar(self.client.get(url))
+        self.assertTrue(len(reponse) > 0)
+        self.assertEqual(set(reponse[0].keys()), {"name", "json", "lab"})
         # test detail
-        url = reverse("location-detail", args=[l[0]["name"]])
+        url = reverse("location-detail", args=[reponse[0]["name"]])
         d = self.ar(self.client.get(url))
-        self.assertEqual(d, l[0])
+        self.assertEqual(d, reponse[0])
         # test patch
-        url = reverse("location-detail", args=[l[0]["name"]])
+        url = reverse("location-detail", args=[reponse[0]["name"]])
         json_dict = {
             "string": "look at me! I'm a Json field",
             "integer": 15,

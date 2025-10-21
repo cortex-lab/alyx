@@ -4,24 +4,26 @@ services:
     container_name: alyx_apache
     ports:
       - "8000:8000"
-    env_file: ../alyx/alyx/.env
+    env_file: ../alyx/alyx/.env_local
     command: >
       bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
                gunicorn --workers 2 -b 0.0.0.0:8000 alyx.gunicorn_wsgi:application"
     restart: always
+    environment:
+      - APACHE_LOG_DIR=/var/log/apache2
     volumes:
-      - /var/log/apache2:/var/log/apache2
-      - /var/log/alyx:/var/log/alyx
       - /etc/letsencrypt:/etc/apache2/ssl
+      - alyx_logs:/var/log/apache2
     depends_on:
       - postgres
   postgres:
     image: postgres:17
     container_name: alyx_postgres
-    env_file: ../alyx/alyx/.env
+    env_file: ../alyx/alyx/.env_local
     volumes:
       - alyx_postgres:/var/lib/postgresql/data
     expose:
       - 5432
 volumes:
   alyx_postgres:
+  alyx_logs:

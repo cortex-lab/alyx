@@ -13,7 +13,6 @@ import json
 import dj_database_url
 import logging
 import dotenv
-import structlog
 from pathlib import Path
 
 from django.conf.locale.en import formats as en_formats
@@ -27,16 +26,13 @@ if dotenv_path.exists():
     dotenv.load_dotenv(dotenv_path=dotenv_path)
 
 # Lab-specific settings
-try:
-    from .settings_lab import *  # noqa
-except ImportError:
-    from .settings_lab_template import *  # noqa
+from .settings_lab import *  # noqa
 
 # %% Databases
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-# the database details are provided in the form of an URL. The Url looks like::
-# "postgres://${POSTGRES_DB}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-database_url = f"postgres://{os.getenv('POSTGRES_DB')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+# the database details are provided in the form of an URL. The URL looks like::
+# "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
+database_url = f"postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"  # noqa
 DATABASES = {"default": dj_database_url.parse(database_url)}
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
@@ -74,10 +70,6 @@ LOGGING = {
                 'CRITICAL': 'bold_red',
             },
         },
-        'json_formatter': {
-            '()': structlog.stdlib.ProcessorFormatter,
-            'processor': structlog.processors.JSONRenderer(),
-        },
     },
     'handlers': {
         'file': {
@@ -94,7 +86,7 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': LOG_LEVEL,
             'propagate': True,
         },
@@ -110,10 +102,11 @@ LOGGING = {
 DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 
 # ALYX-SPECIFIC
-ALLOWED_HOSTS = ['localhost', '0.0.0.0', '127.0.0.1', '.internationalbrainlab.org', '.eu-west-2.compute.amazonaws.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
 if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
     ALLOWED_HOSTS.append(web_host)
-CSRF_TRUSTED_ORIGINS = [f"http://{web_host}", f"https://{web_host}", f"https://*.internationalbrainlab.org"]
+CSRF_TRUSTED_ORIGINS = [
+    f"http://{web_host}", f"https://{web_host}", "https://*.internationalbrainlab.org"]
 CSRF_COOKIE_SECURE = True
 
 
@@ -142,6 +135,7 @@ INSTALLED_APPS = (
     'experiments',
     'jobs',
     'subjects',
+    'drf_spectacular',
     'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
@@ -155,7 +149,6 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'alyx.base.QueryPrintingMiddleware',
-    'django_structlog.middlewares.RequestMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'
@@ -194,7 +187,7 @@ REST_FRAMEWORK = {
     'STRICT_JSON': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,
 }
 
@@ -213,13 +206,13 @@ EMAIL_USE_TLS = True
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR.joinpath('media'))
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR.joinpath('uploaded')))
 MEDIA_URL = '/uploaded/'
 UPLOADED_IMAGE_WIDTH = 800
 
 # The location for saving and/or serving the cache tables.
 # May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', BASE_DIR.joinpath('media'))
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', str(BASE_DIR.joinpath('uploaded')))
 
 # storage configurations
 STORAGES = {
@@ -228,7 +221,7 @@ STORAGES = {
     },
 }
 
-if str(MEDIA_ROOT).startswith('https://') and '.s3.' in str(MEDIA_ROOT):
+if MEDIA_ROOT.startswith('https://') and '.s3.' in MEDIA_ROOT:
     _logger.warning('S3 backend enabled for uploads and tables')
     STORAGES['default'] = {
         "BACKEND": "storages.backends.s3.S3Storage",

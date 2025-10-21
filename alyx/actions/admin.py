@@ -1,6 +1,6 @@
 import base64
 import json
-import structlog
+import logging
 
 from django import forms
 from django.conf import settings
@@ -27,7 +27,7 @@ from .water_control import WaterControl
 from experiments.models import ProbeInsertion, FOV
 from jobs.models import Task
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # Filters
@@ -212,6 +212,17 @@ class BaseActionAdmin(BaseAdmin):
         form.current_user = request.user
         form.last_subject_id = self._get_last_subject(request)
         return form
+
+    def change_view(self, request, object_id, extra_context=None, **kwargs):
+        context = extra_context or {}
+        context = _pass_narrative_templates(context)
+        return super(BaseActionAdmin, self).change_view(
+            request, object_id, extra_context=context, **kwargs)
+
+    def add_view(self, *args, extra_context=None):
+        context = extra_context or {}
+        context = _pass_narrative_templates(context)
+        return super(BaseActionAdmin, self).add_view(*args, extra_context=context)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Logged-in user by default.
@@ -615,17 +626,6 @@ class SessionAdmin(BaseActionAdmin):
                 Q(users=request.user.pk) | Q(users=None) | Q(pk__in=current_proj)
             ).distinct()
         return form
-
-    def change_view(self, request, object_id, extra_context=None, **kwargs):
-        context = extra_context or {}
-        context = _pass_narrative_templates(context)
-        return super(SessionAdmin, self).change_view(
-            request, object_id, extra_context=context, **kwargs)
-
-    def add_view(self, request, extra_context=None):
-        context = extra_context or {}
-        context = _pass_narrative_templates(context)
-        return super(SessionAdmin, self).add_view(request, extra_context=context)
 
     def project_(self, obj):
         return [getattr(p, 'name', None) for p in obj.projects.all()]

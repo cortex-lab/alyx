@@ -16,6 +16,13 @@ To start, make sure you have both `git` and `docker` installed in your system an
 ```shell
 git clone https://github.com/cortex-lab/alyx.git
 ```
+
+Copy the template configuration file from `environment_template.env` to `.env`
+```shell
+ cp alyx/alyx/alyx/environment_template.env alyx/alyx/alyx/.env
+```
+Update the `DJANGO_SECRET_KEY` value (you can create one on this website: [https://djecrety.ir/](https://djecrety.ir/))
+
 Then we will start the containers. The `docker compose up` command will make sure the service is always running, even after a restart.
 
 ```shell

@@ -1,10 +1,12 @@
 
 # Deployments how-to's guides
 
-If the database needs to be served on the web, one tested solution is to use an apache web server.
+For a simple deployment using a containerized version of Alyx interacting with a containerized database, refer to the how-to guide.
+
+For running alyx directly on the host machine, follow the instructions below.
 
 
-## Install a development version of Alyx
+## Install a development version of Alyx on the host machine
 
 Copy the settings files from the deploy folder inside of the alyx project. Those files are ignored by git.
 
@@ -24,15 +26,22 @@ APACHE_LOG_DIR=/Users/olivier/scratch/alyxlogs
 POSTGRES_HOST=localhost
 ```
 
+First we will start the docker service containing the database and make sure we can connect to it using the current `.env` settings.
+The `showmigrations` command will fail if the database is not available.
 ```shell
 docker compose -f ./deploy/docker-compose-postgres.yaml up -d
 cd alyx
+python manage.py showmigrations
+```
+
+Next we can start collecting the static files, migrating the database, setup the minimum amount of data and create a superuser.
+
+```shell
 python manage.py collectstatic --noinput
 python manage.py check
 python manage.py migrate
 ../scripts/load-init-fixtures.sh
 python manage.py createsuperuser
-
 python manage.py runserver
 ```
 NB: the password above is the postgres database user password. It is used by Django only to connect to the database, and is distinct from any user password on admin website.

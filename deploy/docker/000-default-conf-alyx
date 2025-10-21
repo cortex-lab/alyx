@@ -40,5 +40,11 @@
         SSLHonorCipherOrder     on
         SSLCompression          off
         SSLOptions +StrictRequire
+
+        # Configurations for easy maintenance mode
+        RewriteEngine On
+        RewriteCond %{ENV:REDIRECT_STATUS} !=503
+        RewriteCond "/var/www/alyx/maintenance.trigger" -f
+        RewriteRule ^(.*)$ /$1 [R=503,L]
     </VirtualHost>
 </IfModule>

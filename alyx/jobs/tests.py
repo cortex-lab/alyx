@@ -68,7 +68,7 @@ class TestManagementTasks(BaseTests):
         """Test for cleanup action."""
         # First run in dry mode, expect submit_delete to not be called
         n = self.n_tasks - 10
-        before_date = (self.base - timedelta(days=n)).date()
+        before_date = (self.base - timedelta(days=n - .1)).date()
         with patch.object(self.command.stdout, 'write') as stdout_mock:
             self.command.handle(action='cleanup', before=str(before_date), dry=True)
             stdout_mock.assert_called()
