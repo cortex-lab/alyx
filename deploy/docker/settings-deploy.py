@@ -13,6 +13,7 @@ import json
 import dj_database_url
 import logging
 import dotenv
+import urllib.parse
 from pathlib import Path
 
 from django.conf.locale.en import formats as en_formats
@@ -30,9 +31,15 @@ from .settings_lab import *  # noqa
 
 # %% Databases
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-# the database details are provided in the form of an URL. The URL looks like::
+# Build the connection URL
+POSTGRES_USER = urllib.parse.quote(os.getenv('POSTGRES_USER', ''))
+POSTGRES_PASSWORD = urllib.parse.quote(os.getenv('POSTGRES_PASSWORD', ''))
+POSTGRES_HOST = urllib.parse.quote(os.getenv('POSTGRES_HOST', ''))
+POSTGRES_PORT = urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))  # Default PostgreSQL port
+POSTGRES_DB = urllib.parse.quote(os.getenv('POSTGRES_DB', ''))
+# the database details are provided in the form of an URL. The URL looks like:
 # "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
-database_url = f"postgres://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"  # noqa
+database_url = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 DATABASES = {"default": dj_database_url.parse(database_url)}
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
@@ -106,7 +113,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
 if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
     ALLOWED_HOSTS.append(web_host)
 CSRF_TRUSTED_ORIGINS = [
-    f"http://{web_host}", f"https://{web_host}", "https://*.internationalbrainlab.org"]
+    f"http://{web_host}", f"https://{web_host}"]
 CSRF_COOKIE_SECURE = True
 
 
