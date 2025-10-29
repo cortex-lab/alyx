@@ -7,9 +7,45 @@ from django.contrib.admin.sites import AdminSite
 
 from alyx.test_base import setup_admin_subject_user
 from misc.models import LabMember
-from subjects.models import Subject
+from subjects.models import Subject, BreedingPair
 from actions.models import Cull, CullMethod, CullReason
-from subjects.admin import CullForm, SubjectAdmin
+from subjects.admin import CullForm, SubjectAdmin, BreedingPairAdminForm
+
+
+class TestBreedingPairAdmin(TestCase):
+    fixtures = ['misc.lab.json']
+
+    def setUp(self):
+        self.site = AdminSite()
+        setup_admin_subject_user(self)
+
+    def test_set_end_date_with_culled_subject(self):
+        lab_member_stock_manager = LabMember.objects.create_user(
+            username='stock_manager', password='bar123', email='foo@example.com', is_staff=True, is_active=True, is_stock_manager=True)
+        kwargs_subjects = dict(birth_date=date(2025, 1, 1), lab=self.lab, responsible_user=lab_member_stock_manager)
+        father = Subject.objects.create(nickname='father', sex='M', **kwargs_subjects)
+        mother1 = Subject.objects.create(nickname='mother1', sex='F', **kwargs_subjects)
+        breeding_pair = BreedingPair.objects.create(father=father, mother1=mother1, mother2=None)
+        # the form is valid as both parents are alive
+        form_data = {
+        'json': breeding_pair.json,
+            'description': breeding_pair.description,
+            'name': breeding_pair.name,
+         'line': breeding_pair.line,
+         'start_date': breeding_pair.start_date,
+         'end_date': breeding_pair.end_date,
+         'father': breeding_pair.father,
+         'mother1': breeding_pair.mother1,
+         'mother2': breeding_pair.mother2,
+         }
+        form_instance = BreedingPairAdminForm(data=form_data, instance=breeding_pair)
+        self.assertTrue(form_instance.is_valid())
+        # the form is still valid once the father is culled: it can´t  be set on a new breeding pair,
+        # but it can remain on this one and the form is valid
+        Cull(subject=father, user=lab_member_stock_manager, date=date(2025, 6, 1))
+        father.save()
+        form_instance = BreedingPairAdminForm(data=form_data, instance=breeding_pair)
+        self.assertTrue(form_instance.is_valid())
 
 
 class TestSubjectCullForm(TestCase):

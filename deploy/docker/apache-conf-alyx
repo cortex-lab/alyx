@@ -1,4 +1,4 @@
-ServerName openalyx.internationalbrainlab.org
+Define APACHE_SERVER_NAME=${APACHE_SERVER_NAME}
 Mutex file:${APACHE_LOCK_DIR} default
 PidFile ${APACHE_PID_FILE}
 Timeout 300

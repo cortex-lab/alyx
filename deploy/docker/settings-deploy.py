@@ -9,48 +9,56 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 """
 
 import os
-import structlog
+import json
+import dj_database_url
+import logging
+import dotenv
+import urllib.parse
+from pathlib import Path
+
 from django.conf.locale.en import formats as en_formats
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-try:
-    from .settings_secret import *  # noqa
-except ImportError:
-    # We're probably autobuilding some documentation so let's just import something
-    # to keep Django happy...
-    from .settings_secret_template import *  # noqa
+_logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).parents[1]  # '/var/www/alyx/alyx'
+dotenv_path = BASE_DIR.joinpath('alyx', '.env')
+if dotenv_path.exists():
+    _logger.warning(f'environment file found: {dotenv_path}')
+    dotenv.load_dotenv(dotenv_path=dotenv_path)
 
 # Lab-specific settings
-try:
-    from .settings_lab import *  # noqa
-except ImportError:
-    from .settings_lab_template import *  # noqa
+from .settings_lab import *  # noqa
+
+# %% Databases
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+# Build the connection URL
+POSTGRES_USER = urllib.parse.quote(os.getenv('POSTGRES_USER', ''))
+POSTGRES_PASSWORD = urllib.parse.quote(os.getenv('POSTGRES_PASSWORD', ''))
+POSTGRES_HOST = urllib.parse.quote(os.getenv('POSTGRES_HOST', ''))
+POSTGRES_PORT = urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))  # Default PostgreSQL port
+POSTGRES_DB = urllib.parse.quote(os.getenv('POSTGRES_DB', ''))
+# the database details are provided in the form of an URL. The URL looks like:
+# "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
+database_url = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+DATABASES = {"default": dj_database_url.parse(database_url)}
+# %% S3 access to write cache tables
+# the s3 access details are provided in the form of a JSON string. The variable looks like:
+# S3_ACCESS={"access_key":"xxxxx", "secret_key":"xxxxx", "region":"us-east-1"}
+if (s3_credentials := os.getenv("S3_ACCESS", None)) is not None:
+    S3_ACCESS = json.loads(s3_credentials)
 
 en_formats.DATETIME_FORMAT = "d/m/Y H:i"
 DATE_INPUT_FORMATS = ('%d/%m/%Y',)
-USE_DEPRECATED_PYTZ = True  # Support for using pytz will be removed in Django 5.0
-
-if 'GITHUB_ACTIONS' in os.environ:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'githubactions',
-            'USER': 'postgres',
-            'PASSWORD': 'postgres',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
-    }
-
 
 # Custom User model with UUID primary key
 AUTH_USER_MODEL = 'misc.LabMember'
-
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).parents[1]  # '/var/www/alyx/alyx'
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO')
+LOG_FOLDER_ROOT = Path(os.getenv('APACHE_LOG_DIR', BASE_DIR.joinpath('logs')))
 
 LOGGING = {
     'version': 1,
@@ -72,62 +80,45 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/alyx.log',
-            'maxBytes': 16777216,
-            'backupCount': 1,
+            'level': LOG_LEVEL,
+            'class': 'logging.FileHandler',
+            'filename': LOG_FOLDER_ROOT.joinpath('django.log'),
             'formatter': 'simple'
         },
         'console': {
-            'level': 'WARNING',
+            'level': LOG_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
+            'handlers': ['file', 'console'],
+            'level': LOG_LEVEL,
             'propagate': True,
         },
     },
     'root': {
         'handlers': ['file', 'console'],
-        'level': 'WARNING',
+        'level': LOG_LEVEL,
         'propagate': True,
     }
 }
 
-
-if 'TRAVIS' in os.environ or 'READTHEDOCS' in os.environ:
-    LOGGING['handlers']['file']['filename'] = 'alyx.log'
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 
-# Production settings:
-if not DEBUG:
-    CSRF_COOKIE_SECURE = True
-    X_FRAME_OPTIONS = 'DENY'
-    SESSION_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 30
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+# ALYX-SPECIFIC
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
+if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
+    ALLOWED_HOSTS.append(web_host)
+CSRF_TRUSTED_ORIGINS = [
+    f"http://{web_host}", f"https://{web_host}"]
+CSRF_COOKIE_SECURE = True
 
 
 # Application definition
-
 INSTALLED_APPS = (
-    # 'dal',
-    # 'dal_select2',
     'django_admin_listfilter_dropdown',
     'django_filters',
     'django.contrib.admin',
@@ -145,13 +136,13 @@ INSTALLED_APPS = (
     'rest_framework_docs',
     'reversion',
     'test_without_migrations',
-    # alyx-apps
     'actions',
     'data',
     'misc',
     'experiments',
     'jobs',
     'subjects',
+    'drf_spectacular',
     'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
@@ -163,8 +154,8 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'alyx.base.QueryPrintingMiddleware',
-    'django_structlog.middlewares.RequestMiddleware',
 )
 
 ROOT_URLCONF = 'alyx.urls'
@@ -202,48 +193,51 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'STRICT_JSON': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    # 'DEFAULT_RENDERER_CLASSES': (
-    #     'rest_framework.renderers.JSONRenderer',
-    # ),
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.8/topics/i18n/
-
-
 USE_I18N = False
 USE_L10N = False
 USE_TZ = False
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.8/howto/static-files/
+# %% Email configuration
+EMAIL_HOST = 'mail.superserver.net'
+EMAIL_HOST_USER = 'alyx@awesomedomain.org'
+EMAIL_HOST_PASSWORD = 'UnbreakablePassword'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = '/backups/uploaded/'
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR.joinpath('uploaded')))
 MEDIA_URL = '/uploaded/'
-TABLES_ROOT = '/backups/tables/'
-
 UPLOADED_IMAGE_WIDTH = 800
 
+# The location for saving and/or serving the cache tables.
+# May be a local path, http address or s3 uri (i.e. s3://)
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', str(BASE_DIR.joinpath('uploaded')))
 
-structlog.configure(
-    processors=[
-        structlog.stdlib.filter_by_level,
-        structlog.processors.TimeStamper(fmt='iso'),
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-    ],
-    context_class=structlog.threadlocal.wrap_dict(dict),
-    logger_factory=structlog.stdlib.LoggerFactory(),
-    wrapper_class=structlog.stdlib.BoundLogger,
-    cache_logger_on_first_use=True,
-)
+# storage configurations
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+if MEDIA_ROOT.startswith('https://') and '.s3.' in MEDIA_ROOT:
+    _logger.warning('S3 backend enabled for uploads and tables')
+    STORAGES['default'] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            'bucket_name': 'alyx-uploaded',
+            'location': 'uploaded',
+            'region_name': 'eu-west-2',
+            'addressing_style': 'virtual',
+        },
+    }
+else:
+    STORAGES['default'] = {"BACKEND": "django.core.files.storage.FileSystemStorage"}

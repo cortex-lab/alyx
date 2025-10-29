@@ -1,7 +1,17 @@
 REST API
 ========================
 
-Overview
+References
+------------------------
+
+The list of endpoints, fields and methods is self-documented for each database at the  `/docs` URL.
+
+.. tip:: Try it ! On the IBL public Alyx instance, this would be at: https://openalyx.internationalbrainlab.org/docs/ (intbrainlab/international).
+
+REST endpoints are programmatically accessed client side. And example of a client side application is described in details here.
+`ONE Tool documentation <https://int-brain-lab.github.io/ONE/>`_
+
+Explanation
 ------------------------
 
 The **base URL** is the URL of your Alyx installation, for example at IBL: https://openalyx.internationalbrainlab.org
@@ -35,10 +45,3 @@ With POST, PATCH, and PUT requests, data is passed as key-value pairs in JSON_. 
 .. _UUID: https://en.wikipedia.org/wiki/Universally_unique_identifier
 
 In practice, a library in your language should provide you with primitives such as `get(url)`, `post(url, key1=val1, ...)`, etc. so you don't need to understand all of the underlying details: just the HTTP request type, the endpoint URL, the fields you need to pass, and the fields that are returned by the endpoint.
-
-Going further
-------------------------
-The list of endpoints, fields and methods is self-documented for each database at the  `/docs` URL.
-For example, a public Alyx instance is available here for reference: https://openalyx.internationalbrainlab.org/docs/
-
-REST endpoints are programmatically accessed client side. And example of a client side application is described in details here: [https://one.internationalbrainlab.org/](https://int-brain-lab.github.io/ONE/).

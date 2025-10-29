@@ -1,5 +1,5 @@
 import json
-import structlog
+import logging
 import os
 import os.path as op
 import re
@@ -18,7 +18,7 @@ from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataReposi
 from rest_framework.response import Response
 from actions.models import Session
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Login
 # ------------------------------------------------------------------------------------------------

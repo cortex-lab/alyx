@@ -5,30 +5,53 @@
 
 Database for experimental neuroscience laboratories
 
-Documentation: [Installation and getting started](http://alyx.readthedocs.io), [Alyx usage guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
+[Documentation](https://alyx.readthedocs.io)
+
+[Alyx Experimenter Guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
 
 ## Installation
-Alyx has only been tested on Ubuntu (16.04 / 18.04 / 20.04), the latest is recommended. There are no guarantees that 
-this setup will work on other systems. Assumptions made are that you have sudo permissions under an account named
 
-[The getting started](docs/gettingstarted.md) section of the documentation details the steps for 
+[The getting started](https://alyx.readthedocs.io/en/latest/gettingstarted.html) section of the documentation details the steps for 
 -   installing the Python/Django environment
--   serving a local database
+-   running the app with a development server
 -   registering local data
 -   accessing local data using [ONE](https://one.internationalbrainlab.org)
+
+More complex deployments scenarios using web servers and Cloud applications are in the [how-to guides section of the documtentaiton](docs/how-to-guides)
 
 ## Contribution
 
 * Development happens on the **dev** branch
 * alyx is sync with the **master** branch
 * alyx-dev is sync with the **dev** branch
-* Migrations files are provided by the repository
-* Continuous integration is setup, to run tests locally:
+* Migrations files are always provided by the repository
+
+Contribution checklist:
+- [ ] lint using ruff `ruff check .` at the root of the repository
+- [ ] tests pass (see below how to run tests)
+- [ ] migrations are provided with the commit
+- [ ] update version number in `./alyx/alyx/__init__.py`
+- [ ] update `CHANGELOG.md`
+
+
+### Running tests
+
+Continuous integration is setup. But before submitting a PR or commit,the tests can run locally.
     - `./manage.py test -n` test without migrations (faster)
     - `./manage.py test` test with migrations (recommended if model changes)
-    - NB: When running tests ensure `DEBUG = True` in the settings.py file (specifically `SECURE_SSL_REDIRECT = True` causes REST tests to fail)
 
-```shell
-./manage.py test -n
+### Documentation contribution guide
+
+#### Dependencies
 ```
+pip install myst-parser sphinx_rtd_theme sphinx-autobuild
+```
+
+#### Build documentation locally
+
+From the root of the repository.
+````shell
+sphinx-autobuild -b html ./docs ./docs/_build/ --port 8700
+````
+https://www.scan.co.uk/products/3xs-evolve-studio-pro-intel-core-ultra-9-285k-64gb-ddr5-16gb-nvidia-rtx-5070-ti-super-1tb-ssd-2tb-ss
