@@ -78,7 +78,7 @@ class Lab(BaseModel):
     institution = models.CharField(max_length=255, blank=True)
     address = models.CharField(max_length=255, blank=True)
     timezone = models.CharField(
-        max_length=64, blank=True, default=TIME_ZONE,
+        max_length=64, blank=True,
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
@@ -105,6 +105,10 @@ class Lab(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, timezone=None, **kwargs):
+        self.timezone = timezone or self.timezone or TIME_ZONE
+        super().save(*args, **kwargs)
 
 
 class LabMembership(BaseModel):

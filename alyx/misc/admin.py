@@ -16,6 +16,7 @@ from rangefilter.filters import DateRangeFilter
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
 from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url
+from alyx.settings import TIME_ZONE
 
 
 class LabForm(forms.ModelForm):
@@ -24,6 +25,7 @@ class LabForm(forms.ModelForm):
         # if user has read-only permissions only fields is empty
         if not self.is_bound:
             return
+        self.fields['timezone'].initial = TIME_ZONE
         self.fields['reference_weight_pct'].help_text =\
             'Threshold ratio triggers a warning using the Reference Weight method (0-1)'
         self.fields['reference_weight_pct'].label = 'Reference Weight Ratio'
