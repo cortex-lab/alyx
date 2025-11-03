@@ -203,13 +203,6 @@ USE_I18N = False
 USE_L10N = False
 USE_TZ = False
 
-# %% Email configuration
-EMAIL_HOST = 'mail.superserver.net'
-EMAIL_HOST_USER = 'alyx@awesomedomain.org'
-EMAIL_HOST_PASSWORD = 'UnbreakablePassword'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
