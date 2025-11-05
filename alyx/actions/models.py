@@ -460,11 +460,20 @@ def create_notification(
     return notif
 
 
-def send_pending_emails():
+def send_pending_emails(max_resend=3):
     """Send all pending notifications."""
     notifications = Notification.objects.filter(status='to-send', send_at__lte=timezone.now())
     for notification in notifications:
-        notification.send_if_needed()
+        success = notification.send_if_needed()
+        # If not successful, and max_resend reached, set to no-send.
+        if (
+            not success and
+            max_resend is not None and
+            notification.ready_to_send() and
+            len(notification.json.get('failed_attempts', [])) >= max_resend
+        ):
+            notification.status = 'no-send'
+            notification.save()
 
 
 class Notification(BaseModel):
@@ -499,11 +508,22 @@ class Notification(BaseModel):
             logger.warning("Email not ready to send.")
             return False
         emails = [user.email for user in self.users.all() if user.email]
-        if alyx_mail(emails, self.title, self.message):
+        if succeeded := alyx_mail(emails, self.title, self.message):
             self.status = 'sent'
             self.sent_at = timezone.now()
             self.save()
             return True
+        elif succeeded is False:
+            json = self.json or {}
+            if 'failed_attempts' in json:
+                json['failed_attempts'].append(timezone.now().isoformat())
+            else:
+                json['failed_attempts'] = [timezone.now().isoformat()]
+            self.json = json
+            self.save()
+            return False
+        else:  # alyx_mail returns None when email sending is disabled
+            return False
 
     def __str__(self):
         return "<Notification '%s' (%s) %s>" % (self.title, self.status, self.send_at)
