@@ -50,7 +50,7 @@ class LabForm(forms.ModelForm):
         ref = self.cleaned_data['timezone']
         if ref not in all_timezones:
             raise forms.ValidationError(
-                ("Time Zone is incorrect here is the list (column TZ Database Name):  "
+                ("Time Zone is incorrect. Here is the list (column TZ Database Name):  "
                  "https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"))
         return ref
 
