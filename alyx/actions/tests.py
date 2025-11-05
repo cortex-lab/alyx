@@ -1,13 +1,17 @@
 import datetime
+from io import StringIO
+from unittest import mock
 import numpy as np
 from django.test import TestCase
 from django.utils import timezone
+from django.core.management import call_command
 
 from alyx import base
 from actions.water_control import to_date
 from actions.models import (
     WaterAdministration, WaterRestriction, WaterType, Weighing,
-    Notification, NotificationRule, create_notification, Surgery, ProcedureType)
+    Notification, NotificationRule, create_notification, Surgery, ProcedureType,
+    send_pending_emails)
 from actions.notifications import check_water_administration, check_weighed
 from misc.models import LabMember, LabMembership, Lab
 from subjects.models import Subject
@@ -289,3 +293,81 @@ class NotificationTests(TestCase):
         nr.subjects_scope = 'none'
         nr.save()
         _assert_users([self.user2], [self.user2])
+
+    def test_send_pending_emails(self):
+        """Test for sending pending notification emails."""
+        n1 = Notification.objects.create(
+            title='Test notification 1',
+            message='This is a test notification.',
+            send_at=timezone.now() - datetime.timedelta(minutes=1)
+        )
+        n2 = Notification.objects.create(
+            title='Test notification 2',
+            message='This is another test notification.',
+            status='no-send',
+            send_at=timezone.now() - datetime.timedelta(minutes=1)
+        )
+        # Check ready_to_send method
+        self.assertTrue(n1.ready_to_send())
+        self.assertFalse(n2.ready_to_send())
+        # Call the function to send pending emails
+        with mock.patch('actions.models.alyx_mail', return_value=False) as mock_mail:
+            send_pending_emails()
+        # Should have been called once with the first notification
+        mock_mail.assert_called_once_with([], n1.title, n1.message)
+        json_field = Notification.objects.get(id=n1.id).json or {}
+        self.assertIn('failed_attempts', json_field)
+        self.assertEqual(len(json_field['failed_attempts']), 1)
+        # Call the function to send pending emails
+        with mock.patch('actions.models.alyx_mail', return_value=False) as mock_mail:
+            send_pending_emails(max_resend=1)
+        self.assertEqual('no-send', Notification.objects.get(id=n1.id).status)
+        # Create two notifications to be sent
+        Notification.objects.create(
+            title='Test notification 3',
+            message='This is a test notification.',
+            send_at=timezone.now() - datetime.timedelta(minutes=1)
+        )
+        Notification.objects.create(
+            title='Test notification 4',
+            message='This is another test notification.',
+            send_at=timezone.now() - datetime.timedelta(minutes=1)
+        )
+        with mock.patch('actions.models.alyx_mail', return_value=True) as mock_mail:
+            send_pending_emails(max_resend=1)
+        # Check that notifications are marked as emailed
+        notifs = Notification.objects.filter(status='sent', sent_at__isnull=False)
+        self.assertEqual(notifs.count(), 2)
+
+
+class TestManagementTasks(base.BaseTests):
+    """Tests for the tasks management command."""
+
+    def test_send_pending_notifications_command(self):
+        """Test for send_pending_notifications management command."""
+        out = StringIO()
+        with mock.patch('actions.models.send_pending_emails') as mock_send:
+            call_command('send_pending_notifications', stdout=out)
+            mock_send.assert_called_once()
+
+    def test_delete_expired_notifications_command(self):
+        """Test for delete_expired_notifications management command."""
+        # Create some old notifications
+        old_date = timezone.now() - datetime.timedelta(days=365)
+        for i in range(5):
+            Notification.objects.create(
+                title=f'Old notification {i}',
+                message='This is an old notification.',
+                send_at=old_date,
+                sent_at=old_date,
+                status='sent'
+            )
+        out = StringIO()
+        call_command('delete_expired_notifications',
+                     n_days_old=180, status='sent', stdout=out, dry_run=True)
+        self.assertIn('Dry run: 5 notifications found with status "sent"', out.getvalue())
+        self.assertEqual(Notification.objects.count(), 5)
+        out = StringIO()
+        call_command('delete_expired_notifications', n_days_old=180, status='sent', stdout=out)
+        self.assertIn('Deleted 5 notifications with status "sent"', out.getvalue())
+        self.assertEqual(Notification.objects.count(), 0)

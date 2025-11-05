@@ -470,7 +470,7 @@ def send_pending_emails(max_resend=3):
             not success and
             max_resend is not None and
             notification.ready_to_send() and
-            len(notification.json.get('failed_attempts', [])) >= max_resend
+            len((notification.json or {}).get('failed_attempts', [])) >= max_resend
         ):
             notification.status = 'no-send'
             notification.save()

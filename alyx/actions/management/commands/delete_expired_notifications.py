@@ -16,7 +16,7 @@ class Command(BaseCommand):
             '--dry-run', help='Simulate deletion without actually deleting', action='store_true')
 
     def handle(self, *args, **options):
-        n_days_old = options['n-days-old']
+        n_days_old = options['n_days_old']
         status = options['status']
         cutoff_date = timezone.now() - timezone.timedelta(days=n_days_old)
 
@@ -25,14 +25,14 @@ class Command(BaseCommand):
         if status:
             notifications = notifications.filter(status=status)
 
-        if options['dry-run']:
+        if options['dry_run']:
             message = f'Dry run: {notifications.count()} notifications found'
             if status:
                 message += f' with status "{status}"'
             self.stdout.write(self.style.NOTICE(message))
         else:
-            deleted_count = notifications.delete()
-            message = f'Deleted {deleted_count} notifications'
+            _, deleted_count = notifications.delete()
+            message = f'Deleted {deleted_count["actions.Notification"]} notifications'
             if status:
                 message += f' with status "{status}"'
             self.stdout.write(self.style.SUCCESS(message))
