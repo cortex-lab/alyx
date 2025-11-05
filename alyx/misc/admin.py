@@ -25,7 +25,6 @@ class LabForm(forms.ModelForm):
         # if user has read-only permissions only fields is empty
         if not self.is_bound:
             return
-        self.fields['timezone'].initial = TIME_ZONE
         self.fields['reference_weight_pct'].help_text =\
             'Threshold ratio triggers a warning using the Reference Weight method (0-1)'
         self.fields['reference_weight_pct'].label = 'Reference Weight Ratio'
@@ -71,6 +70,12 @@ class LabAdmin(BaseAdmin):
 
     def server(self, obj):
         return ','.join([p.name for p in obj.repositories.filter(globus_is_personal=False)])
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not obj:
+            form.base_fields['timezone'].initial = TIME_ZONE
+        return form
 
 
 class LabMembershipAdmin(BaseAdmin):
