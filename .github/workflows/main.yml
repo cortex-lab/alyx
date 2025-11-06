@@ -67,29 +67,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APACHE_LOG_DIR: /var/log/alyx
           POSTGRES_HOST: localhost
-
-      # Docker steps only run when master branch pushed to directly OR when a PR is merged
-      - name: Set Docker conditional value if needed
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        run: |
-          echo "DOCKER_PUSH_NEEDED=true" >> "$GITHUB_ENV"
-
-      - name: Configure Docker login if needed
-        if: env.DOCKER_PUSH_NEEDED == 'true'
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Set up Docker Buildx if needed
-        if: env.DOCKER_PUSH_NEEDED == 'true'
-        uses: docker/setup-buildx-action@v1
-
-      - name: Build and push Docker base image if needed
-        if: env.DOCKER_PUSH_NEEDED == 'true'
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./scripts/deployment_examples/alyx-docker/Dockerfile.base
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/alyx:base
