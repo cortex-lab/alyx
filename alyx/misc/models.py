@@ -19,11 +19,10 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
 
 from alyx.base import BaseModel, modify_fields, ALF_SPEC
-from alyx.settings import TIME_ZONE, UPLOADED_IMAGE_WIDTH, DEFAULT_LAB_PK
 
 
 def default_lab():
-    return DEFAULT_LAB_PK
+    return settings.DEFAULT_LAB_PK
 
 
 class LabMember(AbstractUser):
@@ -107,7 +106,7 @@ class Lab(BaseModel):
         return self.name
 
     def save(self, *args, timezone=None, **kwargs):
-        self.timezone = timezone or self.timezone or TIME_ZONE
+        self.timezone = timezone or self.timezone or settings.TIME_ZONE
         super().save(*args, **kwargs)
 
 
@@ -162,7 +161,7 @@ class Note(BaseModel):
             with Image.open(self.image) as im:
                 with BytesIO() as output:
                     # Compute new size by keeping the aspect ratio.
-                    width = int(image_width or UPLOADED_IMAGE_WIDTH)
+                    width = int(image_width or settings.UPLOADED_IMAGE_WIDTH)
                     wpercent = width / float(im.size[0])
                     height = int((float(im.size[1]) * float(wpercent)))
                     im.thumbnail((width, height))

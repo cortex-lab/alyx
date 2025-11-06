@@ -3,6 +3,7 @@ from pytz import all_timezones
 from django import forms
 from django.db import models
 from django.db.models import Q
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
@@ -16,7 +17,6 @@ from rangefilter.filters import DateRangeFilter
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
 from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url
-from alyx.settings import TIME_ZONE
 
 
 class LabForm(forms.ModelForm):
@@ -74,7 +74,7 @@ class LabAdmin(BaseAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if not obj:
-            form.base_fields['timezone'].initial = TIME_ZONE
+            form.base_fields['timezone'].initial = settings.TIME_ZONE
         return form
 
 
