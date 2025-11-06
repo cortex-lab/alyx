@@ -2,7 +2,8 @@ FROM ubuntu/apache2:2.4-22.04_beta
 
 # python unbuffered allows to get real-time logs
 ENV PYTHONUNBUFFERED=1
-ENV TZ=Europe/London
+ARG TZ=UTC
+ENV TZ=${TZ}
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN cat /etc/lsb-release && apt-get update
