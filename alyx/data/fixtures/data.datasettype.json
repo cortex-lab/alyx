@@ -1230,16 +1230,5 @@
       "description": "Manually annotated cluster labels",
       "filename_pattern": "*clusters.curatedLabels*.tsv"
     }
-  },
-  {
-    "model": "data.datasettype",
-    "pk": "a4f3af41-e1b6-4e5b-ad54-ca8658f8e408",
-    "fields": {
-      "json": null,
-      "name": "iblsorter_parameters",
-      "created_by": null,
-      "description": "Spike sorting parameters",
-      "filename_pattern": "*.yaml"
-    }
   }
 ]
