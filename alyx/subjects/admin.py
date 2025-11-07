@@ -173,7 +173,7 @@ class TodoFilter(DefaultListFilter):
         elif self.value() == 'c':
             return queryset.filter(to_be_culled=True)
         elif self.value() == 'r':
-            return queryset.filter(cull__isnull=False, reduced=False)
+            return queryset.filter(cull__isnull=False, reduced_date__isnull=False)
 
 
 class LineDropdownFilter(RelatedDropdownFilter):
@@ -658,8 +658,6 @@ class SubjectAdmin(BaseAdmin):
         formset.save_m2m()
 
     def save_model(self, request, obj, form, change):
-        if obj.reduced_date is not None and not obj.reduced:
-            obj.reduced = True
         if hasattr(obj, 'cull') and obj.to_be_culled:
             obj.to_be_culled = False
         super(SubjectAdmin, self).save_model(request, obj, form, change)
@@ -1494,7 +1492,7 @@ class CullSubjectAliveListFilter(DefaultListFilter):
         if self.value() == 'n':
             return queryset.exclude(cull__isnull=True)
         if self.value() == 'nr':
-            return queryset.filter(reduced=False).exclude(cull__isnull=True)
+            return queryset.filter(reduced_date__isnull=True).exclude(cull__isnull=True)
         if self.value() == 'tbc':
             return queryset.filter(to_be_culled=True, cull__isnull=True)
         elif self.value == 'all':
@@ -1502,14 +1500,14 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
 
 class CullMiceAdmin(SubjectAdmin):
-    list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced', 'sex_f', 'ear_mark',
+    list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced_date', 'sex_f', 'ear_mark',
                     'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    CullSubjectAliveListFilter,
                    ZygosityFilter,
                    ('line', LineDropdownFilter)]
-    list_editable = ['death_date', 'to_be_culled', 'reduced']
+    list_editable = ['death_date', 'to_be_culled', 'reduced_date']
 
     ordering = ['-birth_date', '-nickname']
 

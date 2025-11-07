@@ -192,14 +192,13 @@ class Subject(BaseModel):
 
     to_be_genotyped = models.BooleanField(default=False)
     to_be_culled = models.BooleanField(default=False)
-    reduced = models.BooleanField(default=False)
     reduced_date = models.DateField(null=True, blank=True)
 
     # We save the history of these fields.
     _fields_history = ('nickname', 'responsible_user', 'cage')
     # We track the changes of these fields without saving their history in the JSON.
     _track_field_changes = ('request', 'responsible_user', 'litter', 'genotype_date',
-                            'death_date', 'reduced')
+                            'death_date', 'reduced_date')
 
     class Meta:
         ordering = ['nickname', '-birth_date']
@@ -366,10 +365,6 @@ class Subject(BaseModel):
         elif hasattr(self, 'cull') and self.death_date != self.cull.date:
             self.cull.date = self.death_date
             self.cull.save()
-        # Save the reduced date.
-        if self.reduced and _has_field_changed(self, 'reduced'):
-            self.reduced_date = django.utils.timezone.now().date()
-        self.reduced = self.reduced_date is not None
         # Update subject request.
         if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
