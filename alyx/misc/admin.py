@@ -3,7 +3,6 @@ from pytz import all_timezones
 from django import forms
 from django.db import models
 from django.db.models import Q
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
@@ -70,12 +69,6 @@ class LabAdmin(BaseAdmin):
 
     def server(self, obj):
         return ','.join([p.name for p in obj.repositories.filter(globus_is_personal=False)])
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        if not obj:
-            form.base_fields['timezone'].initial = settings.TIME_ZONE
-        return form
 
 
 class LabMembershipAdmin(BaseAdmin):

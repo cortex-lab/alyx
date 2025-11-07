@@ -25,6 +25,10 @@ def default_lab():
     return settings.DEFAULT_LAB_PK
 
 
+def default_timezone():
+    return settings.TIME_ZONE
+
+
 class LabMember(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     is_stock_manager = models.BooleanField(default=False)
@@ -77,7 +81,7 @@ class Lab(BaseModel):
     institution = models.CharField(max_length=255, blank=True)
     address = models.CharField(max_length=255, blank=True)
     timezone = models.CharField(
-        max_length=64, blank=True,
+        max_length=64, blank=True, default=default_timezone,
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
 
@@ -104,10 +108,6 @@ class Lab(BaseModel):
 
     def __str__(self):
         return self.name
-
-    def save(self, *args, timezone=None, **kwargs):
-        self.timezone = timezone or self.timezone or settings.TIME_ZONE
-        super().save(*args, **kwargs)
 
 
 class LabMembership(BaseModel):

@@ -1,0 +1,1 @@
+/home/ters0n/PYTHON/iblalyx/management/one_django.py

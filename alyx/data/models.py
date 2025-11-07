@@ -3,11 +3,11 @@ from one.alf.spec import QC
 
 from django.core.validators import RegexValidator
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
-from alyx.settings import TIME_ZONE, AUTH_USER_MODEL
 from actions.models import Session
 from alyx.base import BaseModel, modify_fields, BaseManager, CharNullField, BaseQuerySet, ALF_SPEC
 
@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 def _related_string(field):
     return "%(app_label)s_%(class)s_" + field + "_related"
+
+
+def default_timezone():
+    return settings.TIME_ZONE
 
 
 # Data repositories
@@ -67,7 +71,7 @@ class DataRepository(BaseModel):
         blank=True, null=True,
         help_text="URL of the data repository, if it is accessible via HTTP")
     timezone = models.CharField(
-        max_length=64, blank=True, default=TIME_ZONE,
+        max_length=64, blank=True, default=default_timezone,
         help_text="Timezone of the server "
         "(see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
     globus_path = models.CharField(
@@ -147,7 +151,7 @@ class DatasetType(BaseModel):
         help_text="Short identifying nickname, e.g. 'spikes.times'")
 
     created_by = models.ForeignKey(
-        AUTH_USER_MODEL, blank=True, null=True,
+        settings.AUTH_USER_MODEL, blank=True, null=True,
         on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
@@ -194,7 +198,7 @@ class BaseExperimentalData(BaseModel):
         help_text="The Session to which this data belongs")
 
     created_by = models.ForeignKey(
-        AUTH_USER_MODEL, blank=True, null=True,
+        settings.AUTH_USER_MODEL, blank=True, null=True,
         on_delete=models.CASCADE,
         related_name=_related_string('created_by'),
         help_text="The creator of the data.")
@@ -470,7 +474,7 @@ class FileRecord(BaseModel):
 # ------------------------------------------------------------------------------------------------
 
 class Download(BaseModel):
-    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     first_download = models.DateTimeField(auto_now_add=True)
     last_download = models.DateTimeField(auto_now=True)

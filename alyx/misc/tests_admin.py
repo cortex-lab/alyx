@@ -36,7 +36,10 @@ class TestLabAdminViews(TestCase):
         LabForm = la.get_form(request)
         # Check initial value of timezone field
         form = LabForm(data={})
-        self.assertEqual(form.fields['timezone'].initial, 'Africa/Djibouti')
+        initial = form.fields['timezone'].initial
+        if callable(initial):
+            initial = initial()
+        self.assertEqual(initial, 'Africa/Djibouti')
         # Check form cleaning
         data = {
             'timezone': 'Africa/Djibouti',
