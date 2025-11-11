@@ -186,7 +186,6 @@ class Subject(BaseModel):
                                        default=settings.DEFAULT_PROTOCOL)
     description = models.TextField(blank=True)
 
-    cull_method = models.TextField(blank=True)
     adverse_effects = models.TextField(blank=True)
     actual_severity = models.IntegerField(null=True, blank=True, choices=SEVERITY_CHOICES)
 
@@ -325,7 +324,7 @@ class Subject(BaseModel):
         return Project.objects.filter(session__subject=self).distinct()
 
     def save(self, *args, **kwargs):
-        from actions.models import WaterRestriction, Cull, CullMethod
+        from actions.models import WaterRestriction
         # If the nickname is empty, use the autoname from the line.
         if self.line and self.nickname in (None, '', '-'):
             self.line.set_autoname(self)
@@ -352,19 +351,6 @@ class Subject(BaseModel):
                                                       end_time__isnull=True):
                 wr.end_time = self.death_date
                 wr.save()
-        # deal with the synchronisation of cull object, ideally this should be done in a form
-        # Get the cull_method instance with the same name, if it exists, or None.
-        cull_method = CullMethod.objects.filter(name=self.cull_method).first()
-        if self.death_date and not hasattr(self, 'cull'):
-            Cull.objects.create(
-                subject=self, cull_method=cull_method, date=self.death_date,
-                user=self.responsible_user)
-        elif hasattr(self, 'cull') and self.cull_method != str(self.cull.cull_method):
-            self.cull.cull_method = cull_method
-            self.cull.save()
-        elif hasattr(self, 'cull') and self.death_date != self.cull.date:
-            self.cull.date = self.death_date
-            self.cull.save()
         # Update subject request.
         if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
