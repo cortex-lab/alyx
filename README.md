@@ -5,27 +5,27 @@
 
 Database for experimental neuroscience laboratories
 
-[Documentation](https://alyx.readthedocs.io)
+[Documentation](https://cortex-lab.github.io/alyx/)
 
 [Alyx Experimenter Guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
 
 ## Installation
 
-[The getting started](https://alyx.readthedocs.io/en/latest/gettingstarted.html) section of the documentation details the steps for 
+[The getting started](https://cortex-lab.github.io/alyx/00_gettingstarted.html) section of the documentation details the steps for 
 -   installing the Python/Django environment
 -   running the app with a development server
 -   registering local data
 -   accessing local data using [ONE](https://one.internationalbrainlab.org)
 
-More complex deployments scenarios using web servers and Cloud applications are in the [how-to guides section of the documtentaiton](docs/how-to-guides)
+More complex deployments scenarios using web servers and Cloud applications are in the [how-to guides section of the documentation](docs/how-to-guides)
 
 ## Contribution
 
 * Development happens on the **dev** branch
-* alyx is sync with the **master** branch
-* alyx-dev is sync with the **dev** branch
-* Migrations files are always provided by the repository
+* alyx is in sync with the **master** branch
+* alyx-dev is in sync with the **dev** branch
+* Migration files are always provided by the repository
 
 Contribution checklist:
 - [ ] lint using ruff `ruff check .` at the root of the repository
@@ -52,6 +52,5 @@ pip install myst-parser sphinx_rtd_theme sphinx-autobuild
 
 From the root of the repository.
 ````shell
-sphinx-autobuild -b html ./docs ./docs/_build/ --port 8700
+sphinx-autobuild -b html ./docs/source ./docs/build/html --port 8700
 ````
-https://www.scan.co.uk/products/3xs-evolve-studio-pro-intel-core-ultra-9-285k-64gb-ddr5-16gb-nvidia-rtx-5070-ti-super-1tb-ssd-2tb-ss
