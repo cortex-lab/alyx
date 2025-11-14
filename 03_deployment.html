@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployments how-to’s guides &mdash; Alyx  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="REST API" href="04_REST-api.html" />
+    <link rel="prev" title="History and Rationale of Alyx" href="01_motivation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Alyx
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00_gettingstarted.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="01_motivation.html">History and Rationale of Alyx</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deployments how-to’s guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-a-development-version-of-alyx-on-the-host-machine">Install a development version of Alyx on the host machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-the-docker-containers">Building the docker containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-topics">Advanced topics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#apache-webserver-and-interaction-with-wsgi">Apache webserver and interaction with wsgi</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="04_REST-api.html">REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05_models.html">List of models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Alyx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Deployments how-to’s guides</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/03_deployment.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="deployments-how-to-s-guides">
+<h1>Deployments how-to’s guides<a class="headerlink" href="#deployments-how-to-s-guides" title="Link to this heading"></a></h1>
+<p>For a simple deployment using a containerized version of Alyx interacting with a containerized database, refer to the how-to guide.</p>
+<p>For running alyx directly on the host machine, follow the instructions below.</p>
+<section id="install-a-development-version-of-alyx-on-the-host-machine">
+<h2>Install a development version of Alyx on the host machine<a class="headerlink" href="#install-a-development-version-of-alyx-on-the-host-machine" title="Link to this heading"></a></h2>
+<p>Copy the settings files from the deploy folder inside of the alyx project. Those files are ignored by git.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cp<span class="w"> </span>./deploy/docker/settings-deploy.py<span class="w"> </span>alyx/alyx/settings.py
+cp<span class="w"> </span>./deploy/docker/settings_lab-deploy.py<span class="w"> </span>alyx/alyx/settings_lab.py
+</pre></div>
+</div>
+<p>Copy the environment template file and edit the path to the logs</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="o">./</span><span class="n">alyx</span><span class="o">/</span><span class="n">alyx</span><span class="o">/</span><span class="n">environment_template</span><span class="o">.</span><span class="n">env</span> <span class="o">./</span><span class="n">alyx</span><span class="o">/</span><span class="n">alyx</span><span class="o">/.</span><span class="n">env</span>
+<span class="n">vi</span> <span class="o">./</span><span class="n">alyx</span><span class="o">/</span><span class="n">alyx</span><span class="o">/.</span><span class="n">env</span>
+</pre></div>
+</div>
+<p>In the environment file, you need to provide a writable log directory and change the postgres host to localhost</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">APACHE_LOG_DIR</span><span class="o">=</span>/Users/olivier/scratch/alyxlogs
+<span class="nv">POSTGRES_HOST</span><span class="o">=</span>localhost
+</pre></div>
+</div>
+<p>First we will start the docker service containing the database and make sure we can connect to it using the current <code class="docutils literal notranslate"><span class="pre">.env</span></code> settings.
+The <code class="docutils literal notranslate"><span class="pre">showmigrations</span></code> command will fail if the database is not available.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>./deploy/docker-compose-postgres.yaml<span class="w"> </span>up<span class="w"> </span>-d
+<span class="nb">cd</span><span class="w"> </span>alyx
+python<span class="w"> </span>manage.py<span class="w"> </span>showmigrations
+</pre></div>
+</div>
+<p>Next we can start collecting the static files, migrating the database, setup the minimum amount of data and create a superuser.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--noinput
+python<span class="w"> </span>manage.py<span class="w"> </span>check
+python<span class="w"> </span>manage.py<span class="w"> </span>migrate
+../scripts/load-init-fixtures.sh
+python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
+python<span class="w"> </span>manage.py<span class="w"> </span>runserver
+</pre></div>
+</div>
+<p>NB: the password above is the postgres database user password. It is used by Django only to connect to the database, and is distinct from any user password on admin website.</p>
+<p>You can then visit http://localhost:8000/admin, connect with your superuser credentials.</p>
+</section>
+<section id="building-the-docker-containers">
+<h2>Building the docker containers<a class="headerlink" href="#building-the-docker-containers" title="Link to this heading"></a></h2>
+<p>We have built our images on top of the apache2 images as it is the webserver we currently use.
+However as shown in the getting started section, those images are suitable for use with different servers such as gunicorn.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># need to be in the build folder to copy some apache settings</span>
+<span class="nb">cd</span><span class="w"> </span>./alyx/deploy/docker/
+
+<span class="c1"># builds the base container</span>
+docker<span class="w"> </span>buildx<span class="w"> </span>build<span class="w"> </span>.<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--tag<span class="w"> </span>internationalbrainlab/alyx_apache_base:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-f<span class="w"> </span>./Dockerfile_base
+
+<span class="c1"># builds the top layer</span>
+docker<span class="w"> </span>buildx<span class="w"> </span>build<span class="w"> </span>.<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--tag<span class="w"> </span>internationalbrainlab/alyx_apache:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-f<span class="w"> </span>./Dockerfile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--build-arg<span class="w"> </span><span class="nv">alyx_branch</span><span class="o">=</span>deploy<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--no-cache
+</pre></div>
+</div>
+</section>
+<section id="advanced-topics">
+<h2>Advanced topics<a class="headerlink" href="#advanced-topics" title="Link to this heading"></a></h2>
+<section id="apache-webserver-and-interaction-with-wsgi">
+<h3>Apache webserver and interaction with wsgi<a class="headerlink" href="#apache-webserver-and-interaction-with-wsgi" title="Link to this heading"></a></h3>
+<p>Put the <a class="reference download internal" download="" href="_downloads/40d4b951d21f79f935428323e1c0f2ac/001-alyx.conf"><span class="xref download myst">site configuration</span></a> here: <code class="docutils literal notranslate"><span class="pre">/etc/apache2/sites-available/001-alyx.conf</span></code></p>
+<ul class="simple">
+<li><p>make sure the paths within the file match the alyx installation path.</p></li>
+<li><p>update ServerName parameter <code class="docutils literal notranslate"><span class="pre">ServerName</span>&#160; <span class="pre">alyx.internationalbrainlab.org</span></code></p></li>
+<li><p>it should match the <code class="docutils literal notranslate"><span class="pre">alyx/alyx/settings_lab.py</span></code> <code class="docutils literal notranslate"><span class="pre">ALLOWED_HOSTS</span></code> parameter</p></li>
+</ul>
+<p>Activate the website</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>sudo a2ensite
+    001-alyx-main
+</pre></div>
+</div>
+<p>Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as
+it should not interrupt current user transactions if any.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>sudo /etc/init.d/apache2 restart
+sudo /etc/init.d/apache2 reload
+</pre></div>
+</div>
+<p>Location of error logs for apache if it fails to start</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>/var/log/apache2/
+</pre></div>
+</div>
+<hr class="docutils" />
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="01_motivation.html" class="btn btn-neutral float-left" title="History and Rationale of Alyx" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="04_REST-api.html" class="btn btn-neutral float-right" title="REST API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, C Rossant, M Hunter, O Winter, C Burgess, K Harris.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

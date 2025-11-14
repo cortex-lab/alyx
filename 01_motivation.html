@@ -1,0 +1,152 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History and Rationale of Alyx &mdash; Alyx  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Deployments how-to’s guides" href="03_deployment.html" />
+    <link rel="prev" title="Getting Started" href="00_gettingstarted.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Alyx
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00_gettingstarted.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">History and Rationale of Alyx</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#searchability">Searchability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metadata-vs-bulk-data">Metadata vs bulk data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unstructured-and-arbitrary-metadata">Unstructured and arbitrary metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unique-identifiers">Unique identifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-and-webform-access">API and webform access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sharing">Sharing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="03_deployment.html">Deployments how-to’s guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04_REST-api.html">REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05_models.html">List of models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Alyx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">History and Rationale of Alyx</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/01_motivation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="history-and-rationale-of-alyx">
+<h1>History and Rationale of Alyx<a class="headerlink" href="#history-and-rationale-of-alyx" title="Link to this heading"></a></h1>
+<p>Previous standardisation efforts, as well as current data organisation methods used in laboratories, have several drawbacks. Most recently, the <a class="reference external" href="https://neurodatawithoutborders.github.io/">Neurodata Without Borders</a> project has worked to standardise a format for all experimental neurophysiology data. Alyx builds on this work and adds a number of key advantages:</p>
+<p>Alyx focuses on <strong>metadata</strong>, storing only references to the experimental data. This leaves the choice of experimental data format to the user. The experiments meta-data are embodied in a relational database, making it <strong>scalable</strong> and <strong>searchable</strong>.</p>
+<section id="searchability">
+<h2>Searchability<a class="headerlink" href="#searchability" title="Link to this heading"></a></h2>
+<p>To use data, one has to first find the data. Alyx allows a user to quickly and simply search a database of neurophysiology experiments to find that needed for their scientific question. The search could run over all data collected in the user’s own lab, or all the shared data in the world.</p>
+</section>
+<section id="metadata-vs-bulk-data">
+<h2>Metadata vs bulk data<a class="headerlink" href="#metadata-vs-bulk-data" title="Link to this heading"></a></h2>
+<p>The data accompanying a neurophysiology experiment has two components: <strong>metadata</strong>, which has complex relational organization but small size; and <strong>bulk data</strong>, which consists of large numerical arrays. While the boundary between metadata and bulk data is not always clear, here we use a simple definition: <em>metadata is any data that a user will want to search over</em>. Details of an experiment, and summary statistics of the recorded neurons would be searchable metadata: for example, a user could search for all electrophysiological recordings made in hippocampal area CA1 during linear-track running that contain at least 20 well-isolated narrow-spiking units. However the precise spike times and extracellular waveforms of each unit would be unsearchable bulk data.</p>
+<p>Storage of complex relational data, and storage of large numerical arrays are both solved problems in computing. We apply tried-and-tested solutions:</p>
+<ul class="simple">
+<li><p>Metadata is stored in an SQL database. A web interface allows users to update this metadata quickly and easily, for example while doing an experiment.</p></li>
+<li><p>Bulk data is stored with one binary file per numerical array, and the URI (i.e. location) of each file stored in the SQL database. The Open Neurophysiology Environment (ONE) interface allows users to search and access this bulk data.</p></li>
+</ul>
+</section>
+<section id="unstructured-and-arbitrary-metadata">
+<h2>Unstructured and arbitrary metadata<a class="headerlink" href="#unstructured-and-arbitrary-metadata" title="Link to this heading"></a></h2>
+<p>It is impossible to predict the metadata users will want to store for their experiments, as experimental paradigms are constantly evolving. Traditional relational databases, however, require all columns to be defined ahead of time. We will solve this problem by giving each table an additional “json” column that contains a JSON-formatted string, which can easily be converted into a MATLAB struct. PostgreSQL allows such fields to be searched in a similar way to traditional columns.</p>
+</section>
+<section id="unique-identifiers">
+<h2>Unique identifiers<a class="headerlink" href="#unique-identifiers" title="Link to this heading"></a></h2>
+<p>Databases identify each entry in a table with a “primary key”. As primary keys, we give each entry in a table (e.g. a subject, a lab, an experiment, or a neuron) a “GUID” – a random 128-bit number – which makes the chance of key duplication vanishingly small, even if this schema were used to store all the world’s neuroscience data. This GUID is assigned when the item is first added to the database (e.g. when a web form is filled in for an experiment; after spike sorting; etc.). The use of GUIDs allows users to copy or transfer their data to centralized stores with infinitesimal danger of ID clash.</p>
+</section>
+<section id="api-and-webform-access">
+<h2>API and webform access<a class="headerlink" href="#api-and-webform-access" title="Link to this heading"></a></h2>
+<p>All database tables described in <span class="xref std std-doc">the Models page</span> are accessible by a series of online webforms; each webform broadly represents one table. A subset of data, described in <span class="xref std std-doc">the API documentation</span>, are accessible programmatically via an online HTTP REST API; these are ‘serialized’ to avoid users having to write their own database joins and views as much as possible.</p>
+<p>Initially, only the data which is likely to be accessed programmatically is made accessible via the API; subjects, experiments, data and analyis results are all exposed in the API, but information about the lab or editing detailed user permissions information is not.</p>
+</section>
+<section id="sharing">
+<h2>Sharing<a class="headerlink" href="#sharing" title="Link to this heading"></a></h2>
+<p>This system was originally designed to be used within a single lab, as an “electronic lab notebook” that keeps track of the experiments performed and datasets produced. It can also be used by multi-lab collaborations, and is now used for data management by the International Brain Lab.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="00_gettingstarted.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="03_deployment.html" class="btn btn-neutral float-right" title="Deployments how-to’s guides" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, C Rossant, M Hunter, O Winter, C Burgess, K Harris.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

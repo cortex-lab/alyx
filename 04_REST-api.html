@@ -1,0 +1,147 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REST API &mdash; Alyx  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="List of models" href="05_models.html" />
+    <link rel="prev" title="Deployments how-to’s guides" href="03_deployment.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Alyx
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="00_gettingstarted.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="01_motivation.html">History and Rationale of Alyx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_deployment.html">Deployments how-to’s guides</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">REST API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#explanation">Explanation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="05_models.html">List of models</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Alyx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">REST API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/04_REST-api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rest-api">
+<h1>REST API<a class="headerlink" href="#rest-api" title="Link to this heading"></a></h1>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading"></a></h2>
+<p>The list of endpoints, fields and methods is self-documented for each database at the  <cite>/docs</cite> URL.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Try it ! On the IBL public Alyx instance, this would be at: <a class="reference external" href="https://openalyx.internationalbrainlab.org/docs/">https://openalyx.internationalbrainlab.org/docs/</a> (intbrainlab/international).</p>
+</div>
+<p>REST endpoints are programmatically accessed client side. And example of a client side application is described in details here.
+<a class="reference external" href="https://int-brain-lab.github.io/ONE/">ONE Tool documentation</a></p>
+</section>
+<section id="explanation">
+<h2>Explanation<a class="headerlink" href="#explanation" title="Link to this heading"></a></h2>
+<p>The <strong>base URL</strong> is the URL of your Alyx installation, for example at IBL: <a class="reference external" href="https://openalyx.internationalbrainlab.org">https://openalyx.internationalbrainlab.org</a></p>
+<p>With <a class="reference external" href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST</a>, you make an HTTP request to a particular URL, named an <strong>endpoint</strong>, with possibly some parameters, and you obtain a response in <a class="reference external" href="https://en.wikipedia.org/wiki/JSON">JSON</a>. There are several types of HTTP requests used in Alyx:</p>
+<dl class="simple">
+<dt>GET</dt><dd><p>obtain read-only data about an object, or perform a query</p>
+</dd>
+<dt>POST</dt><dd><p>create a new object</p>
+</dd>
+<dt>PATCH</dt><dd><p>update some fields of an object</p>
+</dd>
+<dt>PUT</dt><dd><p>update all fields of an object</p>
+</dd>
+</dl>
+<p>Some GET endpoints return a list of objects satisfying to your query, while other endpoints return the detail of a single object.</p>
+<p>The <cite>/</cite> endpoint (base URL) returns the list of all available endpoints.</p>
+<p>Every object is identified with a unique 128-bit <a class="reference external" href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a>, representing by a string of 32 hexadecimal digits, like e.g. <cite>6915b95b-c6d4-45a6-80c3-324675723d3e</cite>.</p>
+<p>When we say to do a GET request to the <cite>/blah/</cite> endpoint, we mean to perform an HTTP GET request to the url <cite>https://yourbaseurl/blah/</cite>.</p>
+<p>With POST, PATCH, and PUT requests, data is passed as key-value pairs in <a class="reference external" href="https://en.wikipedia.org/wiki/JSON">JSON</a>. For example, doing a POST request to the <cite>/blah/</cite> endpoint with <cite>key1=val1</cite> and <cite>key2=val2</cite> means performing an HTTP POST request to the url <cite>https://yourbaseurl/blah/</cite> with data a string with the <cite>application/json</cite> mime type, and the contents <cite>{“key1”: “val1”, “key2”: “val2”}</cite>.</p>
+<p>In practice, a library in your language should provide you with primitives such as <cite>get(url)</cite>, <cite>post(url, key1=val1, …)</cite>, etc. so you don’t need to understand all of the underlying details: just the HTTP request type, the endpoint URL, the fields you need to pass, and the fields that are returned by the endpoint.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="03_deployment.html" class="btn btn-neutral float-left" title="Deployments how-to’s guides" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="05_models.html" class="btn btn-neutral float-right" title="List of models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2018, C Rossant, M Hunter, O Winter, C Burgess, K Harris.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
