@@ -1230,5 +1230,16 @@
       "description": "Manually annotated cluster labels",
       "filename_pattern": "*clusters.curatedLabels*.tsv"
     }
+  },
+  {
+    "model": "data.datasettype",
+    "pk": "83a5c789-43de-44cc-8bfa-4b574a82dd8d",
+    "fields": {
+      "json": null,
+      "name": "fpData.regionImage",
+      "created_by": null,
+      "description": "the camera image of the fiber bundle of the neurophotometrics FP3002, overlayed with the named regions of interest.",
+      "filename_pattern": ""
+    }
   }
 ]
