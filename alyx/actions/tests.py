@@ -71,6 +71,11 @@ class WaterControlTests(TestCase):
     def tearDown(self):
         base.DISABLE_MAIL = False
 
+    def test_plot(self):
+        wc = self.sub.water_control
+        r = wc.plot()
+        self.assertEqual(r.status_code, 200)
+
     def test_water_administration_expected(self):
         wc = self.sub.water_control
         wa = WaterAdministration.objects.filter(subject=self.sub)

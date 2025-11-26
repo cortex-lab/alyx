@@ -94,10 +94,10 @@ def restrict_dates(dates, start, end, *arrs):
     return [dates[ind]] + [arr[ind] for arr in arrs]
 
 
-def find_color(w, e, thresholds):
+def find_color(w, e, thresholds, implant_weight=0):
     """Find the color of a weight, given the expected weight and the list of thresholds."""
     for t, bgc, fgc, ls in thresholds:
-        if w < e * t:
+        if (w - implant_weight) < (e - implant_weight) * t:
             return bgc
     return PALETTE['green']
 
@@ -537,19 +537,22 @@ class WaterControl:
             reference_weights = np.array(
                 [self.reference_weight(date) for date in weighing_dates],
                 dtype=np.float64)
+            implant_weights = np.array(
+                [self.implant_weight(date) for date in weighing_dates],
+            )
 
         label = None
         # spans is a list of pairs (date, color) where there are changes of background colors.
         for start_wr, end_wr, ref_weight in self.water_restrictions:
             end_wr = end_wr or end
             # Get the dates and weights for the current water restriction.
-            ds, ws, es, zw, rw = restrict_dates(weighing_dates, start_wr, end_wr, weights,
-                                                expected_weights, zscore_weights,
-                                                reference_weights)
+            ds, ws, es, zw, rw, iws = restrict_dates(weighing_dates, start_wr, end_wr, weights,
+                                                    expected_weights, zscore_weights,
+                                                    reference_weights, implant_weights)
             # Plot background colors.
             spans = [(start_wr, None)]
-            for d, w, e in zip(ds, ws, es):
-                c = find_color(w, e, self.thresholds)
+            for d, w, e, iw in zip(ds, ws, es, iws):
+                c = find_color(w, e, self.thresholds, implant_weight=iw)
                 # Skip identical consecutive colors.
                 if c == spans[-1][1]:
                     continue
@@ -560,11 +563,13 @@ class WaterControl:
 
             # Plot reference weight and zscore
             ax.plot(ds, rw, '--', color='b', lw=1, label=label or 'ref_weight')
+            # ax.plot(ds, es, '--', color='b', lw=1, label=label or 'expected_weight')
             ax.plot(ds, zw, '-.', color='g', lw=1, label=label or 'zscore')
 
             # Plot weight thresholds.
             for p, bgc, fgc, ls in self.thresholds:
-                ax.plot(ds, p * es, ls, color=fgc, lw=2, label=label or f'{p:.0%}')
+                # the threshold line is the implant-free weight over the expected weight implant free
+                ax.plot(ds, p * (es - iw) + iw, ls, color=fgc, lw=2, label=label or f'{p:.0%}')
 
             # Plot weights.
             ax.plot(ds, ws, '-ok', lw=2)

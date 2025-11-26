@@ -5,10 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
 
-### Added
+## [3.3.2] 2025-11-26
 
+### Fixed
+
+- water history plots: the weight thresholds is `(w - iw) / (ew - iw)`, where `w` is the measured weight, `iw` the implant weight and `ew` the expected weight.  Expected weight is `(ew = (rw * a + zw *b) + iw`  (weighted sum of reference weight and zscore weight + implant weight).  The display was computing thresholds according to `w/ew` , not taking into account the implant weight and is now fixed.
+
+
+## [3.3.1] 2025-11-06
 
 ### Changed
 
