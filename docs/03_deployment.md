@@ -6,7 +6,18 @@ For a simple deployment using a containerized version of Alyx interacting with a
 For running alyx directly on the host machine, follow the instructions below.
 
 
+
 ## Install a development version of Alyx on the host machine
+
+Clone the alyx repository from [here](https://github.com/cortex-lab/alyx). 
+```shell
+git clone https://github.com/cortex-lab/alyx.git
+cd alyx
+```
+
+Create a virtual environment using uv and install the repo in an editable mode using `uv pip install -e .`
+
+
 
 Copy the settings files from the deploy folder inside of the alyx project. Those files are ignored by git.
 
@@ -20,11 +31,13 @@ Copy the environment template file and edit the path to the logs
 cp ./alyx/alyx/environment_template.env ./alyx/alyx/.env
 vi ./alyx/alyx/.env
 ```
-In the environment file, you need to provide a writable log directory and change the postgres host to localhost
+In the environment file, you need to provide a writable log directory and change the postgres host to localhost.
 ```shell
 APACHE_LOG_DIR=/Users/olivier/scratch/alyxlogs
 POSTGRES_HOST=localhost
 ```
+
+**Note:** On macOS, if there is a local version of the postgres already installed and you want to use the containerized version of postgres, it is also good to change the variable `POSTGRES_PORT` in the .env file to 5433. And export the variable as well using `export POSTGRES_PORT=5433` in the shell where the following commands will be launched.
 
 First we will start the docker service containing the database and make sure we can connect to it using the current `.env` settings.
 The `showmigrations` command will fail if the database is not available.
