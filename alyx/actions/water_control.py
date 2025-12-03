@@ -294,7 +294,7 @@ class WaterControl:
         weights_before = (
             (d, w) for (d, w) in reversed(self.implant_weights) if d.date() <= date.date()
         )
-        w = next(weights_before, None)
+        w = next(weights_before, 0)
         return w[1] if (w and not return_date) else w
 
     def last_weighing_before(self, date=None):
