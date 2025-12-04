@@ -1,6 +1,6 @@
 boto3
 colorlog
-django>=5.2.2
+django>=5.2.9,<6  # see issue #963
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
