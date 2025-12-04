@@ -348,9 +348,12 @@ class WaterRestrictionForm(forms.ModelForm):
 class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
-            object_id = request.resolver_match.kwargs.get('object_id')
-            obj = self.get_object(request, object_id) if object_id else None
+            obj = None
             kwargs['queryset'] = Subject.objects.filter(cull__isnull=True).order_by('nickname')
+            # here if the form is of an existing water restriction, get the subject
+            if request.resolver_match is not None:
+                object_id = request.resolver_match.kwargs.get('object_id')
+                obj = self.get_object(request, object_id) if object_id else None
             if obj is not None:
                 kwargs['queryset'] = (kwargs['queryset'] | Subject.objects.filter(pk=obj.subject.pk)).order_by('nickname')
                 kwargs['initial'] = obj.subject
