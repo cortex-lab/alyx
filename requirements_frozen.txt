@@ -75,5 +75,5 @@ structlog==25.3.0
 tqdm==4.67.1
 tzdata==2025.2
 uritemplate==4.1.1
-urllib3==2.4.0
+urllib3==2.6.0
 webdavclient3==3.14.6
