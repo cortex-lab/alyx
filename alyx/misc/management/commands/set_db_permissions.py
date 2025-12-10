@@ -5,7 +5,8 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-import psycopg2 as Database
+import psycopg as Database
+from psycopg import IsolationLevel
 
 
 class Command(BaseCommand):
@@ -53,8 +54,7 @@ class Command(BaseCommand):
         if database_port:
             conn_params['port'] = database_port
 
-        connection = Database.connect(**conn_params)
-        connection.set_isolation_level(0)  # autocommit false
+        connection = Database.connect(**conn_params, autocommit=True)
         cursor = connection.cursor()
 
         # Recreate and grant perms

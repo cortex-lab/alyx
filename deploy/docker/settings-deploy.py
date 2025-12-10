@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 
 import os
 import json
-import dj_database_url
 import logging
 import dotenv
 import urllib.parse
@@ -39,8 +38,36 @@ POSTGRES_PORT = urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))  # Defaul
 POSTGRES_DB = urllib.parse.quote(os.getenv('POSTGRES_DB', ''))
 # the database details are provided in the form of an URL. The URL looks like:
 # "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
-database_url = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-DATABASES = {"default": dj_database_url.parse(database_url)}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": POSTGRES_DB,
+        "USER": POSTGRES_USER,
+        "PASSWORD": POSTGRES_PASSWORD,
+        "HOST": POSTGRES_HOST,
+        "PORT": POSTGRES_PORT,
+        "CONN_MAX_AGE": 0,  # Required for pooling
+        "OPTIONS": {
+            "pool": {
+                # Minimum number of connections to maintain in the pool
+                'min_size': int(os.getenv('DB_POOL_MIN_SIZE', '4')),
+                # Maximum number of connections in the pool (handles traffic spikes)
+                # Start with max_size equal to expected concurrent users divided by 10. Scale up if you see timeout errors in logs.
+                'max_size': int(os.getenv('DB_POOL_MAX_SIZE', '16')),
+                # Timeout (seconds) for acquiring a connection from the pool
+                # Fails fast under extreme load
+                'timeout': int(os.getenv('DB_POOL_TIMEOUT', '10')),
+                # Maximum lifetime (seconds) of a connection
+                # 30 minutes maximum connection age
+                'max_lifetime': int(os.getenv('DB_POOL_MAX_LIFETIME', '1800')),
+                # Maximum idle time (seconds) of a connection
+                # Close idle connections after 5 minutes
+                'max_idle': int(os.getenv('DB_POOL_MAX_IDLE', '300')),
+            },  
+        }
+    }
+}
+
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
 # S3_ACCESS={"access_key":"xxxxx", "secret_key":"xxxxx", "region":"us-east-1"}

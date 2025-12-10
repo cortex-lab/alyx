@@ -3,7 +3,8 @@ adapted from http://www.djangosnippets.org/snippets/828/ by dnordberg
 """
 import logging
 
-import psycopg2 as Database
+import psycopg as Database
+from psycopg import IsolationLevel
 
 from django.conf import settings
 from django.core.management import call_command
@@ -72,8 +73,7 @@ Type 'yes' to continue, or 'no' to cancel: """ % (database_name,))
         if database_port:
             conn_params['port'] = database_port
 
-        connection = Database.connect(**conn_params)
-        connection.set_isolation_level(0)  # autocommit false
+        connection = Database.connect(**conn_params, autocommit=True)
         cursor = connection.cursor()
 
         # Now let's do the dirty work
