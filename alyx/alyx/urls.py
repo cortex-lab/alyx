@@ -26,12 +26,6 @@ urlpatterns = [
     path('docs/', SpectacularRedocViewCoreAPIDeprecation.as_view(url_name='schema'), name='redoc'),
 ]
 
-# Add Prometheus metrics endpoint if django_prometheus is installed
-try:
-    urlpatterns += [path('', include('django_prometheus.urls'))]
-except ModuleNotFoundError:
-    pass
-
 # this is an optional app
 try:
     urlpatterns += [path('ibl_reports/', include('ibl_reports.urls')), ]
