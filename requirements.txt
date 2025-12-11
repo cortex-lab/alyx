@@ -13,7 +13,6 @@ django-storages
 django-structlog
 django-test-without-migrations
 djangorestframework
-dj_database_url
 drf-spectacular
 docutils
 dotenv
@@ -28,6 +27,7 @@ matplotlib
 ONE-api>=3.0
 pillow>=11.3.0
 psycopg[binary,pool]>=3.2.0
+prometheus-client
 python-dateutil
 python-magic
 pytz
