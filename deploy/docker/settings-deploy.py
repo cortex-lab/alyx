@@ -132,6 +132,11 @@ LOGGING = {
     }
 }
 
+# Set psycopg pool logging to info level
+logging.getLogger('psycopg.pool').setLevel(logging.INFO)
+# Add handler to save to log file
+logging.getLogger('psycopg.pool').addHandler(logging.FileHandler(LOG_FOLDER_ROOT.joinpath('psycopg.pool.log')))
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 
