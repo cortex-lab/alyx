@@ -17,15 +17,14 @@ from rangefilter.filters import DateRangeFilter
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession, 
-                     FiberInsertion
+                     Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession,
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
 from misc.models import Note
 from subjects.models import Subject
 from .water_control import WaterControl
-from experiments.models import ProbeInsertion, FOV
+from experiments.models import ProbeInsertion, FOV, FiberInsertion
 from jobs.models import Task
 
 logger = logging.getLogger(__name__)
