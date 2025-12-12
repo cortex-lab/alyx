@@ -24,6 +24,7 @@ urlpatterns = [
     # YOUR PATTERNS
     path('api/schema', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularRedocViewCoreAPIDeprecation.as_view(url_name='schema'), name='redoc'),
+    path('', include('django_prometheus.urls')),
 ]
 
 # this is an optional app

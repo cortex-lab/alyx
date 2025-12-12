@@ -63,7 +63,7 @@ DATABASES = {
                 # Maximum idle time (seconds) of a connection
                 # Close idle connections after 5 minutes
                 'max_idle': int(os.getenv('DB_POOL_MAX_IDLE', '300')),
-            },  
+            }
         }
     }
 }
@@ -133,9 +133,17 @@ LOGGING = {
 }
 
 # Set psycopg pool logging to info level
-logging.getLogger('psycopg.pool').setLevel(logging.INFO)
-# Add handler to save to log file
-logging.getLogger('psycopg.pool').addHandler(logging.FileHandler(LOG_FOLDER_ROOT.joinpath('psycopg.pool.log')))
+LOGGING['handlers']['psycopg_pool_file'] = {
+    'level': 'INFO',
+    'class': 'logging.FileHandler',
+    'filename': LOG_FOLDER_ROOT.joinpath('psycopg.pool.log'),
+    'formatter': 'simple'
+}
+LOGGING['loggers']['psycopg.pool'] = {
+    'handlers': ['psycopg_pool_file', 'console'],
+    'level': 'INFO',
+    'propagate': False
+}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
