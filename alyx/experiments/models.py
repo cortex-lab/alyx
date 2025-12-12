@@ -380,7 +380,7 @@ class FiberTrajectoryEstimate(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['provenance', ''],
+            models.UniqueConstraint(fields=['provenance', 'chronic_fiber_insertion'],
                                     condition=models.Q(fiber_insertion__isnull=True),
                                     name='unique_trajectory_per_chronic_provenance'),
             models.UniqueConstraint(fields=['provenance', 'fiber_insertion'],
@@ -390,12 +390,9 @@ class FiberTrajectoryEstimate(models.Model):
 
     def __str__(self):
         if self.fiber_insertion:
-            return "%s  %s/%s" % \
-                   (self.get_provenance_display(), str(self.session), self.fiber_insertion.name)
+            return f"{self.get_provenance_display()}  {self.session}/{self.fiber_insertion.name}"
         elif self.chronic_fiber_insertion:
-            return "%s  %s/%s" % \
-                   (self.get_provenance_display(), self.chronic_fiber_insertion.subject.nickname,
-                    self.chronic_fiber_insertion.name)
+            return f"{self.get_provenance_display()}  {self.chronic_fiber_insertion.subject.nickname}/{self.chronic_fiber_insertion.name}"
         else:
             return super().__str__()
 
