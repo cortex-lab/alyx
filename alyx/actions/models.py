@@ -316,6 +316,15 @@ class ImagingSession(Session):
     class Meta:
         proxy = True
 
+class PhotometrySession(Session):
+    """
+    This proxy class allows to register as a different admin page.
+    The database is left untouched.
+    New methods are fine but not new fields.
+    For what defines an photometry session see actions.admin.PhotometrySessionAdmin.get_queryset.
+    """
+    class Meta:
+        proxy = True
 
 class WaterRestriction(BaseAction):
     """

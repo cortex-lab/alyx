@@ -17,7 +17,8 @@ from rangefilter.filters import DateRangeFilter
 from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
-                     Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession
+                     Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession, 
+                     FiberInsertion
                      )
 from data.models import Dataset, FileRecord
 from misc.admin import NoteInline
@@ -682,6 +683,12 @@ class ProbeInsertionInline(TabularInline):
     fields = ('name', 'model')
     extra = 0
 
+class FiberInsertionInline(TabularInline):
+    fk_name = "session"
+    show_change_link = True
+    model = FiberInsertion
+    fields = ('name', 'fiber_model')
+    extra = 0
 
 class FOVInline(TabularInline):
     fk_name = 'session'
@@ -697,6 +704,14 @@ class EphysSessionAdmin(SessionAdmin):
     def get_queryset(self, request):
         qs = super(EphysSessionAdmin, self).get_queryset(request)
         return qs.filter(procedures__name__icontains='ephys')
+
+
+class PhotometrySessionAdmin(SessionAdmin):
+    inlines = [FiberInsertionInline, TasksAdminInline, WaterAdminInline, DatasetInline, NoteInline]
+
+    def get_queryset(self, request):
+        qs = super(PhotometrySessionAdmin, self).get_queryset(request)
+        return qs.filter(procedures__name__icontains='Fiber photometry')
 
 
 class ImagingSessionAdmin(SessionAdmin):

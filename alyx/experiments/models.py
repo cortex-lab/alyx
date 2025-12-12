@@ -220,6 +220,224 @@ class TrajectoryEstimate(models.Model):
             return self.chronic_insertion.subject.nickname
 
 
+class FiberModel(BaseModel):  # maybe this shouldn't be based on a ProbeModel but rather have
+    """
+    A model for an optical fiber cannula, implanted in a brain
+    as used by fiber photometry or optogenetics experiments
+    """
+
+    fiber_manufacturer = models.CharField(
+        max_length=255,
+        null=True,
+        help_text="manufacturer's name, e.g. Doric",
+    )
+    fiber_model = models.CharField(
+        max_length=255,
+        null=True,
+        help_text="manufacturer's part number e.g. MFC__mm_ZF1.25_FLT",
+    )
+    na = models.FloatField(null=False, help_text="numerical aperture of the fiber, e.g. .54")
+    diameter = models.FloatField(null=False, help_text="fiber diameter in um, e.g. 200")
+    length = models.FloatField(null=False, help_text="fiber length in mm, e.g. 6")
+    tip_type = models.CharField(default="flat", null=False, help_text="fiber tip type, e.g. flat, tapered etc.")
+    tip_parameter = models.FloatFiled(null=True, help_text="fiber shape parameter, e.g. tip angle, taper length")
+    description = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="any additional description",
+    )
+
+    def __str__(self):
+        # TODO here: depending on tip shape, maybe we want to include more information here
+        # those two are the most important though
+        return f"NA:{self.na}, diameter:{self.diameter}"
+
+
+class ChronicFiberInsertion(ChronicRecording):
+    """
+    note: ChronicRecording is empy, this is a BaseAction
+    could also just directly inherit from that, but maybe it's
+    set up like this for future extensability
+    TODO DOCME
+    """
+
+    model = models.ForeignKey(
+        FiberModel,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="chronic_fiber_insertion",
+    )
+
+    def __str__(self):
+        return "%s %s %s" % (self.name, self.subject.nickname, self.serial)
+
+
+class FiberInsertion(BaseModel):
+    """
+    Describe an optical fiber insertion used for fiber photometry 
+    recordings or optogenetics
+    """
+
+    objects = BaseManager()
+
+    session = models.ForeignKey(
+        "actions.PhotometrySession",
+        blank=True,
+        null=True, # these insertions have meaning on session level only, so I think it should be True
+        on_delete=models.CASCADE,
+        related_name="fiber_insertion",
+    )
+
+    fiber_model = models.ForeignKey(
+        FiberModel,
+        blank=True,
+        null=False, # TODO should this be True
+        on_delete=models.SET_NULL, # doesn't this clash with nullable?
+        related_name="fiber_insertion", 
+    )
+
+    datasets = models.ManyToManyField(
+        "data.Dataset",
+        blank=True,
+        related_name="fiber_insertion",
+    )
+
+    chronic_insertion = models.ForeignKey(
+        ChronicFiberInsertion,
+        blank=True,
+        on_delete=models.SET_NULL,
+        null=False,
+        related_name="fiber_insertion",
+    )
+
+    auto_datetime = models.DateTimeField(
+        auto_now=True,
+        blank=True,
+        null=True,
+        verbose_name="last updated",
+    )
+
+    def __str__(self):
+        return "%s %s" % (self.name, str(self.session))
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "session"],
+                name="unique_fiber_insertion_name_per_session",
+            )
+        ]
+
+    @property
+    def subject(self):
+        return self.session.subject.nickname
+
+    @property
+    def datetime(self):
+        return self.session.start_time
+
+
+class FiberTrajectoryEstimate(models.Model):
+    """
+    Describes a probe insertion trajectory - always a straight line
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    INSERTION_DATA_SOURCES = [
+        # (70, 'Ephys aligned histology track',), # doesn't exist for fiber
+        (50, 'Histology track',),
+        # (30, 'Micro-manipulator',), # doesn't exist for fiber
+        (10, 'Planned',),
+    ]
+
+    fiber_insertion = models.ForeignKey(FiberInsertion, blank=True, null=False,
+                                        on_delete=models.CASCADE,
+                                        related_name='fiber_trajectory_estimate')
+    chronic_fiber_insertion = models.ForeignKey(ChronicFiberInsertion, blank=True, null=False,
+                                          on_delete=models.CASCADE,
+                                          related_name='fiber_trajectory_estimate')
+    x = models.FloatField(null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y = models.FloatField(null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z = models.FloatField(null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    depth = models.FloatField(null=True, help_text="probe insertion depth (um)")
+    theta = models.FloatField(null=True,
+                              help_text="Polar angle ie. from vertical, (degrees) [0-180]",
+                              validators=[MinValueValidator(0), MaxValueValidator(180)])
+    phi = models.FloatField(null=True,
+                            help_text="Azimuth from right (degrees), anti-clockwise, [0-360]",
+                            validators=[MinValueValidator(-180), MaxValueValidator(360)])
+    roll = models.FloatField(null=True,
+                             validators=[MinValueValidator(0), MaxValueValidator(360)])
+    _phelp = ' / '.join([str(s[0]) + ': ' + s[1] for s in INSERTION_DATA_SOURCES])
+    provenance = models.IntegerField(default=10, choices=INSERTION_DATA_SOURCES, help_text=_phelp)
+    coordinate_system = models.ForeignKey(CoordinateSystem, null=True, blank=True,
+                                          on_delete=models.SET_NULL,
+                                          help_text='3D coordinate system used.')
+    datetime = models.DateTimeField(auto_now=True, verbose_name='last update')
+    json = models.JSONField(null=True, blank=True,
+                            help_text="Structured data, formatted in a user-defined way")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['provenance', ''],
+                                    condition=models.Q(fiber_insertion__isnull=True),
+                                    name='unique_trajectory_per_chronic_provenance'),
+            models.UniqueConstraint(fields=['provenance', 'fiber_insertion'],
+                                    condition=models.Q(fiber_insertion__isnull=False),
+                                    name='unique_trajectory_per_provenance'),
+        ]
+
+    def __str__(self):
+        if self.fiber_insertion:
+            return "%s  %s/%s" % \
+                   (self.get_provenance_display(), str(self.session), self.fiber_insertion.name)
+        elif self.chronic_fiber_insertion:
+            return "%s  %s/%s" % \
+                   (self.get_provenance_display(), self.chronic_fiber_insertion.subject.nickname,
+                    self.chronic_fiber_insertion.name)
+        else:
+            return super().__str__()
+
+    @property
+    def probe_name(self):
+        if self.fiber_insertion:
+            return self.fiber_insertion.name
+        elif self.chronic_fiber_insertion:
+            return self.chronic_fiber_insertion.name
+
+    @property
+    def session(self):
+        if self.fiber_insertion:
+            return self.fiber_insertion.session
+
+    @property
+    def subject(self):
+        if self.fiber_insertion:
+            return self.fiber_insertion.session.subject.nickname
+        elif self.chronic_fiber_insertion:
+            return self.chronic_fiber_insertion.subject.nickname
+
+
+class FiberTipLocation(BaseModel):
+    # modelled after a "channel" in ephys
+    x = models.FloatField(blank=True, null=True, help_text=X_HELP_TEXT, verbose_name='x-ml (um)')
+    y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
+    z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
+    brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
+                                     on_delete=models.SET_NULL, related_name='channels')
+    fiber_trajectory_estimate = models.ForeignKey(FiberTrajectoryEstimate, null=True, blank=True,
+                                            on_delete=models.CASCADE, related_name='fiber_tip_location')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['fiber_trajectory_estimate'],
+                                               name='unique_fiber_trajectory_estimate')]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.fiber_trajectory_estimate.save()  # this will bump the datetime auto-update of trajectory
+
+
 class Channel(BaseModel):
     axial = models.FloatField(blank=True, null=True,
                               help_text=("Distance in micrometers along the probe from the tip."
