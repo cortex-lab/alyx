@@ -240,7 +240,7 @@ class FiberModel(BaseModel):  # maybe this shouldn't be based on a ProbeModel bu
     diameter = models.FloatField(null=False, help_text="fiber diameter in um, e.g. 200")
     length = models.FloatField(null=False, help_text="fiber length in mm, e.g. 6")
     tip_type = models.CharField(default="flat", null=False, help_text="fiber tip type, e.g. flat, tapered etc.")
-    tip_parameter = models.FloatFiled(null=True, help_text="fiber shape parameter, e.g. tip angle, taper length")
+    tip_parameter = models.FloatField(null=True, help_text="fiber shape parameter, e.g. tip angle, taper length")
     description = models.CharField(
         max_length=255,
         null=True,
