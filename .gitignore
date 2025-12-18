@@ -48,3 +48,5 @@ alyx/alyx_full.sql.gz
 alyx/.idea/
 
 alyx.log
+
+alyx/data/management/commands/create_public_links.py

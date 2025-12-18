@@ -1,6 +1,6 @@
 boto3
 colorlog
-django>=5.2.2
+django>=5.2.9,<6  # see issue #963
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
@@ -19,6 +19,7 @@ docutils
 dotenv
 drfdocs
 flake8
+fonttools>=4.61.0
 globus-cli
 globus-sdk
 gunicorn
@@ -33,6 +34,6 @@ python-magic
 pytz
 requests>=2.32.4
 setuptools
-urllib3>=2.5.0
+urllib3>=2.6.0
 webdavclient3
 whitenoise
