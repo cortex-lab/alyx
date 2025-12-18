@@ -21,7 +21,7 @@ from one.alf.spec import QC
 from one.remote.aws import get_s3_virtual_host
 
 from django.db import connection
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, QuerySet
 from django.core.management.base import BaseCommand
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.paginator import Paginator
@@ -316,37 +316,9 @@ class Command(BaseCommand):
         return zip_file, tag_file
 
 
-@measure_time
-def generate_sessions_frame(tags=None) -> pd.DataFrame:
-    """SESSIONS_COLUMNS = (
-        'id',               # uuid str
-        'lab',              # str
-        'subject',          # str
-        'date',             # str yyyy-mm-dd
-        'number',           # int64
-        'task_protocol',    # str
-        'projects'           # str
-    )
-    """
+def session_queryset_to_dataframe(query: QuerySet) -> pd.DataFrame:
     fields = ('id', 'lab__name', 'subject__nickname', 'start_time__date',
               'number', 'task_protocol', 'all_projects')
-    query = (Session
-             .objects
-             .select_related('subject', 'lab')
-             .prefetch_related('projects')
-             .annotate(all_projects=ArrayAgg('projects__name'))
-             .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
-    if tags:
-        if not isinstance(tags, str):
-            query = query.filter(data_dataset_session_related__tags__name__in=tags)
-        else:
-            query = query.filter(data_dataset_session_related__tags__name=tags)
-
-    if query.count() == 0:
-        logger.warning(f'No datasets associated with sessions found for {tags}, '
-                       f'returning empty dataframe')
-        return pd.DataFrame(columns=SESSIONS_COLUMNS).set_index('id')
-
     df = pd.DataFrame.from_records(query.values(*fields).distinct())
     logger.debug(f'Raw session frame = {getsizeof(df) / 1024**2} MiB')
     # Rename, sort fields
@@ -365,6 +337,73 @@ def generate_sessions_frame(tags=None) -> pd.DataFrame:
 
     logger.debug(f'Final session frame = {getsizeof(df) / 1024 ** 2:.1f} MiB')
     return df
+
+
+def dataset_queryset_to_dataframe(ds: QuerySet, batch_size: int = 100_000) -> pd.DataFrame:
+    # fields to keep from Dataset table
+    fields = (
+        'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
+        'session__id', 'qc'
+    )
+    fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
+
+    paginator = Paginator(ds.order_by('pk'), batch_size)
+    all_df = pd.DataFrame([])
+    for i in tqdm(paginator.page_range):
+        data = paginator.get_page(i)
+        current_qs = data.object_list
+        df = (pd.DataFrame
+              .from_records(current_qs.values(*fields))
+              .rename(fields_map, axis=1)
+              .astype({'id': str, 'eid': str, 'file_size': 'UInt64'}))
+        df['exists'] = True
+
+        # relative_path
+        revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
+        zipped = zip(df.pop('collection'), revision, df.pop('name'))
+        df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
+
+        # UUIDs converted to str: not supported by parquet
+        df = df.set_index(['eid', 'id'])
+
+        # Convert QC enum int to pandas category
+        df['qc'] = pd.Categorical([QC(i).name for i in df['qc']], dtype=QC_TYPE)
+
+        all_df = pd.concat([all_df, df], ignore_index=False, copy=False)
+
+    logger.debug(f'Final datasets frame = {getsizeof(all_df) / 1024 ** 2:.1f} MiB')
+    return all_df.sort_index()
+
+
+@measure_time
+def generate_sessions_frame(tags=None) -> pd.DataFrame:
+    """SESSIONS_COLUMNS = (
+        'id',               # uuid str
+        'lab',              # str
+        'subject',          # str
+        'date',             # str yyyy-mm-dd
+        'number',           # int64
+        'task_protocol',    # str
+        'projects'           # str
+    )
+    """
+    query = (Session
+             .objects
+             .select_related('subject', 'lab')
+             .prefetch_related('projects')
+             .annotate(all_projects=ArrayAgg('projects__name'))
+             .order_by('-start_time', 'subject__nickname', '-number'))  # FIXME Ignores nickname :(
+    if tags:
+        if not isinstance(tags, str):
+            query = query.filter(data_dataset_session_related__tags__name__in=tags)
+        else:
+            query = query.filter(data_dataset_session_related__tags__name=tags)
+
+    if query.count() == 0:
+        logger.warning(f'No datasets associated with sessions found for {tags}, '
+                       f'returning empty dataframe')
+        return pd.DataFrame(columns=SESSIONS_COLUMNS).set_index('id')
+    return session_queryset_to_dataframe(query)
 
 
 @measure_time
@@ -402,39 +441,7 @@ def generate_datasets_frame(tags=None, batch_size=100_000) -> pd.DataFrame:
                 .set_index(['eid', 'id'])
                 .astype({'qc': QC_TYPE, 'file_size': np.uint64}))
 
-    # fields to keep from Dataset table
-    fields = (
-        'id', 'name', 'file_size', 'hash', 'collection', 'revision__name', 'default_dataset',
-        'session__id', 'qc'
-    )
-    fields_map = {'session__id': 'eid', 'default_dataset': 'default_revision'}
-
-    paginator = Paginator(ds.order_by('pk'), batch_size)
-    all_df = pd.DataFrame([])
-    for i in tqdm(paginator.page_range):
-        data = paginator.get_page(i)
-        current_qs = data.object_list
-        df = (pd.DataFrame
-              .from_records(current_qs.values(*fields))
-              .rename(fields_map, axis=1)
-              .astype({'id': str, 'eid': str, 'file_size': 'UInt64'}))
-        df['exists'] = True
-
-        # relative_path
-        revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
-        zipped = zip(df.pop('collection'), revision, df.pop('name'))
-        df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
-
-        # UUIDs converted to str: not supported by parquet
-        df = df.set_index(['eid', 'id'])
-
-        # Convert QC enum int to pandas category
-        df['qc'] = pd.Categorical([QC(i).name for i in df['qc']], dtype=QC_TYPE)
-
-        all_df = pd.concat([all_df, df], ignore_index=False, copy=False)
-
-    logger.debug(f'Final datasets frame = {getsizeof(all_df) / 1024 ** 2:.1f} MiB')
-    return all_df.sort_index()
+    return dataset_queryset_to_dataframe(ds)
 
 
 def create_metadata() -> dict:

@@ -1,6 +1,7 @@
 # environment files for deployments
 .env*
 # all of the iblreports sym links
+alyx/data/management/one_django.py
 alyx/data/management/commands/*ibl*
 alyx/data/management/commands/sync_patcher.py
 alyx/ibl_reports
