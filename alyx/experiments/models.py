@@ -422,7 +422,7 @@ class FiberTipLocation(BaseModel):
     y = models.FloatField(blank=True, null=True, help_text=Y_HELP_TEXT, verbose_name='y-ap (um)')
     z = models.FloatField(blank=True, null=True, help_text=Z_HELP_TEXT, verbose_name='z-dv (um)')
     brain_region = models.ForeignKey(BrainRegion, default=0, null=True, blank=True,
-                                     on_delete=models.SET_NULL, related_name='channels')
+                                     on_delete=models.SET_NULL, related_name='fiber_tip_location')
     fiber_trajectory_estimate = models.ForeignKey(FiberTrajectoryEstimate, null=True, blank=True,
                                             on_delete=models.CASCADE, related_name='fiber_tip_location')
 
