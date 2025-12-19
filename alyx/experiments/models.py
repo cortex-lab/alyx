@@ -382,7 +382,7 @@ class FiberTrajectoryEstimate(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['provenance', 'chronic_fiber_insertion'],
                                     condition=models.Q(fiber_insertion__isnull=True),
-                                    name='unique_trajectory_per_chronic_provenance'),
+                                    name='unique_fiber_trajectory_per_chronic_provenance'),
             models.UniqueConstraint(fields=['provenance', 'fiber_insertion'],
                                     condition=models.Q(fiber_insertion__isnull=False),
                                     name='unique_trajectory_per_provenance'),
