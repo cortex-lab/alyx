@@ -158,7 +158,7 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 def alyx_mail(to, subject, text=''):
     if DISABLE_MAIL or os.getenv('DISABLE_MAIL', None):
-        logger.warning("Mails are disabled by DISABLE_MAIL.")
+        logger.warning("Mail is disabled by DISABLE_MAIL.")
         return
     if not to:
         return

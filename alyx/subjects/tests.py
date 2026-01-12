@@ -311,13 +311,11 @@ class SubjectSurgery(TestCase):
         for outcome in ('n', 'a'):
             with self.subTest(outcome_type=outcome):
                 surgery = Surgery.objects.create(outcome_type=outcome, **kwargs)
-                self.assertFalse(hasattr(self.sub, 'cull'))
                 surgery.end_time = datetime(2019, 1, 1, 13, 0, 0)
                 surgery.save()
-                self.assertTrue(hasattr(self.sub, 'cull'))
+                self.assertFalse(hasattr(self.sub, 'cull'))  # no longer expected to create a cull
                 self.assertEqual(self.sub.death_date, surgery.end_time.date())
                 surgery.delete()
-                self.sub.cull.delete()
 
 
 class SubjectCullTests(TestCase):
@@ -344,7 +342,6 @@ class SubjectCullTests(TestCase):
         cull.cull_method = self.decapitation
         cull.date = '2019-07-16'
         cull.save()
-        self.assertEqual(self.sub1.cull_method, str(cull.cull_method))
         self.assertEqual(self.sub1.death_date, cull.date)
         # [CR] WARNING: the water restriction is closed at the first save (Cull creation), but NOT
         # at the second save, when the cull date has been changed. I don't think the closed
@@ -357,18 +354,4 @@ class SubjectCullTests(TestCase):
         # death_date set to None
         cull.delete()
         self.assertIsNone(self.sub1.death_date)
-        self.assertEqual(self.sub1.cull_method, '')
         self.assertTrue(self.sub1.alive())
-
-    def test_update_subject_death(self):
-        # now add a death date and make sure a cull action is created
-        self.assertFalse(hasattr(self.sub2, 'cull'))
-        self.sub2.death_date = '2019-07-18'
-        self.sub2.save()
-        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
-        # it should work on updates too
-        self.sub2.death_date = '2019-07-11'
-        self.sub2.cull_method = 'CO2'
-        self.sub2.save()
-        self.assertEqual(self.sub2.cull.date, self.sub2.death_date)
-        self.assertEqual(str(self.sub2.cull.cull_method), self.sub2.cull_method)

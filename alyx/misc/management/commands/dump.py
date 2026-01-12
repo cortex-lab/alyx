@@ -14,7 +14,36 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15
 
 
 def _dump_all(path):
+    # Dump in dependency order to avoid foreign key errors during loading.
+    # Models must be listed in order: dependencies first, then models that reference them.
+    # The order is critical: Line must come before Subject, BreedingPair, Litter, SubjectRequest
     call_command('dumpdata',
+                 'misc.lab',
+                 'misc.labmember',
+                 'misc.lablocation',
+                 'subjects.species',
+                 'subjects.strain', 
+                 'subjects.source',
+                 'subjects.allele',
+                 'subjects.sequence',
+                 'subjects.project',
+                 'subjects.line',
+                 'subjects.breedingpair',
+                 'subjects.litter',
+                 'subjects.subjectrequest',
+                 'subjects.subject',
+                 'subjects.zygosity',
+                 'subjects.genotypetest',
+                 'actions.proceduretype',
+                 'actions.weighing',
+                 'actions.watertype',
+                 'actions.wateradministration',
+                 'actions.surgery',
+                 'actions.session',
+                 'actions.waterrestriction',
+                 'actions.cull',
+                 'data.dataformat',
+                 'data.datasettype',
                  '-e', 'contenttypes',
                  '-e', 'auth.permission',
                  '-e', 'admin.logentry',

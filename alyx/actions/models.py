@@ -590,14 +590,8 @@ class Cull(BaseModel):
         return "%s Cull" % (self.subject)
 
     def save(self, *args, **kwargs):
-        subject_change = False
         if self.subject.death_date != self.date:
             self.subject.death_date = self.date
-            subject_change = True
-        if self.subject.cull_method != str(self.cull_method):
-            self.subject.cull_method = str(self.cull_method)
-            subject_change = True
-        if subject_change:
             # End all open water restrictions.
             for wr in WaterRestriction.objects.filter(
                     subject=self.subject, start_time__isnull=False, end_time__isnull=True):
