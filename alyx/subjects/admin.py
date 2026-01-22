@@ -1502,14 +1502,14 @@ class SubjectCullAliveListFilter(DefaultListFilter):
 
 
 class SubjectCullAdmin(SubjectAdmin):
-    list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced_date', 'sex_f', 'ear_mark',
-                    'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
+    list_display = ['nickname', 'to_be_culled', 'death_date', 'actual_severity', 'reduced_date', 'sex_f',
+                    'ear_mark', 'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
                    SubjectCullAliveListFilter,
                    ZygosityFilter,
                    ('line', LineDropdownFilter)]
-    list_editable = ['death_date', 'to_be_culled', 'reduced_date']
+    list_editable = ['death_date', 'to_be_culled', 'actual_severity', 'reduced_date']
 
     ordering = ['-birth_date', '-nickname']
 
