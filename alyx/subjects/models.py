@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import logging
 from operator import attrgetter
 import urllib
@@ -10,7 +9,7 @@ from django.core import validators
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-import django.utils.timezone
+from django.utils import timezone
 
 from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
@@ -60,7 +59,7 @@ def init_old_fields(obj, fields):
 
 
 def save_old_fields(obj, fields):
-    date_time = datetime.now(timezone.utc).isoformat()
+    date_time = timezone.now().isoformat()
     d = (getattr(obj, 'json', None) or {}).get('history', {})
     for field in fields:
         v = _get_current_field(obj, field)
@@ -250,7 +249,7 @@ class Subject(BaseModel):
             return self.housing.subjects.exclude(pk=self.pk)
 
     def alive(self):
-        return not hasattr(self, 'cull')
+        return self.death_date is None or self.death_date > timezone.now().date()
     alive.boolean = True
 
     def nicknamesafe(self):
@@ -259,7 +258,7 @@ class Subject(BaseModel):
     def age_days(self):
         if (self.death_date is None and self.birth_date is not None):
             # subject still alive
-            age = datetime.now(timezone.utc).date() - self.birth_date
+            age = timezone.now().date() - self.birth_date
         elif (self.death_date is not None and self.birth_date is not None):
             # subject is dead
             age = self.death_date - self.birth_date
@@ -281,9 +280,9 @@ class Subject(BaseModel):
 
     def timezone(self):
         if not self.lab:
-            return django.utils.timezone.get_default_timezone()
+            return timezone.get_default_timezone()
         elif not self.lab.timezone:
-            return django.utils.timezone.get_default_timezone()
+            return timezone.get_default_timezone()
         else:
             try:
                 tz = pytz.timezone(self.lab.timezone)
@@ -351,6 +350,15 @@ class Subject(BaseModel):
                                                       end_time__isnull=True):
                 wr.end_time = self.death_date
                 wr.save()
+
+        # deal with the synchronisation of cull date
+        # WARNING: data integrity issue - if a subject has a cull but the death_date
+        # is set back to null, the cull will not be modified or deleted however the
+        # filters will consider that subject alive
+        if self.death_date and hasattr(self, 'cull') and self.cull.date != self.death_date:
+            self.cull.date = self.death_date
+            self.cull.save()
+
         # Update subject request.
         if (self.responsible_user_id and _has_field_changed(self, 'responsible_user') and
                 self.line is not None and
@@ -389,7 +397,7 @@ class SubjectRequest(BaseModel):
         help_text="Who requested this subject.")
     line = models.ForeignKey('Line', null=True, blank=True, on_delete=models.SET_NULL)
     count = models.IntegerField(null=True, blank=True)
-    date_time = models.DateField(default=django.utils.timezone.now, null=True, blank=True)
+    date_time = models.DateField(default=timezone.now, null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
 

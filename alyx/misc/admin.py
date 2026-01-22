@@ -9,6 +9,7 @@ from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
 from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
+from django.utils import timezone
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from rest_framework.authtoken.models import TokenProxy
 from rangefilter.filters import DateRangeFilter
@@ -202,7 +203,7 @@ class HousingSubjectAdminInline(admin.TabularInline):
 
     def get_queryset(self, request):
         qs = super(HousingSubjectAdminInline, self).get_queryset(request)
-        return qs.filter(subject__cull__isnull=True)
+        return qs.exclude(subject__death_date__lte=timezone.now().date())
 
 
 class HousingAdminForm(forms.ModelForm):

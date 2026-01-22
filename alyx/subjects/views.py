@@ -1,6 +1,8 @@
 from rest_framework import generics
 import django_filters
 
+from django.utils import timezone
+
 from alyx.base import BaseFilterSet, rest_permission_classes
 from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
@@ -11,12 +13,18 @@ from .serializers import (SubjectListSerializer,
 
 
 class SubjectFilter(BaseFilterSet):
-    alive = django_filters.BooleanFilter('cull', lookup_expr='isnull')
+    alive = django_filters.BooleanFilter('death_date', method='filter_alive')
     responsible_user = django_filters.CharFilter('responsible_user__username')
     stock = django_filters.BooleanFilter('responsible_user', method='filter_stock')
     water_restricted = django_filters.BooleanFilter(method='filter_water_restricted')
     lab = django_filters.CharFilter('lab__name')
     project = django_filters.CharFilter('projects__name')
+
+    def filter_alive(self, queryset, name, value):
+        if value is True:
+            return queryset.exclude(death_date__lte=timezone.now().date())
+        else:
+            return queryset.filter(death_date__lte=timezone.now().date())
 
     def filter_stock(self, queryset, name, value):
         if value is True:
@@ -37,7 +45,7 @@ class SubjectFilter(BaseFilterSet):
                 (SELECT subject_id FROM actions_waterrestriction
                 WHERE end_time IS NULL)
                 '''])
-        return qs.filter(cull__isnull=True)
+        return qs.exclude(death_date__lte=timezone.now().date())
 
     class Meta:
         model = Subject

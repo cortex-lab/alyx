@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Case, When, Exists, OuterRef
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils import timezone
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib.admin import TabularInline
 from django.contrib.contenttypes.models import ContentType
@@ -63,9 +64,9 @@ class SubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(subject__cull__isnull=True)
+            return queryset.exclude(subject__death_date__lte=timezone.now().date())
         if self.value() == 'n':
-            return queryset.exclude(subject__cull__isnull=True)
+            return queryset.filter(subject__death_date__lte=timezone.now().date())
         elif self.value == 'all':
             return queryset.all()
 
@@ -172,8 +173,13 @@ class BaseActionForm(forms.ModelForm):
         if 'subject' in self.fields and not (
                 self.current_user.is_stock_manager or self.current_user.is_superuser):
             inst = self.instance
-            ids = [s.id for s in Subject.objects.filter(responsible_user=self.current_user,
-                                                        cull__isnull=True).order_by('nickname')]
+            subjects = (Subject
+                        .objects
+                        .filter(responsible_user=self.current_user)
+                        .exclude(death_date__lte=timezone.now().date())
+                        .order_by('nickname')
+                        )
+            ids = list(subjects.values_list('pk', flat=True))
             if getattr(inst, 'subject', None):
                 ids = _bring_to_front(ids, inst.subject.pk)
             if getattr(self, 'last_subject_id', None):
@@ -184,8 +190,9 @@ class BaseActionForm(forms.ModelForm):
                 self.fields['subject'].queryset = Subject.objects.filter(
                     pk__in=ids).order_by(preserved, 'nickname')
             else:
-                self.fields['subject'].queryset = Subject.objects.filter(
-                    cull__isnull=True).order_by('nickname')
+                self.fields['subject'].queryset = (
+                    Subject.objects.exclude(death_date__lte=timezone.now().date()).order_by('nickname')
+                )
 
 
 class BaseActionAdmin(BaseAdmin):
@@ -349,7 +356,7 @@ class WaterRestrictionAdmin(BaseActionAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'subject':
             obj = None
-            kwargs['queryset'] = Subject.objects.filter(cull__isnull=True).order_by('nickname')
+            kwargs['queryset'] = Subject.objects.exclude(death_date__lte=timezone.now().date()).order_by('nickname')
             # here if the form is of an existing water restriction, get the subject
             if request.resolver_match is not None:
                 object_id = request.resolver_match.kwargs.get('object_id')
@@ -493,7 +500,7 @@ class WeighingForm(BaseActionForm):
             # Order by alive subjects first
             ids = list(Subject
                        .objects
-                       .filter(death_date__isnull=True)
+                       .exclude(death_date__lte=timezone.now().date())
                        .order_by('nickname')
                        .only('pk')
                        .values_list('pk', flat=True))
@@ -761,6 +768,11 @@ class CullAdmin(BaseAdmin):
     search_fields = ('user__username', 'subject__nickname', 'subject__projects__name')
     fields = ('date', 'subject', 'user', 'cull_reason', 'cull_method', 'description')
     ordering = ('-date',)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'date':
+            kwargs['initial'] = timezone.now().date()
+        return super(CullAdmin, self).formfield_for_dbfield(db_field, request, **kwargs)
 
     def subject_l(self, obj):
         url = get_admin_url(obj.subject)

@@ -1,6 +1,7 @@
 import uuid
 
 from django import forms
+from django.utils import timezone
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django.contrib import admin
 from django.contrib.auth import get_user_model
@@ -86,9 +87,9 @@ class SubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(cull__isnull=True)
+            return queryset.exclude(death_date__lte=timezone.now().date())
         if self.value() == 'n':
-            return queryset.exclude(cull__isnull=True)
+            return queryset.filter(death_date__lte=timezone.now().date())
         elif self.value == 'all':
             return queryset.all()
 
@@ -173,7 +174,7 @@ class TodoFilter(DefaultListFilter):
         elif self.value() == 'c':
             return queryset.filter(to_be_culled=True)
         elif self.value() == 'r':
-            return queryset.filter(cull__isnull=False, reduced_date__isnull=False)
+            return queryset.filter(death_date__lte=timezone.now().date(), reduced_date__isnull=False)
 
 
 class LineDropdownFilter(RelatedDropdownFilter):
@@ -838,8 +839,8 @@ class BreedingPairFilter(DefaultListFilter):
 
 def _bp_subjects(line, sex, current_subjects=None):
     # All alive subjects of the given sex.
-    qs = Subject.objects.filter(
-        Q(sex=sex, responsible_user__is_stock_manager=True, cull__isnull=True) |
+    qs = Subject.objects.exclude(death_date__lte=timezone.now().date()).filter(
+        Q(sex=sex, responsible_user__is_stock_manager=True) |
         Q(pk__in=[current_subjects] if isinstance(current_subjects, uuid.UUID) else []),
     )
     qs = qs.order_by('nickname')
@@ -1488,13 +1489,14 @@ class CullSubjectAliveListFilter(DefaultListFilter):
 
     def queryset(self, request, queryset):
         if self.value() is None:
-            return queryset.filter(cull__isnull=True)
+            return queryset.exclude(death_date__lte=timezone.now().date())
         if self.value() == 'n':
-            return queryset.exclude(cull__isnull=True)
+            return queryset.filter(death_date__lte=timezone.now().date())
         if self.value() == 'nr':
-            return queryset.filter(reduced_date__isnull=True).exclude(cull__isnull=True)
+            return queryset.filter(reduced_date__isnull=True, death_date__lte=timezone.now().date())
         if self.value() == 'tbc':
-            return queryset.filter(to_be_culled=True, cull__isnull=True)
+            # Include mice with a death date but no cull object
+            return queryset.filter(to_be_culled=True, death_date__gt=timezone.now().date())
         elif self.value == 'all':
             return queryset.all()
 
