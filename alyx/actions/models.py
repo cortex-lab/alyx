@@ -212,7 +212,7 @@ class Surgery(BaseAction):
         verbose_name_plural = "surgeries"
         constraints = [
             models.CheckConstraint(
-                check=models.Q(implant_weight__gte=0), name="implant_weight_gte_0"),
+                condition=models.Q(implant_weight__gte=0), name="implant_weight_gte_0"),
         ]
 
     def save(self, *args, **kwargs):

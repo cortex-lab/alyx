@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='surgery',
-            constraint=models.CheckConstraint(check=models.Q(('implant_weight__gte', 0)), name='implant_weight_gte_0'),
+            constraint=models.CheckConstraint(condition=models.Q(('implant_weight__gte', 0)), name='implant_weight_gte_0'),
         ),
     ]
