@@ -174,7 +174,7 @@ class TodoFilter(DefaultListFilter):
         elif self.value() == 'c':
             return queryset.filter(to_be_culled=True)
         elif self.value() == 'r':
-            return queryset.filter(death_date__lte=timezone.now().date(), reduced_date__isnull=False)
+            return queryset.filter(death_date__lte=timezone.now().date(), reduced_date__isnull=True)
 
 
 class LineDropdownFilter(RelatedDropdownFilter):
@@ -1474,7 +1474,7 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     line_l.short_description = 'line'
 
 
-class CullSubjectAliveListFilter(DefaultListFilter):
+class SubjectCullAliveListFilter(DefaultListFilter):
     title = 'alive'
     parameter_name = 'alive'
 
@@ -1495,18 +1495,18 @@ class CullSubjectAliveListFilter(DefaultListFilter):
         if self.value() == 'nr':
             return queryset.filter(reduced_date__isnull=True, death_date__lte=timezone.now().date())
         if self.value() == 'tbc':
-            # Include mice with a death date but no cull object
+            # Include subjects with a death date but no cull object
             return queryset.filter(to_be_culled=True, death_date__gt=timezone.now().date())
-        elif self.value == 'all':
+        elif self.value() == 'all':
             return queryset.all()
 
 
-class CullMiceAdmin(SubjectAdmin):
+class SubjectCullAdmin(SubjectAdmin):
     list_display = ['nickname', 'to_be_culled', 'death_date', 'reduced_date', 'sex_f', 'ear_mark',
                     'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
-                   CullSubjectAliveListFilter,
+                   SubjectCullAliveListFilter,
                    ZygosityFilter,
                    ('line', LineDropdownFilter)]
     list_editable = ['death_date', 'to_be_culled', 'reduced_date']
@@ -1528,4 +1528,4 @@ class CullMiceAdmin(SubjectAdmin):
 
 
 create_modeladmin(SubjectAdverseEffectsAdmin, model=Subject, name='Adverse effect')
-create_modeladmin(CullMiceAdmin, model=Subject, name='Cull subject')
+create_modeladmin(SubjectCullAdmin, model=Subject, name='Cull subject')
