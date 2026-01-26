@@ -10,7 +10,7 @@ from django.db import models
 from django.utils import timezone
 
 from alyx.base import BaseModel, modify_fields, alyx_mail, BaseManager
-from misc.models import Lab, LabLocation, LabMember, Note
+from misc.models import Lab, LabLocation, LabMember, LabMembership, Note
 
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,10 @@ class Weighing(BaseModel):
 
     def save(self, *args, **kwargs):
         super(Weighing, self).save(*args, **kwargs)
+        # Update subject water control
+        if self.subject._water_control:  # if already initialized
+            self.subject.water_control.add_weighing(self.date_time, self.weight)
+        # Check for underweight
         from actions.notifications import check_underweight
         check_underweight(self.subject)
 
@@ -388,52 +392,64 @@ NOTIFICATION_MIN_DELAYS = {
 def delay_since_last_notification(notification_type, title, subject):
     """Return the delay since the last notification corresponding to the given
     type, title, subject, in seconds, whether it was actually sent or not."""
-    last_notif = Notification.objects.filter(
-        notification_type=notification_type,
-        title=title,
-        subject=subject).exclude(status='no-send').order_by('send_at').last()
+    last_notif = (
+        Notification
+        .objects
+        .filter(
+            notification_type=notification_type,
+            title=title,
+            subject=subject)
+        .exclude(status='no-send')
+        .order_by('send_at')
+        .values_list('sent_at', 'send_at')
+        .last()
+    )
     if last_notif:
-        date = last_notif.sent_at or last_notif.send_at
+        date = last_notif[0] or last_notif[1]
         return (timezone.now() - date).total_seconds()
     return inf
 
 
 def check_scope(user, subject, scope):
-    if subject is None:
-        return True
     # Default scope: mine.
     scope = scope or 'mine'
     assert scope in ('none', 'mine', 'lab', 'all')
     if scope == 'mine':
-        return subject.responsible_user == user
+        return subject.responsible_user.pk == user
     elif scope == 'lab':
-        return subject.lab.name in (user.lab or ())
+        return (
+            LabMembership
+            .objects
+            .filter(lab=subject.lab, user=user, start_date__lt=timezone.now().date())
+            .exclude(end_date__lt=timezone.now().date())
+            .exists()
+        )
     elif scope == 'all':
         return True
-    elif scope == 'none':
-        return False
+    return False
 
 
 def get_recipients(notification_type, subject=None, users=None):
-    """Return the list of users that will receive a notification."""
+    """Return the set of users that will receive a notification."""
     # Default: initial list of recipients is the subject's responsible user.
     if users is None and subject and subject.responsible_user:
-        users = [subject.responsible_user]
-    if users is None:
-        users = []
+        users = {subject.responsible_user}
+    users = set() if users is None else set(users)
+    rules = dict(
+        NotificationRule
+        .objects
+        .select_related('user')
+        .filter(notification_type=notification_type)
+        .values_list('user', 'subjects_scope')
+    )
+    # Remove 'none' users from the specified users (those who explicitly unsubscribed).
+    users = users - {LabMember.objects.get(pk=user) for user, scope in rules.items() if scope == 'none'}
     if not subject:
         return users
-    members = LabMember.objects.all()
-    rules = NotificationRule.objects.filter(notification_type=notification_type)
-    # Dictionary giving the scope of every user in the database.
-    user_rules = {user: None for user in members}
-    user_rules.update({rule.user: rule.subjects_scope for rule in rules})
-    # Remove 'none' users from the specified users.
-    users = [user for user in users if user_rules.get(user, None) != 'none']
-    # Return the selected users, and those who opted in in the notification rules.
-    return users + [member for member in members
-                    if check_scope(member, subject, user_rules.get(member, None)) and
-                    member not in users]
+
+    # Include those who opted subscribed in the notification rules.
+    users |= {LabMember.objects.get(pk=user) for user, scope in rules.items() if check_scope(user, subject, scope)}
+    return users
 
 
 def create_notification(
@@ -463,7 +479,7 @@ def create_notification(
 def send_pending_emails(max_resend=3):
     """Send all pending notifications."""
     notifications = Notification.objects.filter(status='to-send', send_at__lte=timezone.now())
-    for notification in notifications:
+    for notification in notifications.iterator():
         success = notification.send_if_needed()
         # If not successful, and max_resend reached, set to no-send.
         if (

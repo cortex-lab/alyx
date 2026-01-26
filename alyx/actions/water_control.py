@@ -615,30 +615,53 @@ def water_control(subject):
     if absolute_min := settings.WEIGHT_THRESHOLD:
         wc.add_threshold(
             percentage=absolute_min, bgcolor=PALETTE['red'], fgcolor='#F08699', line_style='--')
-    # Water restrictions.
-    wrs = sorted(list(subject.actions_waterrestrictions.all()), key=attrgetter('start_time'))
     # Surgeries.
-    srgs = sorted(list(subject.actions_surgerys.all()), key=attrgetter('start_time'))
-    for srg in srgs:
-        iw = srg.implant_weight
-        if iw:
-            wc.add_implant_weight(srg.start_time, iw)
+    srgs = (
+        subject
+        .actions_surgerys
+        .all()
+        .order_by('start_time')
+        .values_list('start_time', 'implant_weight')
+    )
+    for (start_time, implant_weight) in srgs.iterator():
+        if implant_weight:
+            wc.add_implant_weight(start_time, implant_weight)
+
+    # Water restrictions.
+    wrs = list(
+        subject
+        .actions_waterrestrictions
+        .all()
+        .order_by('start_time')
+        .values_list('start_time', 'reference_weight', 'end_time')
+    )
     # Reference weight.
     last_wr = wrs[-1] if wrs else None
-    if last_wr:
-        if last_wr.reference_weight:
-            wc.set_reference_weight(last_wr.start_time, last_wr.reference_weight)
-    for wr in wrs:
-        wc.add_water_restriction(wr.start_time, wr.end_time, wr.reference_weight)
+    if last_wr and last_wr[1]:  # reference weight
+        wc.set_reference_weight(last_wr[0], last_wr[1])
+    for (start_time, reference_weight, end_time) in wrs:
+        wc.add_water_restriction(start_time, end_time, reference_weight)
 
     # Water administrations.
-    was = sorted(list(subject.water_administrations.all()), key=attrgetter('date_time'))
-    for wa in was:
-        wc.add_water_administration(wa.date_time, wa.water_administered, session=wa.session_id)
+    was = (
+        subject
+        .water_administrations
+        .all()
+        .order_by('date_time')
+        .values_list('date_time', 'water_administered', 'session_id')
+    )
+    for (date_time, water_administered, session_id) in was.iterator():
+        wc.add_water_administration(date_time, water_administered, session=session_id)
 
     # Weighings
-    ws = sorted(list(subject.weighings.all()), key=attrgetter('date_time'))
-    for w in ws:
-        wc.add_weighing(w.date_time, w.weight)
+    ws = (
+        subject
+        .weighings
+        .all()
+        .order_by('date_time')
+        .values_list('date_time', 'weight')
+    )
+    for (date_time, weight) in ws.iterator():
+        wc.add_weighing(date_time, weight)
 
     return wc

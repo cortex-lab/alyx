@@ -16,6 +16,6 @@ class Command(BaseCommand):
                 start_time__isnull=False,
                 end_time__isnull=True). \
             order_by('subject__responsible_user__username', 'subject__nickname')
-        for wr in wrs:
+        for wr in wrs.iterator():
             check_water_administration(wr.subject)
             check_weighed(wr.subject)
