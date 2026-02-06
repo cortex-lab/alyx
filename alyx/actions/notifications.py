@@ -20,7 +20,7 @@ def check_underweight(subject, date=None):
     """Called when a weighing is added."""
     # Reinit the water_control instance to make sure the just-added
     # weighing is taken into account
-    wc = subject.reinit_water_control()
+    wc = subject.water_control
     perc = wc.percentage_weight(date=date)
     min_perc = wc.min_percentage(date=date)
     lwb = wc.last_weighing_before(date=date)
@@ -36,7 +36,7 @@ def check_weighed(subject, date=None):
     date = date or timezone.now()
     # Reinit the water_control instance to make sure the just-added
     # weighing is taken into account
-    wc = subject.reinit_water_control()
+    wc = subject.water_control
     if not wc or not wc.is_water_restricted(date):
         return
 
@@ -73,7 +73,7 @@ def check_water_administration(subject, date=None):
         The datetime to check, deafults to now.
     """
     date = date or timezone.now()
-    wc = subject.reinit_water_control()
+    wc = subject.water_control
     if not wc or not wc.is_water_restricted(date):
         return
     remaining = wc.remaining_water(date=date)

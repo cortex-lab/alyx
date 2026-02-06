@@ -32,7 +32,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.NOTICE(message))
         else:
             _, deleted_count = notifications.delete()
-            message = f'Deleted {deleted_count["actions.Notification"]} notifications'
+            message = f'Deleted {deleted_count.get("actions.Notification", 0)} notifications'
             if status:
                 message += f' with status "{status}"'
             self.stdout.write(self.style.SUCCESS(message))

@@ -350,6 +350,11 @@ class SubjectCullTests(TestCase):
         self.assertNotEqual(
             WaterRestriction.objects.get(subject=self.sub1).end_time.strftime('%Y-%m-%d'),
             cull.date)
+        # make sure that when a subject with a cull has its death date changed, the cull object
+        # is updated too
+        self.sub1.death_date = date(2019, 7, 17)
+        self.sub1.save()
+        self.assertEqual(cull.date, self.sub1.death_date)
         # now make sure that when the Cull object is deleted, the corresponding subject has his
         # death_date set to None
         cull.delete()

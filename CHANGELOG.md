@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED]
+## [3.4.1]
+
+### Modified
+- added actual severity column to SubjectCullAdmin
+- renamed 'Mice' to 'Subject' in views
+
+### Fixed
+- all alive filters depend on death date instead of cull
+- django 5.1 deprecation: CheckConstraint check -> condition
+- various filter typos, e.g. 'To be reduced' filter now works
+- improvements to notifications performance
+- fix log typo in delete_expired_notifications management command
+
+## [3.4.0]
+
+### Modified
+- moved prune_cortexlab.py to iblalyx repository
+
+### Fixed
+- removed test for removed subject death save logic
+- fixed command for dumping test database fixtures
 
 ### Added
 - in `alyx.misc` the one_cache command module contains utils to generate cache dataframes from sessions and datasets querysets

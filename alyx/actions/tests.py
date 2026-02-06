@@ -175,6 +175,7 @@ class NotificationTests(TestCase):
             water_administered=10,
         )
         self.date = to_date('2018-06-10')
+        self.subject.reinit_water_control()
 
     def tearDown(self):
         base.DISABLE_MAIL = False
