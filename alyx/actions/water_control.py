@@ -5,7 +5,7 @@ from dateutil.rrule import HOURLY
 import functools
 import io
 import logging
-from operator import attrgetter, itemgetter
+from operator import itemgetter
 import os.path as op
 
 from django.conf import settings
