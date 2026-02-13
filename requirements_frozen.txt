@@ -70,7 +70,7 @@ ruff==0.11.11
 s3transfer==0.13.0
 setuptools==80.9.0
 six==1.17.0
-sqlparse==0.5.3
+sqlparse==0.5.4
 structlog==25.3.0
 tqdm==4.67.1
 tzdata==2025.2
