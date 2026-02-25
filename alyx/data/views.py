@@ -523,9 +523,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             check_protected = check_protected == 'True'
 
         # Multiple labs (NB: projects is an alias of labs)
-        labs = request.data.get('labs', '').split(',')
-        labs += request.data.get('projects', '').split(',')
-        labs = [Lab.objects.get(name=lab) for lab in labs if lab]
+        labs = request.data.get('labs', [])
+        if isinstance(labs, str):
+            labs = labs.split(',')
+        projects = request.data.get('projects', [])
+        if isinstance(projects, str):
+            projects = projects.split(',')
+        labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
         repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
         if repo and repo not in repositories:
             repositories += [repo]

@@ -259,6 +259,9 @@ class APIDataTests(BaseTests):
                 'hostname': 'hostname',
                 'labs': ['laba'],
                 }
+        # NB: After serialization and deserialization, labs ends up as a str in this test,
+        # however ONE REST requests appear to serialize differently, with labs remaining as
+        # a list. Both lists and comma separated strings must be supported
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
         fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
