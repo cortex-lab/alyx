@@ -11,7 +11,7 @@ coreapi==2.3.3
 coreschema==0.0.4
 coverage==7.8.2
 coveralls==4.0.1
-cryptography==45.0.3
+cryptography==46.0.5
 cycler==0.12.1
 Django==5.2.11
 django-admin-list-filter-dropdown==1.0.3
@@ -52,7 +52,7 @@ numpy==2.2.6
 ONE-api==3.1.1
 packaging==25.0
 pandas==2.2.3
-pillow==11.2.1
+pillow==12.1.1
 psycopg2-binary==2.9.10
 pyarrow==20.0.0
 pycodestyle==2.13.0
@@ -70,7 +70,7 @@ ruff==0.11.11
 s3transfer==0.13.0
 setuptools==80.9.0
 six==1.17.0
-sqlparse==0.5.3
+sqlparse==0.5.4
 structlog==25.3.0
 tqdm==4.67.1
 tzdata==2025.2
