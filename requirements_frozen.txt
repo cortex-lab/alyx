@@ -58,7 +58,7 @@ pyarrow==20.0.0
 pycodestyle==2.13.0
 pycparser==2.22
 pyflakes==3.3.2
-PyJWT==2.10.1
+PyJWT==2.12.0
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
 python-ipware==3.0.0
