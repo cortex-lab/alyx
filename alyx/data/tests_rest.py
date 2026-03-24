@@ -2,11 +2,13 @@ import datetime
 from pathlib import PurePosixPath
 import uuid
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download, Tag
+from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat
+from subjects.models import Subject
 
 
 class APIDataTests(BaseTests):
@@ -746,7 +748,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': True})
 
         # Create some datasets and register
-        data = {'path': '%s/2018-01-01/002/' % self.subject,
+        data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.d.e2,test_prot/a.d.e1,',
                 'name': 'drb1',  # this is the repository name
                 }
@@ -763,7 +765,7 @@ class APIDataTests(BaseTests):
         # 1. already created + protected --> expect protected=True
         # 2. already created --> expect protected=False
         # 3. not yet created --> expect protected=False
-        data = {'path': '%s/2018-01-01/002/' % self.subject,
+        data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.d.e2,test_prot/a.d.e1,test_prot/a.b.e1',
                 'name': 'drb1',
                 'check_protected': True
@@ -792,7 +794,7 @@ class APIDataTests(BaseTests):
         self.client.post(reverse('tag-list'), {'name': 'tag1', 'protected': True})
 
         # Create some datasets and register
-        data = {'path': '%s/2018-01-01/002/' % self.subject,
+        data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.c.e2',
                 'name': 'drb1',  # this is the repository name
                 }
@@ -800,7 +802,7 @@ class APIDataTests(BaseTests):
         d = self.ar(self.client.post(reverse('register-file'), data), 201)
 
         # Check the same dataset to see if it is protected, should be unprotected
-        # and get a status 200 respons
+        # and get a status 200 response
         _ = data.pop('name')
 
         r = self.ar(self.client.get(reverse('check-protected'), data=data,
@@ -817,6 +819,40 @@ class APIDataTests(BaseTests):
                                     content_type='application/json'), 200)
         self.assertEqual(r['status_code'], 403)
         self.assertEqual(r['error'], 'One or more datasets is protected')
+
+        # Test with aggregate dataset
+        for i in range(2):
+            dataset, is_new = Dataset.objects.get_or_create(
+                collection=f'subjects/laba/{self.subject}', name=f'a.d.e{i}',
+                dataset_type=DatasetType.objects.first(), data_format=DataFormat.objects.first(),
+                content_type=ContentType.objects.get(app_label='subjects', model='subject'),
+                object_id=Subject.objects.get(nickname=self.subject).pk
+            )
+
+        # add protected tag to the second dataset
+        dataset.tags.add(tag1)
+
+        # Check the protected status of three files
+        # 1. already created + protected --> expect protected=True
+        # 2. already created --> expect protected=False
+        # 3. not yet created --> expect protected=False
+        data = {
+            'path': dataset.collection,
+            'filenames': 'a.d.e0,a.d.e1,a.d.e2',
+            'object_id': str(Subject.objects.get(nickname=self.subject).pk),
+            'content_type': 'subjects.subject'}
+
+        r = self.client.get(reverse('check-protected'), data)
+        r = self.ar(r, 200)
+        self.assertEqual(r['status_code'], 403)
+        self.assertEqual(r['error'], 'One or more datasets is protected')
+        expected = [{'a.d.e0': [{'': False}]}, {'a.d.e1': [{'': True}]}, {'a.d.e2': []}]
+        self.assertEqual(r['details'], expected)
+        # Untag dataset and check that the status is now 200
+        dataset.tags.remove(tag1)
+        r = self.client.get(reverse('check-protected'), data)
+        r = self.ar(r, 200)
+        self.assertEqual(r['details'], 'None of the datasets are protected')
 
     def test_revisions(self):
         # Check revision lookup with name
@@ -907,3 +943,74 @@ class APIDataTests(BaseTests):
         # check that all modified_datetime fields are set to the value we chose
         for iurl, url in enumerate(dset_urls):
             self.assertEqual(self.client.get(url).data['auto_datetime'], mod_dates[0])
+
+    def test_register_aggregate(self):
+        """Test endpoint for registering a dataset aggregated accross sessions.
+        
+        Such datasets are associated to a model via a generic foreign key, and the relative
+        path does not include the session pattern.
+        """
+        # Check basic registration of aggregate dataset
+        subject_uuid = str(Subject.objects.get(nickname=self.subject).pk)
+        data = {
+            'path': f'Subjects/laba/{self.subject}',
+            'filenames': 'a.a.e1,a.b.e1',
+            'hostname': 'hostname',
+            'object_id': subject_uuid,
+            'content_type': 'subject',
+            'check_protected': True
+        }
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
+        self.assertTrue(fr.count() == 1)
+        # Should support app label in content type
+        data['content_type'] = 'subjects.subject'
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 201)
+        fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
+        self.assertTrue(fr.count() == 1)
+        # Response should include content type and object id
+        self.assertEqual(r.data[0]['content_type'], 'subjects.subject')
+        self.assertEqual(str(r.data[0]['object_id']), subject_uuid)
+
+        # Check behaviour when dataset protected
+        tag = Tag.objects.create(name='protected_tag', protected=True)
+        dataset = Dataset.objects.get(name='a.a.e1')
+        dataset.tags.add(tag)
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 403)
+        self.assertEqual(r.data['error'], 'One or more datasets is protected')
+        details = r.data['details']
+        expected = [{'a.a.e1': [{'': True}]}, {'a.b.e1': [{'': False}]}]
+        self.assertEqual(details, expected)
+
+        # And with check-protected False
+        data['check_protected'] = False
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 403)
+        self.assertRegex(r.data['detail'], rf'Dataset {str(dataset.pk)} is protected, cannot patch')
+
+        # Test some validation
+        del data['content_type']
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+        data['content_type'] = 'subject'
+        del data['hostname']
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+        # Incorrect content type
+        data['hostname'] = 'hostname'
+        data['content_type'] = 'incorrect'
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+        # Incorrect object id
+        data['content_type'] = 'subject'
+        data['object_id'] = 'incorrect'
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)
+        # Invalid path
+        data['object_id'] = subject_uuid
+        data['path'] = f'Subjects/l+ba/{self.subject}'
+        r = self.client.post(reverse('register-file'), data)
+        self.ar(r, 400)

@@ -4,19 +4,20 @@ import os
 import os.path as op
 import re
 import time
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PurePath
 
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
 from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
-from one.alf.spec import QC
+from one.alf.spec import QC, regex, COLLECTION_SPEC
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
 from rest_framework.response import Response
 from actions.models import Session
+from subjects.models import Subject
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ def get_config_path(path=''):
 
 
 def create_globus_client():
+    # FIXME use ONE Globus client instead
     client = globus_sdk.NativeAppAuthClient(settings.GLOBUS_CLIENT_ID)
     client.oauth2_start_flow(refresh_tokens=True)
     return client
@@ -188,52 +190,115 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
+def _parse_path(path):
+    pattern = regex(spec='{subject}/{date}/{number}').pattern + '.*'
+    m = re.match(pattern, path)
+    if not m:
+        raise ValueError(r"The path %s should be `nickname/YYYY-MM-DD/n/..." % path)
+    date = m.group('date')
+    nickname = m.group('subject')
+    session_number = int(m.group('number'))
+    # An error is raised if the subject or data repository do not exist.
+    subject = Subject.objects.get(nickname=nickname)
+    return subject, date, session_number
+
+
 def _get_name_collection_revision(file, rel_dir_path):
     """
     Extract collection, revision and session parts from the full file path.
 
     :param file: The filename
     :param rel_dir_path: The relative path (subject/date/number/collection/revision)
-    :return: dict of path parts
+    :return: dict of path parts (or list of dicts)
     :return: a REST Response object if ALF path is invalid, otherwise None
     """
-    # Get collections/revisions for each file
-    fullpath = Path(rel_dir_path).joinpath(file)
-    try:
-        info = folder_parts(fullpath.parent, as_dict=True)
-        if info['revision']:
-            path_parts = fullpath.parent.parts
-            assert path_parts.index(f"#{info['revision']}#") == len(path_parts) - 1
-    except AssertionError:
-        data = {'status_code': 400,
-                'detail': 'Invalid ALF path. There must be only 1 revision and it cannot contain'
-                          'sub folders. A revision folder must be surrounded by pound signs (#).'}
-        return None, Response(data=data, status=400)
-    except ValueError:
-        data = {'status_code': 400,
-                'detail': 'Invalid ALF path. Only letters, numbers, hyphen and underscores '
-                          'allowed. A revision folder must be surrounded by pound signs (#).'}
-        return None, Response(data=data, status=400)
+    if return_single := isinstance(file, (str, PurePath)):
+        file = [file]
 
-    info['full_path'] = fullpath.as_posix()
-    info['filename'] = fullpath.name
-    info['rel_dir_path'] = '{subject}/{date}/{number}'.format(**info)
-    info = {k: v or '' for k, v in info.items()}
-    return info, None
+    parsed_paths = []
+    for f in file:
+        # Get collections/revisions for each file
+        fullpath = Path(rel_dir_path).joinpath(f)
+        try:
+            info = folder_parts(fullpath.parent, as_dict=True)
+            if info['revision']:
+                path_parts = fullpath.parent.parts
+                assert path_parts.index(f"#{info['revision']}#") == len(path_parts) - 1
+        except AssertionError:
+            data = {'status_code': 400,
+                    'detail': 'Invalid ALF path. There must be only 1 revision and it cannot contain'
+                            'sub folders. A revision folder must be surrounded by pound signs (#).'}
+            return None, Response(data=data, status=400)
+        except ValueError:
+            data = {'status_code': 400,
+                    'detail': 'Invalid ALF path. Only letters, numbers, hyphen and underscores '
+                            'allowed. A revision folder must be surrounded by pound signs (#).'}
+            return None, Response(data=data, status=400)
+
+        info['full_path'] = fullpath.as_posix()
+        info['filename'] = fullpath.name
+        info['rel_dir_path'] = '{subject}/{date}/{number}'.format(**info)
+        info = {k: v or '' for k, v in info.items()}
+        parsed_paths.append(info)
+
+    if return_single:
+        return parsed_paths[0], None
+    return parsed_paths, None
 
 
-def _change_default_dataset(session, collection, filename):
+def get_aggregate_collection_revision(files, rel_dir_path):
+    """Parse the path of a dataset not associated to a session.
+    
+    This is less strict than `_get_name_collection_revision`.
+    
+    By convention, the pattern is this: relation/identifier/(revision)/dataset
+    For example: Subjects/cortexlab/SP044/#2020-01-01#/obj.attr.ext
+                 Tags/2026_Q1_Wang_Yu_et_al/obj.attr.ext
+    """
+    dataset_path_parsed = []
+    for f in files:
+        assert f
+        fullpath = Path(rel_dir_path, f)
+        _rel_dir_path = '' if len(fullpath.parts) == 1 else fullpath.parent.as_posix()
+        info = regex(spec=COLLECTION_SPEC).match(_rel_dir_path + '/').groupdict()
+        info['full_path'] = fullpath.as_posix()
+        info['filename'] = fullpath.name
+        info['rel_dir_path'] = _rel_dir_path
+        info['relation'] = info['identifier'] = None
+        if info['collection']:
+            if '/' in info['collection']:
+                # This is just convention and is not enforced
+                info['relation'], info['identifier'] = info['collection'].split('/', 1)                    
+        # Check that collection (if present) was captured correctly
+        expected_len = 0 if not info['collection'] else len(info['collection'].split('/'))
+        expected_len += int(bool(info['revision']))
+        if len(fullpath.parent.parts) != expected_len:
+            data = {'status_code': 400,
+                    'detail': 'Invalid ALF path. Only letters, numbers, hyphen and underscores '
+                            'allowed. A revision folder must be surrounded by pound signs (#).'}
+            return None, Response(data=data, status=400)
+        dataset_path_parsed.append(info)
+    return dataset_path_parsed, None
+
+
+def _change_default_dataset(session, collection, filename, **kwargs):
     dataset = Dataset.objects.filter(
-        session=session, collection=collection or '', name=filename, default_dataset=True)
+        session=session, collection=collection or '',
+        name=filename, default_dataset=True, **kwargs)
     if dataset.count() > 0:
         dataset.update(default_dataset=False)
 
 
-def _check_dataset_protected(session, collection, filename):
+def _check_dataset_protected(session, collection, filename, **kwargs):
     # Order datasets by the latest revision with the original one last
-    dataset = Dataset.objects.filter(
-        session=session, collection=collection or '', name=filename).order_by(
-        F('revision__created_datetime').desc(nulls_last=True))
+    dataset = (
+        Dataset
+        .objects
+        .filter(
+            session=session, collection=collection or '', name=filename, **kwargs)
+        .order_by(
+            F('revision__created_datetime')
+        .desc(nulls_last=True)))
     if dataset.count() == 0:
         return False, []
     else:
@@ -246,9 +311,9 @@ def _check_dataset_protected(session, collection, filename):
 def _create_dataset_file_records(
         rel_dir_path=None, filename=None, session=None, user=None,
         repositories=None, exists_in=None, collection=None, hash=None,
-        file_size=None, version=None, revision=None, default=None, qc=None):
-
-    assert session is not None
+        file_size=None, version=None, revision=None, default=None,
+        qc=None, content_type=None, object_id=None):
+    assert session or all([content_type, object_id])
     collection = collection or ''
     revision_name = f'#{revision.name}#' if revision else ''
     relative_path = PurePosixPath(rel_dir_path, collection, revision_name, filename)
@@ -260,12 +325,14 @@ def _create_dataset_file_records(
     # If we are going to set this one as the default we need to change any previous ones with
     # same session, collection and name to have default flag to false
     if default:
-        _change_default_dataset(session, collection, filename)
+        _change_default_dataset(session, collection, filename,
+                                content_type=content_type, object_id=object_id)
 
     # Get or create the dataset.
     dataset, is_new = Dataset.objects.get_or_create(
-        collection=collection, name=filename, session=session,  # content_object=session,
-        dataset_type=dataset_type, data_format=data_format, revision=revision
+        collection=collection, name=filename, session=session,
+        dataset_type=dataset_type, data_format=data_format, revision=revision,
+        content_type=content_type, object_id=object_id
     )
     dataset.default_dataset = default is True
     try:
@@ -273,7 +340,7 @@ def _create_dataset_file_records(
     except ValueError:
         data = {'status_code': 400,
                 'detail': f'Invalid QC value "{qc}" for dataset "{relative_path}"'}
-        return None, Response(data=data, status=403)
+        return None, Response(data=data, status=400)
     dataset.save()
 
     # If the dataset already existed see if it is protected (i.e can't be overwritten)
