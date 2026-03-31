@@ -136,9 +136,6 @@ class APIProbeExperimentTests(BaseTests):
         
         probe_ins = self.ar(self.client.get(reverse('probeinsertion-list')), 200)
         self.assertEqual(probe_ins[0]['session_info']['id'], str(session.id))
-        self.assertEqual(probe_ins[0]['name'], 'probe00')
-        self.assertEqual(probe_ins[1]['name'], 'probe01')
-        self.assertEqual(probe_ins[2]['name'], 'probe02')
         self.assertEqual([x['name'] for x in probe_ins], ['probe00', 'probe01', 'probe02', 'probe00', 'probe01'])
 
     def test_probe_insertion_dataset_interaction(self):

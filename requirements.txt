@@ -26,7 +26,7 @@ gunicorn
 ipython
 markdown
 matplotlib
-ONE-api>=3.0
+ONE-api>=3.5.1
 pillow>=11.3.0
 psycopg2-binary
 python-dateutil
