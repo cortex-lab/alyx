@@ -317,7 +317,7 @@ def _create_dataset_file_records(
     collection = collection or ''
     revision_name = f'#{revision.name}#' if revision else ''
     relative_path = PurePosixPath(rel_dir_path, collection, revision_name, filename)
-    dataset_type = get_dataset_type(filename, DatasetType.objects.all())
+    dataset_type = get_dataset_type(filename, DatasetType.objects.values('id', 'name', 'filename_pattern'))
     data_format = get_data_format(filename)
     assert dataset_type
     assert data_format
@@ -331,7 +331,7 @@ def _create_dataset_file_records(
     # Get or create the dataset.
     dataset, is_new = Dataset.objects.get_or_create(
         collection=collection, name=filename, session=session,
-        dataset_type=dataset_type, data_format=data_format, revision=revision,
+        dataset_type=dataset_type.id, data_format=data_format, revision=revision,
         content_type=content_type, object_id=object_id
     )
     dataset.default_dataset = default is True

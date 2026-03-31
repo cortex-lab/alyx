@@ -81,7 +81,7 @@ class TestDatasetTypeModel(TestCase):
             ('some_file.ext', 'some_file')
         )
 
-        dtypes = DatasetType.objects.all()
+        dtypes = DatasetType.objects.values('name', 'filename_pattern')
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
                 self.assertEqual(get_dataset_type(filename, dtypes).name, dataname)
