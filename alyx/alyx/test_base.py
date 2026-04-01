@@ -1,10 +1,12 @@
 from datetime import date
 import json
 
-from django.test import TestCase
-from django.test import Client
+from django.test import Client, RequestFactory, TestCase, override_settings
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth import get_user_model
 
 from alyx.base import _custom_filter_parser
+from alyx.throttling import AdaptiveScopedRateThrottle, IPRateThrottle
 
 
 class TestDocView(TestCase):
@@ -77,3 +79,58 @@ def setup_admin_subject_user(obj):
         obj.Lab = Lab.objects.create(name='cortexlab')
     obj.subject = Subject.objects.create(
         nickname='aQt', birth_date=date(2025, 1, 1), lab=obj.lab, actual_severity=2)
+
+
+class DocsIPThrottle(IPRateThrottle):
+    scope = 'docs'
+    rate = '10/minute'
+
+
+class TestThrottling(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_ip_rate_throttle_uses_ip_cache_key(self):
+        request = self.factory.get('/docs/', REMOTE_ADDR='203.0.113.10')
+        request.user = AnonymousUser()
+        throttle = DocsIPThrottle()
+
+        key = throttle.get_cache_key(request, view=None)
+
+        self.assertEqual(key, 'throttle_docs_203.0.113.10')
+
+    def test_ip_rate_throttle_returns_none_when_rate_is_disabled(self):
+        request = self.factory.get('/docs/', REMOTE_ADDR='203.0.113.10')
+        request.user = AnonymousUser()
+        throttle = DocsIPThrottle()
+        throttle.rate = None
+
+        key = throttle.get_cache_key(request, view=None)
+
+        self.assertIsNone(key)
+
+    @override_settings(THROTTLE_MODE='user-based')
+    def test_adaptive_scoped_rate_throttle_uses_user_ident_when_authenticated(self):
+        user = get_user_model().objects.create_user('throttle_user', 'throttle@example.com', 'pass')
+        request = self.factory.get('/docs/', REMOTE_ADDR='198.51.100.1')
+        request.user = user
+
+        throttle = AdaptiveScopedRateThrottle()
+        throttle.scope = 'docs'
+
+        key = throttle.get_cache_key(request, view=None)
+
+        self.assertEqual(key, f'throttle_docs_{user.pk}')
+
+    @override_settings(THROTTLE_MODE='anonymous')
+    def test_adaptive_scoped_rate_throttle_uses_ip_even_when_authenticated(self):
+        user = get_user_model().objects.create_user('throttle_user2', 'throttle2@example.com', 'pass')
+        request = self.factory.get('/docs/', REMOTE_ADDR='198.51.100.20')
+        request.user = user
+
+        throttle = AdaptiveScopedRateThrottle()
+        throttle.scope = 'docs'
+
+        key = throttle.get_cache_key(request, view=None)
+
+        self.assertEqual(key, 'throttle_docs_198.51.100.20')

@@ -185,11 +185,24 @@ TEMPLATE_LOADERS = (
 
 WSGI_APPLICATION = 'alyx.wsgi.application'
 
+THROTTLE_MODE = os.getenv('THROTTLE_MODE', 'user-based').strip().lower()
+if THROTTLE_MODE not in ('user-based', 'anonymous'):
+    raise ValueError('THROTTLE_MODE must be one of: user-based, anonymous')
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'alyx.throttling.BurstRateThrottle',
+        'alyx.throttling.SustainedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'burst': os.getenv('THROTTLE_BURST_RATE', '550/minute'),
+        'sustained': os.getenv('THROTTLE_SUSTAINED_RATE', None),
+        'docs': os.getenv('THROTTLE_DOCS_RATE', '20/minute'),
+    },
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'STRICT_JSON': False,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',

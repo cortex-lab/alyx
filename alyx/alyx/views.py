@@ -6,6 +6,7 @@ from rest_framework.negotiation import BaseContentNegotiation
 from drf_spectacular.views import SpectacularRedocView
 
 import alyx
+from alyx.throttling import AdaptiveScopedRateThrottle
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
@@ -29,6 +30,8 @@ class SpectacularRedocViewCoreAPIDeprecation(SpectacularRedocView):
     are now served via the api/schema
     """
     content_negotiation_class = IgnoreClientContentNegotiation
+    throttle_classes = [AdaptiveScopedRateThrottle]
+    throttle_scope = 'docs'
 
     def get(self, request, *args, **kwargs):
         if request.headers['Accept'].startswith('application/coreapi+json'):
