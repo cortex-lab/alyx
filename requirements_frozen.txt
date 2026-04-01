@@ -11,9 +11,9 @@ coreapi==2.3.3
 coreschema==0.0.4
 coverage==7.8.2
 coveralls==4.0.1
-cryptography==46.0.5
+cryptography==46.0.6
 cycler==0.12.1
-Django==5.2.11
+Django==5.2.12
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.13.2
 django-autocomplete-light==3.12.1
@@ -43,7 +43,7 @@ jmespath==1.0.1
 kiwisolver==1.4.8
 llvmlite==0.44.0
 lxml==5.4.0
-Markdown==3.8
+Markdown==3.8.1
 MarkupSafe==3.0.2
 matplotlib==3.10.3
 mccabe==0.7.0
@@ -58,14 +58,14 @@ pyarrow==20.0.0
 pycodestyle==2.13.0
 pycparser==2.22
 pyflakes==3.3.2
-PyJWT==2.10.1
+PyJWT==2.12.0
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
 python-ipware==3.0.0
 python-magic==0.4.27
 pytz==2025.2
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.33.0
 ruff==0.11.11
 s3transfer==0.13.0
 setuptools==80.9.0

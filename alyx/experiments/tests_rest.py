@@ -120,6 +120,24 @@ class APIProbeExperimentTests(BaseTests):
         probe_ins = self.ar(self.client.get(urlf))
         self.assertTrue(len(probe_ins) == 0)
 
+        # Test that the serializer returns probes sorted by session start time and then name
+        # Create a more recent session
+        session = Session.objects.create(subject=self.session.subject, number=2)
+        session.task_protocol = 'ephys'
+        session.save()
+        insertions = []
+        for name in ['probe01', 'probe02', 'probe00']:
+            insertion = {'session': str(session.id),
+                         'name': name,
+                         'model': '3A'
+                         }
+            url = reverse('probeinsertion-list')
+            insertions.append(self.ar(self.post(url, insertion), 201))
+        
+        probe_ins = self.ar(self.client.get(reverse('probeinsertion-list')), 200)
+        self.assertEqual(probe_ins[0]['session_info']['id'], str(session.id))
+        self.assertEqual([x['name'] for x in probe_ins], ['probe00', 'probe01', 'probe02', 'probe00', 'probe01'])
+
     def test_probe_insertion_dataset_interaction(self):
         # First create two insertions and attach to session
         probe_names = ['probe00', 'probe01']

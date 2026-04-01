@@ -199,7 +199,7 @@ class Command(BaseCommand):
             dr.data_url = 'http://ibl.flatironinstitute.org/cortexlab/Subjects/'
             dr.save()
 
-            qs = DatasetType.objects.filter(filename_pattern__isnull=False)
+            qs = DatasetType.objects.filter(filename_pattern__isnull=False).values('pk', 'name', 'filename_pattern')
             dt = None
             for d in FileRecord.objects.all().select_related('dataset'):
                 try:

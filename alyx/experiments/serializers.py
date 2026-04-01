@@ -109,7 +109,7 @@ class ChronicProbeInsertionListSerializer(serializers.ModelSerializer):
         """
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
         queryset = queryset.prefetch_related('session__projects')
-        return queryset.order_by('-session__start_time')
+        return queryset.order_by('-session__start_time', 'name')
 
     model = serializers.SlugRelatedField(read_only=True, slug_field='name')
     session_info = SessionListSerializer(read_only=True, source='session')
@@ -126,7 +126,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
         queryset = queryset.prefetch_related('session__projects', 'datasets')
-        return queryset.order_by('-session__start_time')
+        return queryset.order_by('-session__start_time', 'name')
 
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
@@ -161,7 +161,7 @@ class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
         """ Perform necessary eager loading of data to avoid horrible performance."""
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
         queryset = queryset.prefetch_related('session__projects')
-        return queryset.order_by('-session__start_time')
+        return queryset.order_by('-session__start_time', 'name')
 
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
@@ -311,7 +311,7 @@ class FOVSerializer(serializers.ModelSerializer):
         queryset = queryset.prefetch_related(
             'datasets', Prefetch('location', queryset=location_qs)
         )
-        return queryset.order_by('-session__start_time')
+        return queryset.order_by('-session__start_time', 'name')
 
     class Meta:
         model = FOV

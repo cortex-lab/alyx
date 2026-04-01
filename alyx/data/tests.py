@@ -81,7 +81,7 @@ class TestDatasetTypeModel(TestCase):
             ('some_file.ext', 'some_file')
         )
 
-        dtypes = DatasetType.objects.all()
+        dtypes = DatasetType.objects.values('name', 'filename_pattern')
         for filename, dataname in filename_typename:
             with self.subTest(filename=filename):
                 self.assertEqual(get_dataset_type(filename, dtypes).name, dataname)
@@ -306,3 +306,72 @@ class TestTransfers(TestCase):
         self.assertIsInstance(resp, Response)
         self.assertEqual(resp.status_code, 400)
         self.assertIn('Invalid ALF path', resp.data['detail'])
+
+    def test_get_aggregate_collection_revision(self):
+        # For example: Subjects/cortexlab/SP044/#2020-01-01#/obj.attr.ext
+        #              Tags/2026_Q1_Wang_Yu_et_al/obj.attr.ext
+        f = transfers.get_aggregate_collection_revision
+        # Check processes revisions in filenames list
+        # Check parses identifier and relation parts
+        relative_path = 'Subjects/cortexlab/SP044'
+        filenames =[
+            'obj.attr.ext',
+            '#2020-01-01#/obj.attr.ext'
+        ]
+        dataset_path_parsed, resp = f(filenames, relative_path)
+        self.assertIsNone(resp) # should be no error response
+        self.assertEqual(len(dataset_path_parsed), 2)
+        expected = {
+            'full_path': 'Subjects/cortexlab/SP044/obj.attr.ext',
+            'filename': filenames[0],
+            'rel_dir_path': relative_path,
+            'collection': relative_path,
+            'revision': None,
+            'relation': 'Subjects',
+            'identifier': 'cortexlab/SP044'
+        }
+        self.assertDictEqual(dataset_path_parsed[0], expected)
+        self.assertEqual(dataset_path_parsed[1]['revision'], '2020-01-01')
+        
+        # Check handles no collection and no revision
+        dataset_path_parsed, resp = f(filenames, '')
+        expected = [
+            {
+                'full_path': filenames[0],
+                'filename': filenames[0],
+                'rel_dir_path': '',
+                'collection': None,
+                'revision': None,
+                'identifier': None,
+                'relation': None
+            },
+            {
+                'full_path': filenames[1],
+                'filename': filenames[0],
+                'rel_dir_path': '#2020-01-01#',
+                'collection': None,
+                'revision': '2020-01-01',
+                'identifier': None,
+                'relation': None
+            }
+        ]
+        self.assertIsNone(resp)
+        self.assertDictEqual(dataset_path_parsed[0], expected[0])
+        self.assertDictEqual(dataset_path_parsed[1], expected[1])
+
+        # Check handles single collection (shouldn't error parsing identifier and relation)
+        dataset_path_parsed, resp = f(filenames, 'foo')
+        self.assertIsNone(resp)
+        self.assertEqual(dataset_path_parsed[0]['collection'], 'foo')
+        self.assertIsNone(dataset_path_parsed[0]['identifier'])
+        self.assertIsNone(dataset_path_parsed[0]['relation'])
+
+        # Check error on repeated revisions
+        dataset_path_parsed, resp = f(filenames, '#rev1a#')
+        self.assertIsInstance(resp, Response)
+        self.assertEqual(resp.status_code, 400)
+
+        # Check error on unsupported characters
+        dataset_path_parsed, resp = f(filenames[:1], 'foo/b+r/baz')
+        self.assertIsInstance(resp, Response)
+        self.assertEqual(resp.status_code, 400)

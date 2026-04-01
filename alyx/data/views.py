@@ -1,16 +1,16 @@
 import logging
-import re
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
-from one.alf.spec import regex
 
 from alyx.base import BaseFilterSet, rest_permission_classes
-from subjects.models import Subject, Project
 from experiments.models import ProbeInsertion
+from subjects.models import Subject, Project
 from misc.models import Lab
 from .models import (DataRepositoryType,
                      DataRepository,
@@ -33,9 +33,9 @@ from .serializers import (DataRepositoryTypeSerializer,
                           RevisionSerializer,
                           TagSerializer
                           )
-from .transfers import (_get_session, _get_repositories_for_labs,
-                        _create_dataset_file_records, bulk_sync, _check_dataset_protected,
-                        _get_name_collection_revision)
+from .transfers import (_get_session, _parse_path, _get_repositories_for_labs, bulk_sync,
+                        _check_dataset_protected, _get_name_collection_revision,
+                        get_aggregate_collection_revision, _create_dataset_file_records)
 
 logger = logging.getLogger(__name__)
 
@@ -299,35 +299,39 @@ def _make_dataset_response(dataset):
         'id': dataset.pk,
         'name': dataset.name,
         'file_size': dataset.file_size,
-        'subject': dataset.session.subject.nickname,
+        'subject': dataset.session.subject.nickname if dataset.session else None,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,
         'dataset_type': getattr(dataset.dataset_type, 'name', ''),
-        'data_format': getattr(dataset.data_format, 'name', ''),
-        'session': getattr(dataset.session, 'pk', ''),
-        'session_number': dataset.session.number,
-        'session_users': ','.join(_.username for _ in dataset.session.users.all()),
-        'session_start_time': dataset.session.start_time,
+        'data_format': getattr(dataset.data_format, 'name', '')}
+    if dataset.session:
+        out.update({
+            'session': getattr(dataset.session, 'pk', ''),
+            'session_number': dataset.session.number,
+            'session_users': ','.join(_.username for _ in dataset.session.users.all()),
+            'session_start_time': dataset.session.start_time})
+    elif dataset.content_object:
+        out.update({
+            'content_type': f'{dataset.content_type.app_label}.{dataset.content_type.model}',
+            'object_id': dataset.object_id})
+    # NB: Keeping this order for backward compatibility
+    out.update({
         'collection': dataset.collection,
         'revision': getattr(dataset.revision, 'name', ''),
         'default': dataset.default_dataset,
         'qc': dataset.qc
-    }
+    })
     out['file_records'] = file_records
     return out
 
 
-def _parse_path(path):
-    pattern = regex(spec='{subject}/{date}/{number}').pattern + '.*'
-    m = re.match(pattern, path)
-    if not m:
-        raise ValueError(r"The path %s should be `nickname/YYYY-MM-DD/n/..." % path)
-    date = m.group('date')
-    nickname = m.group('subject')
-    session_number = int(m.group('number'))
-    # An error is raised if the subject or data repository do not exist.
-    subject = Subject.objects.get(nickname=nickname)
-    return subject, date, session_number
+def _get_content_type(content_type_str):
+    """Helper function to get content type object from a string that can be either 'model' or 'app.model'."""
+    if '.' in content_type_str:
+        app_label, model_name = content_type_str.split('.')
+        return ContentType.objects.get(app_label=app_label, model=model_name)
+    else:
+        return ContentType.objects.get(model=content_type_str)
 
 
 class ProtectedFileViewSet(mixins.ListModelMixin,
@@ -354,6 +358,7 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
         Returns a response indicating if any of the datasets are protected or not
         -   Status 403 if a dataset is protected, details contains a list of protected datasets
         -   Status 200 is none of the datasets are protected
+
         """
 
         req = request.GET.dict() if len(request.data) == 0 else request.data
@@ -371,25 +376,53 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
         # Extract the data repository from the hostname, the subject, the directory path.
         rel_dir_path = rel_dir_path.replace('\\', '/')
         rel_dir_path = rel_dir_path.replace('//', '/')
-        subject, date, session_number = _parse_path(rel_dir_path)
 
         filenames = req.get('filenames', ())
         if isinstance(filenames, str):
             filenames = filenames.split(',')
+        filenames = list(filter(None, filenames))  # Remove empty strings
 
-        session = _get_session(
-            subject=subject, date=date, number=session_number, user=user)
-        assert session
+        content_type = req.get('content_type', None)
+        object_id = req.get('object_id', None)
 
+        if content_type and object_id:
+            # Aggregate dataset
+            session = None
+            try:
+                content_type = _get_content_type(content_type)
+                model = content_type.model_class()
+            except ContentType.DoesNotExist:
+                data = {'status_code': 400,
+                        'detail': f'Invalid content type: {content_type}'}
+                return Response(data=data, status=400)
+            try:
+                model.objects.get(pk=object_id)
+            except (model.DoesNotExist, ValidationError):
+                data = {'status_code': 400,
+                        'detail': f'Invalid object ID: {object_id}'}
+                return Response(data=data, status=400)
+            dataset_path_parsed, resp = get_aggregate_collection_revision(filenames, rel_dir_path)
+            if resp:
+                return resp
+        elif any([content_type, object_id]):
+            data = {'status_code': 400,
+                    'error': 'Both content_type and object_id should be provided together.'}
+            return Response(data=data, status=400)
+        else:
+            subject, date, session_number = _parse_path(rel_dir_path)
+            session = _get_session(
+                subject=subject, date=date, number=session_number, user=user)
+            assert session
+            dataset_path_parsed, resp = _get_name_collection_revision(filenames, rel_dir_path)
+            if resp:
+                return resp
         # Loop through the files to see if any are protected
         prot_response = []
         protected = []
-        for file in filenames:
-            info, resp = _get_name_collection_revision(file, rel_dir_path)
-            if resp:
-                return resp
+        for file, info in zip(filenames, dataset_path_parsed):
             prot, prot_info = _check_dataset_protected(
-                session, info['collection'], info['filename'])
+                session, info['collection'], info['filename'],
+                content_type=content_type, object_id=object_id)
             protected.append(prot)
             prot_response.append({file: prot_info})
         if any(protected):
@@ -410,10 +443,10 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
     def create(self, request):
         """
-        Endpoint to create a register a dataset record through the REST API.
+        Endpoint to create and register a dataset and file record through the REST API.
 
         The session is retrieved by the ALF convention in the relative path, so this field has to
-        match the format Subject/Date/Number as shown below.
+        match the format Subject/Date/Number as shown below, unless 
 
         The set of repositories are given through the labs. The lab is by default the subject lab,
         but if it is specified, it overrides the subject lab entirely.
@@ -451,6 +484,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                'projects': 'alyx_lab_name',  # optional, alias of lab field above
               }
         ```
+        
+        For registering data that is not associated with a session, the following fields should be
+        provided:
+        ```python
+        r_ = {'content_type': 'model_name',  # e.g. 'probeinsertion', 'experiment.probeinsertion'
+              'object_id': 'object_pk',  # UUID of the object the dataset is associated
+        ```
+        NB: The repository hostname or name should be provided for non-session datasets.
 
         If the dataset already exists, it will use the file hash to deduce if the file has been
         patched or not (i.e. the filerecords will be created as not existing)
@@ -475,20 +516,20 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         rel_dir_path = request.data.get('path', '')
         if not rel_dir_path:
             raise ValueError("The path argument is required.")
-
-        # Extract the data repository from the hostname, the subject, the directory path.
         rel_dir_path = rel_dir_path.replace('\\', '/')
-        rel_dir_path = rel_dir_path.replace('//', '/')
-        subject, date, session_number = _parse_path(rel_dir_path)
+        rel_dir_path = rel_dir_path.replace('//', '/').strip('/')
 
         filenames = request.data.get('filenames', ())
         if isinstance(filenames, str):
             filenames = filenames.split(',')
+        filenames = list(filter(None, filenames))  # Remove empty strings
 
         # versions if provided
         versions = request.data.get('versions', [None] * len(filenames))
         if isinstance(versions, str):
             versions = versions.split(',')
+            if len(versions) == 1:
+                versions = versions * len(filenames)
 
         # file hashes if provided
         hashes = request.data.get('hashes', [None] * len(filenames))
@@ -522,15 +563,73 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if isinstance(check_protected, str):
             check_protected = check_protected == 'True'
 
-        # Multiple labs (NB: projects is an alias of labs)
-        labs = request.data.get('labs', [])
-        if isinstance(labs, str):
-            labs = labs.split(',')
-        projects = request.data.get('projects', [])
-        if isinstance(projects, str):
-            projects = projects.split(',')
-        labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
-        repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
+        # If the content type and object id are provided, we skip the session retrieval;
+        # The dataset is associated to a different model than actions.Session
+        content_type = request.data.get('content_type', None)
+        object_id = request.data.get('object_id', None)
+        if content_type and object_id:
+            # Aggregate dataset
+            try:
+                content_type = _get_content_type(content_type)
+                model = content_type.model_class()
+            except ContentType.DoesNotExist:
+                data = {'status_code': 400,
+                        'detail': f'Invalid content type: {content_type}'}
+                return Response(data=data, status=400)
+            try:
+                model.objects.get(pk=object_id)
+            except (model.DoesNotExist, ValidationError):
+                data = {'status_code': 400,
+                        'detail': f'Invalid object ID: {object_id}'}
+                return Response(data=data, status=400)
+            # For aggregate datasets the repository must be specified,
+            # as we cannot retrieve it from the session subject
+            if not repo:
+                data = {'status_code': 400,
+                        'detail': 'A valid repository name or hostname must be provided for non-session datasets.'}
+                return Response(data=data, status=400)
+            repositories = [repo]
+            session = subject = None
+            dataset_path_parsed, resp = get_aggregate_collection_revision(filenames, rel_dir_path)
+            if resp:
+                return resp
+        elif any([content_type, object_id]):
+            data = {'status_code': 400,
+                    'error': 'Both content_type and object_id should be provided together.'}
+            return Response(data=data, status=400)
+        else:
+            # Extract the session from the directory path.
+            try:
+                subject, date, session_number = _parse_path(rel_dir_path)
+            except ValueError as e:
+                data = {'status_code': 400, 'error': str(e)}
+                return Response(data=data, status=400)
+            except Subject.DoesNotExist:
+                err = f'A subject with nickname "{rel_dir_path.split("/")[0]}" does not exist.'
+                data = {'status_code': 400, 'error': err}
+                return Response(data=data, status=400)
+            try:
+                session = _get_session(
+                    subject=subject, date=date, number=session_number, user=user)
+            except ValueError as e:
+                data = {'status_code': 400, 'error': str(e)}
+                return Response(data=data, status=400)
+            # Parse paths
+            dataset_path_parsed, resp = _get_name_collection_revision(filenames, rel_dir_path)
+            if resp:
+                return resp
+
+            # Multiple labs (NB: projects is an alias of labs)
+            labs = request.data.get('labs', [])
+            if isinstance(labs, str):
+                labs = labs.split(',')
+            projects = request.data.get('projects', [])
+            if isinstance(projects, str):
+                projects = projects.split(',')
+            labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
+            
+            repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
+        
         if repo and repo not in repositories:
             repositories += [repo]
         if server_only:
@@ -544,23 +643,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         if not exists:
             exists_in = (None,)
 
-        session = _get_session(
-            subject=subject, date=date, number=session_number, user=user)
-        assert session
-
         # If the check protected flag is True, loop through the files to see if any are protected
         if check_protected:
             prot_response = []
             protected = []
-            for file in filenames:
-
-                info, resp = _get_name_collection_revision(file, rel_dir_path)
-
-                if resp:
-                    return resp
-
+            for file, info in zip(filenames, dataset_path_parsed):
                 prot, prot_info = _check_dataset_protected(
-                    session, info['collection'], info['filename'])
+                    session, info['collection'], info['filename'],
+                    content_type=content_type, object_id=object_id)
                 protected.append(prot)
                 prot_response.append({file: prot_info})
 
@@ -571,14 +661,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 return Response(data=data, status=403)
 
         response = []
-        for filename, hash, fsize, version, qc in zip(filenames, hashes, filesizes, versions, qcs):
-            if not filename:
-                continue
-            info, resp = _get_name_collection_revision(filename, rel_dir_path)
-
-            if resp:
-                return resp
-
+        all_info = zip(dataset_path_parsed, hashes, filesizes, versions, qcs)
+        for info, hash, fsize, version, qc in all_info:
             if info['revision']:
                 revision, _ = Revision.objects.get_or_create(name=info['revision'])
             else:
@@ -588,7 +672,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 collection=info['collection'], rel_dir_path=info['rel_dir_path'],
                 filename=info['filename'], session=session, user=user, repositories=repositories,
                 exists_in=exists_in, hash=hash or '', file_size=fsize, version=version or '',
-                revision=revision, default=default, qc=qc)
+                revision=revision, default=default, qc=qc, content_type=content_type, object_id=object_id)
             if resp:
                 return resp
             out = _make_dataset_response(dataset)
