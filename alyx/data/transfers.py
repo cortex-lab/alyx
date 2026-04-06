@@ -133,7 +133,10 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     )
     tc = globus_transfer_client()
     tdata = globus_sdk.TransferData(
-        tc, source_id, destination_id, verify_checksum=True, sync_level='checksum',
+        source_endpoint=source_id,
+        destination_endpoint=destination_id,
+        verify_checksum=True,
+        sync_level='checksum',
         label=label[0: min(len(label), 128)],
     )
     tdata.add_item(source_path, destination_path)
@@ -658,7 +661,6 @@ def _globus_transfer_filerecords(dfs, dry=True, gc=None):
             label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
             if not dry:
                 tm[ipri][isec] = globus_sdk.TransferData(
-                    gc,
                     source_endpoint=sec_repos[isec].globus_endpoint_id,
                     destination_endpoint=pri_repos[ipri].globus_endpoint_id,
                     verify_checksum=True,
