@@ -804,7 +804,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
             fr2delete.append(frloc.id)
             file2del = _filename_from_file_record(frloc)
             del_client = delete_clients[(gid := frloc.data_repository.globus_endpoint_id)]
-            assert del_client['endpoint'] == gid  # both are UUIDs now
+            assert str(del_client['endpoint']) == str(gid)  # both are UUIDs now
             del_client.add_item(file2del)
             logger.info('DELETE: ' + _filename_from_file_record(frloc))
     # launch the deletion jobs and remove records from the database

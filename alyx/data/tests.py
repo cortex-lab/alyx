@@ -195,10 +195,10 @@ class TestManagementFiles(TestCase):
         )
         self.assertEqual(['subject/2020-01-01/001/foo.bar.baz'], fr)
 
-    def _new_delete_client(self, _, gid, **kwargs):
+    def _new_delete_client(self, endpoint, **kwargs):
         """Upon calling DeleteData, return dict-like mock"""
-        d = {'DATA': kwargs, 'endpoint': str(gid)}
-        self.delete_clients.append(mock.MagicMock(name=f'delete_obj_{gid}'))
+        d = {'DATA': kwargs, 'endpoint': str(endpoint)}
+        self.delete_clients.append(mock.MagicMock(name=f'delete_obj_{endpoint}'))
         self.delete_clients[-1].__getitem__.side_effect = d.__getitem__
         return self.delete_clients[-1]
 
