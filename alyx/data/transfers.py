@@ -751,7 +751,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
     # create a globus delete_client for each globus endpoint
     gtc = gc or globus_transfer_client()
     # Map of Globus endpoint UUID -> DeleteData client
-    delete_clients = {ge: globus_sdk.DeleteData(gtc, ge, label=label) for ge in globus_endpoints}
+    delete_clients = {ge: globus_sdk.DeleteData(endpoint=ge, label=label) for ge in globus_endpoints}
 
     def _ls_globus(file_record, add_uuid=False):
         N_RETRIES = 3
@@ -802,7 +802,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
             fr2delete.append(frloc.id)
             file2del = _filename_from_file_record(frloc)
             del_client = delete_clients[(gid := frloc.data_repository.globus_endpoint_id)]
-            assert del_client['endpoint'] == str(gid)
+            assert del_client['endpoint'] == gid  # both are UUIDs now
             del_client.add_item(file2del)
             logger.info('DELETE: ' + _filename_from_file_record(frloc))
     # launch the deletion jobs and remove records from the database
@@ -865,7 +865,7 @@ def globus_delete_file_records(file_records, dry=True, gc=None, label=None):
     if not dry:
         # delete_clients = []
         for ge in globus_endpoints:
-            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=label))
+            delete_clients.append(globus_sdk.DeleteData(endpoint=ge, label=label))
     # appends each file for deletion
     for i, ge in enumerate(globus_endpoints):
         current_path = None

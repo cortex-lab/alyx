@@ -20,8 +20,8 @@ dotenv
 drfdocs
 flake8
 fonttools>=4.61.0
-globus-cli
-globus-sdk
+globus-cli>=3.41.0
+globus-sdk>=4.3.0
 gunicorn
 ipython
 markdown
