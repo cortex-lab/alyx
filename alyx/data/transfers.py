@@ -12,6 +12,7 @@ import numpy as np
 from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 from one.alf.spec import QC, regex, COLLECTION_SPEC
+from one.remote.globus import GLOBUS_TRANSFER_SCOPE
 
 from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
@@ -34,7 +35,7 @@ def get_config_path(path=''):
 def create_globus_client():
     # FIXME use ONE Globus client instead
     client = globus_sdk.NativeAppAuthClient(settings.GLOBUS_CLIENT_ID)
-    client.oauth2_start_flow(refresh_tokens=True)
+    client.oauth2_start_flow(refresh_tokens=True, requested_scopes=GLOBUS_TRANSFER_SCOPE)
     return client
 
 

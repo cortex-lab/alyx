@@ -17,6 +17,7 @@ import globus_sdk as globus
 import time
 
 import traceback
+from one.remote.globus import GLOBUS_TRANSFER_SCOPE
 
 from alyx.settings_lab import GLOBUS_CLIENT_ID
 # TODO some way to get the hostname automatically
@@ -30,7 +31,7 @@ def globus_login(globus_client_id):
     with open(token_path, 'r') as f:
         token = json.load(f)
     client = globus.NativeAppAuthClient(globus_client_id)
-    client.oauth2_start_flow(refresh_tokens=True)
+    client.oauth2_start_flow(refresh_tokens=True, requested_scopes=GLOBUS_TRANSFER_SCOPE)
     authorizer = globus.RefreshTokenAuthorizer(token['refresh_token'], client)
 
     return globus.TransferClient(authorizer=authorizer)
