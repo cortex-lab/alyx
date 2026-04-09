@@ -9,10 +9,8 @@ from django.test import Client
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-import os
 import numpy as np
 from pathlib import Path
-import json
 import globus_sdk as globus
 import time
 

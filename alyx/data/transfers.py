@@ -13,8 +13,7 @@ import numpy as np
 from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 from one.alf.spec import QC, regex, COLLECTION_SPEC
-import one.params
-from one.remote.globus import Globus, get_local_endpoint_id, get_local_endpoint_paths, DEFAULT_PAR
+from one.remote.globus import Globus, DEFAULT_PAR
 
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
 from rest_framework.response import Response
