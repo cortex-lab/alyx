@@ -9,71 +9,22 @@ from django.test import Client
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-import os
 import numpy as np
 from pathlib import Path
-import json
 import globus_sdk as globus
 import time
 
 import traceback
+from one.remote.globus import Globus, as_globus_path, get_local_endpoint_paths
+import one.params
 
-from alyx.settings_lab import GLOBUS_CLIENT_ID
 # TODO some way to get the hostname automatically
 SERVER_NAME = 'localhost:8000'
 
 
-def globus_login(globus_client_id):
-    # This assumes globus stuff has been setup using ibllib.io.globus. Ideally need to make globus
-    # functions in data.transfers flexible so it can deal with either alyx or ibllib way!
-    token_path = Path.home().joinpath('.globus', '.admin')
-    with open(token_path, 'r') as f:
-        token = json.load(f)
-    client = globus.NativeAppAuthClient(globus_client_id)
-    client.oauth2_start_flow(refresh_tokens=True)
-    authorizer = globus.RefreshTokenAuthorizer(token['refresh_token'], client)
-
-    return globus.TransferClient(authorizer=authorizer)
-
-
-def get_local_endpoint():
-    """
-    Get the local endpoint id of the computer
-    :return:
-    """
-    id_path = Path.home().joinpath(".globusonline", "lta")
-    with open(id_path.joinpath("client-id.txt"), 'r') as fid:
-        globus_id = fid.read()
-    return globus_id.strip()
-
-
-def get_local_globus_path():
-    config_path = Path.home().joinpath(".globusonline", "lta")
-    message = 'Please make a config-paths file in ./globus/lta that contains the ' \
-              'folder on your local endpoint accessible by globus e.g echo "/mnt/s0/Data" > ' \
-              '~/.globusonline/lta/config-paths'
-    assert config_path.joinpath("config-paths").exists(), message
-    with open(config_path.joinpath("config-paths"), 'r') as fid:
-        globus_path = fid.read()
-
-    return globus_path.strip().split(',')[0]
-
-
-def get_local_path(local_globus_path):
-    if os.environ.get('WSL_DISTRO_NAME', None):
-        local_path = str(Path('/mnt/c/').joinpath(*local_globus_path.split('/')[2:])) + '/'
-    else:
-        local_path = local_globus_path
-    return local_path
-
-
 def client_login(client):
-    one_path = Path.home().joinpath('.one_params')
-    with open(one_path, 'r') as f:
-        one = json.load(f)
-
-    client.login(username=one['ALYX_LOGIN'], password=one['ALYX_PWD'])
-
+    pars = one.params.get(silent=True)
+    client.login(username=pars.ALYX_LOGIN, password=pars.ALYX_PWD)
     return client
 
 
@@ -104,12 +55,12 @@ class TestTransfers(object):
     def setUp(self) -> None:
 
         # Make sure we can log in
-        self.gtc = globus_login(GLOBUS_CLIENT_ID)
+        self.globus = Globus('alyx', headless=True)
+        self.gtc = self.globus.client
         assert self.gtc
 
         # Check that the local endpoint is connected
-        self.local_endpoint_id = get_local_endpoint()
-        endpoint_info = self.gtc.get_endpoint(self.local_endpoint_id)
+        endpoint_info = self.gtc.get_endpoint(self.globus.endpoints['local']['id'])
         assert endpoint_info['gcp_connected']
 
         # Check that the flatiron endpoint is connected
@@ -120,8 +71,8 @@ class TestTransfers(object):
         assert endpoint_info['gcp_connected'] is not False
 
         # Make sure we have the correct accessible local globus path
-        local_globus_path = get_local_globus_path()
-        assert self.gtc.operation_ls(self.local_endpoint_id, path=local_globus_path)
+        local_globus_path = get_local_endpoint_paths()[0]
+        assert self.gtc.operation_ls(self.globus.endpoints['local']['id'], path=local_globus_path)
 
         # Connect to client and check we can log in properly
         client = Client()
@@ -163,7 +114,7 @@ class TestTransfers(object):
         self.local_data_repo, _ = DataRepository.\
             objects.get_or_create(name=name, repository_type=repo_type,
                                   globus_path=self.local_globus_path,
-                                  globus_endpoint_id=self.local_endpoint_id,
+                                  globus_endpoint_id=self.globus.endpoints['local']['id'],
                                   globus_is_personal=globus_is_personal)
 
         # 3. Make an aws file server
@@ -203,7 +154,7 @@ class TestTransfers(object):
         """
         TEST TRANSFER OF DATA WITH NO REVISIONS
         """
-        local_path = get_local_path(self.local_globus_path)
+        local_path = as_globus_path(self.local_globus_path)
         collection = 'alf/probe00'
         revision = None
 
@@ -275,7 +226,7 @@ class TestTransfers(object):
 
         # Run in dry mode and check you get the correct
         dm = globus_delete_local_datasets(dsets_to_del, dry=True, gc=self.gtc)
-        assert dm['endpoint'] == self.local_endpoint_id
+        assert dm['endpoint'] == self.globus.endpoints['local']['id']
         assert dm['DATA'][0]['path'] == exp_files[0]
         # Make sure dry mode hasn't actually deleted anything
         self.assert_delete_datasets(dsets_to_del, before_del=True)
@@ -286,7 +237,7 @@ class TestTransfers(object):
 
         time.sleep(5)
         # Make sure the dataset has been deleted on local endpoint
-        ls_local = self.gtc.operation_ls(self.local_endpoint_id,
+        ls_local = self.gtc.operation_ls(self.globus.endpoints['local']['id'],
                                          path=str(Path(exp_files[0]).parent))
         ls_files = [ls['name'] for ls in ls_local['DATA']]
         assert Path(exp_files[0]).name not in ls_files
@@ -329,7 +280,7 @@ class TestTransfers(object):
         self.assert_delete_datasets(dsets_to_del, local_only=True)
 
         time.sleep(5)
-        ls_local = self.gtc.operation_ls(self.local_endpoint_id,
+        ls_local = self.gtc.operation_ls(self.globus.endpoints['local']['id'],
                                          path=str(Path(exp_files[0]).parent))
         # have spikes.times left
         assert len(ls_local['DATA']) == 1
@@ -509,7 +460,7 @@ class TestTransfers(object):
 
         # Delete the session folders on flatiron and on local computer
         # Delete from local computer
-        local_delete = globus.DeleteData(self.gtc, self.local_endpoint_id, recursive=True)
+        local_delete = globus.DeleteData(self.gtc, self.globus.endpoints['local']['id'], recursive=True)
         local_delete.add_item(self.local_globus_path + self.session_path)
         self.gtc.submit_delete(local_delete)
 

@@ -6,14 +6,15 @@ import re
 import time
 from pathlib import Path, PurePosixPath, PurePath
 
+from django.conf import settings
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
 from one.alf.path import add_uuid_string, folder_parts
 from one.registration import get_dataset_type
 from one.alf.spec import QC, regex, COLLECTION_SPEC
+from one.remote.globus import Globus, DEFAULT_PAR
 
-from alyx import settings
 from data.models import FileRecord, Dataset, DatasetType, DataFormat, DataRepository
 from rest_framework.response import Response
 from actions.models import Session
@@ -21,61 +22,22 @@ from subjects.models import Subject
 
 logger = logging.getLogger(__name__)
 
-# Login
-# ------------------------------------------------------------------------------------------------
-
-
-def get_config_path(path=''):
-    path = op.expanduser(op.join('~/.alyx', path))
-    os.makedirs(op.dirname(path), exist_ok=True)
-    return path
-
-
-def create_globus_client():
-    # FIXME use ONE Globus client instead
-    client = globus_sdk.NativeAppAuthClient(settings.GLOBUS_CLIENT_ID)
-    client.oauth2_start_flow(refresh_tokens=True)
-    return client
-
-
-def create_globus_token():
-    client = create_globus_client()
-    print('Please go to this URL and login: {0}'
-          .format(client.oauth2_get_authorize_url()))
-    get_input = getattr(__builtins__, 'raw_input', input)
-    auth_code = get_input('Please enter the code here: ').strip()
-    token_response = client.oauth2_exchange_code_for_tokens(auth_code)
-    globus_transfer_data = token_response.by_resource_server['transfer.api.globus.org']
-
-    data = dict(transfer_rt=globus_transfer_data['refresh_token'],
-                transfer_at=globus_transfer_data['access_token'],
-                expires_at_s=globus_transfer_data['expires_at_seconds'],
-                )
-    path = get_config_path('globus-token.json')
-    with open(path, 'w') as f:
-        json.dump(data, f, indent=2, sort_keys=True)
-
 
 # Data transfer
 # ------------------------------------------------------------------------------------------------
 
-def get_globus_transfer_rt():
-    path = get_config_path('globus-token.json')
-    if not op.exists(path):
-        return
-    with open(path, 'r') as f:
-        return json.load(f).get('transfer_rt', None)
-
 
 def globus_transfer_client():
-    transfer_rt = get_globus_transfer_rt()
-    if not transfer_rt:
-        create_globus_token()
-        transfer_rt = get_globus_transfer_rt()
-    client = create_globus_client()
-    authorizer = globus_sdk.RefreshTokenAuthorizer(transfer_rt, client)
-    tc = globus_sdk.TransferClient(authorizer=authorizer)
-    return tc
+    # If not set up via ONE, copy the old Globus token information to the ONE params file
+    config_new = Path.home().joinpath('.one', '.remote')
+    if not config_new.exists():
+        # Create the config file but ask user to log in
+        data = {'globus': {'alyx': DEFAULT_PAR}}
+        data['globus']['alyx']['GLOBUS_CLIENT_ID'] = settings.GLOBUS_CLIENT_ID
+        with open(config_new, 'w') as f:
+            json.dump(data, f, indent=2, sort_keys=True)
+    globus = Globus('alyx', headless=True)
+    return globus.client
 
 
 def _escape_label(label):
@@ -132,7 +94,10 @@ def start_globus_transfer(source_file_id, destination_file_id, dry_run=False):
     )
     tc = globus_transfer_client()
     tdata = globus_sdk.TransferData(
-        tc, source_id, destination_id, verify_checksum=True, sync_level='checksum',
+        source_endpoint=source_id,
+        destination_endpoint=destination_id,
+        verify_checksum=True,
+        sync_level='checksum',
         label=label[0: min(len(label), 128)],
     )
     tdata.add_item(source_path, destination_path)
@@ -657,7 +622,6 @@ def _globus_transfer_filerecords(dfs, dry=True, gc=None):
             label = sec_repos[isec].name + ' to ' + pri_repos[ipri].name
             if not dry:
                 tm[ipri][isec] = globus_sdk.TransferData(
-                    gc,
                     source_endpoint=sec_repos[isec].globus_endpoint_id,
                     destination_endpoint=pri_repos[ipri].globus_endpoint_id,
                     verify_checksum=True,
@@ -750,7 +714,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
     # create a globus delete_client for each globus endpoint
     gtc = gc or globus_transfer_client()
     # Map of Globus endpoint UUID -> DeleteData client
-    delete_clients = {ge: globus_sdk.DeleteData(gtc, ge, label=label) for ge in globus_endpoints}
+    delete_clients = {ge: globus_sdk.DeleteData(endpoint=ge, label=label) for ge in globus_endpoints}
 
     def _ls_globus(file_record, add_uuid=False):
         N_RETRIES = 3
@@ -801,7 +765,7 @@ def globus_delete_local_datasets(datasets, dry=True, gc=None, label=None):
             fr2delete.append(frloc.id)
             file2del = _filename_from_file_record(frloc)
             del_client = delete_clients[(gid := frloc.data_repository.globus_endpoint_id)]
-            assert del_client['endpoint'] == str(gid)
+            assert str(del_client['endpoint']) == str(gid)  # both are UUIDs now
             del_client.add_item(file2del)
             logger.info('DELETE: ' + _filename_from_file_record(frloc))
     # launch the deletion jobs and remove records from the database
@@ -864,7 +828,7 @@ def globus_delete_file_records(file_records, dry=True, gc=None, label=None):
     if not dry:
         # delete_clients = []
         for ge in globus_endpoints:
-            delete_clients.append(globus_sdk.DeleteData(gtc, ge, label=label))
+            delete_clients.append(globus_sdk.DeleteData(endpoint=ge, label=label))
     # appends each file for deletion
     for i, ge in enumerate(globus_endpoints):
         current_path = None
