@@ -219,13 +219,13 @@ USE_TZ = False
 STATIC_ROOT = BASE_DIR.joinpath('static')   # /var/www/alyx/alyx/static
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', str(BASE_DIR.joinpath('uploaded')))
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT') or str(BASE_DIR.joinpath('uploaded'))
 MEDIA_URL = '/uploaded/'
 UPLOADED_IMAGE_WIDTH = 800
 
 # The location for saving and/or serving the cache tables.
 # May be a local path, http address or s3 uri (i.e. s3://)
-TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT', str(BASE_DIR.joinpath('uploaded')))
+TABLES_ROOT = os.getenv('DJANGO_TABLES_ROOT') or str(BASE_DIR.joinpath('tables'))
 
 # storage configurations
 STORAGES = {

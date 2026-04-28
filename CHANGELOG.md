@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0]
+
+### Modified
+
+- support registration of datasets unassociated to a session
+- sort insertions by name
+- use ONE Globus class for transfers
+
+### Added
+
+- user REST request rate limits
+
 ## [3.4.2]
 
 ### Fixed
