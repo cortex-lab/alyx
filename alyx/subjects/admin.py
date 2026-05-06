@@ -1474,39 +1474,13 @@ class SubjectAdverseEffectsAdmin(SubjectAdmin):
     line_l.short_description = 'line'
 
 
-class SubjectCullAliveListFilter(DefaultListFilter):
-    title = 'alive'
-    parameter_name = 'alive'
-
-    def lookups(self, request, model_admin):
-        return (
-            (None, 'Yes'),
-            ('n', 'No'),
-            ('nr', 'Not reduced'),
-            ('tbc', 'To be culled'),
-            ('all', 'All'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset.exclude(death_date__lte=timezone.now().date())
-        if self.value() == 'n':
-            return queryset.filter(death_date__lte=timezone.now().date())
-        if self.value() == 'nr':
-            return queryset.filter(reduced_date__isnull=True, death_date__lte=timezone.now().date())
-        if self.value() == 'tbc':
-            # Include subjects with a death date but no cull object
-            return queryset.filter(to_be_culled=True, death_date__gt=timezone.now().date())
-        elif self.value() == 'all':
-            return queryset.all()
-
-
 class SubjectCullAdmin(SubjectAdmin):
     list_display = ['nickname', 'to_be_culled', 'death_date', 'actual_severity', 'reduced_date', 'sex_f',
                     'ear_mark', 'cage', 'zygosities', 'birth_date', 'line', 'responsible_user', 'cull_l']
     ordering = ['-birth_date', '-nickname']
     list_filter = [ResponsibleUserListFilter,
-                   SubjectCullAliveListFilter,
+                   SubjectAliveListFilter,
+                   TodoFilter,
                    ZygosityFilter,
                    ('line', LineDropdownFilter)]
     list_editable = ['death_date', 'to_be_culled', 'actual_severity', 'reduced_date']
