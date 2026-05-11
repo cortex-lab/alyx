@@ -34,6 +34,6 @@ python-magic
 pytz
 requests>=2.32.4
 setuptools
-urllib3>=2.6.0
+urllib3>=2.7.0
 webdavclient3
 whitenoise
