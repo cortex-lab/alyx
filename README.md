@@ -5,7 +5,7 @@
 
 Database for experimental neuroscience laboratories
 
-[Documentation](https://alyx.readthedocs.io)
+[Documentation](https://cortex-lab.github.io/alyx/index.html)
 
 [Alyx Experimenter Guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
