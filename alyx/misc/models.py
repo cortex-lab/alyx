@@ -87,13 +87,18 @@ class Lab(BaseModel):
 
     reference_weight_pct = models.FloatField(
         default=0.,
-        help_text="The minimum mouse weight is a linear combination of "
-        "the reference weight and the zscore weight.")
+        help_text="Fraction (0–1) of the mouse's own reference weight (weight at water-restriction "
+        "start) used as the minimum acceptable weight threshold. E.g. 0.85 requires the mouse to "
+        "stay above 85 % of its reference weight.")
 
     zscore_weight_pct = models.FloatField(
         default=0.,
-        help_text="The minimum mouse weight is a linear combination of "
-        "the reference weight and the zscore weight.")
+        help_text="Fraction (0–1) of the age/sex population-normalised (z-score) weight used as "
+        "the minimum acceptable weight threshold. The z-score weight projects the mouse's weight "
+        "z-score at water-restriction start onto the population growth curve at the current age. "
+        "E.g. 0.85 requires the mouse to stay above 85 % of its expected age/sex weight. When "
+        "both zscore_weight_pct and reference_weight_pct are non-zero, the expected weight is "
+        "their weighted average.")
     # those are all the default fields for populating Housing tables
     cage_type = models.ForeignKey('CageType', on_delete=models.SET_NULL, null=True, blank=True)
     enrichment = models.ForeignKey('Enrichment', on_delete=models.SET_NULL, null=True, blank=True)
