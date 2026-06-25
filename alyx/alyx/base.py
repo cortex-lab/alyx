@@ -194,7 +194,7 @@ ADMIN_PAGES = [
         'Imaging sessions', 'Fields of view']),  # May add 'Imaging type'
     ('Data files', [
         'Data repository types', 'Data repositories', 'Tasks', 'Data formats', 'Dataset types',
-        'Datasets', 'File records', 'Tags', 'Revisions', 'Downloads']),
+        'Datasets', 'File records', 'Tags', 'Revisions', 'Data notices', 'Downloads']),
     ('Subject genetics', [
         'Lines', 'Strains', 'Alleles', 'Sequences', 'Sources', 'Species',
         'Genotypes', 'Genotype tests', 'Zygosities', 'Zygosity tests']),

@@ -5,7 +5,7 @@ from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter, Choi
 from rangefilter.filters import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, FileRecord, Download, Revision, Tag)
+                     Dataset, FileRecord, Download, Revision, Tag, DataNotice)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
 
 
@@ -231,6 +231,39 @@ class TagAdmin(BaseAdmin):
         return queryset
 
 
+class DataNoticeAdmin(BaseAdmin):
+    fields = (
+        'name',
+        'description',
+        'importance',
+        'version_affected',
+        'affected_date_start',
+        'affected_date_end',
+        'datasets',
+        'created_by',
+        'json',
+    )
+    readonly_fields = ('created_datetime',)
+
+    def has_change_permission(self, request, obj=None):
+        # DataNotice has no subject/session ownership; any non-public authenticated user may edit.
+        if request.user.is_public_user:
+            return False
+        return True
+
+    list_display = (
+        'name',
+        'importance',
+        'version_affected',
+        'affected_date_start',
+        'affected_date_end',
+        'created_by',
+        'created_datetime',
+    )
+    search_fields = ('name', 'description', 'version_affected', 'created_by__username')
+    autocomplete_fields = ('datasets',)
+
+
 admin.site.register(DataRepositoryType, DataRepositoryTypeAdmin)
 admin.site.register(DataRepository, DataRepositoryAdmin)
 admin.site.register(DataFormat, DataFormatAdmin)
@@ -240,3 +273,4 @@ admin.site.register(FileRecord, FileRecordAdmin)
 admin.site.register(Download, DownloadAdmin)
 admin.site.register(Revision, RevisionAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(DataNotice, DataNoticeAdmin)

@@ -1,11 +1,12 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q, BooleanField, Prefetch
 from rest_framework import serializers
-from django.db.models import Count, Q, BooleanField
+import markdown
 
 from one.alf.spec import QC
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
-                     Dataset, Download, FileRecord, Revision, Tag)
+                     Dataset, Download, FileRecord, Revision, Tag, DataNotice)
 from .transfers import _get_session, _change_default_dataset
 from alyx.base import BaseSerializerEnumField
 from actions.models import Session
@@ -253,3 +254,50 @@ class RevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Revision
         fields = '__all__'
+
+
+class DataNoticeSerializer(serializers.ModelSerializer):
+    created_by = serializers.SlugRelatedField(
+        slug_field='username',
+        queryset=get_user_model().objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    datasets = serializers.SlugRelatedField(
+        slug_field='pk',
+        many=True,
+        queryset=Dataset.objects.all(),
+        required=False,
+    )
+    description_html = serializers.SerializerMethodField()
+
+    def get_description_html(self, obj):
+        """Render description field as HTML using markdown."""
+        if not obj.description:
+            return ''
+        return markdown.markdown(obj.description, extensions=['extra', 'codehilite'])
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.select_related('created_by')
+        # Prefetch only dataset IDs (serializer uses SlugRelatedField with pk).
+        # This avoids loading full Dataset objects into memory for list responses.
+        dataset_prefetch = Prefetch(
+            'datasets',
+            Dataset.objects.only('id')
+        )
+        queryset = queryset.prefetch_related(dataset_prefetch)
+        return queryset
+
+    class Meta:
+        model = DataNotice
+        fields = '__all__'
+
+    def validate(self, attrs):
+        start = attrs.get('affected_date_start', getattr(self.instance, 'affected_date_start', None))
+        end = attrs.get('affected_date_end', getattr(self.instance, 'affected_date_end', None))
+        if start and end and end < start:
+            raise serializers.ValidationError(
+                {'affected_date_end': 'affected_date_end must be on or after affected_date_start.'}
+            )
+        return attrs
