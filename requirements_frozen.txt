@@ -54,7 +54,7 @@ packaging==25.0
 pandas==2.2.3
 pillow==12.2.0
 psycopg2-binary==2.9.10
-pyarrow==20.0.0
+pyarrow==23.0.1
 pycodestyle==2.13.0
 pycparser==2.22
 pyflakes==3.3.2
