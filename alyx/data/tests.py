@@ -98,7 +98,7 @@ class TestDataNoticeModel(TestCase):
         dataset = Dataset.objects.create(name='mydataset.npy')
         notice = DataNotice.objects.create(name='notice-a')
 
-        self.assertEqual(notice.severity, DataNotice.IMPORTANCE.INSIGNIFICANT)
+        self.assertEqual(notice.importance, DataNotice.IMPORTANCE.INSIGNIFICANT)
         self.assertEqual(str(notice), 'notice-a')
 
         notice.datasets.add(dataset)

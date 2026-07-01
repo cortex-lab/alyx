@@ -249,13 +249,13 @@ class APIDataTests(BaseTests):
 
         n1 = DataNotice.objects.create(
             name='notice-1',
-            severity=DataNotice.IMPORTANCE.MAJOR,
+            importance=DataNotice.IMPORTANCE.MAJOR,
             created_by=self.superuser,
         )
         n1.datasets.add(d1)
         n2 = DataNotice.objects.create(
             name='notice-2',
-            severity=DataNotice.IMPORTANCE.MINOR,
+            importance=DataNotice.IMPORTANCE.MINOR,
             created_by=self.superuser,
         )
         n2.datasets.add(d2)

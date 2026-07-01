@@ -282,9 +282,11 @@ class DataNoticeSerializer(serializers.ModelSerializer):
         queryset = queryset.select_related('created_by')
         # Prefetch only dataset IDs (serializer uses SlugRelatedField with pk).
         # This avoids loading full Dataset objects into memory for list responses.
+        # NB: Calls base manager instead of DatasetManager to avoid select related
+        # on dataset type and data format, which is not needed for this serializer.
         dataset_prefetch = Prefetch(
             'datasets',
-            Dataset.objects.only('id')
+            Dataset._base_manager.only('id')
         )
         queryset = queryset.prefetch_related(dataset_prefetch)
         return queryset
