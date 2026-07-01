@@ -148,6 +148,7 @@ class NoteInline(GenericTabularInline):
     fields = ('user', 'date_time', 'text', 'image')
     image_fields = ('image',)
     ordering = ('-date_time',)
+    show_change_link = True
 
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(
