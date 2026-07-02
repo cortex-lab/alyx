@@ -1,6 +1,5 @@
 import logging
 import markdown as _markdown
-from enum import IntEnum
 from one.alf.spec import QC
 
 from django.core.validators import RegexValidator
@@ -505,7 +504,7 @@ def new_download(dataset, user, projects=()):
 class DataNotice(BaseModel):
     """A notice about data quality issues that may affect one or more datasets."""
 
-    class IMPORTANCE(IntEnum):
+    class IMPORTANCE(models.IntegerChoices):
         CRITICAL = 50
         MAJOR = 40
         MINOR = 30
@@ -513,7 +512,7 @@ class DataNotice(BaseModel):
 
     description = models.TextField(blank=True)
     importance = models.IntegerField(
-        default=IMPORTANCE.INSIGNIFICANT, choices=[(x.value, x.name) for x in IMPORTANCE],
+        default=IMPORTANCE.INSIGNIFICANT, choices=IMPORTANCE,
         help_text=' / '.join([f'{q.value}: {q.name}' for q in IMPORTANCE]))
 
     datasets = models.ManyToManyField(
