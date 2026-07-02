@@ -345,24 +345,24 @@ class APIDataTests(BaseTests):
         datasets = [Dataset.objects.create(name=f'opt-test-{i}.npy') for i in range(5)]
         target_tag = Tag.objects.create(name='opt-target-tag')
         other_tag = Tag.objects.create(name='opt-other-tag')
-        
+
         # Add tags to datasets
         datasets[0].tags.add(target_tag)  # has target tag
         datasets[1].tags.add(other_tag)   # has other tag
         datasets[2].tags.add(target_tag, other_tag)  # has both
         datasets[3].tags.add(other_tag)   # has other tag
         datasets[4].tags.add(target_tag)  # has target tag
-        
+
         # Create notices with various dataset combinations
         n1 = DataNotice.objects.create(name='opt-notice-1', created_by=self.superuser)
         n1.datasets.add(*datasets[:3])  # includes datasets 0, 1, 2
-        
+
         n2 = DataNotice.objects.create(name='opt-notice-2', created_by=self.superuser)
         n2.datasets.add(*datasets[3:])  # includes datasets 3, 4
-        
+
         n3 = DataNotice.objects.create(name='opt-notice-3', created_by=self.superuser)
         n3.datasets.add(datasets[4])  # only dataset 4
-        
+
         # Filter by target_tag; should get notices with datasets having that tag
         # n1: datasets[0,1,2] -> includes 0 (has target) and 2 (has target) ✓
         # n2: datasets[3,4] -> includes 4 (has target) ✓
@@ -371,7 +371,7 @@ class APIDataTests(BaseTests):
         data = self.ar(r, 200)
         names = {item['name'] for item in data}
         self.assertEqual(names, {'opt-notice-1', 'opt-notice-2', 'opt-notice-3'})
-        
+
         # Filter by other_tag; should get different results
         # n1: datasets[0,1,2] -> includes 1 (has other) and 2 (has other) ✓
         # n2: datasets[3,4] -> includes 3 (has other) ✓

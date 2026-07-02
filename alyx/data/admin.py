@@ -241,6 +241,7 @@ class DataNoticeAdmin(BaseAdmin):
         'affected_date_end',
         'datasets',
         'created_by',
+        'created_datetime',
         'json',
     )
     readonly_fields = ('created_datetime',)
