@@ -1,7 +1,11 @@
-from django.db.models import Count, ProtectedError
+from django.db.models import Count, Exists, OuterRef, ProtectedError
 from django.contrib import admin, messages
 from django.utils.html import format_html
-from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter, ChoiceDropdownFilter
+from django_admin_listfilter_dropdown.filters import (
+    RelatedDropdownFilter,
+    ChoiceDropdownFilter,
+    SimpleDropdownFilter,
+)
 from rangefilter.filters import DateRangeFilter
 
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
@@ -246,6 +250,32 @@ class DataNoticeAdmin(BaseAdmin):
     )
     readonly_fields = ('created_datetime',)
 
+    class DatasetTagListFilter(SimpleDropdownFilter):
+        title = 'dataset tag'
+        parameter_name = 'dataset_tag'
+
+        def lookups(self, request, model_admin):
+            return Tag.objects.order_by('name').values_list('id', 'name')
+
+        def queryset(self, request, queryset):
+            """Filter DataNotice queryset by dataset tag.
+
+            This filter avoids joining the full Dataset table directly.
+            """
+            value = self.value()
+            if not value:
+                return queryset
+
+            notice_dataset_through = DataNotice.datasets.through
+            dataset_tag_through = Dataset.tags.through
+
+            matching_datasets = dataset_tag_through.objects.filter(tag_id=value).values('dataset_id')
+            matching_notice_datasets = notice_dataset_through.objects.filter(
+                datanotice_id=OuterRef('pk'), dataset_id__in=matching_datasets)
+
+            return queryset.annotate(_has_dataset_tag=Exists(matching_notice_datasets)).filter(
+                _has_dataset_tag=True)
+
     def has_change_permission(self, request, obj=None):
         # DataNotice has no subject/session ownership; any non-public authenticated user may edit.
         if request.user.is_public_user:
@@ -261,6 +291,7 @@ class DataNoticeAdmin(BaseAdmin):
         'created_by',
         'created_datetime',
     )
+    list_filter = (DatasetTagListFilter,)
     search_fields = ('name', 'description', 'version_affected', 'created_by__username')
     autocomplete_fields = ('datasets',)
 

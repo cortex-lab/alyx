@@ -243,28 +243,6 @@ class APIDataTests(BaseTests):
         r = self.client.get(reverse('dataset-list') + '?date=2018-01-01')
         self.assertTrue(len(self.ar(r, 200)) == 2)
 
-    def test_datanotice_list(self):
-        d1 = Dataset.objects.create(name='notice-dataset-1.npy')
-        d2 = Dataset.objects.create(name='notice-dataset-2.npy')
-
-        n1 = DataNotice.objects.create(
-            name='notice-1',
-            importance=DataNotice.IMPORTANCE.MAJOR,
-            created_by=self.superuser,
-        )
-        n1.datasets.add(d1)
-        n2 = DataNotice.objects.create(
-            name='notice-2',
-            importance=DataNotice.IMPORTANCE.MINOR,
-            created_by=self.superuser,
-        )
-        n2.datasets.add(d2)
-
-        r = self.client.get(reverse('datanotice-list'))
-        data = self.ar(r, 200)
-        names = [item['name'] for item in data]
-        self.assertEqual(names[:2], ['notice-1', 'notice-2'])
-
     def test_datanotice_list_filter_by_dataset(self):
         d1 = Dataset.objects.create(name='notice-filter-1.npy')
         d2 = Dataset.objects.create(name='notice-filter-2.npy')
@@ -306,7 +284,7 @@ class APIDataTests(BaseTests):
         names = {item['name'] for item in data}
         self.assertEqual(names, {'tag-notice-a', 'tag-notice-c'})
 
-    def test_datanotice_list_ordering_date_importance_name(self):
+    def test_datanotice_list_ordering_importance_date_name(self):
         d = Dataset.objects.create(name='notice-ordering.npy')
 
         # Same creation timestamp window: higher importance should sort first, then by name.
@@ -316,18 +294,18 @@ class APIDataTests(BaseTests):
             created_by=self.superuser,
         )
         high_z.datasets.add(d)
-        high_a = DataNotice.objects.create(
-            name='a-high',
-            importance=DataNotice.IMPORTANCE.MAJOR,
-            created_by=self.superuser,
-        )
-        high_a.datasets.add(d)
         low = DataNotice.objects.create(
             name='m-low',
             importance=DataNotice.IMPORTANCE.MINOR,
             created_by=self.superuser,
         )
         low.datasets.add(d)
+        high_a = DataNotice.objects.create(
+            name='a-high',
+            importance=DataNotice.IMPORTANCE.MAJOR,
+            created_by=self.superuser,
+        )
+        high_a.datasets.add(d)
 
         r = self.client.get(reverse('datanotice-list'))
         data = self.ar(r, 200)

@@ -555,7 +555,7 @@ class DataNotice(BaseModel):
         }.get(self.importance, '#6c757d')
 
     class Meta:
-        ordering = ('-created_datetime', '-importance', 'name')
+        ordering = ('-importance', '-created_datetime', 'name')
 
     def __str__(self):
         return self.name or str(self.id)
