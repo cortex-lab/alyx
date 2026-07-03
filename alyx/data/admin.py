@@ -8,6 +8,8 @@ from django_admin_listfilter_dropdown.filters import (
 )
 from rangefilter.filters import DateRangeFilter
 
+from actions.models import Session
+from subjects.models import Project
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Download, Revision, Tag, DataNotice)
 from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
@@ -276,6 +278,40 @@ class DataNoticeAdmin(BaseAdmin):
             return queryset.annotate(_has_dataset_tag=Exists(matching_notice_datasets)).filter(
                 _has_dataset_tag=True)
 
+    class SessionProjectListFilter(SimpleDropdownFilter):
+        title = 'project'
+        parameter_name = 'project'
+
+        def lookups(self, request, model_admin):
+            notice_dataset_through = DataNotice.datasets.through
+            session_project_through = Session.projects.through
+
+            session_ids = Dataset.objects.filter(
+                id__in=notice_dataset_through.objects.values('dataset_id'),
+                session_id__isnull=False,
+            ).values('session_id')
+            project_ids = session_project_through.objects.filter(
+                session_id__in=session_ids,
+            ).values('project_id')
+
+            return Project.objects.filter(id__in=project_ids).order_by('name').values_list('id', 'name')
+
+        def queryset(self, request, queryset):
+            value = self.value()
+            if not value:
+                return queryset
+
+            notice_dataset_through = DataNotice.datasets.through
+            session_project_through = Session.projects.through
+
+            matching_sessions = session_project_through.objects.filter(project_id=value).values('session_id')
+            matching_datasets = Dataset.objects.filter(session_id__in=matching_sessions).values('id')
+            matching_notice_datasets = notice_dataset_through.objects.filter(
+                datanotice_id=OuterRef('pk'), dataset_id__in=matching_datasets)
+
+            return queryset.annotate(_has_project=Exists(matching_notice_datasets)).filter(
+                _has_project=True)
+
     def has_change_permission(self, request, obj=None):
         # DataNotice has no subject/session ownership; any non-public authenticated user may edit.
         if request.user.is_public_user:
@@ -291,7 +327,7 @@ class DataNoticeAdmin(BaseAdmin):
         'created_by',
         'created_datetime',
     )
-    list_filter = (DatasetTagListFilter,)
+    list_filter = (DatasetTagListFilter, SessionProjectListFilter)
     search_fields = ('name', 'description', 'version_affected', 'created_by__username')
     autocomplete_fields = ('datasets',)
 
