@@ -446,7 +446,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         Endpoint to create and register a dataset and file record through the REST API.
 
         The session is retrieved by the ALF convention in the relative path, so this field has to
-        match the format Subject/Date/Number as shown below, unless 
+        match the format Subject/Date/Number as shown below, unless
 
         The set of repositories are given through the labs. The lab is by default the subject lab,
         but if it is specified, it overrides the subject lab entirely.
@@ -484,7 +484,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                'projects': 'alyx_lab_name',  # optional, alias of lab field above
               }
         ```
-        
+
         For registering data that is not associated with a session, the following fields should be
         provided:
         ```python
@@ -505,12 +505,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # get the concerned repository using the name/hostname combination
         name = request.data.get('name', None)
         hostname = request.data.get('hostname', None)
-        if name:
-            repo = DataRepository.objects.get(name=name)
-        elif hostname:
-            repo = DataRepository.objects.get(hostname=hostname)
-        else:
-            repo = None
+        repo = None
+        try:
+            if name:
+                repo = DataRepository.objects.get(name=name)
+            elif hostname:
+                repo = DataRepository.objects.get(hostname=hostname)
+        except DataRepository.DoesNotExist:
+            data = {'status_code': 400, 'detail': 'The specified repository does not exist.'}
+            return Response(data=data, status=400)
+
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
@@ -579,8 +583,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             try:
                 model.objects.get(pk=object_id)
             except (model.DoesNotExist, ValidationError):
-                data = {'status_code': 400,
-                        'detail': f'Invalid object ID: {object_id}'}
+                data = {'status_code': 400, 'detail': f'Invalid object ID: {object_id}'}
                 return Response(data=data, status=400)
             # For aggregate datasets the repository must be specified,
             # as we cannot retrieve it from the session subject
@@ -626,10 +629,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             projects = request.data.get('projects', [])
             if isinstance(projects, str):
                 projects = projects.split(',')
-            labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
-            
+            try:
+                labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
+            except Lab.DoesNotExist:
+                data = {'status_code': 400, 'detail': 'One or more of the specified labs do not exist.'}
+                return Response(data=data, status=400)
+
             repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
-        
+
         if repo and repo not in repositories:
             repositories += [repo]
         if server_only:
