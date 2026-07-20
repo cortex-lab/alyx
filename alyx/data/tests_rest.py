@@ -888,9 +888,11 @@ class APIDataTests(BaseTests):
         data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.c.e2',
                 'name': 'drb1',  # this is the repository name
+                'filesizes': 14564,  # check handles non-list int value here
                 }
 
         d = self.ar(self.client.post(reverse('register-file'), data), 201)
+        self.assertEqual(d[0]['file_size'], 14564)
 
         # Check the same dataset to see if it is protected, should be unprotected
         # and get a status 200 response

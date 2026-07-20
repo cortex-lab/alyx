@@ -8,6 +8,8 @@ from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
 
+from iblutil.util import ensure_list
+
 from alyx.base import BaseFilterSet, rest_permission_classes
 from experiments.models import ProbeInsertion
 from subjects.models import Subject, Project
@@ -544,6 +546,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
+        filesizes = [int(f) if f is not None else None for f in ensure_list(filesizes)]
 
         # qc if provided
         qcs = request.data.get('qc', [None] * len(filenames)) or 'NOT_SET'
