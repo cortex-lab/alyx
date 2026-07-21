@@ -33,7 +33,10 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN echo "root:Docker!" | chpasswd
 
 # Alyx application installation
-RUN git clone --branch dev https://github.com/cortex-lab/alyx.git /var/www/alyx
+# Note: Alyx is checked out and pip installed again in the head container
+# Doing it here makes head container releases very fast as the clone is present and pip cache already built
+ARG alyx_branch=dev
+RUN git clone --branch ${alyx_branch} https://github.com/cortex-lab/alyx.git /var/www/alyx
 # Best practice for configuring python venv
 ENV VIRTUAL_ENV=/var/www/alyx/.venv
 RUN ${PYTHON} -m venv ${VIRTUAL_ENV}

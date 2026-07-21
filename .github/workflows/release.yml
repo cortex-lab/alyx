@@ -1,0 +1,109 @@
+name: Release
+
+# Runs once the CI workflow succeeds on master. If the __version__ in alyx/alyx/__init__.py
+# has been bumped since the last tag, cuts a git tag + GitHub release for it, then builds and
+# pushes both docker images tagged with that version.
+on:
+  workflow_run:
+    workflows: ["CI, approaching CD"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      should_release: ${{ steps.check_tag.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Get version from alyx/alyx/__init__.py
+        id: get_version
+        run: |
+          VERSION=$(python3 -c "import re; print(re.search(r\"__version__ = '([^']+)'\", open('alyx/alyx/__init__.py').read()).group(1))")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version has already been tagged
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -qE "refs/tags/${{ steps.get_version.outputs.version }}$"; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Create tag and GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          gh release create "$VERSION" --title "$VERSION" --generate-notes
+
+  docker:
+    needs: [check-version, release]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.check-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Must be pushed before the main image build below, which pulls this tag as its FROM base.
+      - name: Build and push base image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/docker
+          file: ./deploy/docker/Dockerfile_base
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            alyx_branch=${{ env.VERSION }}
+          tags: |
+            internationalbrainlab/alyx_apache_base:latest
+            internationalbrainlab/alyx_apache_base:${{ env.VERSION }}
+
+      - name: Build and push main image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/docker
+          file: ./deploy/docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          no-cache: true
+          build-args: |
+            alyx_branch=${{ env.VERSION }}
+          tags: |
+            internationalbrainlab/alyx_apache:latest
+            internationalbrainlab/alyx_apache:${{ env.VERSION }}
