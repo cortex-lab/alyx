@@ -27,7 +27,7 @@ ipython
 markdown
 matplotlib
 ONE-api>=3.5.1
-pillow>=11.3.0
+pillow>=12.3.0
 psycopg2-binary
 python-dateutil
 python-magic
