@@ -239,8 +239,8 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
             return super().delete(request, *args, **kwargs)
         except models.ProtectedError as e:
             # Return Forbidden response with dataset name and list of protected tags associated
-            err_msg, _ = e.args
-            return Response(e.args[0], 403)
+            data = {'status_code': 403, 'detail': e.args[0]}
+            return Response(data, 403)
 
 
 # FileRecord
@@ -297,11 +297,17 @@ def _make_dataset_response(dataset):
         }
         for fr in FileRecord.objects.filter(dataset=dataset)]
 
+    subject = None
+    if dataset.session:
+        subject = dataset.session.subject.nickname
+    elif dataset.content_type.model == 'subject':
+        subject = dataset.content_object.nickname
+
     out = {
         'id': dataset.pk,
         'name': dataset.name,
         'file_size': dataset.file_size,
-        'subject': dataset.session.subject.nickname if dataset.session else None,
+        'subject': subject,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,
         'dataset_type': getattr(dataset.dataset_type, 'name', ''),

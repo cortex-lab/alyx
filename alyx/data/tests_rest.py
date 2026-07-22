@@ -209,7 +209,8 @@ class APIDataTests(BaseTests):
 
         # Now attempt to delete the protected dataset
         r = self.client.delete(reverse('dataset-detail', args=[did]), data)
-        self.assertRegex(self.ar(r, 403), 'protected')
+        response = self.ar(r, 403)
+        self.assertRegex(response.get('detail') or '', 'protected')
 
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
@@ -1055,6 +1056,8 @@ class APIDataTests(BaseTests):
         }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
+        # Expect subject field to be populated when content_type == 'subject'
+        self.assertEqual(r.data[0]['subject'], self.subject)
         fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
         self.assertTrue(fr.count() == 1)
         # Should support app label in content type
