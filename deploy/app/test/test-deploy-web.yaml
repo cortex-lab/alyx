@@ -1,0 +1,97 @@
+# Smoke-test the production compose against a locally-built alyx_apache image.
+#   ansible-playbook deploy/app/test/test-deploy-web.yaml
+# Brings the stack up in a temp dir with test env, asserts the app serves HTTP 200,
+# apache is running, log rotation works and Django can reach the DB, then tears down.
+- name: Test Alyx containers
+  hosts: localhost
+  tasks:
+    - name: Create a temporary directory
+      tempfile:
+        state: directory
+        suffix: _alyx_test
+      register: temp_deploy_dir
+
+    - name: Copy the production compose and env template to the temp directory
+      copy:
+        src: "{{ playbook_dir }}/../{{ item.src }}"
+        dest: "{{ temp_deploy_dir.path }}/{{ item.dest }}"
+      loop:
+        - { src: 'docker-compose.yaml', dest: 'docker-compose.yaml' }
+        - { src: 'template.env', dest: '.env' }
+
+    - name: Override .env with test values
+      lineinfile:
+        path: "{{ temp_deploy_dir.path }}/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        state: present
+      loop:
+        - { key: "POSTGRES_PORT", value: "5445" }
+        - { key: "APACHE_SERVER_NAME", value: "localhost" }
+        - { key: "DJANGO_DEBUG", value: "True" }
+        - { key: "APACHE_LOG_DIR", value: "{{ temp_deploy_dir.path }}/logs" }
+        - { key: "DJANGO_MEDIA_ROOT", value: "{{ temp_deploy_dir.path }}/uploaded" }
+
+    - name: Create bind-mount host directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ temp_deploy_dir.path }}/logs"
+        - "{{ temp_deploy_dir.path }}/uploaded"
+
+    - block:
+        - name: Start the stack
+          shell:
+            cmd: docker compose -p test_ansible up -d
+            chdir: "{{ temp_deploy_dir.path }}"
+
+        - name: Wait for the app to serve HTTP 200
+          uri:
+            url: "http://localhost"
+            method: GET
+            status_code: 200
+          register: api_response
+          until: api_response.status == 200
+          retries: 30
+          delay: 10
+
+        - name: Verify Apache is running
+          shell: docker exec alyx_apache service apache2 status
+          register: apache_status
+          failed_when: "'apache2 is running' not in apache_status.stdout"
+
+        - name: Verify log rotation
+          shell: docker exec alyx_apache logrotate /etc/logrotate.d/apache2 --verbose --force
+
+        - name: Verify the app still serves HTTP 200 after log rotation
+          uri:
+            url: "http://localhost"
+            method: GET
+            status_code: 200
+
+        - name: Verify Django database connectivity
+          shell: docker exec alyx_apache ./manage.py showmigrations
+
+      always:
+        - name: Get current user ID
+          command: id -u
+          register: user_id
+          changed_when: false
+
+        - name: Hand log ownership back to the runner so the temp dir can be removed
+          shell: docker exec alyx_apache chown -fR {{ user_id.stdout }}:{{ user_id.stdout }} /var/log/apache2
+          ignore_errors: yes
+
+        - name: Stop and remove containers
+          shell:
+            cmd: docker compose -p test_ansible down -v --remove-orphans
+            chdir: "{{ temp_deploy_dir.path }}"
+          ignore_errors: yes
+
+    - name: Remove temporary directory
+      file:
+        path: "{{ temp_deploy_dir.path }}"
+        state: absent
+      when: temp_deploy_dir.path is defined
