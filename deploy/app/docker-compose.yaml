@@ -34,9 +34,6 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
       - ${APACHE_LOG_DIR}:/var/log/apache2
       - ${DJANGO_MEDIA_ROOT:-~/uploaded}:/var/www/alyx/alyx/uploaded
-      - ${IBLALYX_ROOT:-/home/ubuntu/iblalyx}:/home/iblalyx
-      - ${IBLALYX_ROOT:-/home/ubuntu/iblalyx}/management/ibl_reports:/var/www/alyx/alyx/ibl_reports
-      - ${IBLALYX_ROOT:-/home/ubuntu/iblalyx}/management/ibl_reports/templates:/var/www/alyx/alyx/templates/ibl_reports
     depends_on:
       - postgres
   postgres:
