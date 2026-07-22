@@ -243,6 +243,16 @@ class APIDataTests(BaseTests):
         r = self.client.get(reverse('dataset-list') + '?date=2018-01-01')
         self.assertTrue(len(self.ar(r, 200)) == 2)
 
+    def test_pagination_max_limit(self):
+        # A request for an unbounded `?limit=` must not materialize an arbitrary number of
+        # rows (and their prefetched relations) in memory; see LimitedLimitOffsetPagination.
+        Dataset.objects.bulk_create(
+            [Dataset(name=f'paginated-dataset-{i}.npy') for i in range(1500)])
+        r = self.client.get(reverse('dataset-list') + '?limit=5000')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['count'], 1500)
+        self.assertEqual(len(r.data['results']), 1000)
+
     def test_register_files(self):
         # create 4 repositories, 2 per lab
         self.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
