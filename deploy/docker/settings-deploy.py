@@ -205,7 +205,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'STRICT_JSON': False,
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'alyx.base.LimitedLimitOffsetPagination',
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,

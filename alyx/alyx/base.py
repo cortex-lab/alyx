@@ -26,6 +26,7 @@ from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
 from rest_framework import serializers
 from rest_framework import permissions
+from rest_framework.pagination import LimitOffsetPagination
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 from alyx import __version__ as version
@@ -600,6 +601,15 @@ class BaseSerializerEnumField(serializers.Field):
             raise serializers.ValidationError("Invalid " + self.field_name + ", choices are: " +
                                               ', '.join([ch[1] for ch in self.choices]))
         return status[0][0]
+
+
+class LimitedLimitOffsetPagination(LimitOffsetPagination):
+    """LimitOffsetPagination with a hard cap on the requested page size.
+
+    Prevents a single request (e.g. `?limit=5000`) from materializing an
+    unbounded number of rows and their prefetched relations in memory.
+    """
+    max_limit = 1000
 
 
 def rest_filters_exception_handler(exc, context):
