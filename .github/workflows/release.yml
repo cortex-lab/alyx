@@ -84,8 +84,8 @@ jobs:
       - name: Build and push base image
         uses: docker/build-push-action@v6
         with:
-          context: ./deploy/docker
-          file: ./deploy/docker/Dockerfile_base
+          context: ./deploy/app/docker
+          file: ./deploy/app/docker/Dockerfile_base
           platforms: linux/amd64
           push: true
           build-args: |
@@ -97,8 +97,8 @@ jobs:
       - name: Build and push main image
         uses: docker/build-push-action@v6
         with:
-          context: ./deploy/docker
-          file: ./deploy/docker/Dockerfile
+          context: ./deploy/app/docker
+          file: ./deploy/app/docker/Dockerfile
           platforms: linux/amd64
           push: true
           no-cache: true

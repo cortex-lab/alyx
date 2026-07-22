@@ -22,8 +22,8 @@ Create a virtual environment using uv and install the repo in an editable mode u
 Copy the settings files from the deploy folder inside of the alyx project. Those files are ignored by git.
 
 ```shell
-cp ./deploy/docker/settings-deploy.py alyx/alyx/settings.py
-cp ./deploy/docker/settings_lab-deploy.py alyx/alyx/settings_lab.py
+cp ./deploy/app/docker/settings-deploy.py alyx/alyx/settings.py
+cp ./deploy/app/docker/settings_lab-deploy.py alyx/alyx/settings_lab.py
 ```
 
 Copy the environment template file and edit the path to the logs
@@ -42,7 +42,7 @@ POSTGRES_HOST=localhost
 First we will start the docker service containing the database and make sure we can connect to it using the current `.env` settings.
 The `showmigrations` command will fail if the database is not available.
 ```shell
-docker compose -f ./deploy/docker-compose-postgres.yaml up -d
+docker compose -f ./deploy/editable/docker-compose-postgres.yaml up -d
 cd alyx
 python manage.py showmigrations
 ```
@@ -69,7 +69,7 @@ However as shown in the getting started section, those images are suitable for u
 
 ```shell
 # need to be in the build folder to copy some apache settings
-cd ./alyx/deploy/docker/
+cd ./alyx/deploy/app/docker/
 
 # builds the base container
 docker buildx build . \
