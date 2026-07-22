@@ -81,8 +81,10 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': LOG_LEVEL,
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_FOLDER_ROOT.joinpath('django.log'),
+            'maxBytes': 4 * 1024 * 1024,
+            'backupCount': 5,
             'formatter': 'simple'
         },
         'console': {

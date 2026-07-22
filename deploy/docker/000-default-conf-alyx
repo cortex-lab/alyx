@@ -26,11 +26,11 @@
             Require all granted
         </Directory>
     
-        ErrorLog ${APACHE_LOG_DIR}/error_alyx.log
-        CustomLog ${APACHE_LOG_DIR}/access_alyx.log combined
-    
+        ErrorLog "|/usr/bin/rotatelogs -n 5 ${APACHE_LOG_DIR}/error_alyx.log 128M"
+        CustomLog "|/usr/bin/rotatelogs -n 5 ${APACHE_LOG_DIR}/access_alyx.log 128M" combined
+
         WSGIApplicationGroup %{GLOBAL}
-        WSGIDaemonProcess alyx python-path=/var/www/alyx/alyx python-home=/var/www/alyx/.venv socket-user=#33 listen-backlog=50
+        WSGIDaemonProcess alyx python-path=/var/www/alyx/alyx python-home=/var/www/alyx/.venv socket-user=#33 listen-backlog=50 request-timeout=300 maximum-requests=1000
         WSGIProcessGroup alyx
         WSGIScriptAlias / /var/www/alyx/alyx/alyx/wsgi.py
         WSGIPassAuthorization On
