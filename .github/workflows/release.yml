@@ -1,8 +1,8 @@
 name: Release
 
 # Runs once the CI workflow succeeds on master. If the __version__ in alyx/alyx/__init__.py
-# has been bumped since the last tag, cuts a git tag + GitHub release for it, then builds and
-# pushes both docker images tagged with that version.
+# has been bumped since the last tag, cuts a git tag + GitHub release for it, then triggers
+# the image-build workflow for that tag. Image building itself lives in build-image.yml.
 on:
   workflow_run:
     workflows: ["CI, approaching CD"]
@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: write  # allows dispatching build-image.yml
 
 jobs:
   check-version:
@@ -44,15 +45,15 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.check-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Create tag and GitHub release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.check-version.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -60,50 +61,8 @@ jobs:
           git push origin "$VERSION"
           gh release create "$VERSION" --title "$VERSION" --generate-notes
 
-  docker:
-    needs: [check-version, release]
-    if: needs.check-version.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.check-version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Must be pushed before the main image build below, which pulls this tag as its FROM base.
-      - name: Build and push base image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./deploy/app/docker
-          file: ./deploy/app/docker/Dockerfile_base
-          platforms: linux/amd64
-          push: true
-          build-args: |
-            alyx_branch=${{ env.VERSION }}
-          tags: |
-            internationalbrainlab/alyx_apache_base:latest
-            internationalbrainlab/alyx_apache_base:${{ env.VERSION }}
-
-      - name: Build and push main image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./deploy/app/docker
-          file: ./deploy/app/docker/Dockerfile
-          platforms: linux/amd64
-          push: true
-          no-cache: true
-          build-args: |
-            alyx_branch=${{ env.VERSION }}
-          tags: |
-            internationalbrainlab/alyx_apache:latest
-            internationalbrainlab/alyx_apache:${{ env.VERSION }}
+      # A tag pushed by GITHUB_TOKEN does not trigger build-image.yml's push-tags event
+      # (GitHub suppresses it to avoid recursion), so dispatch the build explicitly.
+      # workflow_dispatch is exempt from that suppression.
+      - name: Trigger image build for the new tag
+        run: gh workflow run build-image.yml --ref "$VERSION"

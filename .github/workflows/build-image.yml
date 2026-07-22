@@ -1,0 +1,57 @@
+name: Build and push images
+
+# Builds and pushes the alyx docker images for a tag. Triggered by:
+#   - pushing a tag manually (rebuild without a version bump), or
+#   - the Release workflow dispatching this after it cuts a tag.
+# Both cases resolve github.ref_name to the tag name, used as the image tag.
+on:
+  push:
+    tags: ['*']
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Must be pushed before the main image build below, which pulls this tag as its FROM base.
+      - name: Build and push base image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/app/docker
+          file: ./deploy/app/docker/Dockerfile_base
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            alyx_branch=${{ env.VERSION }}
+          tags: |
+            internationalbrainlab/alyx_apache_base:latest
+            internationalbrainlab/alyx_apache_base:${{ env.VERSION }}
+
+      - name: Build and push main image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/app/docker
+          file: ./deploy/app/docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          no-cache: true
+          build-args: |
+            alyx_branch=${{ env.VERSION }}
+          tags: |
+            internationalbrainlab/alyx_apache:latest
+            internationalbrainlab/alyx_apache:${{ env.VERSION }}
