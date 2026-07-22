@@ -1,9 +1,10 @@
 # Production web deployment (apache + postgres) for a full Alyx instance.
 #
 # This is the single source of truth for the production compose: it is intentionally
-# server-agnostic and driven entirely by the environment (see template.env). Per-server
-# specifics (SES, local settings_lab.py, extra mounts) belong in a
-# docker-compose.override.yaml living in iblsre, not here.
+# server-agnostic and driven entirely by the environment (see template.env). IBL/per-server
+# specifics (SES, local settings_lab.py, iblalyx requirements install, extra mounts) are
+# layered downstream via a docker-compose.override.yaml in iblsre or an IBL-specific image
+# built on top of this one, not here.
 #
 # This is the single entry point for a production deployment. Usage on a deploy host
 # (with a populated .env alongside this file):
@@ -20,8 +21,7 @@ services:
       - "80:80"
     env_file: .env
     command: >
-      bash -c "pip install --no-cache-dir -r /home/iblalyx/requirements.txt &&
-               python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
+      bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
                /bin/bash /usr/local/bin/alyx_issue_ssl.sh &&
                chown www-data:www-data -fR 664 /var/log/apache2 &
                /usr/sbin/apache2ctl -DFOREGROUND"
