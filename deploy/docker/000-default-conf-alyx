@@ -16,13 +16,13 @@
         </Directory>
     
         Alias /static/ /var/www/alyx/alyx/static/
-        Alias /media/ /var/www/alyx/alyx/media/
-    
+        Alias /uploaded/ /var/www/alyx/alyx/uploaded/
+
         <Directory /var/www/alyx/alyx/static>
             Require all granted
         </Directory>
-    
-        <Directory /var/www/alyx/alyx/media>
+
+        <Directory /var/www/alyx/alyx/uploaded>
             Require all granted
         </Directory>
     
