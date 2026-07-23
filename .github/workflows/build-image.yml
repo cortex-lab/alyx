@@ -18,7 +18,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  gate:
+    # Tags matching '*.*.*' also catch PEP440 post-releases (e.g. 2.5.0.post1), since '*'
+    # swallows embedded dots. Post-releases are metadata-only re-tags with no code change,
+    # so skip the docker job for those specifically; pre-releases (rc/a/b/dev suffixes)
+    # still build since they typically do carry real code changes worth testing.
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.check.outputs.build }}
+    steps:
+      - name: Check whether this tag is a post-release
+        id: check
+        run: |
+          if [[ "$EVENT_NAME" != "workflow_dispatch" && "$REF_NAME" =~ \.post[0-9]+ ]]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping build: '$REF_NAME' is a post-release (metadata-only, no code change)"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+
   docker:
+    needs: gate
+    if: needs.gate.outputs.build == 'true'
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ github.ref_name }}
