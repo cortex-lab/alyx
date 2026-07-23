@@ -35,12 +35,18 @@ Contribution checklist:
 - [ ] update version number in `./alyx/alyx/__init__.py`
 - [ ] update `CHANGELOG.md`
 
+Release process:
+1. Open a PR from your feature branch into dev
+2. On dev, bump the Alyx version and update the changelog
+3. Open a PR from dev to master
+4. When CI passes, make a squash commit into master using the version as the commit title, and changelog section as the message
+5. Actions will automatically create a new release, deploy containers, and assign a DOI
 
 ### Running tests
 
 Continuous integration is set up. But before submitting a PR or commit,the tests can run locally. First install the test dependencies with `pip install -r requirements_test.txt`.
     - `./manage.py test -n --parallel` parallel test without migrations (fastest)
-    - `./manage.py test` test with migrations (recommended if model changes)
+    - `./manage.py test` test with migrations (recommended if models change)
 
 ### Documentation contribution guide
 
