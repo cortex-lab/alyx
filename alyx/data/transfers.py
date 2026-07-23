@@ -7,6 +7,8 @@ import time
 from pathlib import Path, PurePosixPath, PurePath
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db.models import Case, When, Count, Q, F
 import globus_sdk
 import numpy as np
@@ -336,7 +338,12 @@ def _create_dataset_file_records(
     if file_size is not None:
         dataset.file_size = file_size
     # Validate the fields.
-    dataset.full_clean()
+    try:
+        dataset.full_clean()
+    except ValidationError as e:
+        data = {'status_code': 400,
+                'detail': f'Invalid dataset "{relative_path}": {e}'}
+        return None, Response(data=data, status=400)
     dataset.save()
 
     # Create one file record per repository.
@@ -344,13 +351,26 @@ def _create_dataset_file_records(
     for repo in repositories:
         exists = repo in exists_in
         # Do not create a new file record if it already exists.
-        fr, is_new = FileRecord.objects.get_or_create(
-            dataset=dataset, data_repository=repo, relative_path=relative_path.as_posix())
+        try:
+            fr, is_new = FileRecord.objects.get_or_create(
+                dataset=dataset, data_repository=repo, relative_path=relative_path.as_posix())
+        except IntegrityError:
+            data = {'status_code': 400,
+                    'detail': (f'A file record for "{relative_path}" already exists on '
+                              f'repository "{repo.name}" for a different dataset.')}
+            return None, Response(data=data, status=400)
         if is_new or is_patched:
             fr.exists = exists
             fr.json = None  # this is important if a dataset is patched during an ongoing transfer
         # Validate the fields.
-        fr.full_clean()
+        try:
+            fr.full_clean()
+        except ValidationError as e:
+            if is_new:
+                fr.delete()
+            data = {'status_code': 400,
+                    'detail': f'Invalid file record "{relative_path}": {e}'}
+            return None, Response(data=data, status=400)
         fr.save()
 
     return dataset, None

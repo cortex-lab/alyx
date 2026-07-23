@@ -7,7 +7,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat
+from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat, DataNotice
+from misc.models import Lab
 from subjects.models import Subject
 
 
@@ -208,7 +209,8 @@ class APIDataTests(BaseTests):
 
         # Now attempt to delete the protected dataset
         r = self.client.delete(reverse('dataset-detail', args=[did]), data)
-        self.assertRegex(self.ar(r, 403), 'protected')
+        response = self.ar(r, 403)
+        self.assertRegex(response.get('detail') or '', 'protected')
 
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
@@ -242,6 +244,122 @@ class APIDataTests(BaseTests):
         # but both correspond to session of 2018-01-01
         r = self.client.get(reverse('dataset-list') + '?date=2018-01-01')
         self.assertTrue(len(self.ar(r, 200)) == 2)
+
+    def test_datanotice_list_filter_by_dataset(self):
+        d1 = Dataset.objects.create(name='notice-filter-1.npy')
+        d2 = Dataset.objects.create(name='notice-filter-2.npy')
+
+        n1 = DataNotice.objects.create(name='notice-a', created_by=self.superuser)
+        n1.datasets.add(d1)
+        n2 = DataNotice.objects.create(name='notice-b', created_by=self.superuser)
+        n2.datasets.add(d2)
+        n3 = DataNotice.objects.create(name='notice-c', created_by=self.superuser)
+        n3.datasets.add(d1, d2)
+
+        r = self.client.get(reverse('datanotice-list') + f'?datasets={d1.id}')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'notice-a', 'notice-c'})
+
+        r = self.client.get(reverse('datanotice-list') + f'?datasets={d1.id},{d2.id}')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'notice-a', 'notice-b', 'notice-c'})
+
+    def test_datanotice_list_filter_by_dataset_tag(self):
+        d1 = Dataset.objects.create(name='notice-tag-1.npy')
+        d2 = Dataset.objects.create(name='notice-tag-2.npy')
+        public_tag = Tag.objects.create(name='public-tag')
+        private_tag = Tag.objects.create(name='private-tag')
+        d1.tags.add(public_tag)
+        d2.tags.add(private_tag)
+
+        n1 = DataNotice.objects.create(name='tag-notice-a', created_by=self.superuser)
+        n1.datasets.add(d1)
+        n2 = DataNotice.objects.create(name='tag-notice-b', created_by=self.superuser)
+        n2.datasets.add(d2)
+        n3 = DataNotice.objects.create(name='tag-notice-c', created_by=self.superuser)
+        n3.datasets.add(d1, d2)
+
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=public-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'tag-notice-a', 'tag-notice-c'})
+
+    def test_datanotice_list_ordering_importance_date_name(self):
+        d = Dataset.objects.create(name='notice-ordering.npy')
+
+        # Same creation timestamp window: higher importance should sort first, then by name.
+        high_z = DataNotice.objects.create(
+            name='z-high',
+            importance=DataNotice.IMPORTANCE.MAJOR,
+            created_by=self.superuser,
+        )
+        high_z.datasets.add(d)
+        low = DataNotice.objects.create(
+            name='m-low',
+            importance=DataNotice.IMPORTANCE.MINOR,
+            created_by=self.superuser,
+        )
+        low.datasets.add(d)
+        high_a = DataNotice.objects.create(
+            name='a-high',
+            importance=DataNotice.IMPORTANCE.MAJOR,
+            created_by=self.superuser,
+        )
+        high_a.datasets.add(d)
+
+        r = self.client.get(reverse('datanotice-list'))
+        data = self.ar(r, 200)
+        names = [x['name'] for x in data]
+        idx_a = names.index('a-high')
+        idx_z = names.index('z-high')
+        idx_low = names.index('m-low')
+
+        self.assertLess(idx_a, idx_z)
+        self.assertLess(idx_z, idx_low)
+
+    def test_datanotice_list_filter_by_dataset_tag_optimization(self):
+        """Verify dataset_tag filter correctly uses Exists() optimization (no row explosion)."""
+        # Create multiple datasets with various tags
+        datasets = [Dataset.objects.create(name=f'opt-test-{i}.npy') for i in range(5)]
+        target_tag = Tag.objects.create(name='opt-target-tag')
+        other_tag = Tag.objects.create(name='opt-other-tag')
+
+        # Add tags to datasets
+        datasets[0].tags.add(target_tag)  # has target tag
+        datasets[1].tags.add(other_tag)   # has other tag
+        datasets[2].tags.add(target_tag, other_tag)  # has both
+        datasets[3].tags.add(other_tag)   # has other tag
+        datasets[4].tags.add(target_tag)  # has target tag
+
+        # Create notices with various dataset combinations
+        n1 = DataNotice.objects.create(name='opt-notice-1', created_by=self.superuser)
+        n1.datasets.add(*datasets[:3])  # includes datasets 0, 1, 2
+
+        n2 = DataNotice.objects.create(name='opt-notice-2', created_by=self.superuser)
+        n2.datasets.add(*datasets[3:])  # includes datasets 3, 4
+
+        n3 = DataNotice.objects.create(name='opt-notice-3', created_by=self.superuser)
+        n3.datasets.add(datasets[4])  # only dataset 4
+
+        # Filter by target_tag; should get notices with datasets having that tag
+        # n1: datasets[0,1,2] -> includes 0 (has target) and 2 (has target) ✓
+        # n2: datasets[3,4] -> includes 4 (has target) ✓
+        # n3: datasets[4] -> includes 4 (has target) ✓
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=opt-target-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'opt-notice-1', 'opt-notice-2', 'opt-notice-3'})
+
+        # Filter by other_tag; should get different results
+        # n1: datasets[0,1,2] -> includes 1 (has other) and 2 (has other) ✓
+        # n2: datasets[3,4] -> includes 3 (has other) ✓
+        # n3: datasets[4] -> has no other tag ✗
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=opt-other-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'opt-notice-1', 'opt-notice-2'})
 
     def test_pagination_max_limit(self):
         # A request for an unbounded `?limit=` must not materialize an arbitrary number of
@@ -381,6 +499,96 @@ class APIDataTests(BaseTests):
         self.assertEqual(ds1.file_size, 45686)
         self.assertEqual(ds0.version, '1.1.1')
         self.assertEqual(ds1.version, '2.2.2')
+
+    def test_register_files_validation(self):
+        """Test that register files returns a 400 status code under different conditions."""
+        self.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
+        self.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1']})
+
+        # Invalid repository name
+        data = {
+            "name":"invalid",
+            "path":'%s/2018-01-01/2/dir' % self.subject,
+            "filenames":["CognitionPlatform/subjects/qibao/2026-05-11/001/a.c.e1"],
+            "hashes":["8f85ec95a5387df4bb21e6b4eb3c3ca7f1f44bb3"],
+            "filesizes":3073962,
+            "labs":"dra1",
+            "created_by":"test"
+        }
+        r = self.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
+        # Invalid data repository hostname
+        with self.subTest('Invalid data repository hostname'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1',
+                'hostname': 'does-not-exist',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Non-existent lab
+        with self.subTest('Invalid lab name'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1',
+                'name': 'dr',
+                'labs': 'does-not-exist',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Invalid ALF path: revision folder is not the last path segment
+        with self.subTest('Invalid ALF path (misplaced revision)'):
+            data = {
+                'path': '%s/2018-01-01/2/#v1#/sub' % self.subject,
+                'filenames': 'a.b.e1',
+                'name': 'dr',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Dataset.full_clean validation error (hash exceeds the 64 character field length)
+        with self.subTest('Dataset field validation error (hash too long)'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.d.e1',
+                'name': 'dr',
+                'hashes': 'a' * 65,
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # FileRecord.full_clean validation error (relative_path contains a colon)
+        with self.subTest('FileRecord field validation error (invalid relative_path)'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.c.x:y.e1',
+                'name': 'dr',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # FileRecord unique_together violation: two different datasets (distinguished by
+        # object_id) registered to the same repository end up with the same relative_path
+        with self.subTest('FileRecord unique constraint violation'):
+            self.ar(self.post(reverse('lab-list'), {'name': 'labcollide1'}), 201)
+            self.ar(self.post(reverse('lab-list'), {'name': 'labcollide2'}), 201)
+            lab1 = Lab.objects.get(name='labcollide1')
+            lab2 = Lab.objects.get(name='labcollide2')
+            data = {
+                'path': 'Subjects/collide',
+                'filenames': 'a.b.e1',
+                'name': 'dra1',
+                'content_type': 'lab',
+                'object_id': str(lab1.pk),
+            }
+            r = self.post(reverse('register-file'), data)
+            self.ar(r, 201)
+            data['object_id'] = str(lab2.pk)
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
 
     def test_qc_validation(self):
         # this tests the validation of dataset QC outcomes
@@ -807,9 +1015,11 @@ class APIDataTests(BaseTests):
         data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.c.e2',
                 'name': 'drb1',  # this is the repository name
+                'filesizes': 14564,  # check handles non-list int value here
                 }
 
         d = self.ar(self.client.post(reverse('register-file'), data), 201)
+        self.assertEqual(d[0]['file_size'], 14564)
 
         # Check the same dataset to see if it is protected, should be unprotected
         # and get a status 200 response
@@ -956,7 +1166,7 @@ class APIDataTests(BaseTests):
 
     def test_register_aggregate(self):
         """Test endpoint for registering a dataset aggregated accross sessions.
-        
+
         Such datasets are associated to a model via a generic foreign key, and the relative
         path does not include the session pattern.
         """
@@ -972,6 +1182,8 @@ class APIDataTests(BaseTests):
         }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
+        # Expect subject field to be populated when content_type == 'subject'
+        self.assertEqual(r.data[0]['subject'], self.subject)
         fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
         self.assertTrue(fr.count() == 1)
         # Should support app label in content type
