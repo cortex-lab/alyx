@@ -5,14 +5,14 @@
 
 Database for experimental neuroscience laboratories
 
-[Documentation](https://alyx.readthedocs.io)
+[Documentation](https://cortex-lab.github.io/alyx/index.html)
 
 [Alyx Experimenter Guide](https://docs.google.com/document/d/1cx3XLZiZRh3lUzhhR_p65BggEqTKpXHUDkUDagvf9Kc/edit?usp=sharing)
 
 
 ## Installation
 
-[The getting started](https://alyx.readthedocs.io/en/latest/gettingstarted.html) section of the documentation details the steps for 
+[The getting started](https://alyx.readthedocs.io/en/latest/gettingstarted.html) section of the documentation details the steps for
 -   installing the Python/Django environment
 -   running the app with a development server
 -   registering local data
@@ -54,4 +54,3 @@ From the root of the repository.
 ````shell
 sphinx-autobuild -b html ./docs ./docs/_build/ --port 8700
 ````
-https://www.scan.co.uk/products/3xs-evolve-studio-pro-intel-core-ultra-9-285k-64gb-ddr5-16gb-nvidia-rtx-5070-ti-super-1tb-ssd-2tb-ss

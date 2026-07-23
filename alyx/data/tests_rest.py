@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from alyx.base import BaseTests
 from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat, DataNotice
+from misc.models import Lab
 from subjects.models import Subject
 
 
@@ -208,7 +209,8 @@ class APIDataTests(BaseTests):
 
         # Now attempt to delete the protected dataset
         r = self.client.delete(reverse('dataset-detail', args=[did]), data)
-        self.assertRegex(self.ar(r, 403), 'protected')
+        response = self.ar(r, 403)
+        self.assertRegex(response.get('detail') or '', 'protected')
 
     def test_dataset_date_filter(self):
         # create 2 datasets with different dates
@@ -359,6 +361,16 @@ class APIDataTests(BaseTests):
         names = {item['name'] for item in data}
         self.assertEqual(names, {'opt-notice-1', 'opt-notice-2'})
 
+    def test_pagination_max_limit(self):
+        # A request for an unbounded `?limit=` must not materialize an arbitrary number of
+        # rows (and their prefetched relations) in memory; see LimitedLimitOffsetPagination.
+        Dataset.objects.bulk_create(
+            [Dataset(name=f'paginated-dataset-{i}.npy') for i in range(1500)])
+        r = self.client.get(reverse('dataset-list') + '?limit=5000')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['count'], 1500)
+        self.assertEqual(len(r.data['results']), 1000)
+
     def test_register_files(self):
         # create 4 repositories, 2 per lab
         self.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
@@ -487,6 +499,96 @@ class APIDataTests(BaseTests):
         self.assertEqual(ds1.file_size, 45686)
         self.assertEqual(ds0.version, '1.1.1')
         self.assertEqual(ds1.version, '2.2.2')
+
+    def test_register_files_validation(self):
+        """Test that register files returns a 400 status code under different conditions."""
+        self.post(reverse('datarepository-list'), {'name': 'dra1', 'hostname': 'hosta1'})
+        self.post(reverse('lab-list'), {'name': 'laba', 'repositories': ['dra1']})
+
+        # Invalid repository name
+        data = {
+            "name":"invalid",
+            "path":'%s/2018-01-01/2/dir' % self.subject,
+            "filenames":["CognitionPlatform/subjects/qibao/2026-05-11/001/a.c.e1"],
+            "hashes":["8f85ec95a5387df4bb21e6b4eb3c3ca7f1f44bb3"],
+            "filesizes":3073962,
+            "labs":"dra1",
+            "created_by":"test"
+        }
+        r = self.post(reverse('register-file'), data)
+        self.ar(r, 400)
+
+        # Invalid data repository hostname
+        with self.subTest('Invalid data repository hostname'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1',
+                'hostname': 'does-not-exist',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Non-existent lab
+        with self.subTest('Invalid lab name'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.b.e1',
+                'name': 'dr',
+                'labs': 'does-not-exist',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Invalid ALF path: revision folder is not the last path segment
+        with self.subTest('Invalid ALF path (misplaced revision)'):
+            data = {
+                'path': '%s/2018-01-01/2/#v1#/sub' % self.subject,
+                'filenames': 'a.b.e1',
+                'name': 'dr',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # Dataset.full_clean validation error (hash exceeds the 64 character field length)
+        with self.subTest('Dataset field validation error (hash too long)'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.d.e1',
+                'name': 'dr',
+                'hashes': 'a' * 65,
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # FileRecord.full_clean validation error (relative_path contains a colon)
+        with self.subTest('FileRecord field validation error (invalid relative_path)'):
+            data = {
+                'path': '%s/2018-01-01/2/dir' % self.subject,
+                'filenames': 'a.c.x:y.e1',
+                'name': 'dr',
+            }
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
+
+        # FileRecord unique_together violation: two different datasets (distinguished by
+        # object_id) registered to the same repository end up with the same relative_path
+        with self.subTest('FileRecord unique constraint violation'):
+            self.ar(self.post(reverse('lab-list'), {'name': 'labcollide1'}), 201)
+            self.ar(self.post(reverse('lab-list'), {'name': 'labcollide2'}), 201)
+            lab1 = Lab.objects.get(name='labcollide1')
+            lab2 = Lab.objects.get(name='labcollide2')
+            data = {
+                'path': 'Subjects/collide',
+                'filenames': 'a.b.e1',
+                'name': 'dra1',
+                'content_type': 'lab',
+                'object_id': str(lab1.pk),
+            }
+            r = self.post(reverse('register-file'), data)
+            self.ar(r, 201)
+            data['object_id'] = str(lab2.pk)
+            r = self.post(reverse('register-file'), data)
+            self.assertEqual(400, r.status_code, r.data)
 
     def test_qc_validation(self):
         # this tests the validation of dataset QC outcomes
@@ -913,9 +1015,11 @@ class APIDataTests(BaseTests):
         data = {'path': f'{self.subject}/2018-01-01/002/',
                 'filenames': 'test_prot/a.c.e2',
                 'name': 'drb1',  # this is the repository name
+                'filesizes': 14564,  # check handles non-list int value here
                 }
 
         d = self.ar(self.client.post(reverse('register-file'), data), 201)
+        self.assertEqual(d[0]['file_size'], 14564)
 
         # Check the same dataset to see if it is protected, should be unprotected
         # and get a status 200 response
@@ -1062,7 +1166,7 @@ class APIDataTests(BaseTests):
 
     def test_register_aggregate(self):
         """Test endpoint for registering a dataset aggregated accross sessions.
-        
+
         Such datasets are associated to a model via a generic foreign key, and the relative
         path does not include the session pattern.
         """
@@ -1078,6 +1182,8 @@ class APIDataTests(BaseTests):
         }
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 201)
+        # Expect subject field to be populated when content_type == 'subject'
+        self.assertEqual(r.data[0]['subject'], self.subject)
         fr = FileRecord.objects.filter(dataset=Dataset.objects.get(name='a.a.e1'))
         self.assertTrue(fr.count() == 1)
         # Should support app label in content type
