@@ -1,0 +1,8 @@
+# for code coverage
+coverage
+coveralls
+# for ONE cache table generation tests
+pyarrow
+pandas
+# for running django tests in parallel
+tblib

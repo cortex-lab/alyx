@@ -37,8 +37,8 @@ Contribution checklist:
 
 ### Running tests
 
-Continuous integration is setup. But before submitting a PR or commit,the tests can run locally.
-    - `./manage.py test -n` test without migrations (faster)
+Continuous integration is set up. But before submitting a PR or commit,the tests can run locally. First install the test dependencies with `pip install -r requirements_test.txt`.
+    - `./manage.py test -n --parallel` parallel test without migrations (fastest)
     - `./manage.py test` test with migrations (recommended if model changes)
 
 ### Documentation contribution guide
