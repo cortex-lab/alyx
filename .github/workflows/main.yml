@@ -59,6 +59,7 @@ jobs:
           cp ../deploy/app/docker/settings-deploy.py  alyx/settings.py
           cp ../deploy/app/docker/settings_lab-deploy.py  alyx/settings_lab.py
           python manage.py collectstatic --noinput --link
+          python manage.py makemigrations --check --dry-run
           coverage run manage.py test --parallel
           coverage combine
           coveralls --service=github
