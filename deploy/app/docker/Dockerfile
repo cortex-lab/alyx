@@ -5,14 +5,13 @@ COPY settings_lab-deploy.py /var/www/alyx/alyx/alyx/settings_lab.py
 COPY settings_lab-user.py* /var/www/alyx/alyx/alyx/settings_lab.py
 
 ARG alyx_branch=dev
-ARG iblalyx_branch=deploy
 
-RUN git -C /var/www/alyx fetch origin ${alyx_branch}
-RUN git -C /var/www/alyx checkout -B ${alyx_branch} origin/${alyx_branch}
-RUN git -C /home/iblalyx fetch origin ${iblalyx_branch}
-RUN git -C /home/iblalyx checkout -B ${iblalyx_branch} origin/${iblalyx_branch}
+# FETCH_HEAD is used (rather than origin/<ref>) so that this also works when the ARG is a tag,
+# e.g. a release version, and not just a branch name.
+RUN git -C /var/www/alyx fetch origin ${alyx_branch} && \
+    git -C /var/www/alyx checkout -B ${alyx_branch} FETCH_HEAD
 
-RUN pip install -r /var/www/alyx/requirements.txt
+RUN uv pip install --no-cache -r /var/www/alyx/requirements.txt
 
 WORKDIR /var/www/alyx/alyx
 

@@ -1,0 +1,68 @@
+name: Release
+
+# Runs once the CI workflow succeeds on master. If the __version__ in alyx/alyx/__init__.py
+# has been bumped since the last tag, cuts a git tag + GitHub release for it, then triggers
+# the image-build workflow for that tag. Image building itself lives in build-image.yml.
+on:
+  workflow_run:
+    workflows: ["CI, approaching CD"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+  actions: write  # allows dispatching build-image.yml
+
+jobs:
+  check-version:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      should_release: ${{ steps.check_tag.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Get version from alyx/alyx/__init__.py
+        id: get_version
+        run: |
+          VERSION=$(python3 -c "import re; print(re.search(r\"__version__ = '([^']+)'\", open('alyx/alyx/__init__.py').read()).group(1))")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version has already been tagged
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -qE "refs/tags/${{ steps.get_version.outputs.version }}$"; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.check-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Create tag and GitHub release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          gh release create "$VERSION" --title "$VERSION" --generate-notes
+
+      # A tag pushed by GITHUB_TOKEN does not trigger build-image.yml's push-tags event
+      # (GitHub suppresses it to avoid recursion), so dispatch the build explicitly.
+      # workflow_dispatch is exempt from that suppression.
+      - name: Trigger image build for the new tag
+        run: gh workflow run build-image.yml --ref "$VERSION"

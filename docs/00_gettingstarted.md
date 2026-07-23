@@ -26,8 +26,8 @@ Update the `DJANGO_SECRET_KEY` value (you can create one on this website: [https
 Then we will start the containers. The `docker compose up` command will make sure the service is always running, even after a restart.
 
 ```shell
-cd ./alyx/deploy
-docker compose -f docker-compose-postgres-gunicorn.yaml up --detach 
+cd ./alyx/deploy/app
+docker compose up --detach
 ```
 
 Now this has started Alyx as a local service, with an empty database as a backend. So the very first time,
@@ -47,7 +47,7 @@ docker exec -it alyx_apache /var/www/alyx/scripts/load-init-fixtures.sh
 docker exec -it alyx_apache python manage.py createsuperuser
 ```
 
-You can now visit the Alyx interface in your web browser at [http://localhost:8000](http://localhost:8000)
+You can now visit the Alyx interface in your web browser at [http://localhost](http://localhost)
 
 This is it ! In the next session, we will see how to register experiments and datasets on this database from a local python environment.
 

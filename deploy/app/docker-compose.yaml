@@ -1,0 +1,51 @@
+# Production web deployment (apache + postgres) for a full Alyx instance.
+#
+# This is the single source of truth for the production compose: it is intentionally
+# server-agnostic and driven entirely by the environment (see template.env). IBL/per-server
+# specifics (SES, local settings_lab.py, iblalyx requirements install, extra mounts) are
+# layered downstream via a docker-compose.override.yaml in iblsre or an IBL-specific image
+# built on top of this one, not here.
+#
+# This is the single entry point for a production deployment. Usage on a deploy host
+# (with a populated .env alongside this file):
+#   docker compose up -d
+services:
+  alyx_apache:
+    image: internationalbrainlab/alyx_apache:latest
+    container_name: alyx_apache
+    mem_limit: ${APACHE_MEM_LIMIT:-1500m}
+    memswap_limit: ${APACHE_MEM_LIMIT:-1500m}
+    ports:
+      - "8080:8080"
+      - "443:443"
+      - "80:80"
+    env_file: .env
+    command: >
+      bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
+               /bin/bash /usr/local/bin/alyx_issue_ssl.sh &&
+               chown www-data:www-data -fR /var/log/apache2 &&
+               /usr/sbin/apache2ctl -DFOREGROUND"
+    restart: always
+    environment:
+      - APACHE_LOG_DIR=/var/log/apache2
+      - DJANGO_MEDIA_ROOT=${DJANGO_MEDIA_S3:-$DJANGO_MEDIA_ROOT}
+      - DJANGO_TABLES_ROOT=${DJANGO_TABLES_S3:-$DJANGO_TABLES_ROOT}
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - ${APACHE_LOG_DIR}:/var/log/apache2
+      - ${DJANGO_MEDIA_ROOT:-~/uploaded}:/var/www/alyx/alyx/uploaded
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:17
+    container_name: alyx_postgres
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - alyx_postgres:/var/lib/postgresql/data
+    expose:
+      - ${POSTGRES_PORT}
+    environment:
+      PGPORT: ${POSTGRES_PORT}
+volumes:
+  alyx_postgres:
