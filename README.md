@@ -2,6 +2,7 @@
 
 [![Github Actions](https://github.com/cortex-lab/alyx/actions/workflows/main.yml/badge.svg)](https://github.com/cortex-lab/alyx/actions/)
 [![Coverage Status](https://coveralls.io/repos/github/cortex-lab/alyx/badge.svg?branch=github_action)](https://coveralls.io/github/cortex-lab/alyx?branch=master)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21513696.svg)](https://doi.org/10.5281/zenodo.21513696)
 
 Database for experimental neuroscience laboratories
 

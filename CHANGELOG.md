@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Worklfow tests now run in parallel and asserts no new migrations
+- Workflow tests now run in parallel and asserts no new migrations
 
 ## [3.6.0]
 
