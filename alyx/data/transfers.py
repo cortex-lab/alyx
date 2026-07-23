@@ -215,9 +215,9 @@ def _get_name_collection_revision(file, rel_dir_path):
 
 def get_aggregate_collection_revision(files, rel_dir_path):
     """Parse the path of a dataset not associated to a session.
-    
+
     This is less strict than `_get_name_collection_revision`.
-    
+
     By convention, the pattern is this: relation/identifier/(revision)/dataset
     For example: Subjects/cortexlab/SP044/#2020-01-01#/obj.attr.ext
                  Tags/2026_Q1_Wang_Yu_et_al/obj.attr.ext
@@ -230,12 +230,12 @@ def get_aggregate_collection_revision(files, rel_dir_path):
         info = regex(spec=COLLECTION_SPEC).match(_rel_dir_path + '/').groupdict()
         info['full_path'] = fullpath.as_posix()
         info['filename'] = fullpath.name
-        info['rel_dir_path'] = _rel_dir_path
+        info['rel_dir_path'] = ''  # no session path; full path should be captured by collection/revision
         info['relation'] = info['identifier'] = None
         if info['collection']:
             if '/' in info['collection']:
                 # This is just convention and is not enforced
-                info['relation'], info['identifier'] = info['collection'].split('/', 1)                    
+                info['relation'], info['identifier'] = info['collection'].split('/', 1)
         # Check that collection (if present) was captured correctly
         expected_len = 0 if not info['collection'] else len(info['collection'].split('/'))
         expected_len += int(bool(info['revision']))
