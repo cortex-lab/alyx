@@ -60,10 +60,12 @@ jobs:
           cp ../deploy/app/docker/settings_lab-deploy.py  alyx/settings_lab.py
           python manage.py collectstatic --noinput --link
           coverage run manage.py test --parallel
+          coverage combine
           coveralls --service=github
         env:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APACHE_LOG_DIR: /var/log/alyx
+          COVERAGE_RCFILE: ../setup.cfg
           POSTGRES_HOST: localhost
