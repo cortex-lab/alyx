@@ -1,4 +1,4 @@
-FROM ubuntu/apache2:2.4-22.04_beta
+FROM ubuntu/apache2:2.4-25.04_beta
 
 # python unbuffered allows to get real-time logs
 ENV PYTHONUNBUFFERED=1
@@ -18,14 +18,17 @@ RUN apt-get install -y \
     libapache2-mod-wsgi-py3 \
     libpq-dev \
     python3-certbot-apache \
-    software-properties-common \
     vim \
     w3m \
     wget
 
-# The apt-add-repository command is installed by software-properties common above
+# Python 3.13 is the system Python on Ubuntu 25.04, so libapache2-mod-wsgi-py3 (built against
+# it) matches the venv below — no PPA needed and no mod_wsgi/venv version skew.
 ARG PYTHON=python3.13
-RUN apt-add-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y ${PYTHON} ${PYTHON}-venv
+RUN apt-get install -y ${PYTHON} ${PYTHON}-venv
+
+# uv for fast, reproducible dependency management (used for the venv + installs below)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -37,13 +40,13 @@ RUN echo "root:Docker!" | chpasswd
 # Doing it here makes head container releases very fast as the clone is present and pip cache already built
 ARG alyx_branch=dev
 RUN git clone --branch ${alyx_branch} https://github.com/cortex-lab/alyx.git /var/www/alyx
-# Best practice for configuring python venv
+# Create the venv with the system Python 3.13 (ABI-matches mod_wsgi) and install deps with uv
 ENV VIRTUAL_ENV=/var/www/alyx/.venv
-RUN ${PYTHON} -m venv ${VIRTUAL_ENV}
+RUN uv venv --python /usr/bin/${PYTHON} ${VIRTUAL_ENV}
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /var/www/alyx
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir dj-database-url
+RUN uv pip install --no-cache -r requirements.txt
+RUN uv pip install --no-cache dj-database-url
 
 # Apache ENVs
 ENV APACHE_RUN_USER=www-data
@@ -58,8 +61,10 @@ RUN mkdir -p ${APACHE_LOG_DIR} \
     && chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${APACHE_LOG_DIR}
 
 # Apache configs
-COPY apache-conf-alyx /etc/apache2/apache2.conf
-COPY 000-default-conf-alyx /etc/apache2/sites-available/000-default.conf
+COPY apache2.conf /etc/apache2/apache2.conf
+COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY alyx-common.conf /etc/apache2/sites-available/alyx-common.conf
+COPY options-ssl-apache.conf /etc/apache2/sites-available/options-ssl-apache.conf
 
 # Runtime scripts (alyx_issue_ssl.sh is invoked by the deploy compose command at container start)
 COPY scripts/ /usr/local/bin/

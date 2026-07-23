@@ -23,7 +23,7 @@ services:
     command: >
       bash -c "python /var/www/alyx/alyx/manage.py collectstatic --noinput &&
                /bin/bash /usr/local/bin/alyx_issue_ssl.sh &&
-               chown www-data:www-data -fR 664 /var/log/apache2 &
+               chown www-data:www-data -fR /var/log/apache2 &&
                /usr/sbin/apache2ctl -DFOREGROUND"
     restart: always
     environment:

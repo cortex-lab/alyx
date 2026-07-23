@@ -62,14 +62,8 @@
           register: apache_status
           failed_when: "'apache2 is running' not in apache_status.stdout"
 
-        - name: Verify log rotation
-          shell: docker exec alyx_apache logrotate /etc/logrotate.d/apache2 --verbose --force
-
-        - name: Verify the app still serves HTTP 200 after log rotation
-          uri:
-            url: "http://localhost"
-            method: GET
-            status_code: 200
+        # Log rotation is handled in-container by apache's piped rotatelogs (see the
+        # ErrorLog/CustomLog directives), so there is no logrotate step to test here.
 
         - name: Verify Django database connectivity
           shell: docker exec alyx_apache ./manage.py showmigrations

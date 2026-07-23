@@ -11,7 +11,7 @@ ARG alyx_branch=dev
 RUN git -C /var/www/alyx fetch origin ${alyx_branch} && \
     git -C /var/www/alyx checkout -B ${alyx_branch} FETCH_HEAD
 
-RUN pip install -r /var/www/alyx/requirements.txt
+RUN uv pip install --no-cache -r /var/www/alyx/requirements.txt
 
 WORKDIR /var/www/alyx/alyx
 
