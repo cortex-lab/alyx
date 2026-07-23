@@ -341,7 +341,7 @@ class TestTransfers(TestCase):
         expected = {
             'full_path': 'Subjects/cortexlab/SP044/obj.attr.ext',
             'filename': filenames[0],
-            'rel_dir_path': relative_path,
+            'rel_dir_path': '',  # entire dir path captured by collection and revision
             'collection': relative_path,
             'revision': None,
             'relation': 'Subjects',
@@ -349,7 +349,7 @@ class TestTransfers(TestCase):
         }
         self.assertDictEqual(dataset_path_parsed[0], expected)
         self.assertEqual(dataset_path_parsed[1]['revision'], '2020-01-01')
-        
+
         # Check handles no collection and no revision
         dataset_path_parsed, resp = f(filenames, '')
         expected = [
@@ -365,7 +365,7 @@ class TestTransfers(TestCase):
             {
                 'full_path': filenames[1],
                 'filename': filenames[0],
-                'rel_dir_path': '#2020-01-01#',
+                'rel_dir_path': '',
                 'collection': None,
                 'revision': '2020-01-01',
                 'identifier': None,
