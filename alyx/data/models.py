@@ -1,4 +1,5 @@
 import logging
+import markdown as _markdown
 from one.alf.spec import QC
 
 from django.core.validators import RegexValidator
@@ -498,3 +499,62 @@ def new_download(dataset, user, projects=()):
     d.projects.add(*projects)
     d.increment()
     return d
+
+
+class DataNotice(BaseModel):
+    """A notice about data quality issues that may affect one or more datasets."""
+
+    class IMPORTANCE(models.IntegerChoices):
+        CRITICAL = 50
+        MAJOR = 40
+        MINOR = 30
+        INSIGNIFICANT = 20
+
+    description = models.TextField(blank=True)
+    importance = models.IntegerField(
+        default=IMPORTANCE.INSIGNIFICANT, choices=IMPORTANCE,
+        help_text=' / '.join([f'{q.value}: {q.name}' for q in IMPORTANCE]))
+
+    datasets = models.ManyToManyField(
+        Dataset, blank=True, related_name='data_notices')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='data_notices',
+    )
+    created_datetime = models.DateTimeField(auto_now_add=True)
+    version_affected = models.CharField(max_length=64, blank=True)
+    affected_date_start = models.DateField(null=True, blank=True)
+    affected_date_end = models.DateField(null=True, blank=True)
+
+    def description_html(self):
+        """Render description as safe HTML via markdown."""
+        if not self.description:
+            return ''
+        return _markdown.markdown(self.description, extensions=['extra'])
+
+    def importance_panel_class(self):
+        """Bootstrap panel class for this notice's importance level."""
+        return {
+            self.IMPORTANCE.CRITICAL: 'danger',
+            self.IMPORTANCE.MAJOR: 'warning',
+            self.IMPORTANCE.MINOR: 'info',
+            self.IMPORTANCE.INSIGNIFICANT: 'default',
+        }.get(self.importance, 'default')
+
+    def importance_badge_color(self):
+        """Hex color for the importance badge."""
+        return {
+            self.IMPORTANCE.CRITICAL: '#c9302c',
+            self.IMPORTANCE.MAJOR: '#ec971f',
+            self.IMPORTANCE.MINOR: '#31b0d5',
+            self.IMPORTANCE.INSIGNIFICANT: '#6c757d',
+        }.get(self.importance, '#6c757d')
+
+    class Meta:
+        ordering = ('-importance', '-created_datetime', 'name')
+
+    def __str__(self):
+        return self.name or str(self.id)

@@ -4,9 +4,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Exists, OuterRef
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
+from django_filters import rest_framework as filters
 
 from iblutil.util import ensure_list
 
@@ -23,7 +25,8 @@ from .models import (DataRepositoryType,
                      FileRecord,
                      new_download,
                      Revision,
-                     Tag
+                     Tag,
+                     DataNotice
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -33,7 +36,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DownloadSerializer,
                           FileRecordSerializer,
                           RevisionSerializer,
-                          TagSerializer
+                          TagSerializer,
+                          DataNoticeSerializer
                           )
 from .transfers import (_get_session, _parse_path, _get_repositories_for_labs, bulk_sync,
                         _check_dataset_protected, _get_name_collection_revision,
@@ -139,6 +143,65 @@ class TagDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TagSerializer
     permission_classes = rest_permission_classes()
     lookup_field = 'name'
+
+
+class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
+    """Provides validation of list of UUIDs, passed as comma-separated string."""
+    pass
+
+
+class DataNoticeFilter(BaseFilterSet):
+    datasets = UUIDInFilter(field_name='datasets__id', lookup_expr='in')
+    dataset_tag = django_filters.CharFilter(method='dataset_tag_filter')
+
+    def dataset_tag_filter(self, notices, name, value):
+        """Filter notices by dataset tag using Exists semi-join (avoids fan-out)."""
+        through_model = notices.model.datasets.through
+        return notices.filter(
+            Exists(
+                through_model.objects.filter(
+                    datanotice_id=OuterRef('id'),
+                    dataset__tags__name=value
+                )
+            )
+        )
+
+    class Meta:
+        model = DataNotice
+        fields = (
+            'name',
+            'importance',
+            'created_by',
+            'version_affected',
+            'affected_date_start',
+            'affected_date_end',
+            'datasets',
+            'dataset_tag',
+        )
+
+
+class DataNoticeList(generics.ListCreateAPIView):
+    queryset = DataNotice.objects.all()
+    serializer_class = DataNoticeSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = DataNoticeFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        # For list endpoints, defer large fields not needed in list responses
+        queryset = queryset.defer('description', 'json')
+        return queryset
+
+
+class DataNoticeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DataNotice.objects.all()
+    serializer_class = DataNoticeSerializer
+    permission_classes = rest_permission_classes()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return self.serializer_class.setup_eager_loading(queryset)
 
 # Dataset
 # ------------------------------------------------------------------------------------------------

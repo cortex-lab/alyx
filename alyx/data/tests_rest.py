@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from alyx.base import BaseTests
-from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat
+from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat, DataNotice
 from misc.models import Lab
 from subjects.models import Subject
 
@@ -244,6 +244,122 @@ class APIDataTests(BaseTests):
         # but both correspond to session of 2018-01-01
         r = self.client.get(reverse('dataset-list') + '?date=2018-01-01')
         self.assertTrue(len(self.ar(r, 200)) == 2)
+
+    def test_datanotice_list_filter_by_dataset(self):
+        d1 = Dataset.objects.create(name='notice-filter-1.npy')
+        d2 = Dataset.objects.create(name='notice-filter-2.npy')
+
+        n1 = DataNotice.objects.create(name='notice-a', created_by=self.superuser)
+        n1.datasets.add(d1)
+        n2 = DataNotice.objects.create(name='notice-b', created_by=self.superuser)
+        n2.datasets.add(d2)
+        n3 = DataNotice.objects.create(name='notice-c', created_by=self.superuser)
+        n3.datasets.add(d1, d2)
+
+        r = self.client.get(reverse('datanotice-list') + f'?datasets={d1.id}')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'notice-a', 'notice-c'})
+
+        r = self.client.get(reverse('datanotice-list') + f'?datasets={d1.id},{d2.id}')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'notice-a', 'notice-b', 'notice-c'})
+
+    def test_datanotice_list_filter_by_dataset_tag(self):
+        d1 = Dataset.objects.create(name='notice-tag-1.npy')
+        d2 = Dataset.objects.create(name='notice-tag-2.npy')
+        public_tag = Tag.objects.create(name='public-tag')
+        private_tag = Tag.objects.create(name='private-tag')
+        d1.tags.add(public_tag)
+        d2.tags.add(private_tag)
+
+        n1 = DataNotice.objects.create(name='tag-notice-a', created_by=self.superuser)
+        n1.datasets.add(d1)
+        n2 = DataNotice.objects.create(name='tag-notice-b', created_by=self.superuser)
+        n2.datasets.add(d2)
+        n3 = DataNotice.objects.create(name='tag-notice-c', created_by=self.superuser)
+        n3.datasets.add(d1, d2)
+
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=public-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'tag-notice-a', 'tag-notice-c'})
+
+    def test_datanotice_list_ordering_importance_date_name(self):
+        d = Dataset.objects.create(name='notice-ordering.npy')
+
+        # Same creation timestamp window: higher importance should sort first, then by name.
+        high_z = DataNotice.objects.create(
+            name='z-high',
+            importance=DataNotice.IMPORTANCE.MAJOR,
+            created_by=self.superuser,
+        )
+        high_z.datasets.add(d)
+        low = DataNotice.objects.create(
+            name='m-low',
+            importance=DataNotice.IMPORTANCE.MINOR,
+            created_by=self.superuser,
+        )
+        low.datasets.add(d)
+        high_a = DataNotice.objects.create(
+            name='a-high',
+            importance=DataNotice.IMPORTANCE.MAJOR,
+            created_by=self.superuser,
+        )
+        high_a.datasets.add(d)
+
+        r = self.client.get(reverse('datanotice-list'))
+        data = self.ar(r, 200)
+        names = [x['name'] for x in data]
+        idx_a = names.index('a-high')
+        idx_z = names.index('z-high')
+        idx_low = names.index('m-low')
+
+        self.assertLess(idx_a, idx_z)
+        self.assertLess(idx_z, idx_low)
+
+    def test_datanotice_list_filter_by_dataset_tag_optimization(self):
+        """Verify dataset_tag filter correctly uses Exists() optimization (no row explosion)."""
+        # Create multiple datasets with various tags
+        datasets = [Dataset.objects.create(name=f'opt-test-{i}.npy') for i in range(5)]
+        target_tag = Tag.objects.create(name='opt-target-tag')
+        other_tag = Tag.objects.create(name='opt-other-tag')
+
+        # Add tags to datasets
+        datasets[0].tags.add(target_tag)  # has target tag
+        datasets[1].tags.add(other_tag)   # has other tag
+        datasets[2].tags.add(target_tag, other_tag)  # has both
+        datasets[3].tags.add(other_tag)   # has other tag
+        datasets[4].tags.add(target_tag)  # has target tag
+
+        # Create notices with various dataset combinations
+        n1 = DataNotice.objects.create(name='opt-notice-1', created_by=self.superuser)
+        n1.datasets.add(*datasets[:3])  # includes datasets 0, 1, 2
+
+        n2 = DataNotice.objects.create(name='opt-notice-2', created_by=self.superuser)
+        n2.datasets.add(*datasets[3:])  # includes datasets 3, 4
+
+        n3 = DataNotice.objects.create(name='opt-notice-3', created_by=self.superuser)
+        n3.datasets.add(datasets[4])  # only dataset 4
+
+        # Filter by target_tag; should get notices with datasets having that tag
+        # n1: datasets[0,1,2] -> includes 0 (has target) and 2 (has target) ✓
+        # n2: datasets[3,4] -> includes 4 (has target) ✓
+        # n3: datasets[4] -> includes 4 (has target) ✓
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=opt-target-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'opt-notice-1', 'opt-notice-2', 'opt-notice-3'})
+
+        # Filter by other_tag; should get different results
+        # n1: datasets[0,1,2] -> includes 1 (has other) and 2 (has other) ✓
+        # n2: datasets[3,4] -> includes 3 (has other) ✓
+        # n3: datasets[4] -> has no other tag ✗
+        r = self.client.get(reverse('datanotice-list') + '?dataset_tag=opt-other-tag')
+        data = self.ar(r, 200)
+        names = {item['name'] for item in data}
+        self.assertEqual(names, {'opt-notice-1', 'opt-notice-2'})
 
     def test_pagination_max_limit(self):
         # A request for an unbounded `?limit=` must not materialize an arbitrary number of
