@@ -77,11 +77,19 @@ def _anonymize(path):
                     'subjects.genotypetest',
                     )
 
+    # These sentinel rows are recreated automatically the first time the schema is migrated
+    # (see data.models.default_data_format/default_dataset_type), so including them in the
+    # dump causes a duplicate-name conflict when the fixture is loaded into a freshly
+    # migrated database.
+    UNKNOWN_DEFAULTS = ('data.dataformat', 'data.datasettype')
+
     counter = defaultdict(int)
     data_out = []
     for item in data:
         # Max number of items per model.
         if item['model'] in LIMIT_MODELS and counter[item['model']] >= N_MAX:
+            continue
+        if item['model'] in UNKNOWN_DEFAULTS and item['fields'].get('name') == 'unknown':
             continue
         pk = item['pk']
         # Remove user password and email.
