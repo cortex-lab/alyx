@@ -1,6 +1,6 @@
 boto3
 colorlog
-django>=5.2.14,<6  # see issue #963
+django>=5.2.15,<6  # see issue #963
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
@@ -27,7 +27,7 @@ ipython
 markdown
 matplotlib
 ONE-api>=3.5.1
-pillow>=11.3.0
+pillow>=12.3.0
 psycopg2-binary
 python-dateutil
 python-magic

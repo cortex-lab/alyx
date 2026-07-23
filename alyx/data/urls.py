@@ -49,6 +49,12 @@ urlpatterns = [
     path('tags/<str:name>', dv.TagDetail.as_view(),
          name="tag-detail"),
 
+    path('data-notices', dv.DataNoticeList.as_view(),
+         name='datanotice-list'),
+
+    path('data-notices/<uuid:pk>', dv.DataNoticeDetail.as_view(),
+         name='datanotice-detail'),
+
     path('datasets', dv.DatasetList.as_view(),
          name="dataset-list"),
 

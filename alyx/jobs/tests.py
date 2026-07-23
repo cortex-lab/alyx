@@ -54,15 +54,18 @@ class TestManagementTasks(BaseTests):
                 timezone_mock.return_value = date
                 status = Task.STATUS_DATA_SOURCES[i % len(Task.STATUS_DATA_SOURCES)][0]
                 Task.objects.create(name=f'task_{i}', status=status)
-        # Create a session for testing signed-off filter
-        lab = Lab.objects.create(name='lab')
-        subject = Subject.objects.create(nickname='586', lab=lab)
-        json_data = {'sign_off_checklist': {'sign_off_date': self.base.isoformat()}}
-        self.session = Session.objects.create(
-            subject=subject, number=1, json=json_data, type='Experiment')
-        t = Task.objects.first()
-        t.session = self.session
-        t.save()
+            # Create a session for testing signed-off filter
+            lab = Lab.objects.create(name='lab')
+            subject = Subject.objects.create(nickname='586', lab=lab)
+            json_data = {'sign_off_checklist': {'sign_off_date': self.base.isoformat()}}
+            self.session = Session.objects.create(
+                subject=subject, number=1, json=json_data, type='Experiment')
+            # NB: Task.pk is a random UUID, so Task.objects.first() (which falls back to
+            # ordering by pk) would pick a random task, not task_0; fetch it by name instead.
+            t = Task.objects.get(name='task_0')
+            t.session = self.session
+            timezone_mock.return_value = date_list[0]
+            t.save()
 
     def test_cleanup(self):
         """Test for cleanup action."""

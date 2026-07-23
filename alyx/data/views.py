@@ -4,9 +4,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Exists, OuterRef
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
 import django_filters
+from django_filters import rest_framework as filters
+
+from iblutil.util import ensure_list
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from experiments.models import ProbeInsertion
@@ -21,7 +25,8 @@ from .models import (DataRepositoryType,
                      FileRecord,
                      new_download,
                      Revision,
-                     Tag
+                     Tag,
+                     DataNotice
                      )
 from .serializers import (DataRepositoryTypeSerializer,
                           DataRepositorySerializer,
@@ -31,7 +36,8 @@ from .serializers import (DataRepositoryTypeSerializer,
                           DownloadSerializer,
                           FileRecordSerializer,
                           RevisionSerializer,
-                          TagSerializer
+                          TagSerializer,
+                          DataNoticeSerializer
                           )
 from .transfers import (_get_session, _parse_path, _get_repositories_for_labs, bulk_sync,
                         _check_dataset_protected, _get_name_collection_revision,
@@ -138,6 +144,65 @@ class TagDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = rest_permission_classes()
     lookup_field = 'name'
 
+
+class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
+    """Provides validation of list of UUIDs, passed as comma-separated string."""
+    pass
+
+
+class DataNoticeFilter(BaseFilterSet):
+    datasets = UUIDInFilter(field_name='datasets__id', lookup_expr='in')
+    dataset_tag = django_filters.CharFilter(method='dataset_tag_filter')
+
+    def dataset_tag_filter(self, notices, name, value):
+        """Filter notices by dataset tag using Exists semi-join (avoids fan-out)."""
+        through_model = notices.model.datasets.through
+        return notices.filter(
+            Exists(
+                through_model.objects.filter(
+                    datanotice_id=OuterRef('id'),
+                    dataset__tags__name=value
+                )
+            )
+        )
+
+    class Meta:
+        model = DataNotice
+        fields = (
+            'name',
+            'importance',
+            'created_by',
+            'version_affected',
+            'affected_date_start',
+            'affected_date_end',
+            'datasets',
+            'dataset_tag',
+        )
+
+
+class DataNoticeList(generics.ListCreateAPIView):
+    queryset = DataNotice.objects.all()
+    serializer_class = DataNoticeSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = DataNoticeFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = self.serializer_class.setup_eager_loading(queryset)
+        # For list endpoints, defer large fields not needed in list responses
+        queryset = queryset.defer('description', 'json')
+        return queryset
+
+
+class DataNoticeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = DataNotice.objects.all()
+    serializer_class = DataNoticeSerializer
+    permission_classes = rest_permission_classes()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return self.serializer_class.setup_eager_loading(queryset)
+
 # Dataset
 # ------------------------------------------------------------------------------------------------
 
@@ -237,8 +302,8 @@ class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):
             return super().delete(request, *args, **kwargs)
         except models.ProtectedError as e:
             # Return Forbidden response with dataset name and list of protected tags associated
-            err_msg, _ = e.args
-            return Response(e.args[0], 403)
+            data = {'status_code': 403, 'detail': e.args[0]}
+            return Response(data, 403)
 
 
 # FileRecord
@@ -295,11 +360,17 @@ def _make_dataset_response(dataset):
         }
         for fr in FileRecord.objects.filter(dataset=dataset)]
 
+    subject = None
+    if dataset.session:
+        subject = dataset.session.subject.nickname
+    elif dataset.content_type.model == 'subject':
+        subject = dataset.content_object.nickname
+
     out = {
         'id': dataset.pk,
         'name': dataset.name,
         'file_size': dataset.file_size,
-        'subject': dataset.session.subject.nickname if dataset.session else None,
+        'subject': subject,
         'created_by': dataset.created_by.username,
         'created_datetime': dataset.created_datetime,
         'dataset_type': getattr(dataset.dataset_type, 'name', ''),
@@ -446,7 +517,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         Endpoint to create and register a dataset and file record through the REST API.
 
         The session is retrieved by the ALF convention in the relative path, so this field has to
-        match the format Subject/Date/Number as shown below, unless 
+        match the format Subject/Date/Number as shown below, unless
 
         The set of repositories are given through the labs. The lab is by default the subject lab,
         but if it is specified, it overrides the subject lab entirely.
@@ -484,7 +555,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                'projects': 'alyx_lab_name',  # optional, alias of lab field above
               }
         ```
-        
+
         For registering data that is not associated with a session, the following fields should be
         provided:
         ```python
@@ -505,12 +576,16 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # get the concerned repository using the name/hostname combination
         name = request.data.get('name', None)
         hostname = request.data.get('hostname', None)
-        if name:
-            repo = DataRepository.objects.get(name=name)
-        elif hostname:
-            repo = DataRepository.objects.get(hostname=hostname)
-        else:
-            repo = None
+        repo = None
+        try:
+            if name:
+                repo = DataRepository.objects.get(name=name)
+            elif hostname:
+                repo = DataRepository.objects.get(hostname=hostname)
+        except DataRepository.DoesNotExist:
+            data = {'status_code': 400, 'detail': 'The specified repository does not exist.'}
+            return Response(data=data, status=400)
+
         exists_in = (repo,)
 
         rel_dir_path = request.data.get('path', '')
@@ -540,6 +615,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         filesizes = request.data.get('filesizes', [None] * len(filenames))
         if isinstance(filesizes, str):
             filesizes = filesizes.split(',')
+        filesizes = [int(f) if f is not None else None for f in ensure_list(filesizes)]
 
         # qc if provided
         qcs = request.data.get('qc', [None] * len(filenames)) or 'NOT_SET'
@@ -579,8 +655,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             try:
                 model.objects.get(pk=object_id)
             except (model.DoesNotExist, ValidationError):
-                data = {'status_code': 400,
-                        'detail': f'Invalid object ID: {object_id}'}
+                data = {'status_code': 400, 'detail': f'Invalid object ID: {object_id}'}
                 return Response(data=data, status=400)
             # For aggregate datasets the repository must be specified,
             # as we cannot retrieve it from the session subject
@@ -626,10 +701,14 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             projects = request.data.get('projects', [])
             if isinstance(projects, str):
                 projects = projects.split(',')
-            labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
-            
+            try:
+                labs = [Lab.objects.get(name=lab) for lab in labs + projects if lab]
+            except Lab.DoesNotExist:
+                data = {'status_code': 400, 'detail': 'One or more of the specified labs do not exist.'}
+                return Response(data=data, status=400)
+
             repositories = _get_repositories_for_labs(labs or [subject.lab], server_only=server_only)
-        
+
         if repo and repo not in repositories:
             repositories += [repo]
         if server_only:

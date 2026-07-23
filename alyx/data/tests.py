@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from one.alf.path import add_uuid_string
 
 from data.management.commands import files
-from data.models import Dataset, DatasetType, Tag, Revision, DataRepository, FileRecord
+from data.models import Dataset, DatasetType, Tag, Revision, DataRepository, FileRecord, DataNotice
 from subjects.models import Subject
 from actions.models import Session
 from misc.models import Lab
@@ -91,6 +91,23 @@ class TestRevisionModel(TestCase):
     def test_validation(self):
         # Expect raises when using special characters
         self.assertRaises(ValidationError, Revision.objects.create, name='#2022-01-01.#')
+
+
+class TestDataNoticeModel(TestCase):
+    def test_defaults_and_relations(self):
+        dataset = Dataset.objects.create(name='mydataset.npy')
+        notice = DataNotice.objects.create(name='notice-a')
+
+        self.assertEqual(notice.importance, DataNotice.IMPORTANCE.INSIGNIFICANT)
+        self.assertEqual(str(notice), 'notice-a')
+
+        notice.datasets.add(dataset)
+        self.assertEqual(notice.datasets.count(), 1)
+        self.assertEqual(dataset.data_notices.count(), 1)
+
+    def test_str_without_name(self):
+        notice = DataNotice.objects.create(name='')
+        self.assertEqual(str(notice), str(notice.id))
 
 
 class TestManagementFiles(TestCase):
