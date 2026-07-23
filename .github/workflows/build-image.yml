@@ -1,13 +1,20 @@
 name: Build and push images
 
 # Builds the alyx docker images for a tag, smoke-tests the built image, and pushes only
-# if the test passes. Triggered by:
-#   - pushing a tag manually (rebuild without a version bump), or
-#   - the Release workflow dispatching this after it cuts a tag.
-# Both cases resolve github.ref_name to the tag name, used as the image tag.
+# if the test passes. github.ref_name (the tag name) is the image tag and the alyx ref
+# that gets built. Triggered by:
+#   - a release version tag `N.N.N` (pushed by release.yml, or by a human for a rebuild)
+#       -> build + smoke test + push `<version>` and `latest` to Docker Hub;
+#   - a `dev*` tag (dry run to exercise this pipeline before a real release)
+#       -> build + smoke test only, NO Docker Hub login and NO push;
+#   - workflow_dispatch (available only once this file is on the default branch).
+# NB: tag triggers are NOT branch-scoped — git tags do not belong to a branch, and GitHub
+# offers no branch filter for tag events. The tag-name patterns below are the restriction.
 on:
   push:
-    tags: ['*']
+    tags:
+      - '*.*.*'   # release versions -> build + push
+      - 'dev*'    # dry run -> build + smoke test, no push
   workflow_dispatch:
 
 jobs:
@@ -45,13 +52,17 @@ jobs:
       - name: Smoke-test the built image
         run: ansible-playbook deploy/app/test/test-deploy-web.yaml
 
+      # Dry-run tags (dev*) stop here: the pipeline is validated (build + smoke test) without
+      # touching Docker Hub. Only real version tags log in and push.
       - name: Log in to Docker Hub
+        if: ${{ !startsWith(github.ref_name, 'dev') }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Push images
+        if: ${{ !startsWith(github.ref_name, 'dev') }}
         run: |
           docker push "$BASE:latest"
           docker push "$BASE:$VERSION"
