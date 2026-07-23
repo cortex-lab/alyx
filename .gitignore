@@ -41,6 +41,7 @@ all_dumped_anon.json
 notes.txt
 build
 *venv
+.coverage*
 .idea/*
 .cache/
 alyx/alyx_full.sql.gz

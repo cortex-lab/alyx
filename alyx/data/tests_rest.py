@@ -1,5 +1,6 @@
 import datetime
 from pathlib import PurePosixPath
+from unittest import mock
 import uuid
 
 from django.contrib.contenttypes.models import ContentType
@@ -8,6 +9,7 @@ from django.urls import reverse
 
 from alyx.base import BaseTests
 from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat, DataNotice
+from data.views import DatasetList
 from misc.models import Lab
 from subjects.models import Subject
 
@@ -365,11 +367,14 @@ class APIDataTests(BaseTests):
         # A request for an unbounded `?limit=` must not materialize an arbitrary number of
         # rows (and their prefetched relations) in memory; see LimitedLimitOffsetPagination.
         Dataset.objects.bulk_create(
-            [Dataset(name=f'paginated-dataset-{i}.npy') for i in range(1500)])
-        r = self.client.get(reverse('dataset-list') + '?limit=5000')
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.data['count'], 1500)
-        self.assertEqual(len(r.data['results']), 1000)
+            Dataset(name=f'paginated-dataset-{i}.npy') for i in range(15))
+        # Patch the cap directly so the test doesn't depend on whatever max_limit happens
+        # to be configured (e.g. the default of 1000) in the settings used to run it.
+        with mock.patch.object(DatasetList.pagination_class, 'max_limit', 10):
+            r = self.client.get(reverse('dataset-list') + '?limit=100')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.data['count'], 15)
+            self.assertEqual(len(r.data['results']), 10)
 
     def test_register_files(self):
         # create 4 repositories, 2 per lab
@@ -1212,6 +1217,15 @@ class APIDataTests(BaseTests):
         r = self.client.post(reverse('register-file'), data)
         self.ar(r, 403)
         self.assertRegex(r.data['detail'], rf'Dataset {str(dataset.pk)} is protected, cannot patch')
+
+        # Test with a revision
+        data['filenames'] = '#2026-01-01#/a.a.e1'
+        r = self.client.post(reverse('register-file'), data)
+        d, = self.ar(r, 201)
+        self.assertEqual(d['collection'], data['path'])
+        self.assertEqual(d['revision'], data['filenames'][1:11])
+        file_record_paths = {x['relative_path'] for x in d['file_records']}
+        self.assertEqual(file_record_paths, {data['path'] + '/' + data['filenames']})
 
         # Test some validation
         del data['content_type']

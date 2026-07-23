@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - dev
   pull_request:
     branches:
       - master
@@ -43,7 +42,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage coveralls pyarrow pandas  # for one_cache tests
+          pip install -r requirements_test.txt
         env:
           PIP_USE_MIRRORS: true
       - name: Ruff
@@ -59,11 +58,14 @@ jobs:
           cp ../deploy/app/docker/settings-deploy.py  alyx/settings.py
           cp ../deploy/app/docker/settings_lab-deploy.py  alyx/settings_lab.py
           python manage.py collectstatic --noinput --link
-          coverage run manage.py test -n
+          python manage.py makemigrations --check --dry-run
+          coverage run manage.py test --parallel
+          coverage combine
           coveralls --service=github
         env:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APACHE_LOG_DIR: /var/log/alyx
+          COVERAGE_RCFILE: ../setup.cfg
           POSTGRES_HOST: localhost
