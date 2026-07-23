@@ -64,12 +64,33 @@ You can then visit http://localhost:8000/admin, connect with your superuser cred
 
 ## Building the docker containers
 
-We have built our images on top of the apache2 images as it is the webserver we currently use. 
-However as shown in the getting started section, those images are suitable for use with different servers such as gunicorn.
+This repository is the single source of truth for both the production image and the base
+compose file: the build context lives in `deploy/app/docker/` and the production compose in
+`deploy/app/docker-compose.yaml`. Deployment orchestration (ansible, per-server compose
+overrides, encrypted env) lives in the `iblsre` repository, not here.
+
+We build our images on top of the apache2 images as it is the webserver we currently use.
+Two images are produced: `internationalbrainlab/alyx_apache_base` (system + apache + venv)
+and `internationalbrainlab/alyx_apache` (the base plus the alyx code).
+
+### Standard release (CI/CD) — preferred, no manual build
+
+1. Merge your changes to `master`.
+2. Bump `__version__` in `alyx/alyx/__init__.py` and push to `master`.
+3. On green CI, `.github/workflows/release.yml` cuts a git tag + GitHub release for the new
+   version, then dispatches `.github/workflows/build-image.yml`.
+4. `build-image.yml` builds both images locally, runs the ansible smoke test
+   (`deploy/app/test/test-deploy-web.yaml`) against the freshly built image, and pushes both
+   images tagged `<version>` and `latest` **only if the smoke test passes**.
+
+Confirm the runs are green and the tags land on Docker Hub. A tag pushed manually (without a
+version bump) also triggers `build-image.yml` directly.
+
+### Manual build (fallback / hotfix)
 
 ```shell
 # need to be in the build folder to copy some apache settings
-cd ./alyx/deploy/app/docker/
+cd ./deploy/app/docker/
 
 # builds the base container
 docker buildx build . \
@@ -77,12 +98,12 @@ docker buildx build . \
   --tag internationalbrainlab/alyx_apache_base:latest \
   -f ./Dockerfile_base
 
-# builds the top layer
+# builds the top layer (alyx_branch is the branch or tag to bake in)
 docker buildx build . \
   --platform linux/amd64 \
   --tag internationalbrainlab/alyx_apache:latest \
   -f ./Dockerfile \
-  --build-arg alyx_branch=deploy \
+  --build-arg alyx_branch=master \
   --no-cache
 ```
 
