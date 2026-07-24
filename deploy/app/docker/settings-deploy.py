@@ -12,7 +12,6 @@ import os
 import json
 import logging
 import dotenv
-import urllib.parse
 from pathlib import Path
 
 from django.conf.locale.en import formats as en_formats
@@ -33,12 +32,11 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "USER": urllib.parse.quote(os.getenv('POSTGRES_USER', '')),
-        "PASSWORD": urllib.parse.quote(os.getenv('POSTGRES_PASSWORD', '')),
-        "HOST": urllib.parse.quote(os.getenv('POSTGRES_HOST', '')),
-        "NAME": urllib.parse.quote(os.getenv('POSTGRES_DB', '')),
-        # Default PostgreSQL port
-        "PORT": urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))
+        "USER": os.getenv('POSTGRES_USER', ''),
+        "PASSWORD": os.getenv('POSTGRES_PASSWORD', ''),
+        "HOST": os.getenv('POSTGRES_HOST', ''),
+        "NAME": os.getenv('POSTGRES_DB', ''),
+        "PORT": os.getenv('POSTGRES_PORT', '5432')  # Default PostgreSQL port
     }
 }
 # %% S3 access to write cache tables
