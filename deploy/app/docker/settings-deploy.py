@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/stable/ref/settings/
 
 import os
 import json
-import dj_database_url
 import logging
 import dotenv
 import urllib.parse
@@ -31,16 +30,17 @@ from .settings_lab import *  # noqa
 
 # %% Databases
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-# Build the connection URL
-POSTGRES_USER = urllib.parse.quote(os.getenv('POSTGRES_USER', ''))
-POSTGRES_PASSWORD = urllib.parse.quote(os.getenv('POSTGRES_PASSWORD', ''))
-POSTGRES_HOST = urllib.parse.quote(os.getenv('POSTGRES_HOST', ''))
-POSTGRES_PORT = urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))  # Default PostgreSQL port
-POSTGRES_DB = urllib.parse.quote(os.getenv('POSTGRES_DB', ''))
-# the database details are provided in the form of an URL. The URL looks like:
-# "postgres://USER:PASSWORD@HOST:PORT/DB_NAME"
-database_url = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-DATABASES = {"default": dj_database_url.parse(database_url)}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": urllib.parse.quote(os.getenv('POSTGRES_USER', '')),
+        "PASSWORD": urllib.parse.quote(os.getenv('POSTGRES_PASSWORD', '')),
+        "HOST": urllib.parse.quote(os.getenv('POSTGRES_HOST', '')),
+        "NAME": urllib.parse.quote(os.getenv('POSTGRES_DB', '')),
+        # Default PostgreSQL port
+        "PORT": urllib.parse.quote(os.getenv('POSTGRES_PORT', '5432'))
+    }
+}
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
 # S3_ACCESS={"access_key":"xxxxx", "secret_key":"xxxxx", "region":"us-east-1"}
