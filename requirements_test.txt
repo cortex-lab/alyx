@@ -1,6 +1,10 @@
 # for code coverage
 coverage
 coveralls
+# pin ruff explicitly -- it's otherwise pulled in transitively and unpinned via ONE-api,
+# so a new ruff release can silently start failing CI with no code change at all (see
+# cortex-lab/alyx#1027: ruff 0.16.0 added new default rules, 821 new findings overnight)
+ruff==0.15.22
 # for ONE cache table generation tests
 pyarrow
 pandas
