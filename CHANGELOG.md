@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.2]
+
+### Fixed
+
+- Scoped delete_zygosity_rule post delete hook, improving performance on delete
+
+### Changed
+
+- Removed unused dj_database_url dependency
+- Omit WSGI from CI code coverage
+- Changed default docker project name
+- Use commit message for release description on squash commits to master
+- Pin ruff and remove flake8
+
+### Added
+
+- DOI badge in README
+- Release steps to README
+
 ## [3.6.1]
 
 ### Fixed
