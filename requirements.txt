@@ -13,12 +13,10 @@ django-storages
 django-structlog
 django-test-without-migrations
 djangorestframework
-dj_database_url
 drf-spectacular
 docutils
 dotenv
 drfdocs
-flake8
 fonttools>=4.61.0
 globus-cli>=3.41.0
 globus-sdk>=4.3.0

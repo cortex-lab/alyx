@@ -892,10 +892,9 @@ class ZygosityFinder(object):
             self._create_zygosity(subject, allele, z, force=force)
 
 
-@receiver(post_delete)
+@receiver(post_delete, sender=ZygosityRule)
 def delete_zygosity_rule(sender, instance, **kwargs):
-    if isinstance(instance, ZygosityRule):
-        _update_zygosities(instance.line, instance.sequence0)
+    _update_zygosities(instance.line, instance.sequence0)
 
 
 class AlleleManager(models.Manager):

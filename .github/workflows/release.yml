@@ -52,6 +52,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - name: Create tag and GitHub release
         run: |
@@ -59,7 +60,16 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$VERSION" -m "Release $VERSION"
           git push origin "$VERSION"
-          gh release create "$VERSION" --title "$VERSION" --generate-notes
+
+          PREV_TAG=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' "$VERSION^" 2>/dev/null || true)
+          if [[ -n "$PREV_TAG" && "$(git rev-list --count "$PREV_TAG..$VERSION")" == "1" ]]; then
+            # Single squash commit since the last release: use its message verbatim
+            # instead of --generate-notes, which would just restate the same one commit.
+            NOTES="$(git log -1 --format=%B "$VERSION")"
+            gh release create "$VERSION" --title "$VERSION" --notes "$NOTES"
+          else
+            gh release create "$VERSION" --title "$VERSION" --generate-notes
+          fi
 
       # A tag pushed by GITHUB_TOKEN does not trigger build-image.yml's push-tags event
       # (GitHub suppresses it to avoid recursion), so dispatch the build explicitly.
