@@ -8,7 +8,7 @@ from alyx.base import BaseTests
 from actions.models import Session, ProcedureType
 from misc.models import Lab
 from subjects.models import Subject, Project
-from experiments.models import ProbeInsertion, ImagingType
+from experiments.models import ProbeInsertion, ImagingType, FOV
 from data.models import Dataset, DatasetType, Tag
 
 
@@ -193,6 +193,48 @@ class APIProbeExperimentTests(BaseTests):
         urlf = (reverse('dataset-list') + '?&probe_insertion=' + insertions[0]['id'])
         datasets = self.ar(self.client.get(urlf))
         self.assertTrue(len(datasets) == 2)
+
+    def test_probe_insertion_tag_filter(self):
+        """Insertions are matched via the tags of their datasets, without duplicating rows."""
+        tag = Tag.objects.create(name='2020_Q1_Test_et_al')
+        other_tag = Tag.objects.create(name='unrelated_tag')
+        url = reverse('probeinsertion-list')
+        ins = [ProbeInsertion.objects.create(session=self.session, name=f'probe0{i}')
+               for i in range(3)]
+        # two tagged datasets on the same insertion must not duplicate it in the response
+        for name in ('obj.attr.npy', 'obj.times.npy'):
+            dset = Dataset.objects.create(session=self.session, name=name)
+            dset.tags.add(tag)
+            ins[0].datasets.add(dset)
+        dset = Dataset.objects.create(session=self.session, name='obj.attr.npy')
+        dset.tags.add(tag, other_tag)
+        ins[1].datasets.add(dset)
+        dset = Dataset.objects.create(session=self.session, name='obj.attr.npy')
+        dset.tags.add(other_tag)
+        ins[2].datasets.add(dset)
+        # a tagged dataset belonging to no insertion must not affect the filter
+        Dataset.objects.create(name='aggregate.attr.npy').tags.add(tag)
+
+        expected = sorted([str(ins[0].pk), str(ins[1].pk)])
+        d = self.ar(self.client.get(url + f'?tag={tag.name}'))
+        self.assertEqual(expected, sorted(x['id'] for x in d))
+
+        # the lookup is a case-insensitive partial match on the tag name
+        d = self.ar(self.client.get(url + '?tag=test_ET_al'))
+        self.assertEqual(expected, sorted(x['id'] for x in d))
+
+        d = self.ar(self.client.get(url + f'?tag={other_tag.name}'))
+        self.assertEqual(sorted([str(ins[1].pk), str(ins[2].pk)]),
+                         sorted(x['id'] for x in d))
+
+        d = self.ar(self.client.get(url + '?tag=no_such_tag'))
+        self.assertEqual([], d)
+
+        # combining with another many-to-many filter must not duplicate rows either: the
+        # project lookup matches both of the session's projects
+        self.session.projects.add(Project.objects.get_or_create(name='brain_wide_map')[0])
+        d = self.ar(self.client.get(url + f'?tag={tag.name}&project=brain_wide'))
+        self.assertEqual(expected, sorted(x['id'] for x in d))
 
     def test_create_list_delete_trajectory(self):
         # first create a probe insertion
@@ -500,3 +542,45 @@ class APIImagingExperimentTests(BaseTests):
         # First location in list should be default provenance = True
         self.assertEqual([True, False], [x['default_provenance'] for x in r[0]['location']])
         self.assertIn(355, r[0]['location'][0]['brain_region'])
+
+    def test_fov_tag_filter(self):
+        """FOVs are matched via the tags of their datasets, without duplicating rows."""
+        tag = Tag.objects.create(name='2020_Q1_Test_et_al')
+        other_tag = Tag.objects.create(name='unrelated_tag')
+        # the datasets must exist before the fields of view: the FOV post_save signal is what
+        # associates them, by matching the FOV name against the dataset collection
+        dsets = {
+            ('FOV_00', 'obj.attr.npy'): [tag],
+            ('FOV_00', 'obj.times.npy'): [tag],  # two tagged datasets on one FOV
+            ('FOV_01', 'obj.attr.npy'): [tag, other_tag],
+            ('FOV_02', 'obj.attr.npy'): [other_tag],
+        }
+        for (fov_name, dset_name), tags in dsets.items():
+            dset = Dataset.objects.create(
+                session=self.session, name=dset_name, collection=f'alf/{fov_name}')
+            dset.tags.add(*tags)
+        # a tagged dataset belonging to no field of view must not affect the filter
+        Dataset.objects.create(name='aggregate.attr.npy').tags.add(tag)
+
+        url = reverse('fieldsofview-list')
+        fovs = {}
+        for name in ('FOV_00', 'FOV_01', 'FOV_02'):
+            d = self.ar(self.post(url, dict(self.dict_fov, name=name)), 201)
+            fovs[name] = d['id']
+        # the signal should have associated the datasets with their field of view
+        self.assertEqual(2, len(FOV.objects.get(pk=fovs['FOV_00']).datasets.all()))
+
+        expected = sorted([fovs['FOV_00'], fovs['FOV_01']])
+        r = self.ar(self.client.get(url + f'?tag={tag.name}'), 200)
+        self.assertEqual(expected, sorted(x['id'] for x in r))
+
+        # the lookup is a case-insensitive partial match on the tag name
+        r = self.ar(self.client.get(url + '?tag=test_ET_al'), 200)
+        self.assertEqual(expected, sorted(x['id'] for x in r))
+
+        r = self.ar(self.client.get(url + f'?tag={other_tag.name}'), 200)
+        self.assertEqual(sorted([fovs['FOV_01'], fovs['FOV_02']]),
+                         sorted(x['id'] for x in r))
+
+        r = self.ar(self.client.get(url + '?tag=no_such_tag'), 200)
+        self.assertEqual([], r)

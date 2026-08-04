@@ -16,7 +16,7 @@ from actions.models import (
     Surgery,
     ProcedureType,
 )
-from data.models import Dataset, DatasetType, FileRecord, DataRepository
+from data.models import Dataset, DatasetType, FileRecord, DataRepository, Tag
 
 
 class APIActionsBaseTests(BaseTests):
@@ -94,6 +94,44 @@ class APIActionsSessionsTests(APIActionsBaseTests):
             self.client.get(reverse("session-list") + f"?projects={self.projectY.name}")
         )
         self.assertEqual(len(d), 1)
+
+    def test_sessions_tag(self):
+        """Sessions are matched via the tags of their datasets, without duplicating rows."""
+        tag = Tag.objects.create(name="2020_Q1_Test_et_al")
+        other_tag = Tag.objects.create(name="unrelated_tag")
+        ses1, ses2, ses3 = (
+            Session.objects.create(subject=self.subject, lab=self.lab01, number=i + 1)
+            for i in range(3)
+        )
+        ses1.projects.set([self.projectX, self.projectY])
+        # two tagged datasets on the same session must not duplicate it in the response
+        for name in ("obj.attr.npy", "obj.times.npy"):
+            Dataset.objects.create(session=ses1, name=name).tags.add(tag)
+        Dataset.objects.create(session=ses2, name="obj.attr.npy").tags.add(tag, other_tag)
+        Dataset.objects.create(session=ses3, name="obj.attr.npy").tags.add(other_tag)
+        # a tagged dataset with no session must not affect the filter
+        Dataset.objects.create(name="aggregate.attr.npy").tags.add(tag)
+
+        expected = sorted([str(ses1.pk), str(ses2.pk)])
+        d = self.ar(self.client.get(reverse("session-list") + f"?tag={tag.name}"))
+        self.assertEqual(expected, sorted(x["id"] for x in d))
+
+        # the lookup is a case-insensitive partial match on the tag name
+        d = self.ar(self.client.get(reverse("session-list") + "?tag=test_ET_al"))
+        self.assertEqual(expected, sorted(x["id"] for x in d))
+
+        d = self.ar(self.client.get(reverse("session-list") + f"?tag={other_tag.name}"))
+        self.assertEqual(sorted([str(ses2.pk), str(ses3.pk)]), sorted(x["id"] for x in d))
+
+        d = self.ar(self.client.get(reverse("session-list") + "?tag=no_such_tag"))
+        self.assertEqual([], d)
+
+        # combining with another many-to-many filter must not duplicate rows either: the
+        # projects lookup matches both of ses1's projects
+        d = self.ar(
+            self.client.get(reverse("session-list") + f"?tag={tag.name}&projects=project")
+        )
+        self.assertEqual([str(ses1.pk)], [x["id"] for x in d])
 
     def test_sessions(self):
         a_dict4json = {
