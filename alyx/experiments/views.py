@@ -7,6 +7,7 @@ from django.db.models import Count, Q
 
 
 from alyx.base import BaseFilterSet, rest_permission_classes
+from data.models import Dataset
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
                                 ChronicInsertion, FOV, FOVLocation, ImagingStack)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
@@ -88,13 +89,20 @@ class ProbeInsertionFilter(BaseFilterSet):
         """
         returns insertions that contain datasets tagged as
         :param queryset:
-        :param name:
         :param value:
         :return:
+
+        The matching insertions are resolved in a separate query rather than joining the datasets
+        into the insertion query. A tag covers tens of thousands of datasets but only a few
+        hundred insertions, and joining them in fans the insertion rows out by that ratio, then
+        forces the DISTINCT to deduplicate over the full insertion, model, session, subject and
+        lab row. Passing the insertion IDs in as a literal list also keeps the query planner from
+        re-planning this as a correlated sub-plan over the whole insertion table.
         """
-        queryset = queryset.filter(
-            datasets__tags__name__icontains=value).distinct()
-        return queryset
+        insertion_ids = (Dataset.objects
+                         .filter(tags__name__icontains=value, probe_insertion__isnull=False)
+                         .values_list('probe_insertion', flat=True).distinct())
+        return queryset.filter(pk__in=list(insertion_ids)).distinct()
 
     def atlas(self, queryset, name, value):
         """
@@ -381,6 +389,7 @@ class FOVFilter(BaseFilterSet):
     dataset_types = CharFilter(field_name='dataset_types', method='filter_dataset_types')
     datasets = CharFilter(field_name='datasets', method='filter_datasets')
     imaging_type = CharFilter(field_name='imaging_type__name', lookup_expr='icontains')
+    tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
     atlas_name = CharFilter(field_name='name__icontains', method='atlas')
     atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
@@ -395,10 +404,16 @@ class FOVFilter(BaseFilterSet):
     def filter_tag(self, queryset, _, value):
         """
         Returns FOVs that contain datasets with the provided tag
+
+        As for the sessions and probe insertions tag filters, the matching FOVs are resolved in a
+        separate query: joining the datasets in fans the FOV rows out by the number of tagged
+        datasets each one has, and the DISTINCT that removes them then has to deduplicate over the
+        full FOV row. No FOV datasets are tagged yet, so this is currently cheap either way.
         """
-        queryset = queryset.filter(
-            datasets__tags__name__icontains=value).distinct()
-        return queryset
+        fov_ids = (Dataset.objects
+                   .filter(tags__name__icontains=value, field_of_view__isnull=False)
+                   .values_list('field_of_view', flat=True).distinct())
+        return queryset.filter(pk__in=list(fov_ids)).distinct()
 
     def filter_dataset_types(self, queryset, _, value):
         """
@@ -442,6 +457,11 @@ class FOVList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/fields-of-view?experiment_number=1`
     -   **session**: `/fields-of-view?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **name**: field of view name `/trajectories?name=FOV_01`
+    -   **tag**: tag name of the associated datasets (icontains)
+        `/fields-of-view?tag=2021_Q1_IBL_et_al_Behaviour`
+    -   **dataset_types**: dataset type(s)
+    -   **datasets**: dataset name(s)
+    -   **imaging_type**: imaging type name (icontains)
 
     [===> FOV model reference](/admin/doc/models/experiments.fov)
     """

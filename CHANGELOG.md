@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.4]
+
+### Fixed
+
+- Sessions and probe insertions `tag` REST filters no longer join the datasets table into the
+  main query, which made them 3-174x faster.
+- `tag` filter on the fields-of-view REST endpoint. `FOVFilter` had a `filter_tag` method but
+  never declared the filter that routes to it, so `/fields-of-view?tag=` was silently ignored.
+
 ## [3.6.3]
 
 ### Fixed

@@ -253,10 +253,19 @@ class SessionFilter(BaseActionFilter):
     def filter_tag(self, queryset, name, value):
         """
         returns sessions that contain datasets tagged as
+
+        The matching sessions are resolved in a separate query rather than joining the datasets
+        into the session query. A tag typically covers tens of thousands of datasets but only a
+        few hundred sessions, and joining them in fans the session rows out by that ratio, then
+        forces the DISTINCT to deduplicate over the full (very wide) session row. Passing the
+        session IDs in as a literal list also keeps the query planner from re-planning this as a
+        correlated sub-plan over the whole session table, which it does once the outer query is
+        selective enough to look cheap.
         """
-        queryset = queryset.filter(
-            data_dataset_session_related__tags__name__icontains=value).distinct()
-        return queryset
+        session_ids = (Dataset.objects
+                       .filter(tags__name__icontains=value, session__isnull=False)
+                       .values_list('session', flat=True).distinct())
+        return queryset.filter(pk__in=list(session_ids)).distinct()
 
     def atlas(self, queryset, name, value):
         """
