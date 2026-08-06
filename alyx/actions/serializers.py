@@ -137,10 +137,14 @@ class SessionListSerializer(BaseActionSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
+        """ Perform necessary eager loading of data to avoid horrible performance.
+
+        The sort key is a total order. Subject, start time and number together happen
+        to be unique today but are not guaranteed to stay so.
+        """
         queryset = queryset.select_related('subject', 'lab')
         queryset = queryset.prefetch_related('projects', 'procedures')
-        return queryset.order_by('-start_time')
+        return queryset.order_by('-start_time', 'number', 'subject__nickname', 'pk')
 
     class Meta:
         model = Session

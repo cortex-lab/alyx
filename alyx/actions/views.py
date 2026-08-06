@@ -2,7 +2,7 @@ from datetime import timedelta, date, datetime
 from operator import itemgetter
 
 from django.contrib.postgres.fields import JSONField
-from django.db.models import Count, Q, F, ExpressionWrapper, FloatField, BooleanField
+from django.db.models import Count, Exists, Q, F, ExpressionWrapper, FloatField, OuterRef
 from django.db.models.deletion import Collector
 from django_filters.rest_framework.filters import CharFilter
 from django.http import HttpResponse
@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from one.alf.spec import QC
 
 from alyx.base import base_json_filter, BaseFilterSet, rest_permission_classes
-from data.models import Dataset
+from data.models import Dataset, FileRecord
 from subjects.models import Subject
 from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
@@ -288,43 +288,74 @@ class SessionFilter(BaseActionFilter):
         return base_json_filter('extended_qc', queryset, name, value)
 
     def filter_dataset_types(self, queryset, _, value):
+        """
+        returns sessions that have datasets of all of the given type(s)
+
+        The datasets are counted per session in a subquery instead of being joined into the session
+        query and grouped there: the GROUP BY then covers a single ID column rather than the full
+        session, subject and lab row.
+        """
         dtypes = value.split(',')
-        queryset = queryset.filter(data_dataset_session_related__dataset_type__name__in=dtypes)
-        queryset = queryset.annotate(
-            dtypes_count=Count('data_dataset_session_related__dataset_type', distinct=True))
-        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
-        return queryset
+        sessions = (Dataset.objects
+                    .filter(dataset_type__name__in=dtypes, session__isnull=False)
+                    .values('session')
+                    .annotate(dtypes_count=Count('dataset_type__name', distinct=True))
+                    .filter(dtypes_count__gte=len(dtypes))
+                    .values_list('session', flat=True))
+        return queryset.filter(pk__in=sessions)
 
     def filter_datasets(self, queryset, _, value):
+        """
+        returns sessions that have all of the given dataset(s), present on a server repository
+
+        The file record check is an Exists semi-join rather than a join annotated with a boolean,
+        so a dataset is not returned once per file record.
+
+        For a single dataset name, and only while the QC bound is loose, the whole filter is one
+        Exists semi-join anchored on the session, which resolves through the datasets of that
+        session alone and stops at the first match. It is not used otherwise:
+
+        - with several names that form is no better, and is far worse on the insertions filter,
+          as every name adds a subquery that has to be probed for every row
+        - with a tight QC bound the early exit stops paying, because a session that has no
+          qualifying dataset is only ruled out once all of its datasets have been examined.
+          Measured against the grouped count below: 5.4 s vs 9.9 s at the default bound, but
+          17.8 s vs 9.5 s at PASS, where only half the sessions still qualify.
+        """
         # Note this may later be modified to include collections, e.g. ?datasets=alf/obj.attr.ext
         qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
-        dataset_names = value.split(',')
-        queryset = queryset.filter(data_dataset_session_related__name__in=dataset_names)
-        dsets = Dataset.objects.filter(
-            session__in=queryset,
-            name__in=dataset_names,
-            qc__lte=qc,
-        ).annotate(
-            exists=ExpressionWrapper(
-                Q(
-                    file_records__data_repository__globus_is_personal=False,
-                    file_records__exists=True
-                ),
-                output_field=BooleanField()
-            )
-        ).filter(exists__gte=1)
-        sessions = dsets.values_list('session', flat=True).distinct().annotate(
-            dset_count=Count('name', distinct=True)).filter(dset_count__gte=len(dataset_names))
-        queryset = queryset.filter(pk__in=sessions.values_list('session')).distinct()
-        return queryset
+        dataset_names = sorted(set(value.split(',')))
+        online = FileRecord.objects.filter(
+            dataset=OuterRef('pk'), exists=True, data_repository__globus_is_personal=False)
+        if len(dataset_names) == 1 and qc >= QC.WARNING:
+            return queryset.filter(Exists(
+                Dataset.objects
+                .filter(session=OuterRef('pk'), name=dataset_names[0], qc__lte=qc)
+                .filter(Exists(online)))).distinct()
+        sessions = (Dataset.objects
+                    .filter(name__in=dataset_names, qc__lte=qc, session__isnull=False)
+                    .filter(Exists(online))
+                    .values('session')
+                    .annotate(dset_count=Count('name', distinct=True))
+                    .filter(dset_count__gte=len(dataset_names))
+                    .values_list('session', flat=True))
+        return queryset.filter(pk__in=sessions).distinct()
 
     def filter_dataset_qc_lte(self, queryset, _, value):
+        """
+        returns sessions with at least one dataset whose QC is at most the given value
+
+        An Exists semi-join, so a session is returned once no matter how many of its datasets
+        qualify. The previous join returned it once per qualifying dataset, which duplicated the
+        rows across the paginated response and inflated the reported count to the number of
+        (session, dataset) pairs.
+        """
         # If filtering on datasets too, `filter_datasets` handles both QC and Datasets
         if 'datasets' in self.request.query_params:
             return queryset
         qc = QC.validate(value)
-        queryset = queryset.filter(data_dataset_session_related__qc__lte=qc)
-        return queryset
+        return queryset.filter(
+            Exists(Dataset.objects.filter(session=OuterRef('pk'), qc__lte=qc)))
 
     def filter_performance_gte(self, queryset, name, perf):
         queryset = queryset.exclude(n_trials__isnull=True)
