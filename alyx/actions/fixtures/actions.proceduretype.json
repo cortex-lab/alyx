@@ -239,7 +239,7 @@
  "fields": {
   "name": "Tail Vein Injection",
   "json": null,
-  "description": "To be performed without anaesthesia by a trained personnel (Angela from BSU is the trained and competent person to perform this for us)."
+  "description": "To be performed without anaesthesia by a trained personnel."
  }
 },
 {
@@ -292,6 +292,15 @@
  "pk": "a00737fa-7ec1-48c1-ad7c-08529712adcb",
  "fields": {
   "name": "Fiber photometry",
+  "json": null,
+  "description": ""
+ }
+},
+{
+ "model": "actions.proceduretype",
+ "pk": "0c731d5f-21f0-428e-86ea-f6a8f4c61695",
+ "fields": {
+  "name": "Recording under general anaesthesia",
   "json": null,
   "description": ""
  }
