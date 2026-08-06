@@ -133,6 +133,34 @@ class APIActionsSessionsTests(APIActionsBaseTests):
         )
         self.assertEqual([str(ses1.pk)], [x["id"] for x in d])
 
+    def test_sessions_dataset_filters_do_not_duplicate_sessions(self):
+        """A session is returned once however many of its datasets match the filter.
+
+        These filters used to join the datasets into the session query, returning the session once
+        per matching dataset and reporting the number of (session, dataset) pairs as the count.
+        """
+        session = Session.objects.create(
+            subject=self.subject, lab=self.lab01, number=1)
+        dtype, _ = DatasetType.objects.get_or_create(name="spikes.times")
+        repo = DataRepository.objects.create(name="server", globus_is_personal=False)
+        # three datasets on the one session, all matching every filter below
+        for i in range(3):
+            dset = Dataset.objects.create(
+                session=session, name="spikes.times.npy", dataset_type=dtype, qc=30,
+                version=str(i))
+            FileRecord.objects.create(
+                dataset=dset, data_repository=repo, exists=True,
+                relative_path=f"{session.pk}/alf/#{i}#/spikes.times.npy")
+
+        url = reverse("session-list")
+        for query in ("?dataset_qc_lte=WARNING", "?dataset_types=spikes.times",
+                      "?datasets=spikes.times.npy"):
+            with self.subTest(query=query):
+                r = self.client.get(url + query)
+                self.assertEqual(200, r.status_code)
+                self.assertEqual(1, r.data["count"], "count must not be a pair count")
+                self.assertEqual([str(session.pk)], [x["id"] for x in r.data["results"]])
+
     def test_sessions(self):
         a_dict4json = {
             "String": "this is not a JSON",

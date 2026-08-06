@@ -2,13 +2,15 @@ from random import random, choice, randint
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.db import transaction
+from django.db import connection, transaction
+from django.test.utils import CaptureQueriesContext
+from django.utils.timezone import now
 
 from alyx.base import BaseTests
 from actions.models import Session, ProcedureType
 from misc.models import Lab
 from subjects.models import Subject, Project
-from experiments.models import ProbeInsertion, ImagingType, FOV
+from experiments.models import ProbeInsertion, ImagingType, FOV, ImagingStack
 from data.models import Dataset, DatasetType, Tag
 
 
@@ -133,10 +135,11 @@ class APIProbeExperimentTests(BaseTests):
                          }
             url = reverse('probeinsertion-list')
             insertions.append(self.ar(self.post(url, insertion), 201))
-        
+
         probe_ins = self.ar(self.client.get(reverse('probeinsertion-list')), 200)
         self.assertEqual(probe_ins[0]['session_info']['id'], str(session.id))
-        self.assertEqual([x['name'] for x in probe_ins], ['probe00', 'probe01', 'probe02', 'probe00', 'probe01'])
+        self.assertEqual(['probe00', 'probe01', 'probe02', 'probe00', 'probe01'],
+                         [x['name'] for x in probe_ins])
 
     def test_probe_insertion_dataset_interaction(self):
         # First create two insertions and attach to session
@@ -193,6 +196,46 @@ class APIProbeExperimentTests(BaseTests):
         urlf = (reverse('dataset-list') + '?&probe_insertion=' + insertions[0]['id'])
         datasets = self.ar(self.client.get(urlf))
         self.assertTrue(len(datasets) == 2)
+
+    def test_chronic_insertion_list_query_count(self):
+        """The chronic insertions list costs a fixed number of queries, whatever its length.
+
+        Its nested probe insertions used to be eagerly loaded while serialising each row, which
+        discarded the prefetched result and cost two queries per chronic insertion.
+        """
+        url = reverse('chronicinsertion-list')
+
+        def add_chronic_insertion(i):
+            """a chronic insertion with two probe insertions on two sessions"""
+            ci = self.ar(self.post(url, {
+                'subject': self.session.subject.nickname, 'serial': f'1901910{i}',
+                'model': '3B2', 'name': f'probe{i:02}'}), 201)
+            for number in range(2):
+                session = Session.objects.create(
+                    subject=self.session.subject, number=10 * i + number)
+                session.projects.add(*self.session.projects.all())
+                self.ar(self.post(reverse('probeinsertion-list'), {
+                    'session': str(session.id), 'name': f'probe0{number}', 'model': '3B2',
+                    'chronic_insertion': ci['id'], 'serial': f'1901910{i}'}), 201)
+
+        def count_queries():
+            with CaptureQueriesContext(connection) as ctx:
+                r = self.client.get(url + '?limit=250')
+            self.assertEqual(200, r.status_code)
+            self.assertTrue(all(len(x['probe_insertion']) == 2 for x in r.data['results']))
+            return len(ctx.captured_queries), r.data['count']
+
+        add_chronic_insertion(0)
+        one, n_one = count_queries()
+        self.assertEqual(1, n_one)
+        for i in (1, 2, 3):
+            add_chronic_insertion(i)
+        several, n_several = count_queries()
+        self.assertEqual(4, n_several)
+
+        # the point of the eager loading: the same queries serve one row or many
+        self.assertEqual(one, several,
+                         f'{one} queries for 1 chronic insertion but {several} for 4')
 
     def test_probe_insertion_tag_filter(self):
         """Insertions are matched via the tags of their datasets, without duplicating rows."""
@@ -462,6 +505,99 @@ class APIProbeExperimentTests(BaseTests):
         self.assertEqual(len(d), 1)
         self.assertEqual(probe['id'], d[0]['id'])
 
+    def test_datasets_filter_counts_distinct_names(self):
+        """Several datasets sharing one name do not satisfy a request for several names.
+
+        A name routinely matches more than one dataset of an insertion, across collections and
+        revisions, so counting the datasets rather than the distinct names let an insertion
+        holding two copies of one requested name pass as having two different ones.
+        """
+        probe = self.ar(self.post(reverse('probeinsertion-list'), self.dict_insertion), 201)
+        dtype, _ = DatasetType.objects.get_or_create(name='channels.localCoordinates')
+        # two datasets of the same name, as a session has one per probe
+        for collection in ('alf/probe_00/pykilosort', 'alf/probe_00/iblsort'):
+            Dataset.objects.create(
+                session=self.session, name='channels.localCoordinates.npy',
+                dataset_type=dtype, collection=collection, qc=30)
+        insertion = ProbeInsertion.objects.get(pk=probe['id'])
+        self.assertEqual(2, insertion.datasets.count())
+
+        url = reverse('probeinsertion-list')
+        # the one name it does have is matched
+        d = self.ar(self.client.get(url + '?datasets=channels.localCoordinates.npy'))
+        self.assertEqual([probe['id']], [x['id'] for x in d])
+        # but it does not have both of these, so it must not be returned
+        q = '?datasets=channels.localCoordinates.npy,spikes.times.npy'
+        self.assertEqual([], self.ar(self.client.get(url + q)))
+        # a name repeated in the query asks for that one dataset, not for two of them
+        q = '?datasets=channels.localCoordinates.npy,channels.localCoordinates.npy'
+        self.assertEqual([probe['id']], [x['id'] for x in self.ar(self.client.get(url + q))])
+
+    def test_dataset_filters_do_not_duplicate_insertions(self):
+        """An insertion is returned once however many of its datasets match the filter.
+
+        Each of these filters used to join the datasets into the insertion query, returning the
+        insertion once per matching dataset and reporting the number of (insertion, dataset) pairs
+        as the count.
+        """
+        probe = self.ar(self.post(reverse('probeinsertion-list'), self.dict_insertion), 201)
+        dtype, _ = DatasetType.objects.get_or_create(name='spikes.times')
+        tag, _ = Tag.objects.get_or_create(name='tag_test')
+        # three datasets on the one insertion, all matching every filter below
+        for i in range(3):
+            dset = Dataset.objects.create(
+                session=self.session, name='spikes.times.npy', dataset_type=dtype,
+                collection='alf/probe_00', qc=30, revision=None, version=str(i))
+            dset.tags.add(tag)
+        insertion = ProbeInsertion.objects.get(pk=probe['id'])
+        self.assertEqual(3, insertion.datasets.count(), 'expected all three to be associated')
+
+        url = reverse('probeinsertion-list')
+        for query in ('?dataset_qc_lte=WARNING', '?dataset_types=spikes.times',
+                      '?datasets=spikes.times.npy', '?tag=tag_test'):
+            with self.subTest(query=query):
+                r = self.client.get(url + query)
+                self.assertEqual(200, r.status_code)
+                self.assertEqual(1, r.data['count'], 'count must not be a pair count')
+                self.assertEqual([probe['id']], [x['id'] for x in r.data['results']])
+
+    def test_atlas_filters_do_not_duplicate_rows(self):
+        """A session is returned once however many of its insertions are in the brain region.
+
+        The session branch of the brain region filter ORs two joins together with no DISTINCT, so
+        a session came back once per insertion recording the region -- which is most of them, as
+        sessions routinely have two probes.
+        """
+        insertions = []
+        for name in ('probe00', 'probe01'):
+            insertion = self.ar(self.post(reverse('probeinsertion-list'),
+                                          dict(self.dict_insertion, name=name)), 201)
+            insertions.append(insertion['id'])
+            # only one trajectory per provenance is allowed per insertion, and only the ephys
+            # aligned provenance (70) is considered by the filter
+            traj = self.ar(self.post(reverse('trajectoryestimate-list'), {
+                'probe_insertion': insertion['id'], 'x': -4521.2, 'y': 2415.0, 'z': 0,
+                'phi': 80, 'theta': 10, 'depth': 5000, 'roll': 0,
+                'provenance': 'Ephys aligned histology track'}), 201)
+            for axial in (20, 40, 60):
+                self.ar(self.post(reverse('channel-list'), {
+                    'x': 111.1, 'y': -222.2, 'z': 333.3, 'axial': axial, 'lateral': 40,
+                    'brain_region': 593,  # VISp1
+                    'trajectory_estimate': traj['id']}), 201)
+
+        for query in ('?atlas_acronym=VISp1', '?atlas_id=593', '?atlas_name=primary visual'):
+            with self.subTest(query=query):
+                r = self.client.get(reverse('session-list') + query)
+                self.assertEqual(200, r.status_code)
+                self.assertEqual(1, r.data['count'],
+                                 'the session must not be returned once per insertion')
+                self.assertEqual([str(self.session.pk)], [x['id'] for x in r.data['results']])
+                # both insertions are in the region, and each is returned exactly once
+                r = self.client.get(reverse('probeinsertion-list') + query)
+                self.assertEqual(200, r.status_code)
+                self.assertEqual(2, r.data['count'])
+                self.assertEqual(sorted(insertions), sorted(x['id'] for x in r.data['results']))
+
 
 class APIImagingExperimentTests(BaseTests):
     fixtures = ['experiments.brainregion.json', 'experiments.coordinatesystem.json']
@@ -542,6 +678,83 @@ class APIImagingExperimentTests(BaseTests):
         # First location in list should be default provenance = True
         self.assertEqual([True, False], [x['default_provenance'] for x in r[0]['location']])
         self.assertIn(355, r[0]['location'][0]['brain_region'])
+
+    def test_imaging_stack_list_one_row_per_stack(self):
+        """A stack is listed once however many slices it holds.
+
+        The list was ordered by `slices__name`, which joined the slices into the query and returned
+        the stack once per slice while the reported count stayed at the number of stacks.
+        """
+        stack = ImagingStack.objects.create(name='stack_00')
+        url = reverse('fieldsofview-list')
+        for name in ('FOV_02', 'FOV_00', 'FOV_01'):
+            fov = self.ar(self.post(url, dict(self.dict_fov, name=name)), 201)
+            # not queryset.update(): BaseQuerySet.update sets auto_datetime, which FOV lacks
+            obj = FOV.objects.get(pk=fov['id'])
+            obj.stack = stack
+            obj.save()
+        self.assertEqual(3, stack.slices.count())
+
+        r = self.client.get(reverse('imagingstack-list') + '?limit=250')
+        self.assertEqual(200, r.status_code)
+        self.assertEqual(1, r.data['count'])
+        self.assertEqual(1, len(r.data['results']), 'the stack must not repeat per slice')
+        # and its slices are ordered by name rather than however they were created
+        slices = r.data['results'][0]['slices']
+        self.assertEqual(['FOV_00', 'FOV_01', 'FOV_02'], [s['name'] for s in slices])
+
+    def test_session_list_ordering_uses_number(self):
+        """Sessions sharing a start time are ordered by number, not by whatever the database picks.
+
+        Session declares no uniqueness, and 916 of them share a start time with another, so the
+        sort key needs more than the start time to place them.
+        """
+        start = now()
+        subject = self.session.subject
+        created = [Session.objects.create(subject=subject, start_time=start, number=n)
+                   for n in (3, 1, 2)]
+        r = self.client.get(reverse('session-list') + f'?subject={subject.nickname}&limit=250')
+        rows = [x for x in self.ar(r) if x['id'] in {str(s.pk) for s in created}]
+        self.assertEqual([1, 2, 3], [x['number'] for x in rows])
+
+    def test_fov_dataset_qc_filter(self):
+        """FOVs are matched on the QC of their datasets, as sessions and insertions are."""
+        # the datasets must exist before the fields of view: the FOV post_save signal is what
+        # associates them, by matching the FOV name against the dataset collection
+        dtype, _ = DatasetType.objects.get_or_create(name='obj.attr')
+        for fov_name, name, qc in (('FOV_00', 'obj.attr.npy', 10),    # PASS
+                                   ('FOV_00', 'obj.times.npy', 10),   # a second qualifying dset
+                                   ('FOV_01', 'obj.attr.npy', 40),    # FAIL
+                                   ('FOV_02', 'obj.attr.npy', 50)):   # CRITICAL
+            Dataset.objects.create(session=self.session, name=name, dataset_type=dtype,
+                                   collection=f'alf/{fov_name}', qc=qc)
+        url = reverse('fieldsofview-list')
+        fovs = {}
+        for name in ('FOV_00', 'FOV_01', 'FOV_02'):
+            fovs[name] = self.ar(self.post(url, dict(self.dict_fov, name=name)), 201)['id']
+
+        # FOV_00 has two datasets at PASS and must still be returned exactly once
+        r = self.client.get(url + '?dataset_qc_lte=PASS')
+        self.assertEqual(1, r.data['count'])
+        self.assertEqual([fovs['FOV_00']], [x['id'] for x in r.data['results']])
+
+        r = self.client.get(url + '?dataset_qc_lte=FAIL')
+        self.assertEqual(sorted([fovs['FOV_00'], fovs['FOV_01']]),
+                         sorted(x['id'] for x in self.ar(r)))
+
+        # a QC code should work as well as a name, as on the other endpoints
+        d = self.ar(self.client.get(url + '?dataset_qc_lte=10'))
+        self.assertEqual([fovs['FOV_00']], [x['id'] for x in d])
+
+        # combined with datasets, the datasets filter applies the QC bound to the named dataset
+        d = self.ar(self.client.get(url + '?datasets=obj.attr.npy&dataset_qc_lte=PASS'))
+        self.assertEqual([fovs['FOV_00']], [x['id'] for x in d])
+        d = self.ar(self.client.get(url + '?datasets=obj.attr.npy&dataset_qc_lte=FAIL'))
+        self.assertEqual(sorted([fovs['FOV_00'], fovs['FOV_01']]),
+                         sorted(x['id'] for x in d))
+        # obj.times.npy is only on FOV_00, and only at PASS
+        d = self.ar(self.client.get(url + '?datasets=obj.attr.npy,obj.times.npy'))
+        self.assertEqual([fovs['FOV_00']], [x['id'] for x in d])
 
     def test_fov_tag_filter(self):
         """FOVs are matched via the tags of their datasets, without duplicating rows."""

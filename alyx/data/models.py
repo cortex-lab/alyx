@@ -361,6 +361,14 @@ class Dataset(BaseExperimentalData):
     qc = models.IntegerField(default=QC.NOT_SET, choices=QC_CHOICES,
                              help_text=' / '.join([str(q[0]) + ': ' + q[1] for q in QC_CHOICES]))
 
+    class Meta:
+        indexes = [
+            # `?datasets=` on the sessions, insertions and fields-of-view REST endpoints looks
+            # datasets up by name. Deduplication keeps this small (~23 MB for 3.2M rows) as the
+            # same few hundred names repeat throughout the table.
+            models.Index(fields=['name'], name='data_dataset_name_idx'),
+        ]
+
     @property
     def is_online(self):
         fr = self.file_records.filter(data_repository__globus_is_personal=False)

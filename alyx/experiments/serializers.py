@@ -106,10 +106,18 @@ class ChronicProbeInsertionListSerializer(serializers.ModelSerializer):
         """Perform necessary eager loading of data to avoid horrible performance.
 
         SessionListSerializer uses these related tables.
+
+        The projects and the insertions themselves are given a total order. Project has no
+        Meta.ordering, and insertions of one chronic insertion often share a session start time and
+        name, so without one the database is free to return either in any order and the same
+        request can serialise them differently from one call to the next. The sort key matches
+        ProbeInsertionListSerializer.
         """
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
-        queryset = queryset.prefetch_related('session__projects')
-        return queryset.order_by('-session__start_time', 'name')
+        queryset = queryset.prefetch_related(
+            Prefetch('session__projects', queryset=Project.objects.order_by('name')))
+        return queryset.order_by('-session__start_time', 'name',
+                                 'session__subject__nickname', 'session__number', 'pk')
 
     model = serializers.SlugRelatedField(read_only=True, slug_field='name')
     session_info = SessionListSerializer(read_only=True, source='session')
@@ -123,10 +131,16 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
+        """ Perform necessary eager loading of data to avoid horrible performance.
+
+        The sort key is a total order. Session start time and insertion name are not enough: the
+        unique constraint is on (session, name), so two insertions of the same name in two
+        different sessions that share a start time tie, which 120 insertions currently do.
+        """
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
         queryset = queryset.prefetch_related('session__projects', 'datasets')
-        return queryset.order_by('-session__start_time', 'name')
+        return queryset.order_by('-session__start_time', 'name',
+                                 'session__subject__nickname', 'session__number', 'pk')
 
     session = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='id',
@@ -190,10 +204,23 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """ Perform necessary eager loading of data to avoid horrible performance."""
+        """ Perform necessary eager loading of data to avoid horrible performance.
+
+        The probe insertions are eagerly loaded here, through a Prefetch carrying the queryset
+        their serializer wants, rather than in that serializer. Applying select_related, order_by
+        or prefetch_related to `obj.probe_insertion.all()` while serializing a row discards the
+        prefetched result and re-queries, which cost one query per chronic insertion for the
+        insertions and another for their projects.
+
+        ChronicInsertion has neither Meta.ordering nor any uniqueness of its own, so without the
+        sort key below the rows come back in whatever order the database chooses.
+        """
         queryset = queryset.select_related('model', 'subject', 'lab')
-        queryset = queryset.prefetch_related('probe_insertion')
-        return queryset
+        queryset = queryset.prefetch_related(Prefetch(
+            'probe_insertion',
+            queryset=ChronicProbeInsertionListSerializer.setup_eager_loading(
+                ProbeInsertion.objects.all())))
+        return queryset.order_by('-start_time', 'subject__nickname', 'name', 'pk')
 
     subject = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='nickname',
@@ -207,13 +234,7 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
         read_only=False, required=False, slug_field='name',
         queryset=Lab.objects.all(),
     )
-    probe_insertion = serializers.SerializerMethodField()
-
-    def get_probe_insertion(self, obj):
-        qs = ChronicProbeInsertionListSerializer.setup_eager_loading(obj.probe_insertion.all())
-        request = self.context.get('request', None)
-        ins = ChronicProbeInsertionListSerializer(qs, many=True, context={'request': request})
-        return ins.data
+    probe_insertion = ChronicProbeInsertionListSerializer(read_only=True, many=True)
 
     class Meta:
         model = ChronicInsertion
@@ -304,14 +325,19 @@ class FOVSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """Perform necessary eager loading of data to avoid horrible performance."""
+        """Perform necessary eager loading of data to avoid horrible performance.
+
+        The primary key completes the sort key: as for probe insertions the unique constraint is on
+        (session, name), which leaves two fields of view of the same name in two sessions sharing a
+        start time tied. None are today, but nothing prevents it.
+        """
         queryset = queryset.select_related('imaging_type')
         # Apply eager loading to the nested location field
         location_qs = FOVLocationListSerializer.setup_eager_loading(FOVLocation.objects.all())
         queryset = queryset.prefetch_related(
             'datasets', Prefetch('location', queryset=location_qs)
         )
-        return queryset.order_by('-session__start_time', 'name')
+        return queryset.order_by('-session__start_time', 'name', 'pk')
 
     class Meta:
         model = FOV
@@ -324,11 +350,18 @@ class ImagingStackDetailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        """Perform necessary eager loading of nested slices."""
+        """Perform necessary eager loading of nested slices.
+
+        The stacks are ordered by their own fields. Ordering them by `slices__name` joined the
+        slices into the query and so returned a stack once per slice: `/imaging-stacks` reported
+        174 stacks but served 250 rows covering 162 of them, since all but one stack has more than
+        one slice. The slices are ordered within each stack by the Prefetch queryset instead.
+        """
+        # TODO order slices by z values of FOVLocations where default_provenance is True
         slice_qs = FOVSerializer.setup_eager_loading(FOV.objects.filter(stack__isnull=False))
+        slice_qs = slice_qs.order_by('name', 'pk')
         queryset = queryset.prefetch_related(Prefetch('slices', queryset=slice_qs))
-        # TODO order by z values of FOVLocations where default_provenance is True
-        return queryset.order_by('slices__name')
+        return queryset.order_by('name', 'pk')
 
     class Meta:
         model = ImagingStack
