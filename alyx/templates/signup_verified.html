@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Sign up | {{ site_title|default:_('Alyx') }}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block usertools %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if verified %}
+    <h1>Account activated</h1>
+    <p>
+      Thank you - your email address is confirmed and your account is now active.
+      <a href="{% url 'admin:login' %}">Log in</a> to browse the released data.
+    </p>
+  {% else %}
+    <h1>This link is not valid</h1>
+    <p>
+      The confirmation link has expired, has already been used, or was not copied in full.
+      If your account is still not active, <a href="{% url 'signup' %}">sign up again</a> to
+      receive a new link.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

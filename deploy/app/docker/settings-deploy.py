@@ -24,6 +24,24 @@ if dotenv_path.exists():
     _logger.warning(f'environment file found: {dotenv_path}')
     dotenv.load_dotenv(dotenv_path=dotenv_path)
 
+# %% Defaults for optional lab settings
+# Declared before the lab settings import below so that settings_lab.py overrides them, while
+# deployments whose settings_lab.py predates these options still get a usable value.
+
+# Marks this deployment as a public, read-only instance serving released data. It enables
+# self-registration and hides lab member records from public users, who may then only see
+# redacted users and themselves. Leave False on an internal database.
+PUBLIC_DATABASE = False
+# Whether a new account must confirm its email address before it can be used. Needs a working
+# EMAIL_BACKEND; `manage.py check` warns if this is on without one. How long the confirmation
+# link stays valid is governed by Django's PASSWORD_RESET_TIMEOUT (3 days by default), which
+# the confirmation token is built on.
+PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
+# Usernames that may not be self-registered, either because Alyx reserves them or because they
+# are likely to collide with a real lab member arriving in a future data release.
+PUBLIC_SIGNUP_RESERVED_USERNAMES = (
+    'root', 'admin', 'administrator', 'alyx', 'test', 'public', 'anonymous')
+
 # Lab-specific settings
 from .settings_lab import *  # noqa
 
@@ -172,6 +190,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'misc.context_processors.public_database',
             ],
         },
     },
