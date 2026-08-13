@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Sign up | {{ site_title|default:_('Alyx') }}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block usertools %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if verification_required %}
+    <h1>Confirm your email address</h1>
+    <p>
+      Your account has been created, but it is not active yet. We have sent a confirmation link
+      to the address you registered with - open it to activate the account.
+    </p>
+    <p>
+      If nothing arrives within a few minutes, check your spam folder. The link expires after a
+      few days, after which you can simply sign up again.
+    </p>
+  {% else %}
+    <h1>Account created</h1>
+    <p>Your account is ready. <a href="{% url 'admin:login' %}">Log in</a> to get started.</p>
+  {% endif %}
+</div>
+{% endblock %}

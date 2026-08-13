@@ -14,7 +14,8 @@ from actions.models import Session
 from subjects.models import Project
 from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType,
                      Dataset, FileRecord, Download, Revision, Tag, DataNotice)
-from alyx.base import BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url
+from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url,
+                       UserRelatedDropdownFilter)
 
 
 class CreatedByListFilter(DefaultListFilter):
@@ -59,7 +60,7 @@ class DatasetTypeAdmin(BaseAdmin):
     list_display = ('name', 'fcount', 'description', 'filename_pattern', 'created_by')
     ordering = ('name',)
     search_fields = ('name', 'description', 'filename_pattern', 'created_by__username')
-    list_filter = [('created_by', RelatedDropdownFilter)]
+    list_filter = [('created_by', UserRelatedDropdownFilter)]
 
     def get_queryset(self, request):
         qs = super(DatasetTypeAdmin, self).get_queryset(request)
@@ -98,7 +99,7 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
     list_display = ['name_', '_online', 'version', 'collection', 'dataset_type_', 'file_size',
                     'session_ro', 'created_by', 'created_datetime', 'qc']
     inlines = [FileRecordInline]
-    list_filter = [('created_by', RelatedDropdownFilter),
+    list_filter = [('created_by', UserRelatedDropdownFilter),
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ('tags', RelatedDropdownFilter),

@@ -4,7 +4,7 @@ from django_admin_listfilter_dropdown.filters import (
     DropdownFilter, ChoiceDropdownFilter, RelatedDropdownFilter)
 
 from jobs.models import Task
-from alyx.base import BaseAdmin, get_admin_url
+from alyx.base import BaseAdmin, get_admin_url, UserRelatedDropdownFilter
 
 
 class TaskAdmin(BaseAdmin):
@@ -20,7 +20,7 @@ class TaskAdmin(BaseAdmin):
                    ('status', ChoiceDropdownFilter),
                    ('graph', DropdownFilter),
                    ('session__lab', RelatedDropdownFilter),
-                   ('session__users', RelatedDropdownFilter),
+                   ('session__users', UserRelatedDropdownFilter),
                    ]
 
     def has_change_permission(self, request, obj=None):

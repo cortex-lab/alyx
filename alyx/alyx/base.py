@@ -21,6 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django_filters import CharFilter
 from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
@@ -155,6 +156,24 @@ class DefaultListFilter(admin.SimpleListFilter):
                 }, []),
                 'display': title,
             }
+
+
+class UserRelatedDropdownFilter(RelatedDropdownFilter):
+    """A user dropdown filter that does not enumerate every account.
+
+    The default related filter populates its dropdown from the whole target table, so a plain
+    RelatedDropdownFilter on a user field lists every LabMember - including, on a public
+    database, the accounts of members of the public who have registered. Restrict the choices
+    to the users a public user is allowed to see, matching misc.views.UserQuerySetMixin.
+    """
+
+    def field_choices(self, field, request, model_admin):
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        limit_choices_to = None
+        if getattr(request.user, 'is_public_user', False):
+            limit_choices_to = models.Q(is_redacted=True) | models.Q(pk=request.user.pk)
+        return field.get_choices(
+            include_blank=False, limit_choices_to=limit_choices_to, ordering=ordering)
 
 
 def alyx_mail(to, subject, text=''):

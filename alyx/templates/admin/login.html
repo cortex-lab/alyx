@@ -1,0 +1,13 @@
+{% extends "admin/login.html" %}
+{# Adds a registration link to the admin login page on a public database. Hooks the footer #}
+{# block rather than overriding content, which would mean copying Django's login form markup #}
+{# and having it drift out of step on the next upgrade. #}
+
+{% block footer %}
+{{ block.super }}
+{% if PUBLIC_DATABASE %}
+<div class="signup-link" style="text-align: center; padding: 1em;">
+  Don't have an account? <a href="{% url 'signup' %}">Sign up</a> for access to the public data.
+</div>
+{% endif %}
+{% endblock %}

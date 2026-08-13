@@ -1385,7 +1385,7 @@ class LabMemberAdmin(UserAdmin):
 
     fieldsets = UserAdmin.fieldsets + (
         ('Extra fields', {'fields': ('allowed_users',)},),
-        ('Permissions', {'fields': ('is_stock_manager', 'is_public_user')})
+        ('Permissions', {'fields': ('is_stock_manager', 'is_public_user', 'is_redacted')})
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Extra fields', {'fields': ('allowed_users',)}),
@@ -1395,10 +1395,35 @@ class LabMemberAdmin(UserAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name',
                     'groups_l', 'allowed_users_',
                     'is_staff', 'is_superuser', 'is_stock_manager',
-                    'is_public_user'
+                    'is_public_user', 'is_redacted'
                     ]
     list_editable = ['is_stock_manager', 'is_public_user']
     save_on_top = True
+
+    def get_queryset(self, request):
+        """Mirror the REST endpoint: public users see redacted users and themselves only."""
+        queryset = super(LabMemberAdmin, self).get_queryset(request)
+        if request.user.is_public_user:
+            queryset = queryset.filter(Q(is_redacted=True) | Q(pk=request.user.pk))
+        return queryset
+
+    # LabMemberAdmin extends UserAdmin rather than BaseAdmin, so it does not inherit the
+    # public-user denials in alyx.base.BaseAdmin. Without these, a public user holding stray
+    # model permissions could edit accounts.
+    def has_add_permission(self, request, *args, **kwargs):
+        if request.user.is_public_user:
+            return False
+        return super(LabMemberAdmin, self).has_add_permission(request, *args, **kwargs)
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_public_user:
+            return False
+        return super(LabMemberAdmin, self).has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_public_user:
+            return False
+        return super(LabMemberAdmin, self).has_delete_permission(request, obj)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(LabMemberAdmin, self).get_form(request, obj, **kwargs)
@@ -1419,7 +1444,23 @@ class LabMemberAdmin(UserAdmin):
 
 mysite = admin.site
 
+
+class GroupAdmin(admin.ModelAdmin):
+    """Groups describe the permission structure of the instance; keep them from public users."""
+
+    def has_module_permission(self, request):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(GroupAdmin, self).has_module_permission(request)
+
+    def has_view_permission(self, request, obj=None):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(GroupAdmin, self).has_view_permission(request, obj)
+
+
 mysite.register(LabMember, LabMemberAdmin)
+mysite.register(Group, GroupAdmin)
 
 mysite.register(Project, ProjectAdmin)
 mysite.register(Subject, SubjectAdmin)

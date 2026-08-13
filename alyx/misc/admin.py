@@ -19,7 +19,7 @@ from rangefilter.filters import DateRangeFilter
 
 from misc.models import Note, Lab, LabMembership, LabLocation, CageType, \
     Enrichment, Food, Housing, HousingSubject
-from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url
+from alyx.base import BaseAdmin, DefaultListFilter, get_admin_url, UserRelatedDropdownFilter
 
 
 class LabForm(forms.ModelForm):
@@ -134,7 +134,7 @@ class HasImageFilter(DefaultListFilter):
 class NoteAdmin(ImageWidgetAdmin):
     list_display = ['user', 'date_time', 'content_object', 'text', 'image']
     list_display_links = ['date_time']
-    list_filter = [('user', RelatedDropdownFilter),
+    list_filter = [('user', UserRelatedDropdownFilter),
                    ('date_time', DateRangeFilter),
                    ('content_type', RelatedDropdownFilter),
                    (HasImageFilter),

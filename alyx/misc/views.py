@@ -1,14 +1,25 @@
 from pathlib import Path
+import logging
 import os.path as op
 import json
 
 import urllib.parse
 import requests
 from one.remote.aws import get_s3_virtual_host
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import (
-    HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
+    HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 )
+from django.shortcuts import redirect
+from django.template.loader import render_to_string
+from django.urls import reverse_lazy
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views.generic import FormView, TemplateView
 
 from rest_framework import views
 from rest_framework.response import Response
@@ -18,9 +29,12 @@ from rest_framework import generics
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from data.models import Tag
+from .forms import PublicSignUpForm, signup_token_generator
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
@@ -75,7 +89,23 @@ class UserFilter(BaseFilterSet):
         exclude = ['json']
 
 
-class UserList(generics.ListCreateAPIView):
+class UserQuerySetMixin:
+    """Hide real accounts from public users.
+
+    A public user may see redacted users - whose identifying details have been stripped, and
+    which must stay visible so that the subjects and sessions attributed to them can still be
+    looked up - plus their own record. Everything else is another person's account, and on a
+    public database with self-registration that set includes members of the public.
+    """
+
+    def get_queryset(self):
+        queryset = super(UserQuerySetMixin, self).get_queryset()
+        if self.request.user.is_public_user:
+            queryset = queryset.filter(Q(is_redacted=True) | Q(pk=self.request.user.pk))
+        return queryset
+
+
+class UserList(UserQuerySetMixin, generics.ListCreateAPIView):
     """
     get: **FILTERS**
     - 'id'
@@ -93,7 +123,7 @@ class UserList(generics.ListCreateAPIView):
     lookup_field = 'username'
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(UserQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = UserSerializer.setup_eager_loading(get_user_model().objects.all())
     serializer_class = UserSerializer
     permission_classes = rest_permission_classes()
@@ -228,3 +258,92 @@ class CacheDownloadView(views.APIView):
             cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
             response = FileResponse(open(cache_file, 'br'))
         return response
+
+
+# Public self-registration
+# ------------------------------------------------------------------------------------------------
+# These views are only routed on a deployment with PUBLIC_DATABASE set (see misc/urls.py). They
+# each check the setting as well, so that a mistake in the URL configuration of an internal
+# database cannot expose a way to create accounts.
+
+class PublicDatabaseOnlyMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not getattr(settings, 'PUBLIC_DATABASE', False):
+            raise Http404('This Alyx instance does not offer public registration.')
+        return super(PublicDatabaseOnlyMixin, self).dispatch(request, *args, **kwargs)
+
+
+class SignUpView(PublicDatabaseOnlyMixin, FormView):
+    """Create a read-only account on a public database."""
+    template_name = 'signup.html'
+    form_class = PublicSignUpForm
+    success_url = reverse_lazy('signup-done')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('/admin')
+        return super(SignUpView, self).dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        user = form.save()
+        if user.is_active:  # verification disabled, nothing to send
+            logger.info('Created public account %s (no verification required)', user.username)
+            return super(SignUpView, self).form_valid(form)
+        context = {
+            'user': user,
+            'site_name': self.request.get_host(),
+            'confirmation_url': self.request.build_absolute_uri(
+                reverse_lazy('signup-verify', kwargs={
+                    'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
+                    'token': signup_token_generator.make_token(user)})),
+        }
+        # A failure here would leave an account nobody can activate, so let it 500 rather than
+        # reporting success: the address is far more likely to be mistyped than the mail server
+        # broken, and the user needs to know to try again.
+        send_mail(
+            subject=render_to_string('registration/signup_subject.txt', context).strip(),
+            message=render_to_string('registration/signup_email.txt', context),
+            from_email=None,  # falls back to DEFAULT_FROM_EMAIL
+            recipient_list=[user.email])
+        logger.info('Created public account %s, confirmation sent', user.username)
+        return super(SignUpView, self).form_valid(form)
+
+
+class SignUpDoneView(PublicDatabaseOnlyMixin, TemplateView):
+    template_name = 'signup_done.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SignUpDoneView, self).get_context_data(**kwargs)
+        context['verification_required'] = getattr(
+            settings, 'PUBLIC_SIGNUP_REQUIRE_VERIFICATION', True)
+        return context
+
+
+class SignUpVerifyView(PublicDatabaseOnlyMixin, TemplateView):
+    """Activate an account from the link sent to its email address."""
+    template_name = 'signup_verified.html'
+
+    def get_context_data(self, uidb64=None, token=None, **kwargs):
+        context = super(SignUpVerifyView, self).get_context_data(**kwargs)
+        context['verified'] = self._verify(uidb64, token)
+        return context
+
+    def _verify(self, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = get_user_model().objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, ValidationError,
+                get_user_model().DoesNotExist):
+            return False
+        # Only ever activates a self-registered public account: the token would not validate for
+        # anyone else, but an activation path that could reach a staff account is worth closing
+        # off explicitly rather than relying on that.
+        if not user.is_public_user or user.is_redacted or user.is_superuser:
+            return False
+        if not signup_token_generator.check_token(user, token):
+            return False
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+            logger.info('Activated public account %s', user.username)
+        return True
