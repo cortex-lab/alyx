@@ -53,6 +53,20 @@ class UserSerializer(serializers.ModelSerializer):
     allowed_users = serializers.SlugRelatedField(
         many=True, queryset=LabMember.objects.all(), slug_field='username')
 
+    def get_fields(self):
+        """Withhold personal and internal fields from public users.
+
+        Public users are restricted to redacted users and themselves (see misc.views.UserList),
+        but even there an email address is either meaningless or their own, and the delegation
+        set in allowed_users describes internal working arrangements.
+        """
+        fields = super(UserSerializer, self).get_fields()
+        request = self.context.get('request')
+        if request and getattr(request.user, 'is_public_user', False):
+            for field in ('email', 'allowed_users'):
+                fields.pop(field, None)
+        return fields
+
     @staticmethod
     def setup_eager_loading(queryset):
         queryset = queryset.prefetch_related('subjects_responsible')

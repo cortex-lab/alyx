@@ -99,7 +99,12 @@ def default_source():
 
 
 def default_responsible():
-    return get_user_model().objects.order_by('-is_stock_manager').first()
+    # Selects the primary key rather than the instance. This default is referenced by
+    # subjects.0001_initial, so it runs while migrating from scratch, against a user table that
+    # only has the columns added so far - fetching the whole row would select columns added by
+    # later migrations and fail. ForeignKey.get_default() takes a primary key directly.
+    return get_user_model().objects.order_by('-is_stock_manager').values_list(
+        'pk', flat=True).first()
 
 
 def default_species():
