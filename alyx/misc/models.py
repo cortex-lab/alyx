@@ -34,11 +34,6 @@ class LabMember(AbstractUser):
     is_stock_manager = models.BooleanField(default=False)
     allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
     is_public_user = models.BooleanField(default=False)
-    is_redacted = models.BooleanField(
-        default=False,
-        help_text="This user's identifying details have been stripped. The record is kept so that "
-                  "the subjects, sessions and datasets attributed to it remain queryable, but it "
-                  "holds no usable credentials and should not be treated as a real account.")
 
     class Meta:
         ordering = ['username']
