@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db.models import Q
 from django.http import (
     HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 )
@@ -90,18 +89,20 @@ class UserFilter(BaseFilterSet):
 
 
 class UserQuerySetMixin:
-    """Hide real accounts from public users.
+    """Restrict public users to their own record.
 
-    A public user may see redacted users - whose identifying details have been stripped, and
-    which must stay visible so that the subjects and sessions attributed to them can still be
-    looked up - plus their own record. Everything else is another person's account, and on a
-    public database with self-registration that set includes members of the public.
+    Enumerating the user table is not something a read-only account needs, and on a public
+    database with self-registration it would list the accounts of members of the public. Note
+    that this hides the user *records*, not the usernames attributed to data: those are still
+    returned by the session, subject and dataset endpoints, and are still what
+    `sessions?users=` and `subjects?responsible_user=` filter on, so the work of an anonymised
+    lab member remains queryable.
     """
 
     def get_queryset(self):
         queryset = super(UserQuerySetMixin, self).get_queryset()
         if self.request.user.is_public_user:
-            queryset = queryset.filter(Q(is_redacted=True) | Q(pk=self.request.user.pk))
+            queryset = queryset.filter(pk=self.request.user.pk)
         return queryset
 
 
@@ -338,7 +339,7 @@ class SignUpVerifyView(PublicDatabaseOnlyMixin, TemplateView):
         # Only ever activates a self-registered public account: the token would not validate for
         # anyone else, but an activation path that could reach a staff account is worth closing
         # off explicitly rather than relying on that.
-        if not user.is_public_user or user.is_redacted or user.is_superuser:
+        if not user.is_public_user or user.is_superuser:
             return False
         if not signup_token_generator.check_token(user, token):
             return False

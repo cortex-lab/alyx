@@ -159,21 +159,19 @@ class DefaultListFilter(admin.SimpleListFilter):
 
 
 class UserRelatedDropdownFilter(RelatedDropdownFilter):
-    """A user dropdown filter that does not enumerate every account.
+    """A user dropdown filter that does not list read-only accounts.
 
     The default related filter populates its dropdown from the whole target table, so a plain
     RelatedDropdownFilter on a user field lists every LabMember - including, on a public
-    database, the accounts of members of the public who have registered. Restrict the choices
-    to the users a public user is allowed to see, matching misc.views.UserQuerySetMixin.
+    database with self-registration, the account of every member of the public who has signed
+    up. Public accounts never own data, so they are never a useful thing to filter by; dropping
+    them keeps the filter useful without turning it into a directory of registered users.
     """
 
     def field_choices(self, field, request, model_admin):
         ordering = self.field_admin_ordering(field, request, model_admin)
-        limit_choices_to = None
-        if getattr(request.user, 'is_public_user', False):
-            limit_choices_to = models.Q(is_redacted=True) | models.Q(pk=request.user.pk)
         return field.get_choices(
-            include_blank=False, limit_choices_to=limit_choices_to, ordering=ordering)
+            include_blank=False, limit_choices_to={'is_public_user': False}, ordering=ordering)
 
 
 def alyx_mail(to, subject, text=''):

@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public users are no longer shown other people's accounts. Over REST, `/users` returns
   redacted users and the requester only, without email addresses; in the admin, the user and
   group models are hidden and user filter dropdowns no longer enumerate every account
-- `set_user_permissions` skips public and redacted users, which it previously added to the lab
+- `set_user_permissions` skips public users, which it previously added to the lab
   members group and marked active - granting members of the public write access and activating
   accounts that had never confirmed their email address
 

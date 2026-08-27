@@ -47,11 +47,10 @@ class Command(BaseCommand):
                           (len(group.permissions.all()), group))
 
         # Set user permissions.
-        # Public and redacted users are deliberately skipped. Adding them to the lab members
-        # group would grant members of the public write access to every model; forcing
-        # is_active would activate accounts that never confirmed their email address; and
-        # redacted users are placeholders kept for attribution, not accounts to be enabled.
-        users = get_user_model().objects.exclude(is_public_user=True).exclude(is_redacted=True)
+        # Public users are deliberately skipped: adding them to the lab members group would
+        # grant members of the public write access to every model, and forcing is_active would
+        # activate accounts that never confirmed their email address.
+        users = get_user_model().objects.exclude(is_public_user=True)
         for user in users:
             # Add all users to the group.
             user.groups.add(group)

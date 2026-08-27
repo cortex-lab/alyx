@@ -75,7 +75,6 @@ class PublicSignUpForm(UserCreationForm):
     def save(self, commit=True):
         user = super(PublicSignUpForm, self).save(commit=False)
         user.is_public_user = True  # read-only, enforced by alyx.base
-        user.is_redacted = False  # a real account, to be preserved across data releases
         user.is_superuser = False
         user.is_stock_manager = False
         # Staff status is what lets a user reach the admin site at all. Public users get it so

@@ -26,7 +26,6 @@ class TestSignUp(TestCase):
         self.assertRedirects(response, reverse('signup-done'))
         user = get_user_model().objects.get(username='newcomer')
         self.assertTrue(user.is_public_user, 'must be read-only')
-        self.assertFalse(user.is_redacted, 'must survive a data release')
         self.assertTrue(user.is_staff, 'needs staff status to browse the admin')
         self.assertFalse(user.is_superuser)
         self.assertFalse(user.is_stock_manager)
@@ -153,23 +152,20 @@ class TestPublicPermissionsGroup(TestCase):
             self.assertFalse(granted & set(excluded.values_list('id', flat=True)),
                              f'{app_label}.{model} must not be viewable by public users')
 
-    def test_set_user_permissions_skips_public_and_redacted_users(self):
+    def test_set_user_permissions_skips_public_users(self):
         from misc.management.commands.set_user_permissions import Command as SetUserPermissions
         public = get_user_model().objects.create(
             username='member-of-public', is_public_user=True, is_active=False)
-        redacted = get_user_model().objects.create(username='a1b2c3d4', is_redacted=True)
         staff = get_user_model().objects.create(username='researcher')
 
         SetUserPermissions().handle()
 
         public.refresh_from_db()
-        redacted.refresh_from_db()
         staff.refresh_from_db()
         # Adding a public user to Lab members would give a member of the public write access,
         # and forcing is_active would activate an account that never confirmed its email.
         self.assertEqual([], list(public.groups.all()))
         self.assertFalse(public.is_active)
-        self.assertEqual([], list(redacted.groups.all()))
         self.assertEqual(['Lab members'], [g.name for g in staff.groups.all()])
         self.assertTrue(staff.is_active)
 
@@ -179,8 +175,8 @@ class TestAccountVisibility(TestCase):
     """Public users must not be able to enumerate other people's accounts."""
 
     def setUp(self):
-        self.redacted = get_user_model().objects.create(
-            username='a1b2c3d4', is_redacted=True, is_active=False)
+        self.anonymised = get_user_model().objects.create(
+            username='a1b2c3d4', is_active=False)
         self.researcher = get_user_model().objects.create_user(
             username='researcher', password='x', email='researcher@example.org')
         self.public = get_user_model().objects.create_user(
@@ -189,34 +185,42 @@ class TestAccountVisibility(TestCase):
         SetPublicPermissions().handle(database='default')
         self.public.groups.add(Group.objects.get(name=PUBLIC_GROUP_NAME))
 
-    def test_rest_user_list_shows_redacted_users_and_self(self):
+    def test_rest_user_list_shows_only_self(self):
         self.client.force_login(self.public)
         response = self.client.get(reverse('user-list'))
         self.assertEqual(200, response.status_code)
         results = response.data['results'] if isinstance(response.data, dict) else response.data
-        usernames = {u['username'] for u in results}
-        self.assertIn('a1b2c3d4', usernames, 'redacted users must stay queryable')
-        self.assertIn('member-of-public', usernames)
-        self.assertNotIn('researcher', usernames, "another person's account was exposed")
+        self.assertEqual(['member-of-public'], [u['username'] for u in results])
 
-    def test_rest_hides_email_from_public_users(self):
-        self.client.force_login(self.public)
-        results = self.client.get(reverse('user-list')).data
-        results = results['results'] if isinstance(results, dict) else results
-        self.assertNotIn('email', results[0])
-        self.assertNotIn('allowed_users', results[0])
-        # A regular user still sees the full representation
+    def test_rest_user_list_unrestricted_for_staff(self):
         self.client.force_login(self.researcher)
         results = self.client.get(reverse('user-list')).data
         results = results['results'] if isinstance(results, dict) else results
-        self.assertIn('email', results[0])
+        self.assertEqual({'a1b2c3d4', 'researcher', 'member-of-public'},
+                         {u['username'] for u in results})
 
     def test_rest_user_detail_of_another_account_is_not_found(self):
         self.client.force_login(self.public)
+        for username in ('researcher', 'a1b2c3d4'):
+            self.assertEqual(
+                404, self.client.get(reverse('user-list') + '/' + username).status_code)
         self.assertEqual(
-            404, self.client.get(reverse('user-list') + '/researcher').status_code)
-        self.assertEqual(
-            200, self.client.get(reverse('user-list') + '/a1b2c3d4').status_code)
+            200, self.client.get(reverse('user-list') + '/member-of-public').status_code)
+
+    def test_work_of_anonymised_users_stays_queryable(self):
+        """Hiding the user records must not hide the data attributed to them.
+
+        This is what makes it acceptable for public users to lose sight of the user table: the
+        usernames are still carried on the data and are still what the filters match on.
+        """
+        from subjects.models import Subject
+        Subject.objects.create(nickname='mouse-1', responsible_user=self.anonymised)
+        self.client.force_login(self.public)
+        results = self.client.get(
+            reverse('subject-list') + '?responsible_user=a1b2c3d4').data
+        results = results['results'] if isinstance(results, dict) else results
+        self.assertEqual(['mouse-1'], [s['nickname'] for s in results])
+        self.assertEqual('a1b2c3d4', results[0]['responsible_user'])
 
     def test_admin_labmember_hidden_from_public_users(self):
         self.client.force_login(self.public)
