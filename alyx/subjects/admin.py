@@ -7,7 +7,6 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
-from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Count, Prefetch
 from django.forms import BaseInlineFormSet
@@ -1421,7 +1420,6 @@ class LabMemberAdmin(UserAdmin):
 mysite = admin.site
 
 mysite.register(LabMember, LabMemberAdmin)
-mysite.register(Group)
 
 mysite.register(Project, ProjectAdmin)
 mysite.register(Subject, SubjectAdmin)

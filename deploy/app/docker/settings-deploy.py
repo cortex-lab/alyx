@@ -121,7 +121,8 @@ CSRF_COOKIE_SECURE = True
 INSTALLED_APPS = (
     'django_admin_listfilter_dropdown',
     'django_filters',
-    'django.contrib.admin',
+    # Provides django.contrib.admin, with alyx.base.MyAdminSite as the default admin site
+    'alyx.apps.AlyxAdminConfig',
     'django.contrib.admindocs',
     'django.contrib.contenttypes',
     'django.contrib.auth',

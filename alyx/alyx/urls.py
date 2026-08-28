@@ -8,8 +8,6 @@ from drf_spectacular.views import SpectacularAPIView
 from alyx.views import SpectacularRedocViewCoreAPIDeprecation
 
 
-admin.site.site_header = 'Alyx'
-
 urlpatterns = [
     path('', include('misc.urls')),
     path('', include('experiments.urls')),

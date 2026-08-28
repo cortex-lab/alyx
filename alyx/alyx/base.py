@@ -277,6 +277,18 @@ def get_admin_url(obj):
 
 
 class MyAdminSite(admin.AdminSite):
+    """The admin site Alyx serves.
+
+    Installed as Django's default site by alyx.apps.AlyxAdminConfig, so that
+    ``django.contrib.admin.site`` and the ``@admin.register`` decorator both refer to it.
+    """
+
+    site_header = 'Alyx'
+    site_title = 'Alyx'
+    site_url = None
+    index_title = f'Welcome to Alyx {version}'
+    enable_nav_sidebar = False
+
     def index(self, request, extra_context=None):
         category_list = _get_category_list(self.get_app_list(request))
         context = dict(
@@ -648,13 +660,3 @@ class BaseRestPublicPermission(permissions.BasePermission):
 def rest_permission_classes():
     permission_classes = (permissions.IsAuthenticated & BaseRestPublicPermission,)
     return permission_classes
-
-
-mysite = MyAdminSite()
-mysite.site_header = 'Alyx'
-mysite.site_title = 'Alyx'
-mysite.site_url = None
-mysite.index_title = f'Welcome to Alyx {version}'
-mysite.enable_nav_sidebar = False
-
-admin.site = mysite
