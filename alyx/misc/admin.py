@@ -1,9 +1,12 @@
+from contextlib import suppress
+
 from pytz import all_timezones
 
 from django import forms
 from django.db import models
 from django.db.models import Q
 from django.contrib import admin
+from django.contrib.admin.exceptions import NotRegistered
 from django.contrib.admin.widgets import AdminFileWidget
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.postgres.fields import JSONField
@@ -306,4 +309,8 @@ admin.site.register(Note, NoteAdmin)
 admin.site.register(CageType, CageTypeAdmin)
 admin.site.register(Enrichment, EnrichmentAdmin)
 admin.site.register(Food, FoodAdmin)
-admin.site.unregister(TokenProxy)
+# DRF registers a token admin on the default site; Alyx issues tokens through /auth-token and
+# does not want them editable here. Tolerate its absence so that a DRF release which stops
+# registering it cannot break startup for the sake of a cosmetic removal.
+with suppress(NotRegistered):
+    admin.site.unregister(TokenProxy)

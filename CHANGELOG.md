@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stacks while reporting 174, as the list was ordered by `slices__name` and so joined the slices
   into the query. The stacks are ordered by their own fields now and the slices within each stack
   by the prefetch.
+- Admin no longer fails to start with djangorestframework >= 3.18
 
 ### Added
 
@@ -65,6 +66,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   than before this release. Several names, or a `dataset_qc_lte` below WARNING, keep the grouped
   count, both being cases where the semi-join measured no better or worse. The insertions and
   fields-of-view filters are not special-cased, measuring the same either way.
+
+### Changed
+- The custom admin site is now installed through `alyx.apps.AlyxAdminConfig` instead of by
+  reassigning `django.contrib.admin.site`. **Deployments must replace `'django.contrib.admin'`
+  with `'alyx.apps.AlyxAdminConfig'` in their `INSTALLED_APPS`**, otherwise the stock Django
+  admin index is served in place of the Alyx one. `alyx.base.mysite` is gone; use
+  `django.contrib.admin.site`, which now refers to the site Alyx serves.
+- Groups are administered through `django.contrib.auth`'s `GroupAdmin` rather than a bare
+  `ModelAdmin`, so group permissions get the two-pane selector
 
 ## [3.6.3]
 
