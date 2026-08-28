@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.4]
+
+### Fixed
+
+- Sessions and probe insertions `tag` REST filters no longer join the datasets table into the
+  main query, which made them 3-174x faster.
+- `tag` filter on the fields-of-view REST endpoint. `FOVFilter` had a `filter_tag` method but
+  never declared the filter that routes to it, so `/fields-of-view?tag=` was silently ignored.
+- `dataset_qc_lte` REST filter returned sessions and insertions once per matching dataset, so the
+  rows repeated across the paginated response and the count was the number of (row, dataset)
+  pairs: `/sessions?dataset_qc_lte=WARNING` reported 3,234,065 of 94,594 sessions.
+- `atlas_name`, `atlas_acronym` and `atlas_id` REST filters returned a session once per insertion
+  recording the region, and likewise an imaging stack once per slice.
+- The `dataset_types`, `datasets`, `dataset_qc_lte` and `atlas_*` REST filters now count and match
+  in a subquery instead of joining and grouping over the full row, making them up to 3.5x faster
+  (`/sessions?datasets=` 55 s to 16 s, `/chronic-insertions?atlas_acronym=` 0.7 s to 0.01 s).
+  `/insertions?tag=&dataset_qc_lte=` previously timed out, as the two joins multiplied.
+- The `datasets` REST filter counted the matching datasets rather than the distinct names on the
+  insertions and fields-of-view endpoints, so a row holding two datasets of one requested name
+  passed as having two different ones: `/insertions?datasets=` now agrees with `/sessions?datasets=`.
+  One name matches several datasets across collections and revisions for 142,624 (session, name)
+  and 50,078 (insertion, name) pairs, so this over-returned by ~4x on affected queries.
+- A dataset name repeated in a `datasets` REST filter, e.g. `?datasets=obj.attr.npy,obj.attr.npy`,
+  returned nothing at all rather than the rows having that dataset.
+- The chronic insertions REST list eagerly loaded its nested probe insertions while serialising
+  each row, which discarded the prefetched result and cost two queries per chronic insertion:
+  `/chronic-insertions` issued 329 queries for 176 rows, and now issues 4 regardless of the number
+  of rows (1.7x faster overall, 2.3x less time in the database).
+- The projects of a session, and the probe insertions of a chronic insertion, are now serialised in
+  a defined order. `Project` has no `Meta.ordering` and insertions of one chronic insertion often
+  share a session start time and name, so the database was free to return either in any order.
+- The sessions, insertions, fields-of-view and chronic insertions REST lists are now totally
+  ordered, so a page is the same from one request to the next. 916 sessions share a start time with
+  another and 120 insertions share a session start time and name, and rows tied that way came back
+  in a different order each request; `/chronic-insertions` had no ordering at all. The keys are
+  now `(-start_time, number, subject, pk)` for sessions and `(-session start_time, name, subject,
+  session number, pk)` for insertions and fields of view, the primary key being what makes them
+  total: `Session` and `ChronicInsertion` declare no uniqueness, and the insertion constraint is on
+  (session, name), which does not separate two sessions sharing a start time.
+- `/imaging-stacks` returned a stack once per slice, serving 250 rows covering 162 of the 174
+  stacks while reporting 174, as the list was ordered by `slices__name` and so joined the slices
+  into the query. The stacks are ordered by their own fields now and the slices within each stack
+  by the prefetch.
+- Admin no longer fails to start with djangorestframework >= 3.18
+
+### Added
+
+- `dataset_qc_lte` filter on the fields-of-view REST endpoint, matching the sessions and probe
+  insertions endpoints. The `datasets` filter there now applies the QC bound too, as it does on
+  those endpoints, rather than ignoring it.
+- Index on `data_dataset.name`, which the `?datasets=` REST filters look up and which had no index
+  (23 MB; deduplicated, as a few hundred names repeat across the table). Built concurrently, as
+  the table is continuously written. `/insertions?datasets=` is 7x faster, but note
+  `/sessions?datasets=` with two or more names is ~1.3x slower, as the planner switches from a
+  parallel sequential scan to a bitmap scan past roughly 5% of the table.
+- A single dataset name in the sessions `datasets` REST filter is now matched with one Exists
+  semi-join anchored on the session, rather than gathering every dataset of that name in the table
+  to group them: `/sessions?datasets=` with one name is 1.8x faster (9.9 s to 5.4 s), and 8x faster
+  than before this release. Several names, or a `dataset_qc_lte` below WARNING, keep the grouped
+  count, both being cases where the semi-join measured no better or worse. The insertions and
+  fields-of-view filters are not special-cased, measuring the same either way.
+
+### Changed
+- The custom admin site is now installed through `alyx.apps.AlyxAdminConfig` instead of by
+  reassigning `django.contrib.admin.site`. **Deployments must replace `'django.contrib.admin'`
+  with `'alyx.apps.AlyxAdminConfig'` in their `INSTALLED_APPS`**, otherwise the stock Django
+  admin index is served in place of the Alyx one. `alyx.base.mysite` is gone; use
+  `django.contrib.admin.site`, which now refers to the site Alyx serves.
+- Groups are administered through `django.contrib.auth`'s `GroupAdmin` rather than a bare
+  `ModelAdmin`, so group permissions get the two-pane selector
+
 ## [3.6.3]
 
 ### Fixed

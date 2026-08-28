@@ -16,7 +16,7 @@ from actions.models import (
     Surgery,
     ProcedureType,
 )
-from data.models import Dataset, DatasetType, FileRecord, DataRepository
+from data.models import Dataset, DatasetType, FileRecord, DataRepository, Tag
 
 
 class APIActionsBaseTests(BaseTests):
@@ -94,6 +94,72 @@ class APIActionsSessionsTests(APIActionsBaseTests):
             self.client.get(reverse("session-list") + f"?projects={self.projectY.name}")
         )
         self.assertEqual(len(d), 1)
+
+    def test_sessions_tag(self):
+        """Sessions are matched via the tags of their datasets, without duplicating rows."""
+        tag = Tag.objects.create(name="2020_Q1_Test_et_al")
+        other_tag = Tag.objects.create(name="unrelated_tag")
+        ses1, ses2, ses3 = (
+            Session.objects.create(subject=self.subject, lab=self.lab01, number=i + 1)
+            for i in range(3)
+        )
+        ses1.projects.set([self.projectX, self.projectY])
+        # two tagged datasets on the same session must not duplicate it in the response
+        for name in ("obj.attr.npy", "obj.times.npy"):
+            Dataset.objects.create(session=ses1, name=name).tags.add(tag)
+        Dataset.objects.create(session=ses2, name="obj.attr.npy").tags.add(tag, other_tag)
+        Dataset.objects.create(session=ses3, name="obj.attr.npy").tags.add(other_tag)
+        # a tagged dataset with no session must not affect the filter
+        Dataset.objects.create(name="aggregate.attr.npy").tags.add(tag)
+
+        expected = sorted([str(ses1.pk), str(ses2.pk)])
+        d = self.ar(self.client.get(reverse("session-list") + f"?tag={tag.name}"))
+        self.assertEqual(expected, sorted(x["id"] for x in d))
+
+        # the lookup is a case-insensitive partial match on the tag name
+        d = self.ar(self.client.get(reverse("session-list") + "?tag=test_ET_al"))
+        self.assertEqual(expected, sorted(x["id"] for x in d))
+
+        d = self.ar(self.client.get(reverse("session-list") + f"?tag={other_tag.name}"))
+        self.assertEqual(sorted([str(ses2.pk), str(ses3.pk)]), sorted(x["id"] for x in d))
+
+        d = self.ar(self.client.get(reverse("session-list") + "?tag=no_such_tag"))
+        self.assertEqual([], d)
+
+        # combining with another many-to-many filter must not duplicate rows either: the
+        # projects lookup matches both of ses1's projects
+        d = self.ar(
+            self.client.get(reverse("session-list") + f"?tag={tag.name}&projects=project")
+        )
+        self.assertEqual([str(ses1.pk)], [x["id"] for x in d])
+
+    def test_sessions_dataset_filters_do_not_duplicate_sessions(self):
+        """A session is returned once however many of its datasets match the filter.
+
+        These filters used to join the datasets into the session query, returning the session once
+        per matching dataset and reporting the number of (session, dataset) pairs as the count.
+        """
+        session = Session.objects.create(
+            subject=self.subject, lab=self.lab01, number=1)
+        dtype, _ = DatasetType.objects.get_or_create(name="spikes.times")
+        repo = DataRepository.objects.create(name="server", globus_is_personal=False)
+        # three datasets on the one session, all matching every filter below
+        for i in range(3):
+            dset = Dataset.objects.create(
+                session=session, name="spikes.times.npy", dataset_type=dtype, qc=30,
+                version=str(i))
+            FileRecord.objects.create(
+                dataset=dset, data_repository=repo, exists=True,
+                relative_path=f"{session.pk}/alf/#{i}#/spikes.times.npy")
+
+        url = reverse("session-list")
+        for query in ("?dataset_qc_lte=WARNING", "?dataset_types=spikes.times",
+                      "?datasets=spikes.times.npy"):
+            with self.subTest(query=query):
+                r = self.client.get(url + query)
+                self.assertEqual(200, r.status_code)
+                self.assertEqual(1, r.data["count"], "count must not be a pair count")
+                self.assertEqual([str(session.pk)], [x["id"] for x in r.data["results"]])
 
     def test_sessions(self):
         a_dict4json = {

@@ -11,9 +11,9 @@ coreapi==2.3.3
 coreschema==0.0.4
 coverage==7.8.2
 coveralls==4.0.1
-cryptography==48.0.1
+cryptography==50.0.0
 cycler==0.12.1
-Django==5.2.15
+Django==5.2.16
 django-admin-list-filter-dropdown==1.0.3
 django-admin-rangefilter==0.13.2
 django-autocomplete-light==3.12.1
@@ -70,7 +70,7 @@ ruff==0.11.11
 s3transfer==0.13.0
 setuptools==80.9.0
 six==1.17.0
-sqlparse==0.5.4
+sqlparse==0.6.0
 structlog==25.3.0
 tqdm==4.67.1
 tzdata==2025.2

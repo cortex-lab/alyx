@@ -3,10 +3,11 @@ import logging
 from one.alf.spec import QC
 from rest_framework import generics
 from django_filters.rest_framework import CharFilter, UUIDFilter, NumberFilter
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef
 
 
 from alyx.base import BaseFilterSet, rest_permission_classes
+from data.models import Dataset
 from experiments.models import (ProbeInsertion, TrajectoryEstimate, Channel, BrainRegion,
                                 ChronicInsertion, FOV, FOVLocation, ImagingStack)
 from experiments.serializers import (ProbeInsertionListSerializer, ProbeInsertionDetailSerializer,
@@ -31,38 +32,50 @@ def _filter_qs_with_brain_regions(queryset, region_field: str, region_value: str
     :param region_field: The BrainRegion model field to filter, e.g. id, name, acronym.
     :param region_value: The brain region to filter.
     :return: The filtered queryset.
+
+    The IDs of the matching rows are resolved from the trajectories and field of view locations
+    first, rather than joining those into the outer query: a row was previously returned once per
+    matching channel, and the Session and ImagingStack branches had no DISTINCT to remove the
+    duplicates again, so both the paginated rows and the reported count came back inflated.
     """
     brs = (BrainRegion.objects
            .filter(**{region_field: region_value})
            .get_descendants(include_self=True))
     qs_trajs = (TrajectoryEstimate.objects
                 .filter(provenance__gte=70)
-                .prefetch_related('channels__brain_region')
-                .filter(channels__brain_region__in=brs)
-                .distinct())
+                .filter(channels__brain_region__in=brs))
     qs_fov_loc = (FOVLocation.objects
                   .filter(default_provenance=True)
-                  .prefetch_related('brain_region')
-                  .filter(brain_region__in=brs)
-                  .distinct())
-    if queryset.model.__name__ == 'Session':
-        probe_in_region = Q(probe_insertion__trajectory_estimate__in=qs_trajs)
-        fov_in_region = Q(field_of_view__location__in=qs_fov_loc)
-        qs = (queryset
-              .prefetch_related('probe_insertion__trajectory_estimate', 'field_of_view__location')
-              .filter(probe_in_region | fov_in_region))
-    elif (queryset.model.__name__ == 'ProbeInsertion' or
-          queryset.model.__name__ == 'ChronicInsertion'):
-        qs = queryset.prefetch_related('trajectory_estimate').filter(
-            trajectory_estimate__in=qs_trajs)
-    elif queryset.model.__name__ == 'FOV':
-        qs = queryset.prefetch_related('location').filter(location__in=qs_fov_loc)
-    elif queryset.model.__name__ == 'ImagingStack':
-        qs = queryset.prefetch_related('slices').filter(slices__location__in=qs_fov_loc)
+                  .filter(brain_region__in=brs))
+
+    def ids_of(queryset_, field):
+        """The distinct non-null values of `field`, e.g. the insertions of the trajectories.
+
+        Restricting the subquery to rows that have the field set matters: it lets the planner
+        start from those rows instead of resolving every trajectory in the region first, which
+        is what makes this cheap for the models few trajectories point at.
+        """
+        values = (queryset_
+                  .filter(**{f'{field}__isnull': False})
+                  .values_list(field, flat=True))
+        return set(values)
+
+    model = queryset.model.__name__
+    if model == 'Session':
+        ids = (ids_of(qs_trajs, 'probe_insertion__session') |
+               ids_of(qs_fov_loc, 'field_of_view__session'))
+    elif model in ('ProbeInsertion', 'ChronicInsertion'):
+        # both models are the target of a TrajectoryEstimate foreign key named after them
+        insertion = 'probe_insertion' if model == 'ProbeInsertion' else 'chronic_insertion'
+        ids = ids_of(qs_trajs, insertion)
+    elif model == 'FOV':
+        ids = ids_of(qs_fov_loc, 'field_of_view')
+    elif model == 'ImagingStack':
+        ids = ids_of(qs_fov_loc, 'field_of_view__stack')
     else:
-        logger.error('Filtering by brain region with a %s query set not supported',
-                     queryset.model.__name__)
-    return qs
+        logger.error('Filtering by brain region with a %s query set not supported', model)
+        raise NotImplementedError(f'brain region filter not supported for {model}')
+    return queryset.filter(pk__in=list(ids))
 
 
 class ProbeInsertionFilter(BaseFilterSet):
@@ -88,13 +101,20 @@ class ProbeInsertionFilter(BaseFilterSet):
         """
         returns insertions that contain datasets tagged as
         :param queryset:
-        :param name:
         :param value:
         :return:
+
+        The matching insertions are resolved in a separate query rather than joining the datasets
+        into the insertion query. A tag covers tens of thousands of datasets but only a few
+        hundred insertions, and joining them in fans the insertion rows out by that ratio, then
+        forces the DISTINCT to deduplicate over the full insertion, model, session, subject and
+        lab row. Passing the insertion IDs in as a literal list also keeps the query planner from
+        re-planning this as a correlated sub-plan over the whole insertion table.
         """
-        queryset = queryset.filter(
-            datasets__tags__name__icontains=value).distinct()
-        return queryset
+        insertion_ids = (Dataset.objects
+                         .filter(tags__name__icontains=value, probe_insertion__isnull=False)
+                         .values_list('probe_insertion', flat=True).distinct())
+        return queryset.filter(pk__in=list(insertion_ids)).distinct()
 
     def atlas(self, queryset, name, value):
         """
@@ -103,29 +123,62 @@ class ProbeInsertionFilter(BaseFilterSet):
         return _filter_qs_with_brain_regions(queryset, name, value)
 
     def filter_dataset_types(self, queryset, _, value):
+        """
+        Returns insertions associated with datasets of all of the given type(s)
 
+        The datasets are counted per insertion in a subquery instead of being joined into the
+        insertion query and grouped there: the GROUP BY then covers the full insertion, model,
+        session, subject and lab row rather than a single ID column.
+        """
         dtypes = value.split(',')
-        queryset = queryset.filter(datasets__dataset_type__name__in=dtypes)
-        queryset = queryset.annotate(
-            dtypes_count=Count('datasets__dataset_type', distinct=True))
-        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
-        return queryset
+        insertions = (Dataset.objects
+                      .filter(dataset_type__name__in=dtypes, probe_insertion__isnull=False)
+                      .values('probe_insertion')
+                      .annotate(dtypes_count=Count('dataset_type__name', distinct=True))
+                      .filter(dtypes_count__gte=len(dtypes))
+                      .values_list('probe_insertion', flat=True))
+        return queryset.filter(pk__in=insertions)
 
     def filter_datasets(self, queryset, _, value):
+        """
+        Returns insertions associated with all of the given dataset(s)
+
+        As for `filter_dataset_types`, the datasets are counted per insertion in a subquery. The
+        sessions filter of the same name special-cases a single dataset name into an Exists
+        semi-join; that is deliberately not done here, as it measured no faster either way. There
+        are two orders of magnitude fewer insertions than sessions to probe, which leaves the whole
+        query under 100 ms whichever form is used.
+
+        The distinct dataset *names* are counted, not the datasets: one name routinely matches
+        several datasets of an insertion, across collections and revisions, and counting those
+        instead let an insertion holding two copies of one requested name satisfy a request for
+        two different names.
+        """
         qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
-        dsets = value.split(',')
-        queryset = queryset.filter(datasets__name__in=dsets, datasets__qc__lte=qc)
-        queryset = queryset.annotate(
-            dsets_count=Count('datasets', distinct=True))
-        queryset = queryset.filter(dsets_count__gte=len(dsets))
-        return queryset
+        dsets = sorted(set(value.split(',')))
+        insertions = (Dataset.objects
+                      .filter(name__in=dsets, qc__lte=qc, probe_insertion__isnull=False)
+                      .values('probe_insertion')
+                      .annotate(dsets_count=Count('name', distinct=True))
+                      .filter(dsets_count__gte=len(dsets))
+                      .values_list('probe_insertion', flat=True))
+        return queryset.filter(pk__in=insertions)
 
     def filter_dataset_qc_lte(self, queryset, _, value):
+        """
+        Returns insertions with at least one dataset whose QC is at most the given value
+
+        An Exists semi-join, so an insertion is returned once no matter how many of its datasets
+        qualify. The previous join returned it once per qualifying dataset, which duplicated the
+        rows across the paginated response and inflated the reported count to the number of
+        (insertion, dataset) pairs.
+        """
         # If filtering on datasets too, `filter_datasets` handles both QC and Datasets
         if 'datasets' in self.request.query_params:
             return queryset
         qc = QC.validate(value)
-        return queryset.filter(datasets__qc__lte=qc)
+        return queryset.filter(
+            Exists(Dataset.objects.filter(probe_insertion=OuterRef('pk'), qc__lte=qc)))
 
     class Meta:
         model = ProbeInsertion
@@ -380,7 +433,9 @@ class FOVFilter(BaseFilterSet):
     experiment_number = CharFilter('session__number')
     dataset_types = CharFilter(field_name='dataset_types', method='filter_dataset_types')
     datasets = CharFilter(field_name='datasets', method='filter_datasets')
+    dataset_qc_lte = CharFilter(field_name='dataset_qc', method='filter_dataset_qc_lte')
     imaging_type = CharFilter(field_name='imaging_type__name', lookup_expr='icontains')
+    tag = CharFilter(field_name='tag', method='filter_tag')
     # brain region filters
     atlas_name = CharFilter(field_name='name__icontains', method='atlas')
     atlas_acronym = CharFilter(field_name='acronym__iexact', method='atlas')
@@ -395,32 +450,68 @@ class FOVFilter(BaseFilterSet):
     def filter_tag(self, queryset, _, value):
         """
         Returns FOVs that contain datasets with the provided tag
+
+        As for the sessions and probe insertions tag filters, the matching FOVs are resolved in a
+        separate query: joining the datasets in fans the FOV rows out by the number of tagged
+        datasets each one has, and the DISTINCT that removes them then has to deduplicate over the
+        full FOV row. No FOV datasets are tagged yet, so this is currently cheap either way.
         """
-        queryset = queryset.filter(
-            datasets__tags__name__icontains=value).distinct()
-        return queryset
+        fov_ids = (Dataset.objects
+                   .filter(tags__name__icontains=value, field_of_view__isnull=False)
+                   .values_list('field_of_view', flat=True).distinct())
+        return queryset.filter(pk__in=list(fov_ids)).distinct()
 
     def filter_dataset_types(self, queryset, _, value):
         """
         Returns FOVs associated with the given dataset type(s)
+
+        As for the probe insertions filter of the same name, the datasets are counted per field of
+        view in a subquery rather than joined into this query and grouped there.
         """
         dtypes = value.split(',')
-        queryset = queryset.filter(datasets__dataset_type__name__in=dtypes)
-        queryset = queryset.annotate(
-            dtypes_count=Count('datasets__dataset_type', distinct=True))
-        queryset = queryset.filter(dtypes_count__gte=len(dtypes))
-        return queryset
+        fovs = (Dataset.objects
+                .filter(dataset_type__name__in=dtypes, field_of_view__isnull=False)
+                .values('field_of_view')
+                .annotate(dtypes_count=Count('dataset_type__name', distinct=True))
+                .filter(dtypes_count__gte=len(dtypes))
+                .values_list('field_of_view', flat=True))
+        return queryset.filter(pk__in=fovs)
 
     def filter_datasets(self, queryset, _, value):
         """
         Returns FOVs associated with the given dataset(s)
+
+        Only datasets whose QC is at most `dataset_qc_lte` count, as for the sessions and probe
+        insertions filters of the same name.
+
+        As for the probe insertions filter, the datasets are counted per field of view in a
+        subquery, it is the distinct dataset names that are counted rather than the datasets, and a
+        single name is not special-cased: no dataset is currently associated with any field of
+        view, so there is nothing to measure such a special case against.
         """
-        dsets = value.split(',')
-        queryset = queryset.filter(datasets__name__in=dsets)
-        queryset = queryset.annotate(
-            dsets_count=Count('datasets', distinct=True))
-        queryset = queryset.filter(dsets_count__gte=len(dsets))
-        return queryset
+        qc = QC.validate(self.request.query_params.get('dataset_qc_lte', QC.FAIL))
+        dsets = sorted(set(value.split(',')))
+        fovs = (Dataset.objects
+                .filter(name__in=dsets, qc__lte=qc, field_of_view__isnull=False)
+                .values('field_of_view')
+                .annotate(dsets_count=Count('name', distinct=True))
+                .filter(dsets_count__gte=len(dsets))
+                .values_list('field_of_view', flat=True))
+        return queryset.filter(pk__in=fovs)
+
+    def filter_dataset_qc_lte(self, queryset, _, value):
+        """
+        Returns FOVs with at least one dataset whose QC is at most the given value
+
+        An Exists semi-join, so a field of view is returned once no matter how many of its datasets
+        qualify.
+        """
+        # If filtering on datasets too, `filter_datasets` handles both QC and Datasets
+        if 'datasets' in self.request.query_params:
+            return queryset
+        qc = QC.validate(value)
+        return queryset.filter(
+            Exists(Dataset.objects.filter(field_of_view=OuterRef('pk'), qc__lte=qc)))
 
     class Meta:
         model = FOV
@@ -442,6 +533,13 @@ class FOVList(generics.ListCreateAPIView):
     -   **experiment_number**: session number `/fields-of-view?experiment_number=1`
     -   **session**: `/fields-of-view?session=aad23144-0e52-4eac-80c5-c4ee2decb198`
     -   **name**: field of view name `/trajectories?name=FOV_01`
+    -   **tag**: tag name of the associated datasets (icontains)
+        `/fields-of-view?tag=2021_Q1_IBL_et_al_Behaviour`
+    -   **dataset_types**: dataset type(s)
+    -   **datasets**: dataset name(s)
+    -   **dataset_qc_lte**: dataset QC value, e.g. PASS, WARNING, FAIL, CRITICAL
+        `/fields-of-view?dataset_qc_lte=WARNING`
+    -   **imaging_type**: imaging type name (icontains)
 
     [===> FOV model reference](/admin/doc/models/experiments.fov)
     """
