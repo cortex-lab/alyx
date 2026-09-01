@@ -27,7 +27,7 @@ django-reversion==5.1.0
 django-storages==1.14.6
 django-structlog==9.1.1
 django-test-without-migrations==0.6
-djangorestframework==3.16.0
+djangorestframework==3.17.2
 docopt==0.6.2
 docutils==0.21.2
 drfdocs==0.0.11
