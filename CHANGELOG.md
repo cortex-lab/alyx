@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Relative paths correctly rendered in cache table using pandas 3.
+- The data notice admin change page no longer renders the datasets as a multi-select widget:
+  every attached dataset had to be fetched and rendered as a selected option, which did not scale past a few hundred, and saving posted one form field per dataset, which exceeded `DATA_UPLOAD_MAX_NUMBER_FIELDS` and failed with a 400 status. The datasets are now a read-only, scrollable list of the first 100, with the total count and a link to them in the dataset list. They can still be attached when creating a notice, or through the REST API.
 
 ## [3.6.4]
 
