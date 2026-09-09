@@ -359,7 +359,7 @@ def dataset_queryset_to_dataframe(ds: QuerySet, batch_size: int = 100_000) -> pd
         df['exists'] = True
 
         # relative_path
-        revision = map(lambda x: None if not x else f'#{x}#', df.pop('revision__name'))
+        revision = map(lambda x: None if not x or pd.isna(x) else f'#{x}#', df.pop('revision__name'))
         zipped = zip(df.pop('collection'), revision, df.pop('name'))
         df['rel_path'] = ['/'.join(filter(None, x)) for x in zipped]
 
