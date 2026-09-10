@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.7.0]
 
+### Fixed
+
+- Relative paths correctly rendered in cache table using pandas 3.
+
 ## [3.6.4]
 
 ### Fixed
