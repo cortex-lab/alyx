@@ -1,0 +1,57 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}My account | {{ site_title|default:_('Alyx') }}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>My account</h1>
+
+  <table style="margin-bottom: 1.5em;">
+    <tr><th style="text-align: left; padding-right: 1em;">Username</th>
+        <td>{{ user.username }}</td></tr>
+    <tr><th style="text-align: left; padding-right: 1em;">Email</th>
+        <td>{% if user.email %}{{ user.email }}{% else %}<em>none on record</em>{% endif %}</td></tr>
+    {% if identities %}
+      {% for identity in identities %}
+      <tr><th style="text-align: left; padding-right: 1em;">{{ identity.provider|capfirst }}</th>
+          <td>{{ identity.uid }}</td></tr>
+      {% endfor %}
+    {% endif %}
+    <tr><th style="text-align: left; padding-right: 1em;">Groups</th>
+        <td>{% for group in user.groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% empty %}<em>none</em>{% endfor %}</td></tr>
+  </table>
+
+  <h2>REST API token</h2>
+  <p>
+    This token authenticates you to the REST API. Treat it like a password: anyone holding it
+    can act as you.
+  </p>
+
+  <p><code id="api-token" style="font-size: 1.1em; padding: 0.4em; background: #f6f6f6;
+     border: 1px solid #ddd; user-select: all;">{{ token }}</code></p>
+
+  <p>To use it with ONE:</p>
+  <pre style="background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em; overflow-x: auto;">from one.api import ONE
+ONE.setup(base_url='{{ base_url }}', username='{{ user.username }}', token='{{ token }}')</pre>
+
+  {% if not has_password %}
+  <p>
+    Your account signs in through {{ SSO_PROVIDER_NAME }} and has no password, so this token is
+    how you authenticate to the API.
+  </p>
+  {% endif %}
+
+  <form method="post" style="margin-top: 1.5em;"
+        onsubmit="return confirm('Regenerate your token? The current one stops working immediately.');">
+    {% csrf_token %}
+    <button type="submit" class="button">Regenerate token</button>
+    <span class="help" style="margin-left: 0.8em;">
+      Use this if the token has been exposed. Anything using the old one will need updating.
+    </span>
+  </form>
+</div>
+{% endblock %}
