@@ -14,8 +14,14 @@ def project2projects(apps, schema_editor):
 
     Tested on local instance.
     """
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Session = apps.get_model('actions', 'Session')
-    sessions = Session.objects.exclude(Q(project__isnull=True) | Q(projects=F('project')))
+    sessions = Session.objects.using(db).exclude(Q(project__isnull=True) | Q(projects=F('project')))
+    # Counted up front: once the loop below has run, this queryset matches nothing, so
+    # reporting its count afterwards would always say zero.
+    n_sessions = sessions.count()
 
     # Check query worked
     # from iblutil.util import ensure_list
@@ -27,8 +33,9 @@ def project2projects(apps, schema_editor):
         # session.project = None
         # session.save()  # No need to save
 
-    assert Session.objects.exclude(Q(project__isnull=True) | Q(projects=F('project'))).count() == 0
-    logger.info(f'project -> projects: {sessions.count():,g} sessions updated')
+    assert Session.objects.using(db).exclude(
+        Q(project__isnull=True) | Q(projects=F('project'))).count() == 0
+    logger.info(f'project -> projects: {n_sessions:,g} sessions updated')
 
 
 class Migration(migrations.Migration):

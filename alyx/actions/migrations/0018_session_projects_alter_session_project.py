@@ -7,13 +7,16 @@ import django.db.models.deletion
 def labelprojm2m(apps, schema_editor):
     # We can't import the Session model directly as it may be a newer
     # version than this migration expects. We use the historical version.
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Session = apps.get_model('actions', 'Session')
     # if the deprecated project field doesn't exist anymore, return
     if not 'project' in [f.name for f in Session._meta.fields]:
         return
-    for session in Session.objects.filter(project__isnull=False):
+    for session in Session.objects.using(db).filter(project__isnull=False):
         session.projects.set([session.project])
-        session.save()
+        session.save(using=db)
 
 
 class Migration(migrations.Migration):

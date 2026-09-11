@@ -10,12 +10,18 @@ logger = logging.getLogger(__name__)
 
 def update_reduced_date(apps, schema_editor):
     """Set reduced_date to death_date for all subjects where reduced is True but reduced_date is null."""
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Subject = apps.get_model('subjects', 'Subject')
     # Find all subjects where reduced is True but reduced_date is null
-    subjects_true = Subject.objects.filter(reduced=True, reduced_date__isnull=True)
+    subjects_true = Subject.objects.using(db).filter(reduced=True, reduced_date__isnull=True)
+    # Counted up front: the update below makes this queryset match nothing, so reporting
+    # its count afterwards would always say zero.
+    n_subjects = subjects_true.count()
     # Update reduced_date to be the same as death date
     subjects_true.update(reduced_date=F('death_date'))
-    logger.info(f'reduced_date set to death_date for {subjects_true.count():,g} subjects')
+    logger.info(f'reduced_date set to death_date for {n_subjects:,g} subjects')
 
 
 class Migration(migrations.Migration):

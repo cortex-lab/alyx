@@ -4,8 +4,11 @@ from django.db import migrations, models
 
 
 def update_qc_not_set_value(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Session = apps.get_model('actions', 'Session')
-    Session.objects.filter(qc=20).update(qc=0)
+    Session.objects.using(db).filter(qc=20).update(qc=0)
 
 
 class Migration(migrations.Migration):
