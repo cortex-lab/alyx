@@ -4,23 +4,29 @@ from django.db import migrations, transaction, models
 import django.db.models.deletion
 
 
-def forwards(apps, _):
+def forwards(apps, schema_editor):
     """Go through the datasets and assign the session field to the content_object field"""
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Dataset = apps.get_model('data', 'Dataset')
-    with transaction.atomic():
-        for dataset in Dataset.objects.filter(session__isnull=False).iterator():
+    with transaction.atomic(using=db):
+        for dataset in Dataset.objects.using(db).filter(session__isnull=False).iterator():
             if dataset.content_object is None:
                 dataset.content_object = dataset.session
-                dataset.save()
+                dataset.save(using=db)
 
 
-def backwards(apps, _):
+def backwards(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Dataset = apps.get_model('data', 'Dataset')
-    with transaction.atomic():
-        for dataset in Dataset.objects.filter(session__isnull=False).iterator():
+    with transaction.atomic(using=db):
+        for dataset in Dataset.objects.using(db).filter(session__isnull=False).iterator():
             if dataset.content_object is not None:
                 dataset.content_object = None
-                dataset.save()
+                dataset.save(using=db)
 
 
 class Migration(migrations.Migration):

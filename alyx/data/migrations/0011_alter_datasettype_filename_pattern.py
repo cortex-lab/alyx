@@ -4,10 +4,13 @@ import alyx.base
 from django.db import migrations
 
 
-def str2null(apps, _):
+def str2null(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     DatasetType = apps.get_model('data', 'DatasetType')
-    for dstype in DatasetType.objects.filter(filename_pattern=''):
-        dstype.save()
+    for dstype in DatasetType.objects.using(db).filter(filename_pattern=''):
+        dstype.save(using=db)
 
 
 class Migration(migrations.Migration):
