@@ -3,7 +3,7 @@ from django.urls import path, re_path
 from django.views.generic.base import RedirectView
 from misc import views as mv
 from django.conf.urls import include
-from alyx.settings import MEDIA_URL, PUBLIC_DATABASE
+from alyx.settings import MEDIA_URL, PUBLIC_DATABASE, SSO_ENABLED
 
 media_url = MEDIA_URL.strip('/')
 
@@ -41,8 +41,16 @@ public_urlpatterns = [
          name='password_reset_complete'),
 ]
 
+# The account page is useful on any deployment - it is where a user finds their REST API
+# token - so it is routed unconditionally.
+urlpatterns += [path('me', mv.MeView.as_view(), name='me')]
+
 if PUBLIC_DATABASE:
     urlpatterns += public_urlpatterns
+
+if SSO_ENABLED:
+    # allauth provides the provider handshake, the callback, and account connection management.
+    urlpatterns += [path('accounts/', include('allauth.urls'))]
 
 try:
     # If ibl-reports redirect home to reports page
