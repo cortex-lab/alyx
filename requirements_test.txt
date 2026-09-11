@@ -5,6 +5,9 @@ coveralls
 # so a new ruff release can silently start failing CI with no code change at all (see
 # cortex-lab/alyx#1027: ruff 0.16.0 added new default rules, 821 new findings overnight)
 ruff==0.15.22
+# optional [sso] extra, so CI covers the allauth adapter rather than only the policy
+# functions that are testable without it
+django-allauth[socialaccount]
 # for ONE cache table generation tests
 pyarrow
 pandas

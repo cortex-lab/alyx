@@ -62,6 +62,27 @@ jobs:
           coverage run manage.py test --parallel
           coverage combine
           coveralls --service=github
+      - name: Run tests with single sign-on enabled
+        # The default settings leave SSO off, so its adapter never runs above - the tests for it
+        # skip themselves. Enable it here so that the configuration a public deployment actually
+        # uses is exercised too.
+        run: |
+          cd alyx
+          cat >> alyx/settings_lab.py <<'SSO'
+          PUBLIC_DATABASE = True
+          SSO_ENABLED = True
+          SSO_PROVIDER = 'orcid'
+          SSO_CREATE_USER = True
+          SOCIALACCOUNT_PROVIDERS = {
+              'orcid': {'APP': {'client_id': 'ci', 'secret': 'ci'}},
+          }
+          SSO
+          python manage.py check
+          python manage.py test misc.tests_sso
+        env:
+          DJANGO_SETTINGS_MODULE: alyx.settings
+          APACHE_LOG_DIR: /var/log/alyx
+          POSTGRES_HOST: localhost
         env:
           DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx

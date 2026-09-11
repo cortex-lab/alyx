@@ -110,6 +110,76 @@ docker buildx build . \
 ## Advanced topics
 
 
+### Single sign-on
+
+Alyx can delegate login to an external identity provider through
+[django-allauth](https://docs.allauth.org) - ORCID, Google, an institutional login, or any of
+the providers allauth supports. It is optional and off by default.
+
+```
+pip install alyx[sso]
+```
+
+```python
+# settings_lab.py
+SSO_ENABLED = True
+SSO_PROVIDER = 'orcid'          # any django-allauth provider id
+SSO_PROVIDER_NAME = 'ORCID'     # the name on the sign-in button
+SSO_CREATE_USER = True          # allow new identities to register (a public database)
+SOCIALACCOUNT_PROVIDERS = {
+    'orcid': {'APP': {'client_id': os.getenv('ORCID_CLIENT_ID'),
+                      'secret': os.getenv('ORCID_CLIENT_SECRET')}},
+}
+```
+
+Register `https://<your-host>/accounts/<provider>/login/callback/` as the redirect URI with the
+provider. ORCID issues credentials from the developer tools in an ORCID account, and offers a
+sandbox at `sandbox.orcid.org` for testing - point at it with
+`'BASE_DOMAIN': 'sandbox.orcid.org'` in the provider settings.
+
+Run `manage.py check` afterwards. It reports missing credentials and warns about combinations
+that admit more people than you probably intend.
+
+Identities are stored in allauth's own tables, keyed on `(provider, uid)` with a unique
+constraint. **Those tables exist only where SSO is enabled** - migrations are per-app, so a
+deployment that leaves `SSO_ENABLED` off never creates them.
+
+#### Providers that supply no email address
+
+This is the case ORCID presents, and it shapes the design. ORCID's OpenID Connect surface lists
+neither `email` in its scopes nor `email_verified` in its claims: it returns the ORCID iD, a
+name, and nothing else. An Alyx account created from such an identity therefore has **no email
+address**, and that is a supported state - the account works for data access, it simply cannot
+be emailed. The identity that matters is the `(provider, uid)` pair, not the address.
+
+Consequently `SSO_ALLOWED_DOMAINS` cannot be used with such a provider: there is no domain to
+match, and every sign-in would be refused.
+
+| Setting | Default | |
+| --- | --- | --- |
+| `SSO_CREATE_USER` | `False` | Whether an identity with no account may create one. Off means SSO only signs in accounts that already exist, which is usually right for an internal database. |
+| `SSO_ALLOWED_DOMAINS` | `()` | Restrict sign-in to these email domains. Unusable with a provider that supplies no email. |
+| `SSO_NEW_USER_GROUPS` | `()` | Groups given to accounts SSO creates. On a public database the public users group is added automatically. |
+| `SSO_ALLOW_SUPERUSER` | `False` | Whether a superuser may sign in through SSO. Superusers can change anything in the database, so they are worth keeping on credentials Alyx controls. |
+
+#### API access for accounts without a password
+
+An account created through SSO has no password, and Django will not give it one: password reset
+skips users whose password is unusable, and the password change form requires the old password
+they never had. Such a user therefore cannot obtain a token from `/auth-token`.
+
+The **`/me` page** exists for this. Any signed-in user can see their REST API token there, copy
+it into ONE, and regenerate it if it leaks:
+
+```python
+from one.api import ONE
+ONE.setup(base_url='https://<your-host>', username='<username>', token='<token>')
+```
+
+The page is routed on every deployment, not just those using SSO, since it is the general
+answer to "where do I get my API token".
+
+
 ### Apache webserver and interaction with wsgi
 
 Put the [site configuration](_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`

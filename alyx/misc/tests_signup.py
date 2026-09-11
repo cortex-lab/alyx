@@ -126,6 +126,25 @@ class TestSignUp(TestCase):
         self.assertFalse(get_user_model().objects.filter(username='newcomer').exists())
 
 
+class TestAnonymousAdminLogin(TestCase):
+    """The login page is rendered for users who are not logged in yet.
+
+    django.contrib.admin builds its app list while rendering it, calling has_module_permission
+    on every registered ModelAdmin with an AnonymousUser - which has none of the LabMember
+    fields. Any permission override that reads one directly takes the login page down, for
+    every deployment, whether or not it is public.
+    """
+
+    def test_login_page_renders_for_anonymous_users(self):
+        self.assertEqual(200, self.client.get('/admin/login/').status_code)
+
+    @override_settings(**PUBLIC)
+    def test_login_page_renders_on_a_public_database(self):
+        response = self.client.get('/admin/login/')
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, reverse('signup'))
+
+
 class TestSignUpUrlsNotRouted(TestCase):
     def test_signup_not_routed_by_default(self):
         """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all."""

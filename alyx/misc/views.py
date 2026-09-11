@@ -19,6 +19,9 @@ from django.urls import reverse_lazy
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.generic import FormView, TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 from rest_framework import views
 from rest_framework.response import Response
@@ -348,3 +351,60 @@ class SignUpVerifyView(PublicDatabaseOnlyMixin, TemplateView):
             user.save(update_fields=['is_active'])
             logger.info('Activated public account %s', user.username)
         return True
+
+
+# Account page
+# ------------------------------------------------------------------------------------------------
+
+@method_decorator(never_cache, name='dispatch')
+class MeView(LoginRequiredMixin, TemplateView):
+    """The signed-in user's own account details, and their REST API token.
+
+    This is how a user obtains the credential ONE needs. It matters most for accounts created
+    through single sign-on: those have no password, and Django refuses both of the usual ways
+    of getting one - password reset skips users whose password is unusable, and the password
+    change form requires the old password they do not have - so without this page such an
+    account could sign in to the web interface but never use the API.
+    """
+    template_name = 'me.html'
+    login_url = reverse_lazy('admin:login')
+
+    def get_context_data(self, **kwargs):
+        from rest_framework.authtoken.models import Token
+        context = super(MeView, self).get_context_data(**kwargs)
+        user = self.request.user
+        # Tokens are otherwise created on first password login via /auth-token, which an SSO
+        # account never reaches.
+        token, _ = Token.objects.get_or_create(user=user)
+        context['token'] = token.key
+        context['identities'] = self._identities(user)
+        context['has_password'] = user.has_usable_password()
+        context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
+        return context
+
+    @staticmethod
+    def _identities(user):
+        """Linked single sign-on identities, where SSO is enabled.
+
+        Checks the app registry rather than catching ImportError: allauth's models raise
+        RuntimeError, not ImportError, when the package is installed but its apps are not in
+        INSTALLED_APPS - which is exactly the state of a deployment carrying the optional
+        extra with SSO switched off.
+        """
+        from django.apps import apps
+        if not apps.is_installed('allauth.socialaccount'):
+            return []
+        from allauth.socialaccount.models import SocialAccount
+        return list(SocialAccount.objects.filter(user=user))
+
+    def post(self, request, *args, **kwargs):
+        """Regenerate the API token.
+
+        The old token stops working immediately, which is the only way a user can revoke a
+        credential that has leaked.
+        """
+        from rest_framework.authtoken.models import Token
+        Token.objects.filter(user=request.user).delete()
+        Token.objects.create(user=request.user)
+        logger.info('Regenerated API token for %s', request.user.username)
+        return redirect('me')
