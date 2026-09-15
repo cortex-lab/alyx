@@ -37,7 +37,9 @@ if [ ! -f /etc/letsencrypt/live/$APACHE_SERVER_NAME/fullchain.pem ] || [ ! -f /e
     rm -rf /etc/letsencrypt/live/$APACHE_SERVER_NAME
     # Generate a new SSL certificate using certbot
     if [ -n "$CERTBOT_SG" ]; then  # call script to temporarily remove firewall for certbot challange
-	    certbot certonly --webroot --webroot-path=/var/www/alyx --noninteractive --agree-tos --email $APACHE_SERVER_ADMIN -d $APACHE_SERVER_NAME --pre-hook '/home/iblalyx/crons/ec2_modify_groups.sh --add' --post-hook '/home/iblalyx/crons/ec2_modify_groups.sh --remove'
+        # ec2_modify_groups.sh ships in this image alongside this script (see
+        # Dockerfile_base: COPY scripts/ /usr/local/bin/)
+	    certbot certonly --webroot --webroot-path=/var/www/alyx --noninteractive --agree-tos --email $APACHE_SERVER_ADMIN -d $APACHE_SERVER_NAME --pre-hook '/usr/local/bin/ec2_modify_groups.sh --add' --post-hook '/usr/local/bin/ec2_modify_groups.sh --remove'
     else
         certbot certonly --webroot --webroot-path=/var/www/alyx --noninteractive --agree-tos --email $APACHE_SERVER_ADMIN -d $APACHE_SERVER_NAME
     fi
