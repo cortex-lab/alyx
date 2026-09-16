@@ -2,17 +2,22 @@
 
 Only used on a deployment with PUBLIC_DATABASE set; see misc.views.SignUpView.
 """
+import logging
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
+from misc import antibot
 from misc.models import LabMember
 
 # Group granting read-only access to a public database. Created by the set_public_permissions
 # management command, which is also what decides the permissions it carries.
 PUBLIC_GROUP_NAME = 'Public users'
+
+logger = logging.getLogger(__name__)
 
 
 class SignupTokenGenerator(PasswordResetTokenGenerator):
@@ -50,10 +55,32 @@ class PublicSignUpForm(UserCreationForm):
         fields = ('username', 'email')
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(PublicSignUpForm, self).__init__(*args, **kwargs)
         # Django's admin-facing user creation form offers the option of creating an account
         # with an unusable password. That is never appropriate for self-registration.
         self.fields.pop('usable_password', None)
+        # Hidden from people by the template, so anything that fills it in is a form-filling
+        # bot. Not required, and never shown as an error - a bot learns nothing from a
+        # rejection that names the field that caught it.
+        self.fields[antibot.HONEYPOT_FIELD] = forms.CharField(
+            required=False, label='', widget=forms.TextInput(attrs={
+                'autocomplete': 'off', 'tabindex': '-1', 'aria-hidden': 'true'}))
+        if antibot.turnstile_configured():
+            self.fields['cf-turnstile-response'] = forms.CharField(
+                required=False, widget=forms.HiddenInput())
+
+    def clean(self):
+        cleaned = super(PublicSignUpForm, self).clean()
+        if antibot.honeypot_tripped(self.data):
+            logger.warning('Sign-up rejected: honeypot field completed')
+            raise forms.ValidationError(
+                'Your submission could not be processed. Please try again.')
+        if antibot.turnstile_configured() and not antibot.turnstile_passed(
+                self.request, self.data.get('cf-turnstile-response')):
+            raise forms.ValidationError(
+                'Could not confirm you are human. Please try again.')
+        return cleaned
 
     def clean_username(self):
         username = self.cleaned_data['username']

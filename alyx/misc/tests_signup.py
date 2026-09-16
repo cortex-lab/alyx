@@ -2,9 +2,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core import mail
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
+from misc import antibot
 from misc.forms import PUBLIC_GROUP_NAME, signup_token_generator
 from misc.management.commands.set_public_permissions import (
     Command as SetPublicPermissions, EXCLUDED_MODELS)
@@ -143,6 +144,71 @@ class TestAnonymousAdminLogin(TestCase):
         response = self.client.get('/admin/login/')
         self.assertEqual(200, response.status_code)
         self.assertContains(response, reverse('signup'))
+
+
+@override_settings(**PUBLIC)
+class TestBotProtection(TestCase):
+    """The honeypot and volume cap, and that neither inconveniences a real person."""
+
+    def _post(self, **extra):
+        data = {'username': 'newcomer', 'email': 'newcomer@example.org',
+                'password1': 'a-long-enough-passphrase', 'password2': 'a-long-enough-passphrase'}
+        data.update(extra)
+        return self.client.post(reverse('signup'), data)
+
+    def test_honeypot_field_is_present_but_hidden(self):
+        response = self.client.get(reverse('signup'))
+        self.assertContains(response, antibot.HONEYPOT_FIELD)
+        self.assertContains(response, 'aria-hidden="true"')
+
+    def test_completed_honeypot_is_rejected(self):
+        response = self._post(**{antibot.HONEYPOT_FIELD: 'http://spam.example'})
+        self.assertEqual(200, response.status_code)  # redisplayed, not created
+        self.assertFalse(get_user_model().objects.filter(username='newcomer').exists())
+
+    def test_rejection_does_not_name_the_honeypot(self):
+        """A bot that learns which field caught it simply stops filling that field in."""
+        body = self._post(**{antibot.HONEYPOT_FIELD: 'x'}).content.decode()
+        self.assertNotIn('%s field' % antibot.HONEYPOT_FIELD, body)
+
+    def test_empty_honeypot_lets_a_person_through(self):
+        self.assertRedirects(self._post(), reverse('signup-done'))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=None)
+    def test_throttle_off_by_default(self):
+        """Courses and workshops register ~100 people from one address; the default must not
+        stand in the way of that."""
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.1')
+        for _ in range(150):
+            self.assertFalse(antibot.throttle_exceeded(request))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(3, 3600))
+    def test_throttle_caps_one_address_when_configured(self):
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.2')
+        self.assertEqual([False, False, False, True],
+                         [antibot.throttle_exceeded(request) for _ in range(4)])
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(1, 3600),
+                       PUBLIC_SIGNUP_THROTTLE_EXEMPT=('10.0.0.3',))
+    def test_exempt_address_is_never_throttled(self):
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.3')
+        for _ in range(20):
+            self.assertFalse(antibot.throttle_exceeded(request))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(1, 3600))
+    def test_throttled_post_returns_429_and_creates_nothing(self):
+        self._post(username='first', email='first@example.org')
+        response = self._post(username='second', email='second@example.org')
+        self.assertEqual(429, response.status_code)
+        self.assertFalse(get_user_model().objects.filter(username='second').exists())
+
+    def test_forwarded_for_ignored_unless_trusted(self):
+        """Otherwise a client spoofs the header and the cap counts a different address."""
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.4',
+                                        HTTP_X_FORWARDED_FOR='1.2.3.4')
+        self.assertEqual('10.0.0.4', antibot.client_ip(request))
+        with override_settings(PUBLIC_SIGNUP_TRUST_FORWARDED_FOR=True):
+            self.assertEqual('1.2.3.4', antibot.client_ip(request))
 
 
 class TestSignUpUrlsNotRouted(TestCase):

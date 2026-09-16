@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.http import (
     HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound, Http404
 )
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils.encoding import force_bytes, force_str
@@ -31,6 +31,7 @@ from rest_framework import generics
 
 from alyx.base import BaseFilterSet, rest_permission_classes
 from data.models import Tag
+from . import antibot
 from .forms import PublicSignUpForm, signup_token_generator
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
@@ -286,7 +287,23 @@ class SignUpView(PublicDatabaseOnlyMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect('/admin')
+        if request.method == 'POST' and antibot.throttle_exceeded(request):
+            # Deliberately not a form error: the throttle is about volume from one address,
+            # not about anything the person filled in.
+            return render(request, 'signup_throttled.html', status=429)
         return super(SignUpView, self).dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super(SignUpView, self).get_form_kwargs()
+        kwargs['request'] = self.request  # the form needs it to verify a Turnstile response
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super(SignUpView, self).get_context_data(**kwargs)
+        context['honeypot_field'] = antibot.HONEYPOT_FIELD
+        context['turnstile_site_key'] = (
+            settings.TURNSTILE_SITE_KEY if antibot.turnstile_configured() else '')
+        return context
 
     def form_valid(self, form):
         user = form.save()
@@ -301,14 +318,23 @@ class SignUpView(PublicDatabaseOnlyMixin, FormView):
                     'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
                     'token': signup_token_generator.make_token(user)})),
         }
-        # A failure here would leave an account nobody can activate, so let it 500 rather than
-        # reporting success: the address is far more likely to be mistyped than the mail server
-        # broken, and the user needs to know to try again.
-        send_mail(
-            subject=render_to_string('registration/signup_subject.txt', context).strip(),
-            message=render_to_string('registration/signup_email.txt', context),
-            from_email=None,  # falls back to DEFAULT_FROM_EMAIL
-            recipient_list=[user.email])
+        try:
+            send_mail(
+                subject=render_to_string('registration/signup_subject.txt', context).strip(),
+                message=render_to_string('registration/signup_email.txt', context),
+                from_email=None,  # falls back to DEFAULT_FROM_EMAIL
+                recipient_list=[user.email])
+        except Exception:
+            # The account cannot be activated without this mail, and leaving it behind would
+            # hold its username and address against a retry, so it goes. Causes seen in
+            # practice: a mistyped domain, and an SES account still in the sandbox, which
+            # refuses any recipient that is not a verified identity.
+            logger.exception('Could not send the confirmation to %s; removing the account',
+                             user.email)
+            user.delete()
+            form.add_error(None, 'We could not send a confirmation email to that address. '
+                                 'Please check it and try again.')
+            return self.form_invalid(form)
         logger.info('Created public account %s, confirmation sent', user.username)
         return super(SignUpView, self).form_valid(form)
 

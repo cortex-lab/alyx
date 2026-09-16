@@ -18,7 +18,6 @@ import logging
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import AppRegistryNotReady
 
@@ -59,25 +58,6 @@ def check_existing_user(user):
     if not user.is_active:
         return False, REJECT_INACTIVE
     return True, ''
-
-
-def unique_username(base, reserved=None):
-    """Return `base`, or `base` with a numeric suffix, avoiding taken and reserved names.
-
-    Collisions are expected rather than exceptional. A provider that returns no email gives
-    little to build a username from, so several people can easily suggest the same one, and on
-    a public database the user table also holds anonymised lab members.
-    """
-    reserved = {name.lower() for name in
-                (reserved if reserved is not None
-                 else _setting('PUBLIC_SIGNUP_RESERVED_USERNAMES', ()))}
-    model = get_user_model()
-    candidate, suffix = base, 1
-    while candidate.lower() in reserved or model.objects.filter(
-            username__iexact=candidate).exists():
-        suffix += 1
-        candidate = f'{base}{suffix}'
-    return candidate
 
 
 def new_user_groups():
@@ -169,29 +149,27 @@ if DefaultSocialAccountAdapter is not None:
         def populate_user(self, request, sociallogin, data):
             """Build the candidate user, allocating a username Alyx is willing to store.
 
-            Every candidate goes through generate_unique_username, including one the provider
-            supplied itself: a provider is free to hand over `preferred_username` of "root" or
-            "admin", and taking it at face value would let an identity claim a reserved name.
+            Allocation is left to allauth, which resolves a clash by appending a random suffix
+            rather than a counter - so a username gives away nothing about how many people
+            share a name. It also skips anything in ACCOUNT_USERNAME_BLACKLIST, which the
+            settings point at PUBLIC_SIGNUP_RESERVED_USERNAMES: a provider is free to hand over
+            a `preferred_username` of "root", and taking that at face value would let an
+            identity claim a reserved name.
+
+            Every candidate goes through it, including one the provider supplied itself.
             """
+            # allauth's own socialaccount adapter imports it under this alias.
+            from allauth.account.adapter import get_adapter as get_account_adapter
             user = super(AlyxSocialAccountAdapter, self).populate_user(
                 request, sociallogin, data)
-            user.username = self.generate_unique_username([
+            # generate_unique_username lives on the account adapter, not this one.
+            user.username = get_account_adapter().generate_unique_username([
                 user.username or data.get('username') or '',
                 (data.get('email') or '').split('@')[0],
                 ' '.join(filter(None, (data.get('first_name'), data.get('last_name')))),
                 'user',
             ])
             return user
-
-        def generate_unique_username(self, txts, regex=None):
-            """Pick the first usable suggestion, then make it unique.
-
-            allauth's own implementation would do most of this, but it does not know about
-            PUBLIC_SIGNUP_RESERVED_USERNAMES, and a self-registered account taking a reserved
-            name is exactly what that setting exists to prevent.
-            """
-            from allauth.utils import generate_unique_username as allauth_generate
-            return unique_username(allauth_generate(txts, regex=regex))
 
         def save_user(self, request, sociallogin, form=None):
             """Create the account. Called only for a genuinely new identity."""

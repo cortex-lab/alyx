@@ -1,10 +1,8 @@
-{% extends "admin/base_site.html" %}
+{% extends "public_base.html" %}
 {% load i18n %}
 
-{% block title %}My account | {{ site_title|default:_('Alyx') }}{% endblock %}
+{% block title %}My account | {{ site_title }}{% endblock %}
 
-{% block nav-sidebar %}{% endblock %}
-{% block breadcrumbs %}{% endblock %}
 
 {% block content %}
 <div id="content-main">

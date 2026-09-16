@@ -58,21 +58,37 @@ class TestSignInPolicy(TestCase):
 
 
 class TestUsernameAllocation(TestCase):
+    """Usernames are allocated by allauth; these assert the behaviour Alyx depends on."""
 
-    def test_avoids_taken_names(self):
-        get_user_model().objects.create(username='ada')
-        get_user_model().objects.create(username='ada2')
-        self.assertEqual('ada3', sso.unique_username('ada'))
+    def setUp(self):
+        if sso.DefaultSocialAccountAdapter is None:
+            self.skipTest('requires the optional [sso] extra')
+        self.adapter = sso.AlyxSocialAccountAdapter()
 
-    def test_is_case_insensitive(self):
-        """LabMember.username is unique but not case folded, so near misses still collide."""
-        get_user_model().objects.create(username='Ada')
-        self.assertEqual('ada2', sso.unique_username('ada'))
+    def _allocate(self, **claims):
+        from allauth.socialaccount.models import SocialAccount, SocialLogin
+        login = SocialLogin(user=get_user_model()(username='', email=''),
+                            account=SocialAccount(provider='orcid', uid='uid'))
+        return self.adapter.populate_user(None, login, claims).username
 
-    @override_settings(PUBLIC_SIGNUP_RESERVED_USERNAMES=('root', 'intbrainlab'))
-    def test_avoids_reserved_names(self):
-        self.assertEqual('root2', sso.unique_username('root'))
-        self.assertEqual('intbrainlab2', sso.unique_username('IntBrainLab').lower())
+    def test_derives_a_username_without_an_email(self):
+        """ORCID returns a name and no address, so the name is all there is to work from."""
+        self.assertEqual('ada_lovelace',
+                         self._allocate(first_name='Ada', last_name='Lovelace', email=''))
+
+    def test_suffixes_a_taken_name_without_revealing_a_count(self):
+        get_user_model().objects.create(username='ada_lovelace')
+        allocated = self._allocate(first_name='Ada', last_name='Lovelace', email='')
+        self.assertNotEqual('ada_lovelace', allocated)
+        self.assertTrue(allocated.startswith('ada_lovelace'))
+        # allauth appends a random suffix rather than a counter, so a username says nothing
+        # about how many people share a name.
+        self.assertNotEqual('ada_lovelace2', allocated)
+
+    @override_settings(ACCOUNT_USERNAME_BLACKLIST=['root'])
+    def test_never_allocates_a_reserved_name(self):
+        """A provider may offer any preferred_username; reserved ones must not be taken."""
+        self.assertNotEqual('root', self._allocate(username='root', email=''))
 
 
 class TestProvisioningPolicy(TestCase):

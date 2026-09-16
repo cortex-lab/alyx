@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{# Shell for the public-facing pages: registration, the account page and single sign-on. #}
+{# They borrow the admin's stylesheet so they look like the rest of the site, but they are #}
+{# ordinary views, so the admin's navigation and user tools have nothing to act on and are #}
+{# blanked here rather than in each template. Branding comes from misc.context_processors. #}
+
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block usertools %}{% endblock %}
