@@ -1,0 +1,35 @@
+{% extends "public_base.html" %}
+{% load i18n %}
+{# Replaces django-allauth's own intermediate page. allauth renders it through its {% element %} #}
+{# tag system against a stylesheet it does not ship, so out of the box it arrives unstyled. The #}
+{# page itself is only a confirmation step - allauth requires a POST to begin the handshake so #}
+{# that a bare link cannot start a sign-in - so reproducing it here costs nothing but markup. #}
+
+{% block title %}
+  {% if process == "connect" %}Connect{% else %}Sign in{% endif %} with {{ SSO_PROVIDER_NAME }} | {{ site_title }}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if process == "connect" %}
+    <h1>Connect {{ SSO_PROVIDER_NAME }}</h1>
+    <p>You are about to connect a third-party account from {{ SSO_PROVIDER_NAME }} to your Alyx account.</p>
+  {% else %}
+    <h1>Sign in with {{ SSO_PROVIDER_NAME }}</h1>
+    <p>
+      You are about to sign in using a third-party account from {{ SSO_PROVIDER_NAME }}. You will be
+      sent there to authenticate, and returned here afterwards.
+    </p>
+  {% endif %}
+
+  {# Posts back to the same URL, preserving the query string: allauth carries `process` and #}
+  {# `next` there, and losing them would drop the redirect target after authentication. #}
+  <form method="post" action="{{ request.get_full_path }}">{% csrf_token %}
+    <div class="submit-row">
+      <input type="submit" class="default"
+             value="{% if process == 'connect' %}Connect{% else %}Continue to {{ SSO_PROVIDER_NAME }}{% endif %}">
+      <a href="{% url 'admin:login' %}" class="button cancel-link" style="float: right;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
