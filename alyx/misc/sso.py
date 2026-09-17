@@ -151,10 +151,13 @@ if DefaultSocialAccountAdapter is not None:
 
             Allocation is left to allauth, which resolves a clash by appending a random suffix
             rather than a counter - so a username gives away nothing about how many people
-            share a name. It also skips anything in ACCOUNT_USERNAME_BLACKLIST, which the
-            settings point at PUBLIC_SIGNUP_RESERVED_USERNAMES: a provider is free to hand over
-            a `preferred_username` of "root", and taking that at face value would let an
-            identity claim a reserved name.
+            share a name.
+
+            Reserved names are dropped from the candidates first. A provider is free to hand
+            over a `preferred_username` of "root", and taking that at face value would let an
+            identity claim a reserved name. The list is read here, from the same setting the
+            sign-up form honours, rather than left to ACCOUNT_USERNAME_BLACKLIST: a deployment
+            that sets only PUBLIC_SIGNUP_RESERVED_USERNAMES is then protected on both paths.
 
             Every candidate goes through it, including one the provider supplied itself.
             """
@@ -162,13 +165,20 @@ if DefaultSocialAccountAdapter is not None:
             from allauth.account.adapter import get_adapter as get_account_adapter
             user = super(AlyxSocialAccountAdapter, self).populate_user(
                 request, sociallogin, data)
-            # generate_unique_username lives on the account adapter, not this one.
-            user.username = get_account_adapter().generate_unique_username([
+            reserved = {name.casefold() for name in _setting(
+                'PUBLIC_SIGNUP_RESERVED_USERNAMES', ())}
+            candidates = [
                 user.username or data.get('username') or '',
                 (data.get('email') or '').split('@')[0],
                 ' '.join(filter(None, (data.get('first_name'), data.get('last_name')))),
                 'user',
-            ])
+            ]
+            candidates = [c for c in candidates if c and c.casefold() not in reserved]
+            # generate_unique_username lives on the account adapter, not this one. It needs
+            # something to work from, so the last resort survives even a deployment that
+            # reserves every name offered here; it will be suffixed if it is taken.
+            user.username = get_account_adapter().generate_unique_username(
+                candidates or ['user'])
             return user
 
         def save_user(self, request, sociallogin, form=None):

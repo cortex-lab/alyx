@@ -32,9 +32,21 @@
   <p><code id="api-token" style="font-size: 1.1em; padding: 0.4em; background: #f6f6f6;
      border: 1px solid #ddd; user-select: all;">{{ token }}</code></p>
 
-  <p>To use it with ONE:</p>
+  <p>
+    To use it with ONE, hand it over once. ONE asks the database who the token belongs to, so
+    there is no username to type and no need to call <code>ONE.setup()</code>:
+  </p>
   <pre style="background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em; overflow-x: auto;">from one.api import ONE
-ONE.setup(base_url='{{ base_url }}', username='{{ user.username }}', token='{{ token }}')</pre>
+one = ONE(base_url='{{ base_url }}', token='{{ token }}')</pre>
+  <p>ONE remembers, so from then on it is just:</p>
+  <pre style="background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em; overflow-x: auto;">from one.api import ONE
+one = ONE()</pre>
+  <p>
+    Pass the token again only if you regenerate it, or to sign in as someone else.{% if has_password %}
+    Your account has a password too, so
+    <code>ONE(base_url='{{ base_url }}', username='{{ user.username }}')</code> works just as
+    well, and asks for the password once.{% endif %}
+  </p>
 
   {% if not has_password %}
   <p>

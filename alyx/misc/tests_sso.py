@@ -82,8 +82,13 @@ class TestUsernameAllocation(TestCase):
         self.assertNotEqual('ada_lovelace', allocated)
         self.assertTrue(allocated.startswith('ada_lovelace'))
         # allauth appends a random suffix rather than a counter, so a username says nothing
-        # about how many people share a name.
-        self.assertNotEqual('ada_lovelace2', allocated)
+        # about how many people share a name. A single allocation cannot show that - the first
+        # retry suffix is one random digit, so "ada_lovelace2" is both what a counter would
+        # give and a perfectly ordinary draw - but a counter would hand out the same name every
+        # time from the same state, and these draws do not.
+        draws = {self._allocate(first_name='Ada', last_name='Lovelace', email='')
+                 for _ in range(20)}
+        self.assertGreater(len(draws), 1, 'suffix looks like a counter, not a random draw')
 
     @override_settings(ACCOUNT_USERNAME_BLACKLIST=['root'])
     def test_never_allocates_a_reserved_name(self):
@@ -198,3 +203,22 @@ class TestAccountPage(TestCase):
         response = self.client.get(reverse('me'))
         self.assertEqual(200, response.status_code)
         self.assertContains(response, Token.objects.get(user=self.user).key)
+
+    def test_a_valid_token_is_accepted_in_place_of_a_session(self):
+        """ONE verifies a token by calling this endpoint; it must answer without a session."""
+        token = Token.objects.create(user=self.user)
+        response = self.client.get(reverse('me'), headers={'authorization': f'Token {token.key}'})
+        self.assertEqual(200, response.status_code)
+        self.assertEqual('ada', response.json()['username'])
+
+    def test_a_bad_token_is_rejected_rather_than_redirected(self):
+        """The point of the endpoint: a rejected token must not look like an unread page."""
+        response = self.client.get(reverse('me'), headers={'authorization': 'Token nonsense'})
+        self.assertEqual(401, response.status_code)
+
+    def test_a_token_cannot_regenerate_itself(self):
+        """Rotation stays session-only - a token-authenticated POST carries no CSRF token."""
+        token = Token.objects.create(user=self.user)
+        response = self.client.post(reverse('me'), headers={'authorization': f'Token {token.key}'})
+        self.assertEqual(302, response.status_code)
+        self.assertEqual(token.key, Token.objects.get(user=self.user).key)
