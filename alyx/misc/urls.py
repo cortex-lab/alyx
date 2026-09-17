@@ -3,9 +3,9 @@ from django.urls import path, re_path
 from django.views.generic.base import RedirectView
 from misc import views as mv
 from django.conf.urls import include
-from alyx.settings import MEDIA_URL, PUBLIC_DATABASE, SSO_ENABLED
+from django.conf import settings
 
-media_url = MEDIA_URL.strip('/')
+media_url = settings.MEDIA_URL.strip('/')
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin')),  # redirect the page to admin interface
@@ -53,10 +53,10 @@ urlpatterns += [
     path('llms.txt', mv.LLMsTextView.as_view(), name='llms-txt'),
 ]
 
-if PUBLIC_DATABASE:
+if getattr(settings, 'PUBLIC_DATABASE', False):
     urlpatterns += public_urlpatterns
 
-if SSO_ENABLED:
+if getattr(settings, 'SSO_ENABLED', False):
     # allauth provides the provider handshake, the callback, and account connection management.
     urlpatterns += [path('accounts/', include('allauth.urls'))]
 

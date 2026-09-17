@@ -219,14 +219,12 @@ class TestSignUpUrlsNotRouted(TestCase):
     def test_signup_not_routed_by_default(self):
         """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all.
 
-        The URLconf settles this when it is imported, so the module is reloaded with the setting
-        patched rather than the live URLconf being probed: on a public deployment that URLconf
+        The URLconf settles this when it is imported, so the module is reloaded under the
+        setting rather than the live URLconf being probed: on a public deployment that URLconf
         routes /signup quite correctly, and the test would be measuring the deployment instead
-        of the code. The setting is patched where misc.urls reads it - the settings module
-        itself - since override_settings only reaches django.conf.settings.
+        of the code.
         """
         import importlib
-        from unittest import mock
         from django.urls import clear_url_caches
         from misc import urls as misc_urls
 
@@ -237,15 +235,49 @@ class TestSignUpUrlsNotRouted(TestCase):
             return names
 
         try:
-            with mock.patch('alyx.settings.PUBLIC_DATABASE', False):
+            with override_settings(PUBLIC_DATABASE=False):
                 importlib.reload(misc_urls)
                 clear_url_caches()
                 self.assertNotIn('signup', routed())
-            with mock.patch('alyx.settings.PUBLIC_DATABASE', True):
+            with override_settings(PUBLIC_DATABASE=True):
                 importlib.reload(misc_urls)
                 clear_url_caches()
                 self.assertIn('signup', routed(), 'the check must not pass vacuously')
         finally:
+            importlib.reload(misc_urls)
+            clear_url_caches()
+
+
+    def test_routes_load_when_the_flags_are_absent_entirely(self):
+        """A settings file that predates these flags must still import.
+
+        The openalyx release container supplies its own settings module and defines neither
+        flag; so may any lab running Alyx off the shelf. Importing the names directly made that
+        an ImportError at URLconf load, which takes down the site and every manage.py command
+        with it - including the migrate step of a release.
+        """
+        import importlib
+        from django.conf import settings as django_settings
+        from django.urls import clear_url_caches
+        from misc import urls as misc_urls
+
+        absent = {k: getattr(django_settings, k, None)
+                  for k in ('PUBLIC_DATABASE', 'SSO_ENABLED')}
+        try:
+            for key in absent:
+                # Both copies: LazySettings caches each value in its own __dict__ on first
+                # access, so removing it from the wrapped Settings alone changes nothing.
+                django_settings.__dict__.pop(key, None)
+                if hasattr(django_settings._wrapped, key):
+                    delattr(django_settings._wrapped, key)
+            importlib.reload(misc_urls)  # must not raise
+            clear_url_caches()
+            self.assertNotIn('signup', {getattr(p, 'name', None) for p in misc_urls.urlpatterns})
+        finally:
+            for key, value in absent.items():
+                if value is not None:
+                    setattr(django_settings._wrapped, key, value)
+                django_settings.__dict__.pop(key, None)
             importlib.reload(misc_urls)
             clear_url_caches()
 
