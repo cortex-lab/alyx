@@ -29,7 +29,7 @@ from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework import generics
 
-from alyx.base import BaseFilterSet, rest_permission_classes
+from alyx.base import BaseFilterSet, LimitedLimitOffsetPagination, rest_permission_classes
 from data.models import Tag
 from . import antibot
 from .forms import PublicSignUpForm, signup_token_generator
@@ -42,16 +42,25 @@ logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
 def api_root(request, format=None):
-    """**[==========> CLICK HERE TO GO TO THE ADMIN INTERFACE <==========](/admin)**
+    """Index of the Alyx REST API.
 
-    Welcome to Alyx's API! At the moment, there is read-only support for
-    unauthenticated user lists, and authenticated read-write subject metadata
-    and weighings. This should be reasonably self-documented; standard REST options
-    are supported by sending an `OPTIONS /api/subjects/` for example. This is in alpha
-    and endpoints are subject to change at short notice!
+    **Retrieving more than a page or two of records? Use
+    [ONE](https://int-brain-lab.github.io/ONE/) rather than this API directly.** ONE downloads
+    cache tables and queries them locally, so a search costs no database queries at all. Paging
+    through large result sets here is slow, heavily rate limited, and places load on a database
+    that other people are using. ONE's own documentation puts it plainly: *avoiding the database
+    whenever possible is recommended ... [it] reduces the load on the remote database*.
 
-    **[ ===> Models documentation](/admin/doc/models)**
+    Page size is capped, so `?limit=10000` returns far fewer records than asked for; a response
+    that has been capped says so in its `detail` field.
 
+    Authentication is required. Every request carries `Authorization: Token <key>`; get a key
+    from [your account page](/me), or by POSTing a username and password to `/auth-token`.
+    Sending that header to [/me](/me) returns the account the key belongs to, which is the
+    cheapest way to check whether a key still works and who it speaks for.
+
+    Full schema: [/docs](/docs/) - machine-readable at [/api/schema](/api/schema).
+    Model reference: [/admin/doc/models](/admin/doc/models).
     """
     return Response({
         'users-url': reverse('user-list', request=request, format=format),
@@ -395,6 +404,42 @@ class MeView(LoginRequiredMixin, TemplateView):
     template_name = 'me.html'
     login_url = reverse_lazy('admin:login')
 
+    def dispatch(self, request, *args, **kwargs):
+        """Accept a REST API token in place of a session, for reads.
+
+        This page is where a user finds their token, which makes it the natural place for a
+        client to ask "is this token still good, and whose is it?" - a caller holding only a
+        token has no session to present. Without this the page cannot answer: LoginRequiredMixin
+        redirects an unauthenticated request to the login page, so a rejected token would look
+        exactly like a valid one that simply was not read.
+
+        Only safe methods are accepted this way. Regenerating the token stays session-only:
+        a token-authenticated POST carries no CSRF token, and a credential able to rotate
+        itself is a worse footgun than one that cannot.
+        """
+        if request.method in ('GET', 'HEAD') and 'HTTP_AUTHORIZATION' in request.META:
+            from rest_framework.authentication import TokenAuthentication
+            from rest_framework.exceptions import AuthenticationFailed
+            try:
+                authenticated = TokenAuthentication().authenticate(request)
+            except AuthenticationFailed as e:
+                return JsonResponse({'detail': str(e.detail)}, status=e.status_code)
+            if authenticated is not None:
+                request.user, request.auth = authenticated
+        return super(MeView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """Render the page, or answer in JSON where the caller authenticated with a token."""
+        if getattr(request, 'auth', None) is not None:
+            user = request.user
+            return JsonResponse({
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            })
+        return super(MeView, self).get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         from rest_framework.authtoken.models import Token
         context = super(MeView, self).get_context_data(**kwargs)
@@ -434,3 +479,22 @@ class MeView(LoginRequiredMixin, TemplateView):
         Token.objects.create(user=request.user)
         logger.info('Regenerated API token for %s', request.user.username)
         return redirect('me')
+
+
+class LLMsTextView(TemplateView):
+    """Serve /llms.txt, a plain-text orientation for automated clients.
+
+    An emerging convention (llmstxt.org) for handing a language model a curated entry point
+    instead of leaving it to infer one from HTML. Cheap to provide and read early by clients
+    that look for it, which is exactly the moment to say "use ONE, do not page this API".
+    It is not a substitute for the in-band signals on capped and throttled responses: the
+    clients that cause trouble are generally the ones that never fetch a file like this.
+    """
+    template_name = 'llms.txt'
+    content_type = 'text/plain; charset=utf-8'
+
+    def get_context_data(self, **kwargs):
+        context = super(LLMsTextView, self).get_context_data(**kwargs)
+        context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
+        context['max_limit'] = LimitedLimitOffsetPagination.max_limit
+        return context

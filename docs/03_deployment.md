@@ -168,13 +168,17 @@ An account created through SSO has no password, and Django will not give it one:
 skips users whose password is unusable, and the password change form requires the old password
 they never had. Such a user therefore cannot obtain a token from `/auth-token`.
 
-The **`/me` page** exists for this. Any signed-in user can see their REST API token there, copy
-it into ONE, and regenerate it if it leaks:
+The **`/me` page** exists for this. Any signed-in user can see their REST API token there, hand
+it to ONE, and regenerate it if it leaks:
 
 ```python
 from one.api import ONE
-ONE.setup(base_url='https://<your-host>', username='<username>', token='<token>')
+one = ONE(base_url='https://<your-host>', token='<token>')
 ```
+
+ONE asks the database who the token belongs to, so no username is needed, and it stores the
+token: later sessions are just `ONE()`, with no token and no `ONE.setup()` call. An account that
+does have a password passes `username='<username>'` instead and is asked for it once.
 
 The page is routed on every deployment, not just those using SSO, since it is the general
 answer to "where do I get my API token".
