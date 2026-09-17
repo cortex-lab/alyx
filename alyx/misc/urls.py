@@ -1,9 +1,10 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
 from django.views.generic.base import RedirectView
 from misc import views as mv
 from django.conf.urls import include
 from django.conf import settings
+
+from misc.signup.urls import preferences_urlpatterns, public_urlpatterns
 
 media_url = settings.MEDIA_URL.strip('/')
 
@@ -20,26 +21,11 @@ urlpatterns = [
     re_path(r'^cache/info(?:/(?P<tag>\w+))?/$', mv.CacheVersionView.as_view(), name='cache-info'),
 ]
 
-# Self-registration and the password reset flow that makes those accounts recoverable. The
-# reset views take the admin_password_reset / password_reset_done names so the admin login page
-# shows its "Forgotten your password?" link and its templates are reused.
-# Kept as a separate list so misc.tests_urls can route them whatever the test settings say.
-public_urlpatterns = [
-    path('signup', mv.SignUpView.as_view(), name='signup'),
-    path('signup/done', mv.SignUpDoneView.as_view(), name='signup-done'),
-    path('signup/verify/<uidb64>/<token>', mv.SignUpVerifyView.as_view(), name='signup-verify'),
-    path('password_reset/', auth_views.PasswordResetView.as_view(),
-         name='admin_password_reset'),
-    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(),
-         name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(),
-         name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(),
-         name='password_reset_complete'),
-]
-
 # Where a user finds their REST API token, so routed on every deployment.
 urlpatterns += [path('me', mv.MeView.as_view(), name='me')]
+
+if getattr(settings, 'EMAIL_PREFERENCES', None):
+    urlpatterns += preferences_urlpatterns
 
 # A client handed only a base URL will probe it, and `/` serves an HTML login page that tells
 # a machine nothing. llms.txt is the same idea for clients that look for one.

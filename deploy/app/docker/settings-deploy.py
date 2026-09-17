@@ -35,6 +35,9 @@ PUBLIC_DATABASE = False
 # Require email confirmation before an account works. Needs a working EMAIL_BACKEND; the link
 # expires after PASSWORD_RESET_TIMEOUT.
 PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
+# Mailing preferences offered at sign-up, as {field name: checkbox label}. Empty disables the
+# feature and its page entirely; consent to be emailed is specific to a public database.
+EMAIL_PREFERENCES = {}
 # Usernames that may not be self-registered.
 PUBLIC_SIGNUP_RESERVED_USERNAMES = (
     'root', 'admin', 'administrator', 'alyx', 'test', 'public', 'anonymous')
@@ -218,8 +221,8 @@ if SSO_ENABLED:
     EXTRA_AUTHENTICATION_BACKENDS = (
         ('allauth.account.auth_backends.AuthenticationBackend',)
         + tuple(EXTRA_AUTHENTICATION_BACKENDS))
-    # Alyx applies its own sign-in policy and provisioning; see misc/sso.py.
-    SOCIALACCOUNT_ADAPTER = 'misc.sso.AlyxSocialAccountAdapter'
+    # Alyx applies its own sign-in policy and provisioning; see misc/signup/sso.py.
+    SOCIALACCOUNT_ADAPTER = 'misc.signup.sso.AlyxSocialAccountAdapter'
     # Provision from the provider's data rather than showing allauth's own signup form: Alyx
     # decides what a new account looks like, and a provider that returns no email address (such
     # as ORCID) has nothing to prefill that form with anyway.
@@ -234,6 +237,9 @@ if SSO_ENABLED:
     # list, so the names Alyx reserves are honoured on that path too - without it, a provider
     # supplying a preferred_username of "root" would be taken at face value.
     ACCOUNT_USERNAME_BLACKLIST = PUBLIC_SIGNUP_RESERVED_USERNAMES
+    # New SSO accounts land on the preferences page: a provider such as ORCiD supplies no email
+    # address, so this is the first chance to offer one. Signup only, not every sign-in.
+    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences'
 
 INSTALLED_APPS += tuple(EXTRA_INSTALLED_APPS)
 AUTHENTICATION_BACKENDS = tuple(EXTRA_AUTHENTICATION_BACKENDS) + AUTHENTICATION_BACKENDS

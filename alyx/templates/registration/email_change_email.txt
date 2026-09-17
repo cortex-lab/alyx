@@ -1,0 +1,12 @@
+Hello {{ user.username }},
+
+This address was given for {{ site_name }} so that it can receive the mail you asked for.
+
+Open the link below to confirm it:
+
+{{ confirmation_url }}
+
+The link expires in a few days, and stops working if the address is changed again. Until it is
+opened, nothing will be sent to this address.
+
+If you did not ask for this, you can ignore this message.

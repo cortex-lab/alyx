@@ -47,7 +47,7 @@ def check_sso_settings(app_configs, **kwargs):
     if not getattr(settings, 'SSO_ENABLED', False):
         return errors
 
-    from misc import sso
+    from misc.signup import sso
     if sso.DefaultSocialAccountAdapter is None:
         errors.append(Error(
             'SSO_ENABLED is set but django-allauth is not installed.',
