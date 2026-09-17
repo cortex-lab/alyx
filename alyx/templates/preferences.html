@@ -1,0 +1,60 @@
+{% extends "public_base.html" %}
+{% load i18n %}
+
+{% block title %}Email preferences | {{ site_title }}{% endblock %}
+
+
+{% block content %}
+<div id="content-main">
+  {% if first_visit %}
+    <h1>Welcome to {{ site_header }}</h1>
+    <p>
+      Your account is ready. If you would like to hear about new data releases, add an email
+      address below. This is optional and you can change it at any time from your account page.
+    </p>
+  {% else %}
+    <h1>Email preferences</h1>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <p class="errornote">{{ form.non_field_errors }}</p>
+    {% endif %}
+
+    <fieldset class="module aligned">
+      <div class="form-row">
+        {{ form.email.errors }}
+        <label for="{{ form.email.id_for_label }}">Email address:</label>
+        {{ form.email }}
+        <div class="help">{{ form.email.help_text }}</div>
+      </div>
+
+      {% for field in form %}
+        {% if field.name != 'email' %}
+          <div class="form-row">
+            {{ field.errors }}
+            <label for="{{ field.id_for_label }}" style="width: auto;">
+              {{ field }} {{ field.label }}
+            </label>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </fieldset>
+
+    <div class="submit-row">
+      <input type="submit" value="Save" class="default">
+      {% if first_visit %}
+        <a href="{% url 'me' %}" class="button" style="margin-left: 1em;">Skip for now</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if user.email and not email_verified %}
+    <p style="margin-top: 1.5em;">
+      <strong>{{ user.email }} is not confirmed yet.</strong> Nothing is sent to it until the
+      link we emailed is opened. Save the address again to receive another link.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

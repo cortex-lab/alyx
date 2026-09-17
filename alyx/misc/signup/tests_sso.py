@@ -12,8 +12,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework.authtoken.models import Token
 
-from misc import sso
-from misc.forms import PUBLIC_GROUP_NAME
+from misc.signup import sso
+from misc.signup.forms import PUBLIC_GROUP_NAME
 from misc.management.commands.set_public_permissions import Command as SetPublicPermissions
 
 

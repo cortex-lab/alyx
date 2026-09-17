@@ -1,12 +1,14 @@
 """Tests for public self-registration and for hiding accounts from public users."""
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from unittest import mock
+
 from django.core import mail
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
-from misc import antibot
-from misc.forms import PUBLIC_GROUP_NAME, signup_token_generator
+from misc.signup import antibot, preferences
+from misc.signup.forms import PUBLIC_GROUP_NAME, signup_token_generator
 from misc.management.commands.set_public_permissions import (
     Command as SetPublicPermissions, EXCLUDED_MODELS)
 
@@ -385,3 +387,246 @@ class TestAccountVisibility(TestCase):
         self.researcher.save()
         self.client.force_login(self.researcher)
         self.assertEqual(200, self.client.get('/admin/misc/labmember/').status_code)
+
+
+IBL_PREFERENCES = {'data_releases': 'Email me when new data is released',
+                   'surveys': 'Email me occasional surveys about how the data is used'}
+
+
+@override_settings(**PUBLIC, EMAIL_PREFERENCES=IBL_PREFERENCES)
+class TestEmailPreferences(TestCase):
+    """Email preferences live in LabMember.json; consent is opt-in."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='ada', password='x', email='ada@example.org')
+
+    def test_unset_preferences_read_as_false(self):
+        self.assertEqual({k: False for k in IBL_PREFERENCES}, preferences.get(self.user))
+        self.assertIsNone(preferences.updated(self.user))
+
+    def test_signup_records_the_boxes_ticked(self):
+        response = self.client.post(reverse('signup'), {
+            'username': 'newcomer', 'email': 'newcomer@example.org',
+            'password1': 'a-long-enough-passphrase', 'password2': 'a-long-enough-passphrase',
+            'data_releases': 'on'})
+        self.assertRedirects(response, reverse('signup-done'))
+        user = get_user_model().objects.get(username='newcomer')
+        self.assertTrue(preferences.get(user)['data_releases'])
+        self.assertFalse(preferences.get(user)['surveys'], 'unticked must not be consent')
+        self.assertIsNotNone(preferences.updated(user), 'the time of consent must be recorded')
+
+    def test_signup_without_ticking_stores_no_consent(self):
+        self.client.post(reverse('signup'), {
+            'username': 'quiet', 'email': 'quiet@example.org',
+            'password1': 'a-long-enough-passphrase', 'password2': 'a-long-enough-passphrase'})
+        user = get_user_model().objects.get(username='quiet')
+        self.assertFalse(any(preferences.get(user).values()))
+
+    def test_page_updates_preferences_and_email(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('preferences'), {
+            'email': 'new@example.org', 'surveys': 'on'})
+        self.assertRedirects(response, reverse('me'))
+        self.user.refresh_from_db()
+        self.assertEqual('new@example.org', self.user.email)
+        self.assertTrue(preferences.get(self.user)['surveys'])
+
+    def test_an_address_is_required_to_receive_mail(self):
+        """An account with no email - an ORCiD one, say - cannot opt in without adding one."""
+        self.user.email = ''
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('preferences'), {'email': '', 'data_releases': 'on'})
+        self.assertEqual(200, response.status_code)
+        self.assertFalse(preferences.get(self.user)['data_releases'])
+
+    def test_an_address_already_in_use_is_refused(self):
+        get_user_model().objects.create_user(username='bob', password='x', email='b@example.org')
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('preferences'), {'email': 'b@example.org'})
+        self.assertEqual(200, response.status_code)
+        self.user.refresh_from_db()
+        self.assertEqual('ada@example.org', self.user.email)
+
+    def test_unknown_keys_are_not_stored(self):
+        preferences.set(self.user, {'data_releases': True, 'evil': True})
+        self.assertNotIn('evil', self.user.json['email_preferences'])
+
+    def test_the_page_requires_login(self):
+        response = self.client.get(reverse('preferences'))
+        self.assertEqual(302, response.status_code)
+        self.assertIn(reverse('admin:login'), response.url)
+
+    def test_a_change_keeps_the_previous_value(self):
+        """Consent has to be demonstrable after the fact, so each change records what it was."""
+        preferences.set(self.user, {'data_releases': True})
+        self.assertEqual([], preferences.history(self.user, 'data_releases'))
+        preferences.set(self.user, {'data_releases': False})
+        was = preferences.history(self.user, 'data_releases')
+        self.assertEqual([True], [x['value'] for x in was])
+        self.assertTrue(was[0]['date_time'], 'the time of the change must be recorded')
+
+    def test_setting_the_same_value_adds_no_history(self):
+        preferences.set(self.user, {'data_releases': True})
+        preferences.set(self.user, {'data_releases': True})
+        self.assertEqual([], preferences.history(self.user, 'data_releases'))
+
+    def test_rest_cannot_write_the_json_field(self):
+        """The field is editable=False, so no serialiser or form can be talked into taking it."""
+        from misc.serializers import UserSerializer
+        self.assertNotIn('json', UserSerializer().get_fields())
+        serializer = UserSerializer(
+            self.user, data={'json': {'email_preferences': {'data_releases': True}}},
+            partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+        self.user.refresh_from_db()
+        self.assertFalse(preferences.get(self.user)['data_releases'])
+
+    def test_the_admin_form_cannot_write_it_either(self):
+        """LabMemberAdminForm uses fields='__all__', so only editable=False keeps json out."""
+        from subjects.admin import LabMemberAdminForm
+        self.assertNotIn('json', LabMemberAdminForm.base_fields)
+
+    def test_a_new_address_needs_confirming(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        self.assertRedirects(response, reverse('me'))
+        self.user.refresh_from_db()
+        self.assertFalse(preferences.email_verified(self.user))
+        self.assertEqual(1, len(mail.outbox))
+        self.assertIn('new@example.org', mail.outbox[0].to)
+
+    def test_the_link_confirms_the_address(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        self.user.refresh_from_db()
+        url = reverse('email-verify', kwargs=self._email_token_kwargs(self.user))
+        self.assertTrue(self.client.get(url).context['verified'])
+        self.user.refresh_from_db()
+        self.assertTrue(preferences.email_verified(self.user))
+
+    def test_changing_the_address_again_kills_the_link(self):
+        """The token hashes the address, so a link cannot confirm one since moved away from."""
+        self.client.force_login(self.user)
+        self.client.post(reverse('preferences'), {'email': 'first@example.org'})
+        self.user.refresh_from_db()
+        stale = reverse('email-verify', kwargs=self._email_token_kwargs(self.user))
+        self.client.post(reverse('preferences'), {'email': 'second@example.org'})
+        self.assertFalse(self.client.get(stale).context['verified'])
+        self.user.refresh_from_db()
+        self.assertFalse(preferences.email_verified(self.user))
+
+    def test_another_user_cannot_confirm_it(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        self.user.refresh_from_db()
+        url = reverse('email-verify', kwargs=self._email_token_kwargs(self.user))
+        other = get_user_model().objects.create_user(
+            username='mallory', password='x', email='m@example.org')
+        self.client.force_login(other)
+        self.assertFalse(self.client.get(url).context['verified'])
+        self.user.refresh_from_db()
+        self.assertFalse(preferences.email_verified(self.user))
+
+    def test_a_confirmed_address_is_not_mailed_again(self):
+        preferences.set_email_verified(self.user, True)
+        self.client.force_login(self.user)
+        self.client.post(reverse('preferences'),
+                         {'email': self.user.email, 'data_releases': 'on'})
+        self.assertEqual(0, len(mail.outbox))
+        self.user.refresh_from_db()
+        self.assertTrue(preferences.get(self.user)['data_releases'])
+
+    def test_saving_a_preference_keeps_the_address_confirmed(self):
+        """set() rebuilds the stored dict, so it has to carry the verified flag through."""
+        preferences.set_email_verified(self.user, True)
+        preferences.set(self.user, {'data_releases': True})
+        self.user.refresh_from_db()
+        self.assertTrue(preferences.email_verified(self.user))
+
+    def test_saving_again_while_unconfirmed_sends_another_link(self):
+        """What the page tells the user to do to get a fresh link."""
+        self.client.force_login(self.user)
+        self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        mail.outbox.clear()
+        self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        self.assertEqual(1, len(mail.outbox))
+        self.assertIn('new@example.org', mail.outbox[0].to)
+
+    def test_a_failed_send_leaves_the_account_alone(self):
+        """Unlike sign-up, the mail is not what makes the account work, so nothing is undone."""
+        self.client.force_login(self.user)
+        with mock.patch('misc.signup.views.send_mail', side_effect=Exception('boom')):
+            response = self.client.post(reverse('preferences'), {'email': 'new@example.org'})
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(get_user_model().objects.filter(pk=self.user.pk).exists())
+
+    @staticmethod
+    def _email_token_kwargs(user):
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        from misc.signup.forms import email_change_token_generator
+        return {'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': email_change_token_generator.make_token(user)}
+
+@override_settings(**PUBLIC, EMAIL_PREFERENCES={})
+class TestEmailPreferencesUnconfigured(TestCase):
+    """With no EMAIL_PREFERENCES the feature is absent, as it is for an internal lab database.
+
+    Overridden explicitly rather than left to the ambient settings: a public deployment
+    configures options, and the test would then be measuring the deployment.
+    """
+
+    def test_no_options_offered(self):
+        self.assertEqual({}, preferences.options())
+
+    def test_signup_form_has_no_checkboxes(self):
+        from misc.signup.forms import PublicSignUpForm
+        fields = PublicSignUpForm().fields
+        self.assertNotIn('data_releases', fields)
+
+    def test_the_page_is_not_routed(self):
+        import importlib
+        from django.urls import clear_url_caches
+        from misc import urls as misc_urls
+        try:
+            importlib.reload(misc_urls)
+            clear_url_caches()
+            self.assertNotIn(
+                'preferences', {getattr(p, 'name', None) for p in misc_urls.urlpatterns})
+        finally:
+            importlib.reload(misc_urls)
+            clear_url_caches()
+
+
+@override_settings(**PUBLIC, EMAIL_PREFERENCES=IBL_PREFERENCES)
+class TestAccountPageVerification(TestCase):
+    """The account page flags an address that has not been confirmed."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='ada', password='x', email='ada@example.org')
+        self.client.force_login(self.user)
+
+    def test_unconfirmed_is_flagged(self):
+        response = self.client.get(reverse('me'))
+        self.assertContains(response, 'not confirmed')
+
+    def test_confirmed_is_not_flagged(self):
+        preferences.set_email_verified(self.user, True)
+        response = self.client.get(reverse('me'))
+        self.assertNotContains(response, 'not confirmed')
+
+    def test_no_address_is_not_flagged(self):
+        self.user.email = ''
+        self.user.save()
+        response = self.client.get(reverse('me'))
+        self.assertNotContains(response, 'not confirmed')
+
+    @override_settings(EMAIL_PREFERENCES={})
+    def test_nothing_flagged_where_the_feature_is_off(self):
+        """No confirmation flow exists there, so the flag would be noise."""
+        response = self.client.get(reverse('me'))
+        self.assertNotContains(response, 'not confirmed')

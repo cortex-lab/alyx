@@ -64,7 +64,7 @@ def new_user_groups():
     """Group names given to an account created through SSO."""
     names = set(_setting('SSO_NEW_USER_GROUPS', ()) or ())
     if _setting('PUBLIC_DATABASE', False):
-        from misc.forms import PUBLIC_GROUP_NAME
+        from .forms import PUBLIC_GROUP_NAME
         names.add(PUBLIC_GROUP_NAME)
     return names
 

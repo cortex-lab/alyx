@@ -10,7 +10,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Group
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-from misc import antibot
+from . import antibot, preferences
 from misc.models import LabMember
 
 # Group granting read-only access to a public database. Created by the set_public_permissions
@@ -18,6 +18,18 @@ from misc.models import LabMember
 PUBLIC_GROUP_NAME = 'Public users'
 
 logger = logging.getLogger(__name__)
+
+
+class EmailChangeTokenGenerator(PasswordResetTokenGenerator):
+    """Generates the token in the link confirming a changed email address.
+
+    The hash covers the address itself, so a link dies as soon as the address changes again and
+    cannot confirm an address the user has since moved away from. It deliberately does not cover
+    is_active or last_login: unlike the sign-up link this confirms an account already in use.
+    """
+
+    def _make_hash_value(self, user, timestamp):
+        return f'{user.pk}{user.email}{timestamp}'
 
 
 class SignupTokenGenerator(PasswordResetTokenGenerator):
@@ -41,6 +53,7 @@ class SignupTokenGenerator(PasswordResetTokenGenerator):
 
 
 signup_token_generator = SignupTokenGenerator()
+email_change_token_generator = EmailChangeTokenGenerator()
 
 
 class PublicSignUpForm(UserCreationForm):
@@ -69,6 +82,8 @@ class PublicSignUpForm(UserCreationForm):
         if antibot.turnstile_configured():
             self.fields['cf-turnstile-response'] = forms.CharField(
                 required=False, widget=forms.HiddenInput())
+        for name, label in preferences.options().items():
+            self.fields[name] = forms.BooleanField(required=False, initial=False, label=label)
 
     def clean(self):
         cleaned = super(PublicSignUpForm, self).clean()
@@ -108,8 +123,53 @@ class PublicSignUpForm(UserCreationForm):
         # they can browse released data there; the Public users group grants only view access.
         user.is_staff = True
         user.is_active = not getattr(settings, 'PUBLIC_SIGNUP_REQUIRE_VERIFICATION', True)
+        preferences.set(user, self.cleaned_data, save=False)
         if commit:
             user.save()
             group, _ = Group.objects.get_or_create(name=PUBLIC_GROUP_NAME)
             user.groups.add(group)
+        return user
+
+
+class EmailPreferencesForm(forms.ModelForm):
+    """Email address and mailing preferences, for the /me/preferences page.
+
+    The address is optional: an account that signed in through a provider supplying none can
+    stay without one, and only needs it to receive mail it has asked for.
+    """
+
+    email = forms.EmailField(
+        required=False,
+        help_text='Optional. Only used for the mail you choose below, and to reset a password.')
+
+    class Meta:
+        model = LabMember
+        fields = ('email',)
+
+    def __init__(self, *args, **kwargs):
+        super(EmailPreferencesForm, self).__init__(*args, **kwargs)
+        current = preferences.get(self.instance)
+        for name, label in preferences.options().items():
+            self.fields[name] = forms.BooleanField(
+                required=False, initial=current[name], label=label)
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if email and LabMember.objects.filter(
+                email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Another account already uses this email address.')
+        return email
+
+    def clean(self):
+        cleaned = super(EmailPreferencesForm, self).clean()
+        if any(cleaned.get(name) for name in preferences.options()) and not cleaned.get('email'):
+            raise forms.ValidationError(
+                'Enter an email address to receive the mail you have selected.')
+        return cleaned
+
+    def save(self, commit=True):
+        user = super(EmailPreferencesForm, self).save(commit=False)
+        preferences.set(user, self.cleaned_data, save=False)
+        if commit:
+            user.save()
         return user
