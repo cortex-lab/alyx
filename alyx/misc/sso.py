@@ -149,17 +149,12 @@ if DefaultSocialAccountAdapter is not None:
         def populate_user(self, request, sociallogin, data):
             """Build the candidate user, allocating a username Alyx is willing to store.
 
-            Allocation is left to allauth, which resolves a clash by appending a random suffix
-            rather than a counter - so a username gives away nothing about how many people
-            share a name.
+            allauth resolves a clash with a random suffix rather than a counter, so a username
+            says nothing about how many people share a name.
 
-            Reserved names are dropped from the candidates first. A provider is free to hand
-            over a `preferred_username` of "root", and taking that at face value would let an
-            identity claim a reserved name. The list is read here, from the same setting the
-            sign-up form honours, rather than left to ACCOUNT_USERNAME_BLACKLIST: a deployment
-            that sets only PUBLIC_SIGNUP_RESERVED_USERNAMES is then protected on both paths.
-
-            Every candidate goes through it, including one the provider supplied itself.
+            Reserved names are dropped first: a provider may hand over a `preferred_username` of
+            "root". The list is read from the same setting the sign-up form honours, so a
+            deployment that sets only that one is protected on both paths.
             """
             # allauth's own socialaccount adapter imports it under this alias.
             from allauth.account.adapter import get_adapter as get_account_adapter
