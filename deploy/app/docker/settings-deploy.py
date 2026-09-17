@@ -28,84 +28,54 @@ if dotenv_path.exists():
     dotenv.load_dotenv(dotenv_path=dotenv_path)
 
 # %% Defaults for optional lab settings
-# Declared before the lab settings import below so that settings_lab.py overrides them, while
-# deployments whose settings_lab.py predates these options still get a usable value.
+# Declared before the settings_lab import so that lab settings override them.
 
-# Marks this deployment as a public, read-only instance serving released data. It enables
-# self-registration and hides lab member records from public users, who may then only see
-# redacted users and themselves. Leave False on an internal database.
+# Public read-only instance: enables self-registration and hides lab members from public users.
 PUBLIC_DATABASE = False
-# Whether a new account must confirm its email address before it can be used. Needs a working
-# EMAIL_BACKEND; `manage.py check` warns if this is on without one. How long the confirmation
-# link stays valid is governed by Django's PASSWORD_RESET_TIMEOUT (3 days by default), which
-# the confirmation token is built on.
+# Require email confirmation before an account works. Needs a working EMAIL_BACKEND; the link
+# expires after PASSWORD_RESET_TIMEOUT.
 PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
-# Usernames that may not be self-registered, either because Alyx reserves them or because they
-# are likely to collide with a real lab member arriving in a future data release.
+# Usernames that may not be self-registered.
 PUBLIC_SIGNUP_RESERVED_USERNAMES = (
     'root', 'admin', 'administrator', 'alyx', 'test', 'public', 'anonymous')
 
 # %% Sign-up bot protection
-# The risk being managed is mail, not accounts: the form sends a confirmation to whatever
-# address it is given, and AWS suspends SES sending once bounces pass roughly 5% of volume -
-# taking every other notification with it. Accounts are inert until confirmed, so they cost
-# little on their own. See misc/antibot.py.
-#
-# A hidden honeypot field is always on: it is free, invisible, and costs a legitimate user
-# nothing.
-#
-# Volume cap per client address, as (count, seconds) - e.g. (200, 3600). Off by default, and
-# worth leaving off anywhere that runs courses or workshops: a hundred people registering from
-# one lecture-theatre address within minutes is indistinguishable from a flood by address
-# alone, and a limit set for the ordinary case would lock out the room. The honeypot and
-# Turnstile do not look at the client address at all, so they keep working in that setting;
-# this one is a ceiling on damage rather than a gate on people.
+# Protects outbound mail rather than accounts: bounces over ~5% suspend SES sending. The hidden
+# honeypot field is always on. See misc/antibot.py.
+
+# Per-address cap as (count, seconds). Leave off where courses run - a lecture theatre shares one
+# address - since the honeypot and Turnstile still apply there.
 PUBLIC_SIGNUP_THROTTLE = None
-# Addresses exempt from the cap above - a teaching room's outbound address, say.
+# Addresses exempt from the cap above.
 PUBLIC_SIGNUP_THROTTLE_EXEMPT = ()
-# Only trust X-Forwarded-For when a proxy in front of Alyx is known to set it; otherwise a
-# client can spoof the header and evade the cap.
+# Only trust X-Forwarded-For behind a proxy known to set it; clients can otherwise spoof it.
 PUBLIC_SIGNUP_TRUST_FORWARDED_FOR = False
-# Cloudflare Turnstile, used in preference to reCAPTCHA so that visitor data is not handed to
-# Google on the same page that asks consent to email them. Both keys must be set to enable it.
+# Cloudflare Turnstile. Both keys must be set to enable it.
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
 TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
 
-# Extension points for deployments that add their own Django apps, middleware or
-# authentication backends. These are folded into INSTALLED_APPS / MIDDLEWARE /
-# AUTHENTICATION_BACKENDS after those are defined, which settings_lab.py cannot do for itself
-# because it is imported before them.
+# Folded into INSTALLED_APPS / MIDDLEWARE / AUTHENTICATION_BACKENDS below, which settings_lab.py
+# cannot do itself as it is imported before them.
 EXTRA_INSTALLED_APPS = ()
 EXTRA_MIDDLEWARE = ()
 EXTRA_AUTHENTICATION_BACKENDS = ()
 
 # %% Single sign-on
-# Off unless a deployment turns it on. Enabling it requires the optional dependency:
-#     pip install alyx[sso]
-# and an OAuth/OpenID client registered with the provider. `manage.py check` reports anything
-# missing. See the single sign-on section of docs/03_deployment.md for a worked ORCID example.
-#
-# Identities are held by django-allauth in its own tables, keyed on (provider, uid) - so a
-# provider that supplies no email address, as ORCID does not, still identifies its users
-# reliably. Those tables only exist on a deployment that enables this.
+# Needs the optional dependency: pip install alyx[sso]. `manage.py check` reports what is
+# missing; see the single sign-on section of docs/03_deployment.md.
 SSO_ENABLED = False
-# django-allauth provider id, e.g. 'orcid', 'google', 'openid_connect'. The matching
-# allauth.socialaccount.providers.<id> app is installed automatically.
+# django-allauth provider id; the matching provider app is installed automatically.
 SSO_PROVIDER = 'orcid'
-# Name shown on the sign-in button and the provider confirmation page.
+# Name shown on the sign-in button.
 SSO_PROVIDER_NAME = 'ORCiD'
-# Whether an identity with no matching account may create one. Off by default: on an internal
-# database this would let anyone with an account at the provider into Alyx. Turn it on for a
-# public database, where self-service registration is the point.
+# Whether an identity with no account may create one. On an internal database this would admit
+# anyone holding a provider account.
 SSO_CREATE_USER = False
-# If set, only email addresses in these domains may sign in, e.g. ('example.ac.uk',). Providers
-# that supply no email cannot satisfy this, so leave it empty when using one.
+# Restrict sign-in to these email domains. Unusable with a provider that supplies no email.
 SSO_ALLOWED_DOMAINS = ()
-# Groups given to accounts created through SSO. On a public database the public users group is
-# added to these automatically.
+# Groups given to accounts SSO creates; a public database adds the public users group too.
 SSO_NEW_USER_GROUPS = ()
-# Whether a superuser account may be signed into through SSO. Off by default: superusers can
-# change anything in the database, so they are worth keeping on credentials Alyx controls.
+# Whether a superuser may sign in through SSO. Off: superusers can change anything.
 SSO_ALLOW_SUPERUSER = False
 
 # Lab-specific settings
