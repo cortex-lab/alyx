@@ -41,7 +41,7 @@ Release process:
 3. Open a PR from dev to master
 4. When CI passes, make a squash commit into master using the version as the commit title, and changelog section as the message
 5. Actions will automatically create a new release, deploy containers, and assign a DOI
-6. If using a squash commit, rebase dev on origin/master
+6. If using a squash commit, merge master back into dev
 
 ### Running tests
 

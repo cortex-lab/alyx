@@ -1,6 +1,8 @@
-from django.db.models import Count, Exists, OuterRef, ProtectedError
+from django.db.models import Count, Exists, OuterRef, ProtectedError, Subquery
+from django.db.models.functions import Coalesce
 from django.contrib import admin, messages
-from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.html import format_html, format_html_join
 from django_admin_listfilter_dropdown.filters import (
     RelatedDropdownFilter,
     ChoiceDropdownFilter,
@@ -100,7 +102,8 @@ class DatasetAdmin(BaseExperimentalDataAdmin):
                    ('created_datetime', DateRangeFilter),
                    ('dataset_type', RelatedDropdownFilter),
                    ('tags', RelatedDropdownFilter),
-                   ('qc', ChoiceDropdownFilter)
+                   ('qc', ChoiceDropdownFilter),
+                   ('data_notices', RelatedDropdownFilter),
                    ]
     search_fields = ('session__id', 'name', 'collection', 'dataset_type__name',
                      'dataset_type__filename_pattern', 'version')
@@ -251,6 +254,8 @@ class DataNoticeAdmin(BaseAdmin):
         'json',
     )
     readonly_fields = ('created_datetime',)
+    # Maximum number of datasets rendered by the read-only `datasets_` field
+    max_datasets_displayed = 100
 
     class DatasetTagListFilter(SimpleDropdownFilter):
         title = 'dataset tag'
@@ -318,8 +323,85 @@ class DataNoticeAdmin(BaseAdmin):
             return False
         return True
 
+    def get_fields(self, request, obj=None):
+        """Replace the datasets M2M with its read-only counterpart when changing a notice."""
+        fields = super().get_fields(request, obj)
+        if obj is None:  # datasets may still be picked when creating a notice
+            return fields
+        return tuple('datasets_' if field == 'datasets' else field for field in fields)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = tuple(super().get_readonly_fields(request, obj))
+        if obj is None:
+            return readonly_fields
+        return readonly_fields + ('datasets_',)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request).select_related('created_by')
+        # Count the datasets with a correlated subquery on the through table: joining
+        # the datasets table and grouping does not scale for notices with many datasets.
+        dataset_counts = (DataNotice.datasets.through.objects
+                          .filter(datanotice_id=OuterRef('pk'))
+                          .order_by()
+                          .values('datanotice_id')
+                          .annotate(n=Count('dataset_id'))
+                          .values('n'))
+        return queryset.annotate(dataset_count=Coalesce(Subquery(dataset_counts), 0))
+
+    @admin.display(description='datasets', ordering='dataset_count')
+    def dataset_count(self, obj):
+        return obj.dataset_count
+
+    @staticmethod
+    def _dataset_label(dataset):
+        """Short human readable label for a dataset, cheap enough to call in a loop."""
+        parts = []
+        if dataset.session_id:
+            session = dataset.session
+            parts.append('%s/%s/%s' % (session.subject, str(session.start_time)[:10],
+                                       str(session.number).zfill(3)))
+        parts.append('/'.join(filter(None, (dataset.collection, dataset.name))))
+        return ' '.join(filter(None, parts))
+
+    @admin.display(description='datasets')
+    def datasets_(self, obj):
+        """Read-only, scrollable list of the datasets attached to this notice.
+
+        The M2M widget is deliberately not rendered on the change form: for a notice
+        with thousands of datasets every selected option has to be fetched and
+        rendered, and posting them all back on save exceeds
+        DATA_UPLOAD_MAX_NUMBER_FIELDS, which fails with a 400 status. Datasets are
+        instead assigned when creating the notice, or through the REST API.
+        """
+        count = getattr(obj, 'dataset_count', None)
+        if count is None:  # annotation missing, e.g. object fetched outside the admin
+            count = obj.datasets.count()
+        if not count:
+            return 'No datasets'
+        # NB: the base manager avoids the dataset type / data format select related
+        datasets = (Dataset._base_manager.filter(data_notices=obj)
+                    .select_related('session', 'session__subject')
+                    .order_by('collection', 'name')[:self.max_datasets_displayed])
+        items = format_html_join(
+            '\n', '<li><a href="{}">{}</a></li>',
+            ((get_admin_url(dataset), self._dataset_label(dataset)) for dataset in datasets))
+        truncated = ('' if count <= self.max_datasets_displayed
+                     else ' (showing the first %d)' % self.max_datasets_displayed)
+        changelist_url = '%s?data_notices__id__exact=%s' % (
+            reverse('admin:data_dataset_changelist'), obj.pk)
+        return format_html(
+            '<div style="max-height: 22em; max-width: 60em; overflow: auto; '
+            'resize: vertical; border: 1px solid var(--hairline-color, #ccc); '
+            'padding: 0.5em 0.5em 0.5em 0;">'
+            '<ul style="margin: 0; padding-left: 2em;">{}</ul></div>'
+            '<p class="help">{} dataset{} attached{}. '
+            '<a href="{}">Show them in the dataset list</a>. '
+            'The dataset list is read-only here; change it via the REST API.</p>',
+            items, count, '' if count == 1 else 's', truncated, changelist_url)
+
     list_display = (
         'name',
+        'dataset_count',
         'importance',
         'version_affected',
         'affected_date_start',
