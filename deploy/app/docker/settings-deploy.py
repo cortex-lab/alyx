@@ -13,6 +13,9 @@ import json
 import logging
 import dotenv
 from pathlib import Path
+from textwrap import dedent
+
+from alyx import __version__
 
 from django.conf.locale.en import formats as en_formats
 
@@ -331,6 +334,63 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,
+}
+
+# %% OpenAPI schema (/api/schema, rendered at /docs)
+# Without these drf-spectacular reports an empty title and version 0.0.0, which is its own
+# placeholder rather than anything meaningful. Alyx has no API version independent of the
+# application - the endpoints are the application - so the schema reports the Alyx version,
+# which also tells a client which release it is talking to.
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Alyx REST API',
+    'VERSION': __version__,
+    'SERVE_INCLUDE_SCHEMA': False,  # the schema endpoint itself is not interesting to document
+    'DESCRIPTION': dedent(f"""
+        The REST interface to this Alyx database. Most clients reach it through
+        [ONE](https://int-brain-lab.github.io/ONE/) rather than directly.
+
+        ## Authentication
+
+        Every endpoint requires authentication. Requests carry a token in the `Authorization`
+        header:
+
+            Authorization: Token 1a2b3c4d...
+
+        There are two ways to get one.
+
+        **From your account page.** Sign in and open [/me](/me), which shows your token and can
+        regenerate it if it leaks. This is the only route for accounts that sign in through an
+        identity provider, since those have no password.
+
+        **From the `/auth-token` endpoint**, if your account has a password:
+
+            curl -X POST -d "username=<username>&password=<password>" \\
+                 https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}/auth-token
+
+        ## Using ONE
+
+        Sign in once, with whichever credential your account has. If it has a password, give
+        your username and ONE will ask for the password:
+
+            from one.api import ONE
+            one = ONE(base_url='https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}',
+                      username='<username>')
+
+        If it has no password - an account that signs in through an identity provider - give
+        the token instead. ONE asks the database who it belongs to, so no username is needed:
+
+            from one.api import ONE
+            one = ONE(base_url='https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}',
+                      token='<token>')
+
+        Either way, ONE remembers, so from then on it is just:
+
+            from one.api import ONE
+            one = ONE()
+
+        There is no need to call `ONE.setup()`, and no need to pass the username or token
+        again. Pass one again only to switch accounts, or after regenerating a token.
+        """),
 }
 
 # Internationalization

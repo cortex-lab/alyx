@@ -45,6 +45,14 @@ public_urlpatterns = [
 # token - so it is routed unconditionally.
 urlpatterns += [path('me', mv.MeView.as_view(), name='me')]
 
+# An index of the API. Worth routing rather than leaving the view unreachable: a client - or an
+# AI agent - handed only a base URL will probe it, and `/` serves an HTML admin login, which
+# tells a machine nothing. llms.txt is the same idea for clients that look for one.
+urlpatterns += [
+    path('api/', mv.api_root, name='api-root'),
+    path('llms.txt', mv.LLMsTextView.as_view(), name='llms-txt'),
+]
+
 if PUBLIC_DATABASE:
     urlpatterns += public_urlpatterns
 
