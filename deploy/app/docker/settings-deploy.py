@@ -166,12 +166,30 @@ LOGGING = {
 DEBUG = os.getenv("DJANGO_DEBUG", 'False').lower() in ('true', '1', 't')
 
 # ALYX-SPECIFIC
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.eu-west-2.compute.amazonaws.com']
+# No wildcard here: '.compute.amazonaws.com' would let anyone with an instance on that domain
+# choose the host Django builds password reset and confirmation links from. Additional hosts go
+# in DJANGO_ALLOWED_HOSTS, comma separated.
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 if (web_host := os.getenv('APACHE_SERVER_NAME', '0.0.0.0')) is not None:
     ALLOWED_HOSTS.append(web_host)
-CSRF_TRUSTED_ORIGINS = [
-    f"http://{web_host}", f"https://{web_host}"]
-CSRF_COOKIE_SECURE = True
+_extra_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(',') if h.strip()]
+
+# %% Transport security
+# Skipped where there is no certificate to enforce: a local dev server, or a deployment that
+# sets HTTPS_ENFORCED=0 because TLS terminates somewhere Django cannot see, which would
+# otherwise redirect in a loop.
+HTTPS_ENFORCED = (os.getenv('HTTPS_ENFORCED', 'True').lower() in ('true', '1', 't')
+                  and web_host not in ('localhost', '127.0.0.1', '0.0.0.0'))
+CSRF_TRUSTED_ORIGINS = [f"https://{web_host}"]
+if not HTTPS_ENFORCED:
+    CSRF_TRUSTED_ORIGINS.append(f"http://{web_host}")
+SESSION_COOKIE_SECURE = HTTPS_ENFORCED
+CSRF_COOKIE_SECURE = HTTPS_ENFORCED
+SECURE_SSL_REDIRECT = HTTPS_ENFORCED
+SECURE_HSTS_SECONDS = 31536000 if HTTPS_ENFORCED else 0  # one year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = HTTPS_ENFORCED
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
 # Application definition
