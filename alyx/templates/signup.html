@@ -29,6 +29,13 @@
           </div>
         {% elif field.is_hidden %}
           {{ field }}
+        {% elif field.widget_type == 'checkbox' %}
+          <div class="form-row{% if field.errors %} errors{% endif %}">
+            {{ field.errors }}
+            <label for="{{ field.id_for_label }}" style="width: auto;">
+              {{ field }} {{ field.label }}
+            </label>
+          </div>
         {% else %}
           <div class="form-row{% if field.errors %} errors{% endif %}">
             {{ field.errors }}

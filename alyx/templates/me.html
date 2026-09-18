@@ -11,13 +11,19 @@
   <table style="margin-bottom: 1.5em;">
     <tr><th style="text-align: left; padding-right: 1em;">Username</th>
         <td>{{ user.username }}</td></tr>
+    {% for identity in identities %}
+    <tr><th style="text-align: left; padding-right: 1em;">{{ SSO_PROVIDER_NAME }}</th>
+        <td>{{ identity.uid }}</td></tr>
+    {% endfor %}
     <tr><th style="text-align: left; padding-right: 1em;">Email</th>
-        <td>{% if user.email %}{{ user.email }}{% else %}<em>none on record</em>{% endif %}</td></tr>
-    {% if identities %}
-      {% for identity in identities %}
-      <tr><th style="text-align: left; padding-right: 1em;">{{ identity.provider|capfirst }}</th>
-          <td>{{ identity.uid }}</td></tr>
-      {% endfor %}
+        <td>{% if user.email %}{{ user.email }}{% if email_preferences_configured and not email_verified %}
+              &nbsp;<span style="color: #ba2121;">not confirmed</span>
+              &nbsp;<a href="{% url 'preferences' %}">confirm</a>{% endif %}
+            {% else %}<em>none on record</em>{% endif %}</td></tr>
+    {% if email_preferences_configured %}
+    <tr><th style="text-align: left; padding-right: 1em;">Email preferences</th>
+        <td>{% for label in email_preferences %}{{ label }}{% if not forloop.last %}, {% endif %}{% empty %}<em>none</em>{% endfor %}
+            &nbsp;<a href="{% url 'preferences' %}">change</a></td></tr>
     {% endif %}
     <tr><th style="text-align: left; padding-right: 1em;">Groups</th>
         <td>{% for group in user.groups.all %}{{ group.name }}{% if not forloop.last %}, {% endif %}{% empty %}<em>none</em>{% endfor %}</td></tr>
@@ -31,6 +37,15 @@
 
   <p><code id="api-token" style="font-size: 1.1em; padding: 0.4em; background: #f6f6f6;
      border: 1px solid #ddd; user-select: all;">{{ token }}</code></p>
+
+  <form method="post" style="margin-bottom: 1.5em;"
+        onsubmit="return confirm('Regenerate your token? The current one stops working immediately.');">
+    {% csrf_token %}
+    <button type="submit" class="button">Regenerate token</button>
+    <span class="help" style="margin-left: 0.8em;">
+      Use this if the token has been exposed. Anything using the old one will need updating.
+    </span>
+  </form>
 
   <p>
     To use it with ONE, hand it over once. ONE asks the database who the token belongs to, so
@@ -55,13 +70,5 @@ one = ONE()</pre>
   </p>
   {% endif %}
 
-  <form method="post" style="margin-top: 1.5em;"
-        onsubmit="return confirm('Regenerate your token? The current one stops working immediately.');">
-    {% csrf_token %}
-    <button type="submit" class="button">Regenerate token</button>
-    <span class="help" style="margin-left: 0.8em;">
-      Use this if the token has been exposed. Anything using the old one will need updating.
-    </span>
-  </form>
 </div>
 {% endblock %}
