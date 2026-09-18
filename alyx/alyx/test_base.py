@@ -1,5 +1,7 @@
 from datetime import date
+from pathlib import Path
 import json
+import tempfile
 
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.contrib.auth.models import AnonymousUser
@@ -57,6 +59,20 @@ class BaseCustomFilterTest(TestCase):
         def value_error_on_duplicate_field():
             _custom_filter_parser('toto,abc,toto,1')
         self.assertRaises(ValueError, value_error_on_duplicate_field)
+
+    def test_parser_rejects_expressions(self):
+        """Bracketed values are parsed as literals; this filter is reachable by any REST user."""
+        marker = Path(tempfile.gettempdir(), 'alyx_filter_parser_rce')
+        marker.unlink(missing_ok=True)
+        payloads = [
+            f'f0,[__import__("pathlib").Path("{marker}").touch()]',
+            'f0,[1 for _ in ().__class__.__bases__]',
+            'f0,(__import__("os").getpid())',
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                self.assertRaises(ValueError, _custom_filter_parser, payload)
+        self.assertFalse(marker.exists(), 'the filter parser executed a call')
 
 
 def setup_admin_subject_user(obj):

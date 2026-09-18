@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import os
@@ -578,7 +579,11 @@ def _custom_filter_parser(value, arg_prefix=''):
         elif val.replace('.', '', 1).isdigit():
             val = float(val)
         elif val.startswith(('(', '[')) and val.endswith((')', ']')):
-            val = eval(val)
+            # literal_eval, never eval: this value arrives verbatim in a REST query string.
+            try:
+                val = ast.literal_eval(val)
+            except (ValueError, SyntaxError):
+                raise ValueError(f'Not a list or tuple of literals: "{val}"')
         if arg_prefix + field in out_dict:
             raise ValueError('Duplicated fields in "' + str(value) + '"')
         out_dict[arg_prefix + field] = val
