@@ -7,12 +7,15 @@ import django.db.models.deletion
 import uuid
 
 
-def sync_cull(apps, scheme):
+def sync_cull(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Subject = apps.get_model("subjects", "Subject")
     Cull = apps.get_model("actions", "Cull")
 
-    subs = Subject.objects.filter(death_date__isnull=False)
-    Cull.objects.bulk_create(
+    subs = Subject.objects.using(db).filter(death_date__isnull=False)
+    Cull.objects.using(db).bulk_create(
         [Cull(subject=sub, date=sub.death_date, user=sub.responsible_user) for sub in subs])
 
 

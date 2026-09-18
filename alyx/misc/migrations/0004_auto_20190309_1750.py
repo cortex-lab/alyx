@@ -8,10 +8,13 @@ from django.conf import settings
 
 
 def set_default_lab(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Lab = apps.get_model('misc', 'Lab')
-    dlab = Lab.objects.filter(name=settings.DEFAULT_LAB_NAME)
+    dlab = Lab.objects.using(db).filter(name=settings.DEFAULT_LAB_NAME)
     if dlab.count() == 0:
-        Lab.objects.create(pk=settings.DEFAULT_LAB_PK, name=settings.DEFAULT_LAB_NAME)
+        Lab.objects.using(db).create(pk=settings.DEFAULT_LAB_PK, name=settings.DEFAULT_LAB_NAME)
 
 
 class Migration(migrations.Migration):

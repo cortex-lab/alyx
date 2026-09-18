@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Sign up | {{ site_title|default:_('Alyx') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Alyx') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block usertools %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Sign up</h1>
+  <p>
+    Create an account to browse and download the publicly released data. Accounts are read-only:
+    you will be able to query the database and fetch datasets, but not modify anything.
+  </p>
+
+  {% if form.non_field_errors %}
+    <p class="errornote">{{ form.non_field_errors }}</p>
+  {% endif %}
+
+  <form action="" method="post" id="signup-form">{% csrf_token %}
+    {% for field in form %}
+      <div class="form-row{% if field.errors %} errors{% endif %}">
+        {{ field.errors }}
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}
+          <div class="help">{{ field.help_text|safe }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="submit-row">
+      <input type="submit" value="Sign up" class="default">
+    </div>
+  </form>
+
+  <p>
+    Already have an account? <a href="{% url 'admin:login' %}">Log in</a>.
+  </p>
+</div>
+{% endblock %}

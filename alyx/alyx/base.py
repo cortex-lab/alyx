@@ -21,6 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django_filters import CharFilter
 from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
@@ -155,6 +156,22 @@ class DefaultListFilter(admin.SimpleListFilter):
                 }, []),
                 'display': title,
             }
+
+
+class UserRelatedDropdownFilter(RelatedDropdownFilter):
+    """A user dropdown filter that does not list read-only accounts.
+
+    The default related filter populates its dropdown from the whole target table, so a plain
+    RelatedDropdownFilter on a user field lists every LabMember - including, on a public
+    database with self-registration, the account of every member of the public who has signed
+    up. Public accounts never own data, so they are never a useful thing to filter by; dropping
+    them keeps the filter useful without turning it into a directory of registered users.
+    """
+
+    def field_choices(self, field, request, model_admin):
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        return field.get_choices(
+            include_blank=False, limit_choices_to={'is_public_user': False}, ordering=ordering)
 
 
 def alyx_mail(to, subject, text=''):
