@@ -10,7 +10,11 @@ from misc.forms import PUBLIC_GROUP_NAME, signup_token_generator
 from misc.management.commands.set_public_permissions import (
     Command as SetPublicPermissions, EXCLUDED_MODELS)
 
-PUBLIC = dict(ROOT_URLCONF='misc.tests_urls', PUBLIC_DATABASE=True)
+# The bot protection is switched off explicitly rather than left to whatever the settings
+# happen to carry: a deployment with real Turnstile keys would otherwise reject every sign-up
+# posted here, since a test client has no widget to answer the challenge with.
+PUBLIC = dict(ROOT_URLCONF='misc.tests_urls', PUBLIC_DATABASE=True,
+              TURNSTILE_SITE_KEY='', TURNSTILE_SECRET_KEY='', PUBLIC_SIGNUP_THROTTLE=None)
 
 
 @override_settings(**PUBLIC)
@@ -213,8 +217,37 @@ class TestBotProtection(TestCase):
 
 class TestSignUpUrlsNotRouted(TestCase):
     def test_signup_not_routed_by_default(self):
-        """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all."""
-        self.assertEqual(404, self.client.get('/signup').status_code)
+        """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all.
+
+        The URLconf settles this when it is imported, so the module is reloaded with the setting
+        patched rather than the live URLconf being probed: on a public deployment that URLconf
+        routes /signup quite correctly, and the test would be measuring the deployment instead
+        of the code. The setting is patched where misc.urls reads it - the settings module
+        itself - since override_settings only reaches django.conf.settings.
+        """
+        import importlib
+        from unittest import mock
+        from django.urls import clear_url_caches
+        from misc import urls as misc_urls
+
+        def routed():
+            names = set()
+            for pattern in misc_urls.urlpatterns:
+                names.add(getattr(pattern, 'name', None))
+            return names
+
+        try:
+            with mock.patch('alyx.settings.PUBLIC_DATABASE', False):
+                importlib.reload(misc_urls)
+                clear_url_caches()
+                self.assertNotIn('signup', routed())
+            with mock.patch('alyx.settings.PUBLIC_DATABASE', True):
+                importlib.reload(misc_urls)
+                clear_url_caches()
+                self.assertIn('signup', routed(), 'the check must not pass vacuously')
+        finally:
+            importlib.reload(misc_urls)
+            clear_url_caches()
 
 
 class TestPublicPermissionsGroup(TestCase):
