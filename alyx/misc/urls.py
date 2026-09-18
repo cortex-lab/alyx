@@ -3,9 +3,9 @@ from django.urls import path, re_path
 from django.views.generic.base import RedirectView
 from misc import views as mv
 from django.conf.urls import include
-from alyx.settings import MEDIA_URL, PUBLIC_DATABASE, SSO_ENABLED
+from django.conf import settings
 
-media_url = MEDIA_URL.strip('/')
+media_url = settings.MEDIA_URL.strip('/')
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/admin')),  # redirect the page to admin interface
@@ -20,13 +20,10 @@ urlpatterns = [
     re_path(r'^cache/info(?:/(?P<tag>\w+))?/$', mv.CacheVersionView.as_view(), name='cache-info'),
 ]
 
-# Self-registration, plus the password reset flow that makes self-registered accounts
-# recoverable without an administrator. The reset views are named admin_password_reset /
-# password_reset_done etc. because that is what django.contrib.admin looks for when deciding
-# whether to show the "Forgotten your password?" link on its login page; naming them so reuses
-# the templates the admin already ships.
-# Only routed on a public database (the views check the setting too). Kept as a separate list
-# so that misc.tests_urls can route them regardless of how the test settings are configured.
+# Self-registration and the password reset flow that makes those accounts recoverable. The
+# reset views take the admin_password_reset / password_reset_done names so the admin login page
+# shows its "Forgotten your password?" link and its templates are reused.
+# Kept as a separate list so misc.tests_urls can route them whatever the test settings say.
 public_urlpatterns = [
     path('signup', mv.SignUpView.as_view(), name='signup'),
     path('signup/done', mv.SignUpDoneView.as_view(), name='signup-done'),
@@ -41,22 +38,20 @@ public_urlpatterns = [
          name='password_reset_complete'),
 ]
 
-# The account page is useful on any deployment - it is where a user finds their REST API
-# token - so it is routed unconditionally.
+# Where a user finds their REST API token, so routed on every deployment.
 urlpatterns += [path('me', mv.MeView.as_view(), name='me')]
 
-# An index of the API. Worth routing rather than leaving the view unreachable: a client - or an
-# AI agent - handed only a base URL will probe it, and `/` serves an HTML admin login, which
-# tells a machine nothing. llms.txt is the same idea for clients that look for one.
+# A client handed only a base URL will probe it, and `/` serves an HTML login page that tells
+# a machine nothing. llms.txt is the same idea for clients that look for one.
 urlpatterns += [
     path('api/', mv.api_root, name='api-root'),
     path('llms.txt', mv.LLMsTextView.as_view(), name='llms-txt'),
 ]
 
-if PUBLIC_DATABASE:
+if getattr(settings, 'PUBLIC_DATABASE', False):
     urlpatterns += public_urlpatterns
 
-if SSO_ENABLED:
+if getattr(settings, 'SSO_ENABLED', False):
     # allauth provides the provider handshake, the callback, and account connection management.
     urlpatterns += [path('accounts/', include('allauth.urls'))]
 

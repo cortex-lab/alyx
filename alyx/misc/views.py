@@ -56,8 +56,7 @@ def api_root(request, format=None):
 
     Authentication is required. Every request carries `Authorization: Token <key>`; get a key
     from [your account page](/me), or by POSTing a username and password to `/auth-token`.
-    Sending that header to [/me](/me) returns the account the key belongs to, which is the
-    cheapest way to check whether a key still works and who it speaks for.
+    Sending that header to [/me](/me) returns the account the key belongs to.
 
     Full schema: [/docs](/docs/) - machine-readable at [/api/schema](/api/schema).
     Model reference: [/admin/doc/models](/admin/doc/models).
@@ -395,11 +394,8 @@ class SignUpVerifyView(PublicDatabaseOnlyMixin, TemplateView):
 class MeView(LoginRequiredMixin, TemplateView):
     """The signed-in user's own account details, and their REST API token.
 
-    This is how a user obtains the credential ONE needs. It matters most for accounts created
-    through single sign-on: those have no password, and Django refuses both of the usual ways
-    of getting one - password reset skips users whose password is unusable, and the password
-    change form requires the old password they do not have - so without this page such an
-    account could sign in to the web interface but never use the API.
+    Matters most for single sign-on accounts: they have no password, so neither password reset
+    nor the change form can give them one, and without this page they could never use the API.
     """
     template_name = 'me.html'
     login_url = reverse_lazy('admin:login')
@@ -407,15 +403,11 @@ class MeView(LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         """Accept a REST API token in place of a session, for reads.
 
-        This page is where a user finds their token, which makes it the natural place for a
-        client to ask "is this token still good, and whose is it?" - a caller holding only a
-        token has no session to present. Without this the page cannot answer: LoginRequiredMixin
-        redirects an unauthenticated request to the login page, so a rejected token would look
-        exactly like a valid one that simply was not read.
+        Lets a client ask whether a token is still good and whose it is. Without it
+        LoginRequiredMixin redirects, so a rejected token looks like an unread page.
 
-        Only safe methods are accepted this way. Regenerating the token stays session-only:
-        a token-authenticated POST carries no CSRF token, and a credential able to rotate
-        itself is a worse footgun than one that cannot.
+        Safe methods only: a token-authenticated POST carries no CSRF token, and a credential
+        that can rotate itself is a worse footgun than one that cannot.
         """
         if request.method in ('GET', 'HEAD') and 'HTTP_AUTHORIZATION' in request.META:
             from rest_framework.authentication import TokenAuthentication
@@ -457,10 +449,8 @@ class MeView(LoginRequiredMixin, TemplateView):
     def _identities(user):
         """Linked single sign-on identities, where SSO is enabled.
 
-        Checks the app registry rather than catching ImportError: allauth's models raise
-        RuntimeError, not ImportError, when the package is installed but its apps are not in
-        INSTALLED_APPS - which is exactly the state of a deployment carrying the optional
-        extra with SSO switched off.
+        Checks the app registry because allauth raises RuntimeError, not ImportError, when it
+        is installed but not in INSTALLED_APPS.
         """
         from django.apps import apps
         if not apps.is_installed('allauth.socialaccount'):
@@ -469,11 +459,7 @@ class MeView(LoginRequiredMixin, TemplateView):
         return list(SocialAccount.objects.filter(user=user))
 
     def post(self, request, *args, **kwargs):
-        """Regenerate the API token.
-
-        The old token stops working immediately, which is the only way a user can revoke a
-        credential that has leaked.
-        """
+        """Regenerate the API token, revoking the old one immediately."""
         from rest_framework.authtoken.models import Token
         Token.objects.filter(user=request.user).delete()
         Token.objects.create(user=request.user)
