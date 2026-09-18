@@ -40,18 +40,6 @@
             font-family: Consolas, "Courier New", monospace;
             font-size: 1.0em;
         }
-        .traceback {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            border-radius: 5px;
-            padding: 15px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            font-family: Consolas, "Courier New", monospace;
-            font-size: 0.8em; /* Smaller font size for the traceback */
-        }
-
         .footer {
             margin-top: 20px;
             text-align: center;
@@ -66,10 +54,7 @@
         <p>Oupsy, something went wrong on our end. !</p>
         <p>Feel free to reach out with the information below, we'll do our best to resolve the issue.</p>
         <div class="request">
-            {{ request|safe }}
-        </div>
-        <div class="traceback">
-            {{ traceback|safe }}
+            {{ request }}
         </div>
     </div>
 </body>

@@ -1,4 +1,4 @@
-import traceback
+import logging
 from django.conf.urls import include
 from django.urls import path
 from django.contrib import admin
@@ -7,6 +7,7 @@ from rest_framework.authtoken import views as authv
 from drf_spectacular.views import SpectacularAPIView
 from alyx.views import SpectacularRedocViewCoreAPIDeprecation
 
+logger = logging.getLogger(__name__)
 
 urlpatterns = [
     path('', include('misc.urls')),
@@ -31,10 +32,8 @@ except ModuleNotFoundError:
     pass
 
 def handler500(request):
-    ctx = {
-        'request': request.path,
-        'traceback': traceback.format_exc()
-    }
-    return render(request, 'error_500.html', ctx)
+    # The traceback is logged, not rendered: this page is served to clients in production.
+    logger.error('Server error at %s', request.path, exc_info=True)
+    return render(request, 'error_500.html', {'request': request.path}, status=500)
 
 
