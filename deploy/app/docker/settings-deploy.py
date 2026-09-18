@@ -309,6 +309,9 @@ if THROTTLE_MODE not in ('user-based', 'anonymous'):
     raise ValueError('THROTTLE_MODE must be one of: user-based, anonymous')
 
 REST_FRAMEWORK = {
+    # Without this DRF falls back to AllowAny, so a view that forgets permission_classes is
+    # served to anonymous clients.
+    'DEFAULT_PERMISSION_CLASSES': ('alyx.permissions.BaseRestPermission',),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
