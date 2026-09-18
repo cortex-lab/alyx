@@ -42,6 +42,69 @@ PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
 PUBLIC_SIGNUP_RESERVED_USERNAMES = (
     'root', 'admin', 'administrator', 'alyx', 'test', 'public', 'anonymous')
 
+# %% Sign-up bot protection
+# The risk being managed is mail, not accounts: the form sends a confirmation to whatever
+# address it is given, and AWS suspends SES sending once bounces pass roughly 5% of volume -
+# taking every other notification with it. Accounts are inert until confirmed, so they cost
+# little on their own. See misc/antibot.py.
+#
+# A hidden honeypot field is always on: it is free, invisible, and costs a legitimate user
+# nothing.
+#
+# Volume cap per client address, as (count, seconds) - e.g. (200, 3600). Off by default, and
+# worth leaving off anywhere that runs courses or workshops: a hundred people registering from
+# one lecture-theatre address within minutes is indistinguishable from a flood by address
+# alone, and a limit set for the ordinary case would lock out the room. The honeypot and
+# Turnstile do not look at the client address at all, so they keep working in that setting;
+# this one is a ceiling on damage rather than a gate on people.
+PUBLIC_SIGNUP_THROTTLE = None
+# Addresses exempt from the cap above - a teaching room's outbound address, say.
+PUBLIC_SIGNUP_THROTTLE_EXEMPT = ()
+# Only trust X-Forwarded-For when a proxy in front of Alyx is known to set it; otherwise a
+# client can spoof the header and evade the cap.
+PUBLIC_SIGNUP_TRUST_FORWARDED_FOR = False
+# Cloudflare Turnstile, used in preference to reCAPTCHA so that visitor data is not handed to
+# Google on the same page that asks consent to email them. Both keys must be set to enable it.
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
+
+# Extension points for deployments that add their own Django apps, middleware or
+# authentication backends. These are folded into INSTALLED_APPS / MIDDLEWARE /
+# AUTHENTICATION_BACKENDS after those are defined, which settings_lab.py cannot do for itself
+# because it is imported before them.
+EXTRA_INSTALLED_APPS = ()
+EXTRA_MIDDLEWARE = ()
+EXTRA_AUTHENTICATION_BACKENDS = ()
+
+# %% Single sign-on
+# Off unless a deployment turns it on. Enabling it requires the optional dependency:
+#     pip install alyx[sso]
+# and an OAuth/OpenID client registered with the provider. `manage.py check` reports anything
+# missing. See the single sign-on section of docs/03_deployment.md for a worked ORCID example.
+#
+# Identities are held by django-allauth in its own tables, keyed on (provider, uid) - so a
+# provider that supplies no email address, as ORCID does not, still identifies its users
+# reliably. Those tables only exist on a deployment that enables this.
+SSO_ENABLED = False
+# django-allauth provider id, e.g. 'orcid', 'google', 'openid_connect'. The matching
+# allauth.socialaccount.providers.<id> app is installed automatically.
+SSO_PROVIDER = 'orcid'
+# Name shown on the sign-in button and the provider confirmation page.
+SSO_PROVIDER_NAME = 'ORCiD'
+# Whether an identity with no matching account may create one. Off by default: on an internal
+# database this would let anyone with an account at the provider into Alyx. Turn it on for a
+# public database, where self-service registration is the point.
+SSO_CREATE_USER = False
+# If set, only email addresses in these domains may sign in, e.g. ('example.ac.uk',). Providers
+# that supply no email cannot satisfy this, so leave it empty when using one.
+SSO_ALLOWED_DOMAINS = ()
+# Groups given to accounts created through SSO. On a public database the public users group is
+# added to these automatically.
+SSO_NEW_USER_GROUPS = ()
+# Whether a superuser account may be signed into through SSO. Off by default: superusers can
+# change anything in the database, so they are worth keeping on credentials Alyx controls.
+SSO_ALLOW_SUPERUSER = False
+
 # Lab-specific settings
 from .settings_lab import *  # noqa
 
@@ -165,6 +228,43 @@ INSTALLED_APPS = (
     'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
+if SSO_ENABLED:
+    # django-allauth owns the provider handshake and stores the resulting identity, keyed on
+    # (provider, uid). Its backend goes first so that a social login is handled by it; the model
+    # backend stays in place so username/password login keeps working alongside SSO.
+    EXTRA_INSTALLED_APPS = tuple(EXTRA_INSTALLED_APPS) + (
+        'allauth',
+        'allauth.account',
+        'allauth.socialaccount',
+        f'allauth.socialaccount.providers.{SSO_PROVIDER}',
+    )
+    EXTRA_MIDDLEWARE = tuple(EXTRA_MIDDLEWARE) + (
+        'allauth.account.middleware.AccountMiddleware',)
+    EXTRA_AUTHENTICATION_BACKENDS = (
+        ('allauth.account.auth_backends.AuthenticationBackend',)
+        + tuple(EXTRA_AUTHENTICATION_BACKENDS))
+    # Alyx applies its own sign-in policy and provisioning; see misc/sso.py.
+    SOCIALACCOUNT_ADAPTER = 'misc.sso.AlyxSocialAccountAdapter'
+    # Provision from the provider's data rather than showing allauth's own signup form: Alyx
+    # decides what a new account looks like, and a provider that returns no email address (such
+    # as ORCID) has nothing to prefill that form with anyway.
+    SOCIALACCOUNT_AUTO_SIGNUP = True
+    # allauth does not require an email address by default, which is what lets a provider that
+    # supplies none (ORCID) complete a signup rather than being diverted to allauth's own form.
+    ACCOUNT_EMAIL_VERIFICATION = 'none'  # the provider is the identity proof, not the address
+    # Never store the provider's access/refresh tokens. They are credentials for calling the
+    # provider's API, not for authenticating to Alyx, and this database gets dumped and copied.
+    SOCIALACCOUNT_STORE_TOKENS = False
+    # allauth allocates usernames for SSO accounts and checks each candidate against this
+    # list, so the names Alyx reserves are honoured on that path too - without it, a provider
+    # supplying a preferred_username of "root" would be taken at face value.
+    ACCOUNT_USERNAME_BLACKLIST = PUBLIC_SIGNUP_RESERVED_USERNAMES
+
+INSTALLED_APPS += tuple(EXTRA_INSTALLED_APPS)
+AUTHENTICATION_BACKENDS = tuple(EXTRA_AUTHENTICATION_BACKENDS) + AUTHENTICATION_BACKENDS
+
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -176,6 +276,8 @@ MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'alyx.base.QueryPrintingMiddleware',
 )
+
+MIDDLEWARE += tuple(EXTRA_MIDDLEWARE)
 
 ROOT_URLCONF = 'alyx.urls'
 

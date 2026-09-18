@@ -2,14 +2,19 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core import mail
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
+from misc import antibot
 from misc.forms import PUBLIC_GROUP_NAME, signup_token_generator
 from misc.management.commands.set_public_permissions import (
     Command as SetPublicPermissions, EXCLUDED_MODELS)
 
-PUBLIC = dict(ROOT_URLCONF='misc.tests_urls', PUBLIC_DATABASE=True)
+# The bot protection is switched off explicitly rather than left to whatever the settings
+# happen to carry: a deployment with real Turnstile keys would otherwise reject every sign-up
+# posted here, since a test client has no widget to answer the challenge with.
+PUBLIC = dict(ROOT_URLCONF='misc.tests_urls', PUBLIC_DATABASE=True,
+              TURNSTILE_SITE_KEY='', TURNSTILE_SECRET_KEY='', PUBLIC_SIGNUP_THROTTLE=None)
 
 
 @override_settings(**PUBLIC)
@@ -126,10 +131,123 @@ class TestSignUp(TestCase):
         self.assertFalse(get_user_model().objects.filter(username='newcomer').exists())
 
 
+class TestAnonymousAdminLogin(TestCase):
+    """The login page is rendered for users who are not logged in yet.
+
+    django.contrib.admin builds its app list while rendering it, calling has_module_permission
+    on every registered ModelAdmin with an AnonymousUser - which has none of the LabMember
+    fields. Any permission override that reads one directly takes the login page down, for
+    every deployment, whether or not it is public.
+    """
+
+    def test_login_page_renders_for_anonymous_users(self):
+        self.assertEqual(200, self.client.get('/admin/login/').status_code)
+
+    @override_settings(**PUBLIC)
+    def test_login_page_renders_on_a_public_database(self):
+        response = self.client.get('/admin/login/')
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, reverse('signup'))
+
+
+@override_settings(**PUBLIC)
+class TestBotProtection(TestCase):
+    """The honeypot and volume cap, and that neither inconveniences a real person."""
+
+    def _post(self, **extra):
+        data = {'username': 'newcomer', 'email': 'newcomer@example.org',
+                'password1': 'a-long-enough-passphrase', 'password2': 'a-long-enough-passphrase'}
+        data.update(extra)
+        return self.client.post(reverse('signup'), data)
+
+    def test_honeypot_field_is_present_but_hidden(self):
+        response = self.client.get(reverse('signup'))
+        self.assertContains(response, antibot.HONEYPOT_FIELD)
+        self.assertContains(response, 'aria-hidden="true"')
+
+    def test_completed_honeypot_is_rejected(self):
+        response = self._post(**{antibot.HONEYPOT_FIELD: 'http://spam.example'})
+        self.assertEqual(200, response.status_code)  # redisplayed, not created
+        self.assertFalse(get_user_model().objects.filter(username='newcomer').exists())
+
+    def test_rejection_does_not_name_the_honeypot(self):
+        """A bot that learns which field caught it simply stops filling that field in."""
+        body = self._post(**{antibot.HONEYPOT_FIELD: 'x'}).content.decode()
+        self.assertNotIn('%s field' % antibot.HONEYPOT_FIELD, body)
+
+    def test_empty_honeypot_lets_a_person_through(self):
+        self.assertRedirects(self._post(), reverse('signup-done'))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=None)
+    def test_throttle_off_by_default(self):
+        """Courses and workshops register ~100 people from one address; the default must not
+        stand in the way of that."""
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.1')
+        for _ in range(150):
+            self.assertFalse(antibot.throttle_exceeded(request))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(3, 3600))
+    def test_throttle_caps_one_address_when_configured(self):
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.2')
+        self.assertEqual([False, False, False, True],
+                         [antibot.throttle_exceeded(request) for _ in range(4)])
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(1, 3600),
+                       PUBLIC_SIGNUP_THROTTLE_EXEMPT=('10.0.0.3',))
+    def test_exempt_address_is_never_throttled(self):
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.3')
+        for _ in range(20):
+            self.assertFalse(antibot.throttle_exceeded(request))
+
+    @override_settings(PUBLIC_SIGNUP_THROTTLE=(1, 3600))
+    def test_throttled_post_returns_429_and_creates_nothing(self):
+        self._post(username='first', email='first@example.org')
+        response = self._post(username='second', email='second@example.org')
+        self.assertEqual(429, response.status_code)
+        self.assertFalse(get_user_model().objects.filter(username='second').exists())
+
+    def test_forwarded_for_ignored_unless_trusted(self):
+        """Otherwise a client spoofs the header and the cap counts a different address."""
+        request = RequestFactory().post('/signup', REMOTE_ADDR='10.0.0.4',
+                                        HTTP_X_FORWARDED_FOR='1.2.3.4')
+        self.assertEqual('10.0.0.4', antibot.client_ip(request))
+        with override_settings(PUBLIC_SIGNUP_TRUST_FORWARDED_FOR=True):
+            self.assertEqual('1.2.3.4', antibot.client_ip(request))
+
+
 class TestSignUpUrlsNotRouted(TestCase):
     def test_signup_not_routed_by_default(self):
-        """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all."""
-        self.assertEqual(404, self.client.get('/signup').status_code)
+        """With PUBLIC_DATABASE unset, /signup is not part of the URLconf at all.
+
+        The URLconf settles this when it is imported, so the module is reloaded with the setting
+        patched rather than the live URLconf being probed: on a public deployment that URLconf
+        routes /signup quite correctly, and the test would be measuring the deployment instead
+        of the code. The setting is patched where misc.urls reads it - the settings module
+        itself - since override_settings only reaches django.conf.settings.
+        """
+        import importlib
+        from unittest import mock
+        from django.urls import clear_url_caches
+        from misc import urls as misc_urls
+
+        def routed():
+            names = set()
+            for pattern in misc_urls.urlpatterns:
+                names.add(getattr(pattern, 'name', None))
+            return names
+
+        try:
+            with mock.patch('alyx.settings.PUBLIC_DATABASE', False):
+                importlib.reload(misc_urls)
+                clear_url_caches()
+                self.assertNotIn('signup', routed())
+            with mock.patch('alyx.settings.PUBLIC_DATABASE', True):
+                importlib.reload(misc_urls)
+                clear_url_caches()
+                self.assertIn('signup', routed(), 'the check must not pass vacuously')
+        finally:
+            importlib.reload(misc_urls)
+            clear_url_caches()
 
 
 class TestPublicPermissionsGroup(TestCase):
