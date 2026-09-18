@@ -16,7 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from one.alf.spec import QC
 
-from alyx.base import base_json_filter, BaseFilterSet, rest_permission_classes
+from alyx.base import (base_json_filter, BaseFilterSet, is_lab_member,
+                       LabMemberRequiredMixin, rest_permission_classes)
 from data.models import Dataset, FileRecord
 from subjects.models import Subject
 from experiments.views import _filter_qs_with_brain_regions
@@ -73,7 +74,7 @@ class BaseActionFilter(BaseFilterSet):
         }
 
 
-class SubjectHistoryListView(ListView):
+class SubjectHistoryListView(LabMemberRequiredMixin, ListView):
     template_name = 'subject_history.html'
 
     CLASS_FIELDS = {
@@ -134,7 +135,7 @@ def date_range(start_date, end_date):
         yield (start_date + timedelta(n))
 
 
-class WaterHistoryListView(ListView):
+class WaterHistoryListView(LabMemberRequiredMixin, ListView):
     template_name = 'water_history.html'
 
     def get_context_data(self, **kwargs):
@@ -184,7 +185,7 @@ def training_days(reqdate=None):
         }
 
 
-class TrainingListView(ListView):
+class TrainingListView(LabMemberRequiredMixin, ListView):
     template_name = 'training.html'
 
     def get_context_data(self, **kwargs):
@@ -209,7 +210,7 @@ class TrainingListView(ListView):
 
 
 def weighing_plot(request, subject_id=None):
-    if not request.user.is_authenticated:
+    if not is_lab_member(request.user):
         return HttpResponse('')
     if subject_id in (None, 'None'):
         return HttpResponse('')

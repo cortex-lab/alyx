@@ -12,7 +12,7 @@ from django_filters import rest_framework as filters
 
 from iblutil.util import ensure_list
 
-from alyx.base import BaseFilterSet, rest_permission_classes
+from alyx.base import BaseFilterSet, LabMemberRestPermission, rest_permission_classes
 from experiments.models import ProbeInsertion
 from subjects.models import Subject, Project
 from misc.models import Lab
@@ -408,6 +408,7 @@ def _get_content_type(content_type_str):
 class ProtectedFileViewSet(mixins.ListModelMixin,
                            viewsets.GenericViewSet):
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def list(self, request):
@@ -510,6 +511,7 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def create(self, request):
@@ -762,6 +764,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
 class SyncViewSet(viewsets.GenericViewSet):
 
+    # Both actions run a bulk sync, so this is not open to public read-only accounts.
+    permission_classes = (LabMemberRestPermission,)
     serializer_class = serializers.Serializer
 
     def sync(self, request):
@@ -786,6 +790,7 @@ class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     downloaded for all projects.
     """  # noqa
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def create(self, request):

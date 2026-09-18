@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import os
@@ -15,10 +16,11 @@ from django.db import models
 from django.db import connection
 from django.conf import settings
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.core.management import call_command
 from django.template.response import TemplateResponse
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import termcolors, timezone
 from django.test import TestCase
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
@@ -578,7 +580,11 @@ def _custom_filter_parser(value, arg_prefix=''):
         elif val.replace('.', '', 1).isdigit():
             val = float(val)
         elif val.startswith(('(', '[')) and val.endswith((')', ']')):
-            val = eval(val)
+            # literal_eval, never eval: this value arrives verbatim in a REST query string.
+            try:
+                val = ast.literal_eval(val)
+            except (ValueError, SyntaxError):
+                raise ValueError(f'Not a list or tuple of literals: "{val}"')
         if arg_prefix + field in out_dict:
             raise ValueError('Duplicated fields in "' + str(value) + '"')
         out_dict[arg_prefix + field] = val
@@ -738,3 +744,33 @@ class BaseRestPublicPermission(permissions.BasePermission):
 def rest_permission_classes():
     permission_classes = (permissions.IsAuthenticated & BaseRestPublicPermission,)
     return permission_classes
+
+
+def is_lab_member(user):
+    """Whether this is a signed-in lab member rather than a public read-only account."""
+    return bool(user.is_authenticated and user.is_staff and not user.is_public_user)
+
+
+class LabMemberRestPermission(permissions.BasePermission):
+    """For endpoints a public read-only account has no business calling at all."""
+
+    def has_permission(self, request, view):
+        return is_lab_member(request.user)
+
+
+class LabMemberRequiredMixin:
+    """Restricts a page to signed-in lab members: anyone else gets the login page or a 403.
+
+    Deliberately not built on django.contrib.auth.mixins, which imports the auth forms and so
+    the user model, and cannot be imported here without a circular import through misc.models.
+    """
+
+    login_url = reverse_lazy('admin:login')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not is_lab_member(request.user):
+            if request.user.is_authenticated:
+                raise PermissionDenied
+            from django.contrib.auth.views import redirect_to_login
+            return redirect_to_login(request.get_full_path(), str(self.login_url))
+        return super(LabMemberRequiredMixin, self).dispatch(request, *args, **kwargs)

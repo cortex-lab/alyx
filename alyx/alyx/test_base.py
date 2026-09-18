@@ -1,9 +1,13 @@
 from datetime import date
+from pathlib import Path
 import json
+import tempfile
+import uuid
 
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from alyx.base import _custom_filter_parser
 from alyx.throttling import AdaptiveScopedRateThrottle, IPRateThrottle
@@ -57,6 +61,68 @@ class BaseCustomFilterTest(TestCase):
         def value_error_on_duplicate_field():
             _custom_filter_parser('toto,abc,toto,1')
         self.assertRaises(ValueError, value_error_on_duplicate_field)
+
+    def test_parser_rejects_expressions(self):
+        """Bracketed values are parsed as literals; this filter is reachable by any REST user."""
+        marker = Path(tempfile.gettempdir(), 'alyx_filter_parser_rce')
+        marker.unlink(missing_ok=True)
+        payloads = [
+            f'f0,[__import__("pathlib").Path("{marker}").touch()]',
+            'f0,[1 for _ in ().__class__.__bases__]',
+            'f0,(__import__("os").getpid())',
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                self.assertRaises(ValueError, _custom_filter_parser, payload)
+        self.assertFalse(marker.exists(), 'the filter parser executed a call')
+
+
+class AnonymousAccessTest(TestCase):
+    """Routes that must not answer a client that has not signed in.
+
+    /admin-tasks/status was served to anyone, and four REST endpoints never set
+    permission_classes, so they inherited DRF's AllowAny default. /api is public on purpose.
+    """
+
+    def test_lab_member_pages_redirect_anonymous(self):
+        subject_id = uuid.uuid4()
+        for url in (reverse('tasks_status'),
+                    reverse('training'),
+                    reverse('subject-history', args=[subject_id]),
+                    reverse('water-history', args=[subject_id])):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(302, response.status_code)
+                self.assertIn('login', response['Location'])
+
+    def test_rest_endpoints_refuse_anonymous(self):
+        for method, url in (('get', reverse('check-protected')),
+                            ('get', reverse('sync-file-status')),
+                            ('post', reverse('sync-file-status')),
+                            ('post', reverse('register-file')),
+                            ('post', reverse('new-download'))):
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url)
+                self.assertIn(response.status_code, (401, 403))
+
+    def test_api_root_is_public(self):
+        """Deliberately open: an index and a how-to, and where an agent starts."""
+        response = self.client.get(reverse('api-root'))
+        self.assertEqual(200, response.status_code)
+
+    def test_weighing_plot_refuses_anonymous(self):
+        """Empty body rather than a redirect: this one is embedded in an admin page."""
+        response = self.client.get(reverse('weighing-plot', args=[uuid.uuid4()]))
+        self.assertEqual(b'', response.content)
+
+    def test_lab_member_pages_refuse_public_user(self):
+        """Public accounts are staff, so is_staff alone would let them in."""
+        user = get_user_model().objects.create_user(username='pub', password='pw')
+        user.is_staff = True
+        user.is_public_user = True
+        user.save()
+        self.client.force_login(user)
+        self.assertEqual(403, self.client.get(reverse('tasks_status')).status_code)
 
 
 def setup_admin_subject_user(obj):
