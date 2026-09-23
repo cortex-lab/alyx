@@ -108,11 +108,13 @@ class TestProvisioningPolicy(TestCase):
         self.assertFalse(user.is_stock_manager)
 
     @override_settings(PUBLIC_DATABASE=False)
-    def test_internal_database_account_has_no_admin_access(self):
+    def test_internal_database_account_is_an_ordinary_user(self):
         user = sso.apply_new_user_policy(get_user_model()(username='ada'))
         self.assertTrue(user.is_active)
-        self.assertFalse(user.is_public_user)
-        self.assertFalse(user.is_staff, 'admin access is for an administrator to grant')
+        self.assertFalse(user.is_public_user, 'not subject to the public read-only rules')
+        self.assertTrue(user.is_staff, 'the admin is empty until a group grants something')
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(set(), sso.new_user_groups(), 'permissions are granted, not assumed')
 
     @override_settings(PUBLIC_DATABASE=True)
     def test_public_group_added_on_a_public_database(self):

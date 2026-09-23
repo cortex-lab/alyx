@@ -72,9 +72,10 @@ def new_user_groups():
 def apply_new_user_policy(user):
     """Set the flags and groups a newly provisioned SSO account should have.
 
-    On a public database this mirrors what the sign-up form produces: a read-only account with
-    staff status so the admin site can be browsed. Elsewhere it creates an ordinary account
-    with no admin access, leaving an administrator to grant whatever the lab requires.
+    Staff status is the door to the admin site rather than a permission in itself: an account
+    with no groups sees an empty admin. What it can actually do is decided by its groups, which
+    is what SSO_NEW_USER_GROUPS and the Public users group are for. The sign-up form grants it
+    on the same basis.
 
     The account is active immediately. The provider has established who this is, which is the
     same thing the sign-up form's confirmation email establishes - and for a provider that
@@ -83,7 +84,7 @@ def apply_new_user_policy(user):
     public = _setting('PUBLIC_DATABASE', False)
     user.is_active = True
     user.is_public_user = public
-    user.is_staff = public
+    user.is_staff = True
     user.is_superuser = False
     user.is_stock_manager = False
     return user
