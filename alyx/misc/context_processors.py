@@ -25,9 +25,10 @@ def public_database(request):
         'SSO_LOGIN_URL': '',
     }
     if context['SSO_ENABLED']:
+        from misc.signup.sso import login_url_kwargs
         provider = getattr(settings, 'SSO_PROVIDER', '')
         try:
-            context['SSO_LOGIN_URL'] = reverse(f'{provider}_login')
+            context['SSO_LOGIN_URL'] = reverse(f'{provider}_login', kwargs=login_url_kwargs())
         except NoReverseMatch:  # misconfigured provider; manage.py check reports it
             context['SSO_ENABLED'] = False
     return context

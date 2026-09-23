@@ -69,6 +69,9 @@ EXTRA_AUTHENTICATION_BACKENDS = ()
 SSO_ENABLED = False
 # django-allauth provider id; the matching provider app is installed automatically.
 SSO_PROVIDER = 'orcid'
+# For a provider whose routes carry an app id (openid_connect), the provider_id of the entry
+# in SOCIALACCOUNT_PROVIDERS. Named providers such as google or orcid do not use it.
+SSO_PROVIDER_ID = ''
 # Name shown on the sign-in button.
 SSO_PROVIDER_NAME = 'ORCiD'
 # Whether an identity with no account may create one. On an internal database this would admit

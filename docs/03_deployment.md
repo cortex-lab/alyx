@@ -9,7 +9,7 @@ For running alyx directly on the host machine, follow the instructions below.
 
 ## Install a development version of Alyx on the host machine
 
-Clone the alyx repository from [here](https://github.com/cortex-lab/alyx). 
+Clone the alyx repository from [here](https://github.com/cortex-lab/alyx).
 ```shell
 git clone https://github.com/cortex-lab/alyx.git
 cd alyx
@@ -120,22 +120,37 @@ the providers allauth supports. It is optional and off by default.
 pip install alyx[sso]
 ```
 
+An institutional login - a Shibboleth IdP with its OIDC extension, Keycloak, Entra ID - goes
+through allauth's generic `openid_connect` provider:
+
 ```python
 # settings_lab.py
 SSO_ENABLED = True
-SSO_PROVIDER = 'orcid'          # any django-allauth provider id
-SSO_PROVIDER_NAME = 'ORCID'     # the name on the sign-in button
-SSO_CREATE_USER = True          # allow new identities to register (a public database)
+SSO_PROVIDER = 'openid_connect'
+SSO_PROVIDER_ID = 'yourlab'          # matches provider_id below
+SSO_PROVIDER_NAME = 'Your Lab Login'
+SSO_CREATE_USER = True
+SSO_ALLOWED_DOMAINS = ('yourlab.ac.uk',)
+SSO_NEW_USER_GROUPS = ('Lab members',)
 SOCIALACCOUNT_PROVIDERS = {
-    'orcid': {'APP': {'client_id': os.getenv('ORCID_CLIENT_ID'),
-                      'secret': os.getenv('ORCID_CLIENT_SECRET')}},
+    'openid_connect': {'APPS': [{
+        'provider_id': 'yourlab',
+        'name': 'Your Lab Login',
+        'client_id': os.getenv('SSO_CLIENT_ID'),
+        'secret': os.getenv('SSO_CLIENT_SECRET'),
+        'settings': {'server_url': 'https://idp.yourlab.ac.uk'},
+    }]},
 }
 ```
 
-Register `https://<your-host>/accounts/<provider>/login/callback/` as the redirect URI with the
-provider. ORCID issues credentials from the developer tools in an ORCID account, and offers a
-sandbox at `sandbox.orcid.org` for testing - point at it with
-`'BASE_DOMAIN': 'sandbox.orcid.org'` in the provider settings.
+Redirect URI to register with the provider:
+`https://<your-host>/accounts/oidc/<SSO_PROVIDER_ID>/login/callback/`.
+
+A named provider such as `orcid` or `google` takes `APP` (a dict) instead of `APPS`, needs no
+`SSO_PROVIDER_ID`, and its redirect URI is `https://<your-host>/accounts/<provider>/login/callback/`.
+
+See the [allauth provider documentation](https://docs.allauth.org/en/latest/socialaccount/providers/index.html)
+for the full list of providers and their options.
 
 Run `manage.py check` afterwards. It reports missing credentials and warns about combinations
 that admit more people than you probably intend.
@@ -146,14 +161,7 @@ deployment that leaves `SSO_ENABLED` off never creates them.
 
 #### Providers that supply no email address
 
-This is the case ORCID presents, and it shapes the design. ORCID's OpenID Connect surface lists
-neither `email` in its scopes nor `email_verified` in its claims: it returns the ORCID iD, a
-name, and nothing else. An Alyx account created from such an identity therefore has **no email
-address**, and that is a supported state - the account works for data access, it simply cannot
-be emailed. The identity that matters is the `(provider, uid)` pair, not the address.
-
-Consequently `SSO_ALLOWED_DOMAINS` cannot be used with such a provider: there is no domain to
-match, and every sign-in would be refused.
+ORCiD's OpenID Connect returns only the ORCiD ID and a name. An Alyx account created from such an identity therefore has **no email address**. Consequently `SSO_ALLOWED_DOMAINS` cannot be used with such a provider: there is no domain to match, and every sign-in would be refused.
 
 | Setting | Default | |
 | --- | --- | --- |
@@ -161,28 +169,6 @@ match, and every sign-in would be refused.
 | `SSO_ALLOWED_DOMAINS` | `()` | Restrict sign-in to these email domains. Unusable with a provider that supplies no email. |
 | `SSO_NEW_USER_GROUPS` | `()` | Groups given to accounts SSO creates. On a public database the public users group is added automatically. |
 | `SSO_ALLOW_SUPERUSER` | `False` | Whether a superuser may sign in through SSO. Superusers can change anything in the database, so they are worth keeping on credentials Alyx controls. |
-
-#### API access for accounts without a password
-
-An account created through SSO has no password, and Django will not give it one: password reset
-skips users whose password is unusable, and the password change form requires the old password
-they never had. Such a user therefore cannot obtain a token from `/auth-token`.
-
-The **`/me` page** exists for this. Any signed-in user can see their REST API token there, hand
-it to ONE, and regenerate it if it leaks:
-
-```python
-from one.api import ONE
-one = ONE(base_url='https://<your-host>', token='<token>')
-```
-
-ONE asks the database who the token belongs to, so no username is needed, and it stores the
-token: later sessions are just `ONE()`, with no token and no `ONE.setup()` call. An account that
-does have a password passes `username='<username>'` instead and is asked for it once.
-
-The page is routed on every deployment, not just those using SSO, since it is the general
-answer to "where do I get my API token".
-
 
 ### Apache webserver and interaction with wsgi
 
@@ -197,7 +183,7 @@ Activate the website
     sudo a2ensite
         001-alyx-main
 
-Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as 
+Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as
 it should not interrupt current user transactions if any.
 
 
