@@ -58,6 +58,34 @@ class TestSignInPolicy(TestCase):
             (True, ''), sso.check_existing_user(get_user_model()(username='ada', is_active=True)))
 
 
+class TestProviderConfig(TestCase):
+    """Reading the SOCIALACCOUNT_PROVIDERS entry, whichever shape the provider uses."""
+
+    APP = {'client_id': 'id', 'secret': 'shh'}
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {'APP': APP}})
+    def test_named_provider_uses_app(self):
+        self.assertEqual(self.APP, sso.configured_app('google'))
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'openid_connect': {'APPS': [
+        {'provider_id': 'a', 'client_id': '1'}, {'provider_id': 'b', 'client_id': '2'}]}})
+    def test_openid_connect_entry_chosen_by_id(self):
+        self.assertEqual('2', sso.configured_app('openid_connect', 'b')['client_id'])
+        self.assertIsNone(sso.configured_app('openid_connect', 'absent'))
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={})
+    def test_provider_not_configured(self):
+        self.assertIsNone(sso.configured_app('google'))
+
+    @override_settings(SSO_PROVIDER_ID='yourlab')
+    def test_login_url_kwargs_carries_the_app_id(self):
+        self.assertEqual({'provider_id': 'yourlab'}, sso.login_url_kwargs())
+
+    @override_settings(SSO_PROVIDER_ID='')
+    def test_login_url_kwargs_empty_for_a_named_provider(self):
+        self.assertEqual({}, sso.login_url_kwargs())
+
+
 class TestSignUpRedirect(TestCase):
     """Where allauth sends an account the moment it is created."""
 

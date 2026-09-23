@@ -34,6 +34,31 @@ def _setting(name, default):
     return getattr(settings, name, default)
 
 
+def configured_app(provider, provider_id=''):
+    """The SOCIALACCOUNT_PROVIDERS entry for a provider, whichever shape it uses.
+
+    Named providers such as google or orcid carry a single APP. openid_connect carries APPS, a
+    list, because one deployment may talk to several servers; provider_id picks the entry.
+    """
+    config = (_setting('SOCIALACCOUNT_PROVIDERS', {}) or {}).get(provider) or {}
+    apps = list(config.get('APPS') or ())
+    if not apps and config.get('APP'):
+        apps = [config['APP']]
+    if provider_id:
+        apps = [app for app in apps if app.get('provider_id') == provider_id]
+    return apps[0] if apps else None
+
+
+def login_url_kwargs():
+    """Reverse arguments for the sign-in URL.
+
+    openid_connect routes through the app id rather than the provider name, so its URL cannot
+    be reversed without one.
+    """
+    provider_id = _setting('SSO_PROVIDER_ID', '')
+    return {'provider_id': provider_id} if provider_id else {}
+
+
 def check_email_domain(email):
     """Apply the domain allowlist, if one is configured.
 
