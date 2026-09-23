@@ -12,6 +12,13 @@ on:
 jobs:
   run_jobs:
     runs-on: ubuntu-latest
+    # Job level, not step level: these were attached to the last step, so inserting a step
+    # above them silently left the one before it with no environment at all.
+    env:
+      DJANGO_SETTINGS_MODULE: alyx.settings
+      APACHE_LOG_DIR: /var/log/alyx
+      POSTGRES_HOST: localhost
+      COVERAGE_RCFILE: ../setup.cfg
     services:
       postgres:
         image: postgres:17
@@ -50,9 +57,9 @@ jobs:
           ruff check ./alyx
       - name: Run tests
         run: |
-          sudo mkdir /var/log/alyx
-          sudo touch /var/log/alyx/django.log
-          sudo chmod 666 /var/log/alyx/django.log
+          # Owned by the runner, not just world-writable: rotation renames django.log
+          # inside this directory, which needs write permission on the directory itself.
+          sudo install -d -o "$(id -u)" -g "$(id -g)" /var/log/alyx
           cd alyx
           cp ./alyx/environment_template.env ./alyx/.env
           cp ../deploy/app/docker/settings-deploy.py  alyx/settings.py
@@ -62,6 +69,8 @@ jobs:
           coverage run manage.py test --parallel
           coverage combine
           coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tests with single sign-on enabled
         # The default settings leave SSO off, so its adapter never runs above - the tests for it
         # skip themselves. Enable it here so that the configuration a public deployment actually
@@ -79,10 +88,3 @@ jobs:
           SSO
           python manage.py check
           python manage.py test misc.tests_sso
-        env:
-          DJANGO_SETTINGS_MODULE: alyx.settings
-          APACHE_LOG_DIR: /var/log/alyx
-          POSTGRES_HOST: localhost
-          PYTHONPATH: $HOME/builds/cortexlab/alyx
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERAGE_RCFILE: ../setup.cfg
