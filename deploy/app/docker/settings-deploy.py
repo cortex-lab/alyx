@@ -13,6 +13,9 @@ import json
 import logging
 import dotenv
 from pathlib import Path
+from textwrap import dedent
+
+from alyx import __version__
 
 from django.conf.locale.en import formats as en_formats
 
@@ -23,6 +26,60 @@ dotenv_path = BASE_DIR.joinpath('alyx', '.env')
 if dotenv_path.exists():
     _logger.warning(f'environment file found: {dotenv_path}')
     dotenv.load_dotenv(dotenv_path=dotenv_path)
+
+# %% Defaults for optional lab settings
+# Declared before the settings_lab import so that lab settings override them.
+
+# Public read-only instance: enables self-registration and hides lab members from public users.
+PUBLIC_DATABASE = False
+# Require email confirmation before an account works. Needs a working EMAIL_BACKEND; the link
+# expires after PASSWORD_RESET_TIMEOUT.
+PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
+# Mailing preferences offered at sign-up, as {field name: checkbox label}. Empty disables the
+# feature and its page entirely; consent to be emailed is specific to a public database.
+EMAIL_PREFERENCES = {}
+# Usernames that may not be self-registered.
+PUBLIC_SIGNUP_RESERVED_USERNAMES = (
+    'root', 'admin', 'administrator', 'alyx', 'test', 'public', 'anonymous')
+
+# %% Sign-up bot protection
+# Protects outbound mail rather than accounts: bounces over ~5% suspend SES sending. The hidden
+# honeypot field is always on. See misc/antibot.py.
+
+# Per-address cap as (count, seconds). Leave off where courses run - a lecture theatre shares one
+# address - since the honeypot and Turnstile still apply there.
+PUBLIC_SIGNUP_THROTTLE = None
+# Addresses exempt from the cap above.
+PUBLIC_SIGNUP_THROTTLE_EXEMPT = ()
+# Only trust X-Forwarded-For behind a proxy known to set it; clients can otherwise spoof it.
+PUBLIC_SIGNUP_TRUST_FORWARDED_FOR = False
+# Cloudflare Turnstile. Both keys must be set to enable it.
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
+
+# Folded into INSTALLED_APPS / MIDDLEWARE / AUTHENTICATION_BACKENDS below, which settings_lab.py
+# cannot do itself as it is imported before them.
+EXTRA_INSTALLED_APPS = ()
+EXTRA_MIDDLEWARE = ()
+EXTRA_AUTHENTICATION_BACKENDS = ()
+
+# %% Single sign-on
+# Needs the optional dependency: pip install alyx[sso]. `manage.py check` reports what is
+# missing; see the single sign-on section of docs/03_deployment.md.
+SSO_ENABLED = False
+# django-allauth provider id; the matching provider app is installed automatically.
+SSO_PROVIDER = 'orcid'
+# Name shown on the sign-in button.
+SSO_PROVIDER_NAME = 'ORCiD'
+# Whether an identity with no account may create one. On an internal database this would admit
+# anyone holding a provider account.
+SSO_CREATE_USER = False
+# Restrict sign-in to these email domains. Unusable with a provider that supplies no email.
+SSO_ALLOWED_DOMAINS = ()
+# Groups given to accounts SSO creates; a public database adds the public users group too.
+SSO_NEW_USER_GROUPS = ()
+# Whether a superuser may sign in through SSO. Off: superusers can change anything.
+SSO_ALLOW_SUPERUSER = False
 
 # Lab-specific settings
 from .settings_lab import *  # noqa
@@ -147,6 +204,46 @@ INSTALLED_APPS = (
     'django_cleanup.apps.CleanupConfig',  # needs to be last in the list
 )
 
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
+if SSO_ENABLED:
+    # django-allauth owns the provider handshake and stores the resulting identity, keyed on
+    # (provider, uid). Its backend goes first so that a social login is handled by it; the model
+    # backend stays in place so username/password login keeps working alongside SSO.
+    EXTRA_INSTALLED_APPS = tuple(EXTRA_INSTALLED_APPS) + (
+        'allauth',
+        'allauth.account',
+        'allauth.socialaccount',
+        f'allauth.socialaccount.providers.{SSO_PROVIDER}',
+    )
+    EXTRA_MIDDLEWARE = tuple(EXTRA_MIDDLEWARE) + (
+        'allauth.account.middleware.AccountMiddleware',)
+    EXTRA_AUTHENTICATION_BACKENDS = (
+        ('allauth.account.auth_backends.AuthenticationBackend',)
+        + tuple(EXTRA_AUTHENTICATION_BACKENDS))
+    # Alyx applies its own sign-in policy and provisioning; see misc/signup/sso.py.
+    SOCIALACCOUNT_ADAPTER = 'misc.signup.sso.AlyxSocialAccountAdapter'
+    # Provision from the provider's data rather than showing allauth's own signup form: Alyx
+    # decides what a new account looks like, and a provider that returns no email address (such
+    # as ORCID) has nothing to prefill that form with anyway.
+    SOCIALACCOUNT_AUTO_SIGNUP = True
+    # allauth does not require an email address by default, which is what lets a provider that
+    # supplies none (ORCID) complete a signup rather than being diverted to allauth's own form.
+    ACCOUNT_EMAIL_VERIFICATION = 'none'  # the provider is the identity proof, not the address
+    # Never store the provider's access/refresh tokens. They are credentials for calling the
+    # provider's API, not for authenticating to Alyx, and this database gets dumped and copied.
+    SOCIALACCOUNT_STORE_TOKENS = False
+    # allauth allocates usernames for SSO accounts and checks each candidate against this
+    # list, so the names Alyx reserves are honoured on that path too - without it, a provider
+    # supplying a preferred_username of "root" would be taken at face value.
+    ACCOUNT_USERNAME_BLACKLIST = PUBLIC_SIGNUP_RESERVED_USERNAMES
+    # New SSO accounts land on the preferences page: a provider such as ORCiD supplies no email
+    # address, so this is the first chance to offer one. Signup only, not every sign-in.
+    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences'
+
+INSTALLED_APPS += tuple(EXTRA_INSTALLED_APPS)
+AUTHENTICATION_BACKENDS = tuple(EXTRA_AUTHENTICATION_BACKENDS) + AUTHENTICATION_BACKENDS
+
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -158,6 +255,8 @@ MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'alyx.base.QueryPrintingMiddleware',
 )
+
+MIDDLEWARE += tuple(EXTRA_MIDDLEWARE)
 
 ROOT_URLCONF = 'alyx.urls'
 
@@ -172,6 +271,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'misc.context_processors.public_database',
             ],
         },
     },
@@ -210,6 +310,63 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'alyx.base.rest_filters_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 250,
+}
+
+# %% OpenAPI schema (/api/schema, rendered at /docs)
+# Without these drf-spectacular reports an empty title and version 0.0.0, which is its own
+# placeholder rather than anything meaningful. Alyx has no API version independent of the
+# application - the endpoints are the application - so the schema reports the Alyx version,
+# which also tells a client which release it is talking to.
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Alyx REST API',
+    'VERSION': __version__,
+    'SERVE_INCLUDE_SCHEMA': False,  # the schema endpoint itself is not interesting to document
+    'DESCRIPTION': dedent(f"""
+        The REST interface to this Alyx database. Most clients reach it through
+        [ONE](https://int-brain-lab.github.io/ONE/) rather than directly.
+
+        ## Authentication
+
+        Every endpoint requires authentication. Requests carry a token in the `Authorization`
+        header:
+
+            Authorization: Token 1a2b3c4d...
+
+        There are two ways to get one.
+
+        **From your account page.** Sign in and open [/me](/me), which shows your token and can
+        regenerate it if it leaks. This is the only route for accounts that sign in through an
+        identity provider, since those have no password.
+
+        **From the `/auth-token` endpoint**, if your account has a password:
+
+            curl -X POST -d "username=<username>&password=<password>" \\
+                 https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}/auth-token
+
+        ## Using ONE
+
+        Sign in once, with whichever credential your account has. If it has a password, give
+        your username and ONE will ask for the password:
+
+            from one.api import ONE
+            one = ONE(base_url='https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}',
+                      username='<username>')
+
+        If it has no password - an account that signs in through an identity provider - give
+        the token instead. ONE asks the database who it belongs to, so no username is needed:
+
+            from one.api import ONE
+            one = ONE(base_url='https://{os.getenv('APACHE_SERVER_NAME', 'your-alyx-host')}',
+                      token='<token>')
+
+        Either way, ONE remembers, so from then on it is just:
+
+            from one.api import ONE
+            one = ONE()
+
+        There is no need to call `ONE.setup()`, and no need to pass the username or token
+        again. Pass one again only to switch accounts, or after regenerating a token.
+        """),
 }
 
 # Internationalization

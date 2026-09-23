@@ -1,0 +1,72 @@
+{% extends "public_base.html" %}
+{% load i18n %}
+
+{% block title %}Sign up | {{ site_title }}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Sign up</h1>
+  <p>
+    Create an account to browse and download the publicly released data. Accounts are read-only:
+    you will be able to query the database and fetch datasets, but not modify anything.
+  </p>
+
+  {% if form.non_field_errors %}
+    <p class="errornote">{{ form.non_field_errors }}</p>
+  {% endif %}
+
+  <form action="" method="post" id="signup-form">{% csrf_token %}
+    {# "module aligned" is the admin's own form styling: it gives every label the same width #}
+    {# so the inputs line up, instead of each row starting wherever its label happens to end. #}
+    <fieldset class="module aligned">
+      {% for field in form %}
+        {% if field.name == honeypot_field %}
+          {# Hidden from people, left in the DOM for form-filling bots to complete. Positioned #}
+          {# off-screen rather than display:none, which the cruder bots check for. #}
+          <div aria-hidden="true"
+               style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;">
+            {{ field }}
+          </div>
+        {% elif field.is_hidden %}
+          {{ field }}
+        {% elif field.widget_type == 'checkbox' %}
+          <div class="form-row{% if field.errors %} errors{% endif %}">
+            {{ field.errors }}
+            <label for="{{ field.id_for_label }}" style="width: auto;">
+              {{ field }} {{ field.label }}
+            </label>
+          </div>
+        {% else %}
+          <div class="form-row{% if field.errors %} errors{% endif %}">
+            {{ field.errors }}
+            <div>
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}
+                <div class="help">{{ field.help_text|safe }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if turnstile_site_key %}
+        <div class="form-row">
+          <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
+               data-response-field-name="cf-turnstile-response"></div>
+        </div>
+      {% endif %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Sign up" class="default">
+    </div>
+  </form>
+
+  <p>Already have an account? <a href="{% url 'admin:login' %}">Log in</a>.</p>
+</div>
+{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+{% if turnstile_site_key %}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}

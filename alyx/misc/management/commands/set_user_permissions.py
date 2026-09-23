@@ -47,7 +47,10 @@ class Command(BaseCommand):
                           (len(group.permissions.all()), group))
 
         # Set user permissions.
-        users = get_user_model().objects.all()
+        # Public users are deliberately skipped: adding them to the lab members group would
+        # grant members of the public write access to every model, and forcing is_active would
+        # activate accounts that never confirmed their email address.
+        users = get_user_model().objects.exclude(is_public_user=True)
         for user in users:
             # Add all users to the group.
             user.groups.add(group)
@@ -58,4 +61,7 @@ class Command(BaseCommand):
             user.is_staff = True
             user.is_active = True
             user.save()
-        self.stdout.write("%d users have been successfully updated." % len(users))
+        skipped = get_user_model().objects.count() - users.count()
+        self.stdout.write("%d users have been successfully updated." % users.count())
+        if skipped:
+            self.stdout.write("%d public/redacted users were skipped." % skipped)

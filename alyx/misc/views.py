@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 import os.path as op
 import json
 
@@ -9,6 +10,12 @@ from django.contrib.auth import get_user_model
 from django.http import (
     HttpResponse, FileResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 )
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 from rest_framework import views
 from rest_framework.response import Response
@@ -16,25 +23,36 @@ from rest_framework.decorators import api_view
 from rest_framework.reverse import reverse
 from rest_framework import generics
 
-from alyx.base import BaseFilterSet, rest_permission_classes
+from alyx.base import BaseFilterSet, LimitedLimitOffsetPagination, rest_permission_classes
 from data.models import Tag
+from misc.signup import preferences
 from .serializers import UserSerializer, LabSerializer, NoteSerializer
 from .models import Lab, Note
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
 
+logger = logging.getLogger(__name__)
+
 
 @api_view(['GET'])
 def api_root(request, format=None):
-    """**[==========> CLICK HERE TO GO TO THE ADMIN INTERFACE <==========](/admin)**
+    """Index of the Alyx REST API.
 
-    Welcome to Alyx's API! At the moment, there is read-only support for
-    unauthenticated user lists, and authenticated read-write subject metadata
-    and weighings. This should be reasonably self-documented; standard REST options
-    are supported by sending an `OPTIONS /api/subjects/` for example. This is in alpha
-    and endpoints are subject to change at short notice!
+    **Retrieving more than a page or two of records? Use
+    [ONE](https://int-brain-lab.github.io/ONE/) rather than this API directly.** ONE downloads
+    cache tables and queries them locally, so a search costs no database queries at all. Paging
+    through large result sets here is slow, heavily rate limited, and places load on a database
+    that other people are using. ONE's own documentation puts it plainly: *avoiding the database
+    whenever possible is recommended ... [it] reduces the load on the remote database*.
 
-    **[ ===> Models documentation](/admin/doc/models)**
+    Page size is capped, so `?limit=10000` returns far fewer records than asked for; a response
+    that has been capped says so in its `detail` field.
 
+    Authentication is required. Every request carries `Authorization: Token <key>`; get a key
+    from [your account page](/me), or by POSTing a username and password to `/auth-token`.
+    Sending that header to [/me](/me) returns the account the key belongs to.
+
+    Full schema: [/docs](/docs/) - machine-readable at [/api/schema](/api/schema).
+    Model reference: [/admin/doc/models](/admin/doc/models).
     """
     return Response({
         'users-url': reverse('user-list', request=request, format=format),
@@ -75,7 +93,25 @@ class UserFilter(BaseFilterSet):
         exclude = ['json']
 
 
-class UserList(generics.ListCreateAPIView):
+class UserQuerySetMixin:
+    """Restrict public users to their own record.
+
+    Enumerating the user table is not something a read-only account needs, and on a public
+    database with self-registration it would list the accounts of members of the public. Note
+    that this hides the user *records*, not the usernames attributed to data: those are still
+    returned by the session, subject and dataset endpoints, and are still what
+    `sessions?users=` and `subjects?responsible_user=` filter on, so the work of an anonymised
+    lab member remains queryable.
+    """
+
+    def get_queryset(self):
+        queryset = super(UserQuerySetMixin, self).get_queryset()
+        if self.request.user.is_public_user:
+            queryset = queryset.filter(pk=self.request.user.pk)
+        return queryset
+
+
+class UserList(UserQuerySetMixin, generics.ListCreateAPIView):
     """
     get: **FILTERS**
     - 'id'
@@ -93,7 +129,7 @@ class UserList(generics.ListCreateAPIView):
     lookup_field = 'username'
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(UserQuerySetMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = UserSerializer.setup_eager_loading(get_user_model().objects.all())
     serializer_class = UserSerializer
     permission_classes = rest_permission_classes()
@@ -228,3 +264,107 @@ class CacheDownloadView(views.APIView):
             cache_file = Path(TABLES_ROOT).joinpath('cache.zip')
             response = FileResponse(open(cache_file, 'br'))
         return response
+
+
+# Account page
+# ------------------------------------------------------------------------------------------------
+
+@method_decorator(never_cache, name='dispatch')
+class MeView(LoginRequiredMixin, TemplateView):
+    """The signed-in user's own account details, and their REST API token.
+
+    Matters most for single sign-on accounts: they have no password, so neither password reset
+    nor the change form can give them one, and without this page they could never use the API.
+    """
+    template_name = 'me.html'
+    login_url = reverse_lazy('admin:login')
+
+    def dispatch(self, request, *args, **kwargs):
+        """Accept a REST API token in place of a session, for reads.
+
+        Lets a client ask whether a token is still good and whose it is. Without it
+        LoginRequiredMixin redirects, so a rejected token looks like an unread page.
+
+        Safe methods only: a token-authenticated POST carries no CSRF token, and a credential
+        that can rotate itself is a worse footgun than one that cannot.
+        """
+        if request.method in ('GET', 'HEAD') and 'HTTP_AUTHORIZATION' in request.META:
+            from rest_framework.authentication import TokenAuthentication
+            from rest_framework.exceptions import AuthenticationFailed
+            try:
+                authenticated = TokenAuthentication().authenticate(request)
+            except AuthenticationFailed as e:
+                return JsonResponse({'detail': str(e.detail)}, status=e.status_code)
+            if authenticated is not None:
+                request.user, request.auth = authenticated
+        return super(MeView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """Render the page, or answer in JSON where the caller authenticated with a token."""
+        if getattr(request, 'auth', None) is not None:
+            user = request.user
+            return JsonResponse({
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            })
+        return super(MeView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        from rest_framework.authtoken.models import Token
+        context = super(MeView, self).get_context_data(**kwargs)
+        user = self.request.user
+        # Tokens are otherwise created on first password login via /auth-token, which an SSO
+        # account never reaches.
+        token, _ = Token.objects.get_or_create(user=user)
+        context['token'] = token.key
+        context['identities'] = self._identities(user)
+        chosen = preferences.get(user)
+        context['email_preferences_configured'] = bool(preferences.options())
+        context['email_preferences'] = [
+            label for name, label in preferences.options().items() if chosen[name]]
+        context['email_verified'] = preferences.email_verified(user)
+        context['has_password'] = user.has_usable_password()
+        context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
+        return context
+
+    @staticmethod
+    def _identities(user):
+        """Linked single sign-on identities, where SSO is enabled.
+
+        Checks the app registry because allauth raises RuntimeError, not ImportError, when it
+        is installed but not in INSTALLED_APPS.
+        """
+        from django.apps import apps
+        if not apps.is_installed('allauth.socialaccount'):
+            return []
+        from allauth.socialaccount.models import SocialAccount
+        return list(SocialAccount.objects.filter(user=user))
+
+    def post(self, request, *args, **kwargs):
+        """Regenerate the API token, revoking the old one immediately."""
+        from rest_framework.authtoken.models import Token
+        Token.objects.filter(user=request.user).delete()
+        Token.objects.create(user=request.user)
+        logger.info('Regenerated API token for %s', request.user.username)
+        return redirect('me')
+
+
+class LLMsTextView(TemplateView):
+    """Serve /llms.txt, a plain-text orientation for automated clients.
+
+    An emerging convention (llmstxt.org) for handing a language model a curated entry point
+    instead of leaving it to infer one from HTML. Cheap to provide and read early by clients
+    that look for it, which is exactly the moment to say "use ONE, do not page this API".
+    It is not a substitute for the in-band signals on capped and throttled responses: the
+    clients that cause trouble are generally the ones that never fetch a file like this.
+    """
+    template_name = 'llms.txt'
+    content_type = 'text/plain; charset=utf-8'
+
+    def get_context_data(self, **kwargs):
+        context = super(LLMsTextView, self).get_context_data(**kwargs)
+        context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
+        context['max_limit'] = LimitedLimitOffsetPagination.max_limit
+        return context

@@ -21,6 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils import termcolors, timezone
 from django.test import TestCase
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 from django_filters import CharFilter
 from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
@@ -155,6 +156,22 @@ class DefaultListFilter(admin.SimpleListFilter):
                 }, []),
                 'display': title,
             }
+
+
+class UserRelatedDropdownFilter(RelatedDropdownFilter):
+    """A user dropdown filter that does not list read-only accounts.
+
+    The default related filter populates its dropdown from the whole target table, so a plain
+    RelatedDropdownFilter on a user field lists every LabMember - including, on a public
+    database with self-registration, the account of every member of the public who has signed
+    up. Public accounts never own data, so they are never a useful thing to filter by; dropping
+    them keeps the filter useful without turning it into a directory of registered users.
+    """
+
+    def field_choices(self, field, request, model_admin):
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        return field.get_choices(
+            include_blank=False, limit_choices_to={'is_public_user': False}, ordering=ordering)
 
 
 def alyx_mail(to, subject, text=''):
@@ -620,8 +637,58 @@ class LimitedLimitOffsetPagination(LimitOffsetPagination):
 
     Prevents a single request (e.g. `?limit=5000`) from materializing an
     unbounded number of rows and their prefetched relations in memory.
+
+    The cap also reports itself. Capping alone only converts one huge query into many medium
+    ones: a client asking for 10000 rows is handed 1000 with a `next` link and, seeing a large
+    `count`, does the only thing it can and follows that link until the set is exhausted. That
+    is as hard on the database as the original request and is the pattern that has taken it
+    down. So a response that has been capped, or that begins a long run of pages, carries a
+    line saying what happened and where the bulk route is - in the response body, which is the
+    one channel every client reads whether or not it ever looks at the documentation.
     """
     max_limit = 1000
+    #: Pages beyond this many records are better served by the cache tables than by paging.
+    bulk_advice_threshold = 5000
+
+    def get_limit(self, request):
+        limit = super(LimitedLimitOffsetPagination, self).get_limit(request)
+        requested = request.query_params.get(self.limit_query_param)
+        self.limit_was_capped = False
+        if requested:
+            try:
+                self.limit_was_capped = int(requested) > self.max_limit
+            except (TypeError, ValueError):
+                pass  # unparseable limits are already ignored by super()
+        return limit
+
+    def _advice(self):
+        """Guidance to attach to this response, or '' if none is warranted.
+
+        Deliberately quiet: only when a client asked for more than it can have, or when it has
+        just started paging through a set large enough that paging is the wrong approach.
+        Repeating it on every page of every response would train clients to ignore it.
+        """
+        capped = getattr(self, 'limit_was_capped', False)
+        starting_a_long_run = self.offset == 0 and (self.count or 0) > self.bulk_advice_threshold
+        if not (capped or starting_a_long_run):
+            return ''
+        advice = []
+        if capped:
+            advice.append(f'The requested page size was capped at {self.max_limit} records.')
+        if (self.count or 0) > self.max_limit:
+            advice.append(
+                f'This query matches {self.count} records. Rather than paging through them, '
+                f'use the ONE API, which queries downloaded cache tables locally instead of '
+                f'the database: https://int-brain-lab.github.io/ONE/. Paging large result '
+                f'sets places avoidable load on this database and is heavily rate limited.')
+        return ' '.join(advice)
+
+    def get_paginated_response(self, data):
+        response = super(LimitedLimitOffsetPagination, self).get_paginated_response(data)
+        advice = self._advice()
+        if advice:
+            response.data['detail'] = advice
+        return response
 
 
 def rest_filters_exception_handler(exc, context):
@@ -631,9 +698,20 @@ def rest_filters_exception_handler(exc, context):
     """
     response = exception_handler(exc, context)
     from rest_framework.response import Response
+    from rest_framework.exceptions import Throttled
     # Now add the HTTP status code to the response.
     if response is not None:
         response.data['status_code'] = response.status_code
+        if isinstance(exc, Throttled):
+            # A client that has been throttled is, by definition, reading this response. DRF
+            # already sets Retry-After; saying why and what to do instead turns a wall into an
+            # instruction. Clients that hit the limit are usually paging a large result set,
+            # which the cache tables serve without touching the database at all.
+            response.data['detail'] = (
+                f'{response.data.get("detail", "")} This database is rate limited. If you are '
+                f'retrieving a large number of records, use the ONE API, which queries '
+                f'downloaded cache tables locally rather than this database: '
+                f'https://int-brain-lab.github.io/ONE/').strip()
     else:
         # we send back a long form error message in debug mode
         debug_text = traceback.format_exc() if settings.DEBUG else str(exc)
