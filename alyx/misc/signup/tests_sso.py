@@ -6,10 +6,11 @@ on django-allauth, so they run wherever Alyx is tested rather than only where th
 """
 import unittest
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 from rest_framework.authtoken.models import Token
 
 from misc.signup import sso
@@ -55,6 +56,16 @@ class TestSignInPolicy(TestCase):
     def test_active_account_permitted(self):
         self.assertEqual(
             (True, ''), sso.check_existing_user(get_user_model()(username='ada', is_active=True)))
+
+
+class TestSignUpRedirect(TestCase):
+    """Where allauth sends an account the moment it is created."""
+
+    @unittest.skipUnless(getattr(settings, 'SSO_ENABLED', False), 'SSO is off')
+    def test_redirect_target_is_routed(self):
+        """The first page a new SSO account sees. It was /me/preferences unconditionally, which
+        misc/urls.py only routes when EMAIL_PREFERENCES is set."""
+        resolve(settings.ACCOUNT_SIGNUP_REDIRECT_URL)
 
 
 class TestUsernameAllocation(TestCase):

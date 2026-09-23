@@ -257,7 +257,7 @@ if SSO_ENABLED:
     ACCOUNT_USERNAME_BLACKLIST = PUBLIC_SIGNUP_RESERVED_USERNAMES
     # New SSO accounts land on the preferences page: a provider such as ORCiD supplies no email
     # address, so this is the first chance to offer one. Signup only, not every sign-in.
-    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences'
+    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences' if EMAIL_PREFERENCES else '/me'
 
 INSTALLED_APPS += tuple(EXTRA_INSTALLED_APPS)
 AUTHENTICATION_BACKENDS = tuple(EXTRA_AUTHENTICATION_BACKENDS) + AUTHENTICATION_BACKENDS
