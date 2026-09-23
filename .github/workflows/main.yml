@@ -83,10 +83,6 @@ jobs:
           DJANGO_SETTINGS_MODULE: alyx.settings
           APACHE_LOG_DIR: /var/log/alyx
           POSTGRES_HOST: localhost
-        env:
-          DJANGO_SETTINGS_MODULE: alyx.settings
           PYTHONPATH: $HOME/builds/cortexlab/alyx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APACHE_LOG_DIR: /var/log/alyx
           COVERAGE_RCFILE: ../setup.cfg
-          POSTGRES_HOST: localhost
