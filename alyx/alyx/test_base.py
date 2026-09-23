@@ -1,6 +1,5 @@
 from datetime import date
 from pathlib import Path
-import json
 import tempfile
 import uuid
 
@@ -11,30 +10,6 @@ from django.urls import reverse
 
 from alyx.base import _custom_filter_parser
 from alyx.throttling import AdaptiveScopedRateThrottle, IPRateThrottle
-
-
-class TestDocView(TestCase):
-
-    def test_coreapi_deprecated(self):
-        """
-        This test is enforcing a deprecation. If you have this failing, you are the lucky winner to
-        finish the deprecation of the core-api support from Alyx.
-        - remove this full test class
-        - in alyx/alyx/views.py remove the custom view SpectacularRedocViewCoreAPIDeprecation. At the time
-        of writing these lines, the whole view.py is about this so the whole file can go
-        - in alyx/alyx/urls.py set the /api/schema url point to SpectacularRedocView instead of
-        SpectacularRedocViewCoreAPIDeprecation
-        - remove data/coreapi.json
-        - make sure all the tests pass
-        :return:
-        """
-        self.assertGreater(date(2026, 9, 22), date.today())
-
-    def test_coreapi_json_view(self):
-        client = Client()
-        response = client.get('/docs/', headers={'Accept': 'application/coreapi+json'})
-        schema = json.loads(response.text)
-        self.assertEqual(schema['brain-regions']['read']['fields'][0]['name'], 'id')
 
 
 class BaseCustomFilterTest(TestCase):

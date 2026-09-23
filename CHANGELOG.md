@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   members group and marked active - granting members of the public write access and activating
   accounts that had never confirmed their email address
 
+### Removed
+
+- Core-api support for the `/docs` endpoint. `SpectacularRedocViewCoreAPIDeprecation` and
+  `data/coreapi.json` are gone; `/docs` now serves `SpectacularRedocView` directly regardless of
+  the request's `Accept` header. [#1055](https://github.com/cortex-lab/alyx/issues/1055)
+
 ### Fixed
 
 - Relative paths correctly rendered in cache table using pandas 3.
