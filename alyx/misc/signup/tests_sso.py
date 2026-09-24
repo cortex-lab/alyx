@@ -227,6 +227,16 @@ class TestAccountPage(TestCase):
         self.assertContains(response, token.key)
         self.assertContains(response, 'ada')
 
+    def test_token_is_masked_and_appears_once(self):
+        """Psychological, but a secret in plain sight invites screenshots of it."""
+        self.client.force_login(self.user)
+        html = self.client.get(reverse('me')).content.decode()
+        key = Token.objects.get(user=self.user).key
+        self.assertIn('type="password" value="%s"' % key, html)
+        # The ONE example repeated the token in the clear, which undid the masking.
+        self.assertNotIn("token='%s'" % key, html)
+        self.assertEqual(1, html.count(key), 'the token belongs in the hidden field only')
+
     def test_token_can_be_regenerated(self):
         self.client.force_login(self.user)
         self.client.get(reverse('me'))
