@@ -11,6 +11,8 @@ def public_database(request):
     allauth's provider_login_url tag lives in a template library that does not exist on a
     deployment without the optional dependency, and {% load %} cannot be made conditional.
     """
+    from alyx.base import is_lab_member
+    user = getattr(request, 'user', None)
     context = {
         # The registration, account and single sign-on pages are styled with the admin's
         # templates but are not admin views, so admin.site.each_context() never runs for them
@@ -23,6 +25,8 @@ def public_database(request):
         'SSO_ENABLED': getattr(settings, 'SSO_ENABLED', False),
         'SSO_PROVIDER_NAME': getattr(settings, 'SSO_PROVIDER_NAME', 'SSO'),
         'SSO_LOGIN_URL': '',
+        # Lets shared templates hide links to pages a public account would only get a 403 from.
+        'IS_LAB_MEMBER': bool(user and is_lab_member(user)),
     }
     if context['SSO_ENABLED']:
         from misc.signup.sso import login_url_kwargs
