@@ -35,8 +35,9 @@ PUBLIC_DATABASE = False
 # Require email confirmation before an account works. Needs a working EMAIL_BACKEND; the link
 # expires after PASSWORD_RESET_TIMEOUT.
 PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
-# Mailing preferences offered at sign-up, as {field name: checkbox label}. Empty disables the
-# feature and its page entirely; consent to be emailed is specific to a public database.
+# Mailing preferences offered at sign-up, as {checkbox label: description}. The description is
+# optional and shown under the box. Empty disables the feature and its page entirely; consent
+# to be emailed is specific to a public database.
 EMAIL_PREFERENCES = {}
 # Usernames that may not be self-registered.
 PUBLIC_SIGNUP_RESERVED_USERNAMES = (

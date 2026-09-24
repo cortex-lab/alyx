@@ -82,8 +82,9 @@ class PublicSignUpForm(UserCreationForm):
         if antibot.turnstile_configured():
             self.fields['cf-turnstile-response'] = forms.CharField(
                 required=False, widget=forms.HiddenInput())
-        for name, label in preferences.options().items():
-            self.fields[name] = forms.BooleanField(required=False, initial=False, label=label)
+        for label, description in preferences.options().items():
+            self.fields[label] = forms.BooleanField(
+                required=False, initial=False, label=label, help_text=description)
 
     def clean(self):
         cleaned = super(PublicSignUpForm, self).clean()
@@ -149,9 +150,9 @@ class EmailPreferencesForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(EmailPreferencesForm, self).__init__(*args, **kwargs)
         current = preferences.get(self.instance)
-        for name, label in preferences.options().items():
-            self.fields[name] = forms.BooleanField(
-                required=False, initial=current[name], label=label)
+        for label, description in preferences.options().items():
+            self.fields[label] = forms.BooleanField(
+                required=False, initial=current[label], label=label, help_text=description)
 
     def clean_email(self):
         email = self.cleaned_data['email']
