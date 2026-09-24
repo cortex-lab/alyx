@@ -3,7 +3,8 @@
 
 {% block userlinks %}
     go to
-    <a href="/admin-tasks/status">tasks</a> /
+    {# Lab members only, so a public account is not shown a link that 403s. #}
+    {% if IS_LAB_MEMBER %}<a href="/admin-tasks/status">tasks</a> / {% endif %}
     <a href="/me">api token</a> /
     <a href="/docs">rest documentation</a> /
     {{ block.super }} /

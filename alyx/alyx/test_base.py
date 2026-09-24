@@ -90,6 +90,21 @@ class AnonymousAccessTest(TestCase):
         response = self.client.get(reverse('weighing-plot', args=[uuid.uuid4()]))
         self.assertEqual(b'', response.content)
 
+    def test_tasks_link_is_hidden_from_a_public_user(self):
+        """The banner is shared by every deployment, so the link has to hide itself."""
+        lab_member = get_user_model().objects.create_user(username='lab', password='pw')
+        lab_member.is_staff = True
+        lab_member.save()
+        self.client.force_login(lab_member)
+        self.assertContains(self.client.get(reverse('admin:index')), '/admin-tasks/status')
+
+        public = get_user_model().objects.create_user(username='pub2', password='pw')
+        public.is_staff = True
+        public.is_public_user = True
+        public.save()
+        self.client.force_login(public)
+        self.assertNotContains(self.client.get(reverse('admin:index')), '/admin-tasks/status')
+
     def test_lab_member_pages_refuse_public_user(self):
         """Public accounts are staff, so is_staff alone would let them in."""
         user = get_user_model().objects.create_user(username='pub', password='pw')
