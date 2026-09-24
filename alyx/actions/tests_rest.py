@@ -487,7 +487,9 @@ class APIActionsTests(APIActionsBaseTests):
 
         url = reverse("water-requirement", kwargs={"nickname": self.subject.nickname})
 
-        date = now().date()
+        # Records are bucketed by the subject's lab timezone, which is a different calendar day
+        # from the server's for part of every day. Asking in server time made this fail nightly.
+        date = self.subject.water_control.today().date()
         start_date = date - datetime.timedelta(days=2)
         end_date = date + datetime.timedelta(days=2)
         response = self.client.get(
