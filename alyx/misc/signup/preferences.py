@@ -14,7 +14,11 @@ HISTORY = 'history'
 
 
 def options():
-    """Return the configured options as {field name: checkbox label}, empty if unconfigured."""
+    """Return the configured options as {checkbox label: description}, empty if unconfigured.
+
+    The label doubles as the field name and the key the choice is stored under; the description
+    is optional and may be an empty string.
+    """
     return dict(getattr(settings, 'EMAIL_PREFERENCES', None) or {})
 
 

@@ -35,8 +35,18 @@
     can act as you.
   </p>
 
-  <p><code id="api-token" style="font-size: 1.1em; padding: 0.4em; background: #f6f6f6;
-     border: 1px solid #ddd; user-select: all;">{{ token }}</code></p>
+  <p style="margin-bottom: 0.6em;">
+    <input id="api-token" type="password" value="{{ token }}" readonly
+           style="font-family: monospace; font-size: 1.1em; padding: 0.4em; width: 26em;
+                  background: #f6f6f6; border: 1px solid #ddd; vertical-align: middle;">
+    <button type="button" id="api-token-show" class="button"
+            style="margin-left: 0.4em;">Show</button>
+    <button type="button" id="api-token-copy" class="button">Copy</button>
+    <span id="api-token-copied" class="help" style="margin-left: 0.5em;"></span>
+  </p>
+  <noscript>
+    <p class="help">Shown hidden above; without JavaScript, select the field to copy it.</p>
+  </noscript>
 
   <form method="post" style="margin-bottom: 1.5em;"
         onsubmit="return confirm('Regenerate your token? The current one stops working immediately.');">
@@ -52,7 +62,7 @@
     there is no username to type and no need to call <code>ONE.setup()</code>:
   </p>
   <pre style="background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em; overflow-x: auto;">from one.api import ONE
-one = ONE(base_url='{{ base_url }}', token='{{ token }}')</pre>
+one = ONE(base_url='{{ base_url }}', token='<span id="api-token-echo">••••••••••••••••••••••••••••••••••••••••</span>')</pre>
   <p>ONE remembers, so from then on it is just:</p>
   <pre style="background: #f6f6f6; border: 1px solid #ddd; padding: 0.8em; overflow-x: auto;">from one.api import ONE
 one = ONE()</pre>
@@ -69,6 +79,40 @@ one = ONE()</pre>
     how you authenticate to the API.
   </p>
   {% endif %}
+
+<script>
+  // The token is masked by default: this page gets screen-shared and screenshotted, and a
+  // secret in plain sight invites that. Copy works without revealing it.
+  (function () {
+    var field = document.getElementById('api-token');
+    var show = document.getElementById('api-token-show');
+    var copy = document.getElementById('api-token-copy');
+    var echo = document.getElementById('api-token-echo');
+    var note = document.getElementById('api-token-copied');
+    var masked = echo.textContent;
+
+    show.addEventListener('click', function () {
+      var reveal = field.type === 'password';
+      field.type = reveal ? 'text' : 'password';
+      show.textContent = reveal ? 'Hide' : 'Show';
+      echo.textContent = reveal ? field.value : masked;
+    });
+
+    copy.addEventListener('click', function () {
+      var done = function () { note.textContent = 'copied'; };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(field.value).then(done);
+      } else {  // no clipboard API without https
+        var wasHidden = field.type === 'password';
+        field.type = 'text';
+        field.select();
+        document.execCommand('copy');
+        if (wasHidden) { field.type = 'password'; }
+        done();
+      }
+    });
+  })();
+</script>
 
 </div>
 {% endblock %}

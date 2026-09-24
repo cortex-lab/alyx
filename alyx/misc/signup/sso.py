@@ -34,6 +34,31 @@ def _setting(name, default):
     return getattr(settings, name, default)
 
 
+def configured_app(provider, provider_id=''):
+    """The SOCIALACCOUNT_PROVIDERS entry for a provider, whichever shape it uses.
+
+    Named providers such as google or orcid carry a single APP. openid_connect carries APPS, a
+    list, because one deployment may talk to several servers; provider_id picks the entry.
+    """
+    config = (_setting('SOCIALACCOUNT_PROVIDERS', {}) or {}).get(provider) or {}
+    apps = list(config.get('APPS') or ())
+    if not apps and config.get('APP'):
+        apps = [config['APP']]
+    if provider_id:
+        apps = [app for app in apps if app.get('provider_id') == provider_id]
+    return apps[0] if apps else None
+
+
+def login_url_kwargs():
+    """Reverse arguments for the sign-in URL.
+
+    openid_connect routes through the app id rather than the provider name, so its URL cannot
+    be reversed without one.
+    """
+    provider_id = _setting('SSO_PROVIDER_ID', '')
+    return {'provider_id': provider_id} if provider_id else {}
+
+
 def check_email_domain(email):
     """Apply the domain allowlist, if one is configured.
 
@@ -72,9 +97,10 @@ def new_user_groups():
 def apply_new_user_policy(user):
     """Set the flags and groups a newly provisioned SSO account should have.
 
-    On a public database this mirrors what the sign-up form produces: a read-only account with
-    staff status so the admin site can be browsed. Elsewhere it creates an ordinary account
-    with no admin access, leaving an administrator to grant whatever the lab requires.
+    Staff status is the door to the admin site rather than a permission in itself: an account
+    with no groups sees an empty admin. What it can actually do is decided by its groups, which
+    is what SSO_NEW_USER_GROUPS and the Public users group are for. The sign-up form grants it
+    on the same basis.
 
     The account is active immediately. The provider has established who this is, which is the
     same thing the sign-up form's confirmation email establishes - and for a provider that
@@ -83,7 +109,7 @@ def apply_new_user_policy(user):
     public = _setting('PUBLIC_DATABASE', False)
     user.is_active = True
     user.is_public_user = public
-    user.is_staff = public
+    user.is_staff = True
     user.is_superuser = False
     user.is_stock_manager = False
     return user

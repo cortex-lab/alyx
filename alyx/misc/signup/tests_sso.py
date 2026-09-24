@@ -6,10 +6,11 @@ on django-allauth, so they run wherever Alyx is tested rather than only where th
 """
 import unittest
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 from rest_framework.authtoken.models import Token
 
 from misc.signup import sso
@@ -55,6 +56,44 @@ class TestSignInPolicy(TestCase):
     def test_active_account_permitted(self):
         self.assertEqual(
             (True, ''), sso.check_existing_user(get_user_model()(username='ada', is_active=True)))
+
+
+class TestProviderConfig(TestCase):
+    """Reading the SOCIALACCOUNT_PROVIDERS entry, whichever shape the provider uses."""
+
+    APP = {'client_id': 'id', 'secret': 'shh'}
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {'APP': APP}})
+    def test_named_provider_uses_app(self):
+        self.assertEqual(self.APP, sso.configured_app('google'))
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'openid_connect': {'APPS': [
+        {'provider_id': 'a', 'client_id': '1'}, {'provider_id': 'b', 'client_id': '2'}]}})
+    def test_openid_connect_entry_chosen_by_id(self):
+        self.assertEqual('2', sso.configured_app('openid_connect', 'b')['client_id'])
+        self.assertIsNone(sso.configured_app('openid_connect', 'absent'))
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={})
+    def test_provider_not_configured(self):
+        self.assertIsNone(sso.configured_app('google'))
+
+    @override_settings(SSO_PROVIDER_ID='yourlab')
+    def test_login_url_kwargs_carries_the_app_id(self):
+        self.assertEqual({'provider_id': 'yourlab'}, sso.login_url_kwargs())
+
+    @override_settings(SSO_PROVIDER_ID='')
+    def test_login_url_kwargs_empty_for_a_named_provider(self):
+        self.assertEqual({}, sso.login_url_kwargs())
+
+
+class TestSignUpRedirect(TestCase):
+    """Where allauth sends an account the moment it is created."""
+
+    @unittest.skipUnless(getattr(settings, 'SSO_ENABLED', False), 'SSO is off')
+    def test_redirect_target_is_routed(self):
+        """The first page a new SSO account sees. It was /me/preferences unconditionally, which
+        misc/urls.py only routes when EMAIL_PREFERENCES is set."""
+        resolve(settings.ACCOUNT_SIGNUP_REDIRECT_URL)
 
 
 class TestUsernameAllocation(TestCase):
@@ -108,11 +147,13 @@ class TestProvisioningPolicy(TestCase):
         self.assertFalse(user.is_stock_manager)
 
     @override_settings(PUBLIC_DATABASE=False)
-    def test_internal_database_account_has_no_admin_access(self):
+    def test_internal_database_account_is_an_ordinary_user(self):
         user = sso.apply_new_user_policy(get_user_model()(username='ada'))
         self.assertTrue(user.is_active)
-        self.assertFalse(user.is_public_user)
-        self.assertFalse(user.is_staff, 'admin access is for an administrator to grant')
+        self.assertFalse(user.is_public_user, 'not subject to the public read-only rules')
+        self.assertTrue(user.is_staff, 'the admin is empty until a group grants something')
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(set(), sso.new_user_groups(), 'permissions are granted, not assumed')
 
     @override_settings(PUBLIC_DATABASE=True)
     def test_public_group_added_on_a_public_database(self):
@@ -185,6 +226,16 @@ class TestAccountPage(TestCase):
         token = Token.objects.get(user=self.user)
         self.assertContains(response, token.key)
         self.assertContains(response, 'ada')
+
+    def test_token_is_masked_and_appears_once(self):
+        """Psychological, but a secret in plain sight invites screenshots of it."""
+        self.client.force_login(self.user)
+        html = self.client.get(reverse('me')).content.decode()
+        key = Token.objects.get(user=self.user).key
+        self.assertIn('type="password" value="%s"' % key, html)
+        # The ONE example repeated the token in the clear, which undid the masking.
+        self.assertNotIn("token='%s'" % key, html)
+        self.assertEqual(1, html.count(key), 'the token belongs in the hidden field only')
 
     def test_token_can_be_regenerated(self):
         self.client.force_login(self.user)

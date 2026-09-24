@@ -57,14 +57,37 @@ def check_sso_settings(app_configs, **kwargs):
         return errors  # nothing below can be checked without it
 
     provider = getattr(settings, 'SSO_PROVIDER', '')
-    app = (getattr(settings, 'SOCIALACCOUNT_PROVIDERS', {}) or {}).get(provider, {}).get('APP')
+    provider_id = getattr(settings, 'SSO_PROVIDER_ID', '')
+    app = sso.configured_app(provider, provider_id)
     if not app or not app.get('client_id') or not app.get('secret'):
         errors.append(Error(
             f'SSO_ENABLED is set but SOCIALACCOUNT_PROVIDERS has no client_id/secret for '
-            f'provider {provider!r}.',
+            f'provider {provider!r}'
+            + (f' with provider_id {provider_id!r}.' if provider_id else '.'),
             hint='Add them in settings_lab.py; see the single sign-on section of '
-                 'docs/03_deployment.md.',
+                 'docs/03_deployment.md. openid_connect uses APPS, a list, rather than APP.',
             id='misc.E002'))
+    elif provider == 'openid_connect' and not (app.get('settings') or {}).get('server_url'):
+        errors.append(Error(
+            "The openid_connect app has no settings['server_url'], which allauth reads the "
+            'provider endpoints from.',
+            hint='Add it to the entry in '
+                 "SOCIALACCOUNT_PROVIDERS['openid_connect']['APPS'].",
+            id='misc.E004'))
+
+    # The sign-in button is built by reversing this. openid_connect routes through the app id,
+    # so without SSO_PROVIDER_ID the button silently fails to render.
+    from django.urls import NoReverseMatch, reverse
+    try:
+        reverse(f'{provider}_login', kwargs=sso.login_url_kwargs())
+    except NoReverseMatch:
+        errors.append(Error(
+            f'The sign-in URL for provider {provider!r} cannot be reversed'
+            + (f' with SSO_PROVIDER_ID {provider_id!r}.' if provider_id
+               else ', so no sign-in button is shown.'),
+            hint='openid_connect routes through the app id: set SSO_PROVIDER_ID to the '
+                 "provider_id of the entry in SOCIALACCOUNT_PROVIDERS['openid_connect']['APPS'].",
+            id='misc.E003'))
 
     if getattr(settings, 'SSO_CREATE_USER', False) and not (
             getattr(settings, 'PUBLIC_DATABASE', False)

@@ -35,8 +35,9 @@ PUBLIC_DATABASE = False
 # Require email confirmation before an account works. Needs a working EMAIL_BACKEND; the link
 # expires after PASSWORD_RESET_TIMEOUT.
 PUBLIC_SIGNUP_REQUIRE_VERIFICATION = True
-# Mailing preferences offered at sign-up, as {field name: checkbox label}. Empty disables the
-# feature and its page entirely; consent to be emailed is specific to a public database.
+# Mailing preferences offered at sign-up, as {checkbox label: description}. The description is
+# optional and shown under the box. Empty disables the feature and its page entirely; consent
+# to be emailed is specific to a public database.
 EMAIL_PREFERENCES = {}
 # Usernames that may not be self-registered.
 PUBLIC_SIGNUP_RESERVED_USERNAMES = (
@@ -69,6 +70,9 @@ EXTRA_AUTHENTICATION_BACKENDS = ()
 SSO_ENABLED = False
 # django-allauth provider id; the matching provider app is installed automatically.
 SSO_PROVIDER = 'orcid'
+# For a provider whose routes carry an app id (openid_connect), the provider_id of the entry
+# in SOCIALACCOUNT_PROVIDERS. Named providers such as google or orcid do not use it.
+SSO_PROVIDER_ID = ''
 # Name shown on the sign-in button.
 SSO_PROVIDER_NAME = 'ORCiD'
 # Whether an identity with no account may create one. On an internal database this would admit
@@ -257,7 +261,7 @@ if SSO_ENABLED:
     ACCOUNT_USERNAME_BLACKLIST = PUBLIC_SIGNUP_RESERVED_USERNAMES
     # New SSO accounts land on the preferences page: a provider such as ORCiD supplies no email
     # address, so this is the first chance to offer one. Signup only, not every sign-in.
-    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences'
+    ACCOUNT_SIGNUP_REDIRECT_URL = '/me/preferences' if EMAIL_PREFERENCES else '/me'
 
 INSTALLED_APPS += tuple(EXTRA_INSTALLED_APPS)
 AUTHENTICATION_BACKENDS = tuple(EXTRA_AUTHENTICATION_BACKENDS) + AUTHENTICATION_BACKENDS
