@@ -37,6 +37,9 @@
             <label for="{{ field.id_for_label }}" style="width: auto;">
               {{ field }} {{ field.label }}
             </label>
+            {% if field.help_text %}
+              <div class="help" style="margin-left: 1.8em;">{{ field.help_text|safe }}</div>
+            {% endif %}
           </div>
         {% endif %}
       {% endfor %}

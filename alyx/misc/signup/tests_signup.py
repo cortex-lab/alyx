@@ -8,7 +8,8 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from misc.signup import antibot, preferences
-from misc.signup.forms import PUBLIC_GROUP_NAME, signup_token_generator
+from misc.signup.forms import (EmailPreferencesForm, PUBLIC_GROUP_NAME,
+                               signup_token_generator)
 from misc.management.commands.set_public_permissions import (
     Command as SetPublicPermissions, EXCLUDED_MODELS)
 
@@ -389,8 +390,11 @@ class TestAccountVisibility(TestCase):
         self.assertEqual(200, self.client.get('/admin/misc/labmember/').status_code)
 
 
-IBL_PREFERENCES = {'data_releases': 'Email me when new data is released',
-                   'surveys': 'Email me occasional surveys about how the data is used'}
+# Key is the checkbox label and the name the choice is stored under; value is the optional
+# description shown beneath it.
+IBL_PREFERENCES = {
+    'Data-release updates': 'I agree that IBL may email me about new data releases.',
+    'Research follow-up': ''}
 
 
 @override_settings(**PUBLIC, EMAIL_PREFERENCES=IBL_PREFERENCES)
@@ -401,6 +405,25 @@ class TestEmailPreferences(TestCase):
         self.user = get_user_model().objects.create_user(
             username='ada', password='x', email='ada@example.org')
 
+    def test_label_is_the_key_and_description_is_optional(self):
+        """The label names the choice; the description under it may be left empty."""
+        form = EmailPreferencesForm(instance=self.user)
+        described, bare = 'Data-release updates', 'Research follow-up'
+        self.assertEqual(described, form.fields[described].label)
+        self.assertEqual(IBL_PREFERENCES[described], form.fields[described].help_text)
+        self.assertEqual('', form.fields[bare].help_text)
+
+    def test_description_is_rendered_under_the_box(self):
+        """Both pages that offer the boxes: sign-up is anonymous, preferences signed in."""
+        pages = {'signup': self.client.get(reverse('signup')).content.decode()}
+        self.client.force_login(self.user)
+        pages['preferences'] = self.client.get(reverse('preferences')).content.decode()
+        for page, html in pages.items():
+            with self.subTest(page=page):
+                self.assertIn('Data-release updates', html)
+                self.assertIn(IBL_PREFERENCES['Data-release updates'], html)
+                self.assertIn('class="help"', html)
+
     def test_unset_preferences_read_as_false(self):
         self.assertEqual({k: False for k in IBL_PREFERENCES}, preferences.get(self.user))
         self.assertIsNone(preferences.updated(self.user))
@@ -409,11 +432,11 @@ class TestEmailPreferences(TestCase):
         response = self.client.post(reverse('signup'), {
             'username': 'newcomer', 'email': 'newcomer@example.org',
             'password1': 'a-long-enough-passphrase', 'password2': 'a-long-enough-passphrase',
-            'data_releases': 'on'})
+            'Data-release updates': 'on'})
         self.assertRedirects(response, reverse('signup-done'))
         user = get_user_model().objects.get(username='newcomer')
-        self.assertTrue(preferences.get(user)['data_releases'])
-        self.assertFalse(preferences.get(user)['surveys'], 'unticked must not be consent')
+        self.assertTrue(preferences.get(user)['Data-release updates'])
+        self.assertFalse(preferences.get(user)['Research follow-up'], 'unticked must not be consent')
         self.assertIsNotNone(preferences.updated(user), 'the time of consent must be recorded')
 
     def test_signup_without_ticking_stores_no_consent(self):
@@ -426,20 +449,20 @@ class TestEmailPreferences(TestCase):
     def test_page_updates_preferences_and_email(self):
         self.client.force_login(self.user)
         response = self.client.post(reverse('preferences'), {
-            'email': 'new@example.org', 'surveys': 'on'})
+            'email': 'new@example.org', 'Research follow-up': 'on'})
         self.assertRedirects(response, reverse('me'))
         self.user.refresh_from_db()
         self.assertEqual('new@example.org', self.user.email)
-        self.assertTrue(preferences.get(self.user)['surveys'])
+        self.assertTrue(preferences.get(self.user)['Research follow-up'])
 
     def test_an_address_is_required_to_receive_mail(self):
         """An account with no email - an ORCiD one, say - cannot opt in without adding one."""
         self.user.email = ''
         self.user.save()
         self.client.force_login(self.user)
-        response = self.client.post(reverse('preferences'), {'email': '', 'data_releases': 'on'})
+        response = self.client.post(reverse('preferences'), {'email': '', 'Data-release updates': 'on'})
         self.assertEqual(200, response.status_code)
-        self.assertFalse(preferences.get(self.user)['data_releases'])
+        self.assertFalse(preferences.get(self.user)['Data-release updates'])
 
     def test_an_address_already_in_use_is_refused(self):
         get_user_model().objects.create_user(username='bob', password='x', email='b@example.org')
@@ -450,7 +473,7 @@ class TestEmailPreferences(TestCase):
         self.assertEqual('ada@example.org', self.user.email)
 
     def test_unknown_keys_are_not_stored(self):
-        preferences.set(self.user, {'data_releases': True, 'evil': True})
+        preferences.set(self.user, {'Data-release updates': True, 'evil': True})
         self.assertNotIn('evil', self.user.json['email_preferences'])
 
     def test_the_page_requires_login(self):
@@ -460,29 +483,29 @@ class TestEmailPreferences(TestCase):
 
     def test_a_change_keeps_the_previous_value(self):
         """Consent has to be demonstrable after the fact, so each change records what it was."""
-        preferences.set(self.user, {'data_releases': True})
-        self.assertEqual([], preferences.history(self.user, 'data_releases'))
-        preferences.set(self.user, {'data_releases': False})
-        was = preferences.history(self.user, 'data_releases')
+        preferences.set(self.user, {'Data-release updates': True})
+        self.assertEqual([], preferences.history(self.user, 'Data-release updates'))
+        preferences.set(self.user, {'Data-release updates': False})
+        was = preferences.history(self.user, 'Data-release updates')
         self.assertEqual([True], [x['value'] for x in was])
         self.assertTrue(was[0]['date_time'], 'the time of the change must be recorded')
 
     def test_setting_the_same_value_adds_no_history(self):
-        preferences.set(self.user, {'data_releases': True})
-        preferences.set(self.user, {'data_releases': True})
-        self.assertEqual([], preferences.history(self.user, 'data_releases'))
+        preferences.set(self.user, {'Data-release updates': True})
+        preferences.set(self.user, {'Data-release updates': True})
+        self.assertEqual([], preferences.history(self.user, 'Data-release updates'))
 
     def test_rest_cannot_write_the_json_field(self):
         """The field is editable=False, so no serialiser or form can be talked into taking it."""
         from misc.serializers import UserSerializer
         self.assertNotIn('json', UserSerializer().get_fields())
         serializer = UserSerializer(
-            self.user, data={'json': {'email_preferences': {'data_releases': True}}},
+            self.user, data={'json': {'email_preferences': {'Data-release updates': True}}},
             partial=True)
         self.assertTrue(serializer.is_valid(), serializer.errors)
         serializer.save()
         self.user.refresh_from_db()
-        self.assertFalse(preferences.get(self.user)['data_releases'])
+        self.assertFalse(preferences.get(self.user)['Data-release updates'])
 
     def test_the_admin_form_cannot_write_it_either(self):
         """LabMemberAdminForm uses fields='__all__', so only editable=False keeps json out."""
@@ -534,15 +557,15 @@ class TestEmailPreferences(TestCase):
         preferences.set_email_verified(self.user, True)
         self.client.force_login(self.user)
         self.client.post(reverse('preferences'),
-                         {'email': self.user.email, 'data_releases': 'on'})
+                         {'email': self.user.email, 'Data-release updates': 'on'})
         self.assertEqual(0, len(mail.outbox))
         self.user.refresh_from_db()
-        self.assertTrue(preferences.get(self.user)['data_releases'])
+        self.assertTrue(preferences.get(self.user)['Data-release updates'])
 
     def test_saving_a_preference_keeps_the_address_confirmed(self):
         """set() rebuilds the stored dict, so it has to carry the verified flag through."""
         preferences.set_email_verified(self.user, True)
-        preferences.set(self.user, {'data_releases': True})
+        preferences.set(self.user, {'Data-release updates': True})
         self.user.refresh_from_db()
         self.assertTrue(preferences.email_verified(self.user))
 
@@ -585,7 +608,7 @@ class TestEmailPreferencesUnconfigured(TestCase):
     def test_signup_form_has_no_checkboxes(self):
         from misc.signup.forms import PublicSignUpForm
         fields = PublicSignUpForm().fields
-        self.assertNotIn('data_releases', fields)
+        self.assertNotIn('Data-release updates', fields)
 
     def test_the_page_is_not_routed(self):
         import importlib

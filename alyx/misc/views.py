@@ -325,7 +325,7 @@ class MeView(LoginRequiredMixin, TemplateView):
         chosen = preferences.get(user)
         context['email_preferences_configured'] = bool(preferences.options())
         context['email_preferences'] = [
-            label for name, label in preferences.options().items() if chosen[name]]
+            label for label in preferences.options() if chosen[label]]
         context['email_verified'] = preferences.email_verified(user)
         context['has_password'] = user.has_usable_password()
         context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
