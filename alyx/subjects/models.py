@@ -1,3 +1,4 @@
+from datetime import datetime, time
 import logging
 from operator import attrgetter
 import urllib
@@ -7,6 +8,8 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
 from django.db import models
+from django.db.models import DateTimeField, F, Value
+from django.db.models.functions import Greatest
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -347,14 +350,20 @@ class Subject(BaseModel):
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not _get_old_field(self, 'genotype_date'):
             self.to_be_genotyped = False
-        # When a subject dies.
-        if self.death_date and not _get_old_field(self, 'death_date'):
-            # Close all water restrictions without an end date.
-            for wr in WaterRestriction.objects.filter(subject=self,
-                                                      start_time__isnull=False,
-                                                      end_time__isnull=True):
-                wr.end_time = self.death_date
-                wr.save()
+        # When a subject dies, close all water restrictions without an end date.
+        # A future death date only closes them when first set or changed.
+        death_date = self._meta.get_field('death_date').to_python(self.death_date)
+        if death_date and not self._state.adding and (
+                death_date <= timezone.now().date() or _has_field_changed(self, 'death_date')):
+            # Update in bulk as WaterRestriction.save would save a stale copy of this subject.
+            end_time = datetime.combine(death_date, time.min)
+            n_ended = WaterRestriction.objects.filter(
+                subject=self, start_time__isnull=False, end_time__isnull=True
+            ).update(end_time=Greatest(F('start_time'), Value(end_time, DateTimeField())))
+            if n_ended:
+                logger.debug('Ended %i water restriction(s) for %s.', n_ended, self)
+                self.reinit_water_control()
+                self.set_protocol_number()
 
         # deal with the synchronisation of cull date
         # WARNING: data integrity issue - if a subject has a cull but the death_date
