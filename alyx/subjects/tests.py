@@ -360,3 +360,22 @@ class SubjectCullTests(TestCase):
         cull.delete()
         self.assertIsNone(self.sub1.death_date)
         self.assertTrue(self.sub1.alive())
+
+    def test_cull_ends_water_restriction(self):
+        """Test open water restrictions are ended when the death date is already set."""
+        self.sub2.death_date = date(2019, 7, 15)
+        self.sub2.save()
+        # Water restriction added after the death date was set
+        wr = WaterRestriction.objects.create(
+            subject=self.sub2, start_time=datetime(2019, 7, 15, 12, 0, 0))
+        wr.refresh_from_db()
+        self.assertFalse(wr.is_active())
+        # End time should not precede the start time
+        self.assertEqual(wr.end_time, wr.start_time)
+        # Re-open and add a cull with the same date as the death date
+        WaterRestriction.objects.filter(pk=wr.pk).update(end_time=None)
+        Cull.objects.create(subject=self.sub2, date=date(2019, 7, 15), cull_method=self.CO2)
+        wr.refresh_from_db()
+        self.assertFalse(wr.is_active())
+        self.sub2.refresh_from_db()
+        self.assertEqual(self.sub2.protocol_number, '1')
