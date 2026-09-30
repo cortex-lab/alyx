@@ -6,7 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from alyx.base import BaseSerializerEnumField
 from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
-from subjects.models import Subject, Project
+from subjects.models import Project
+from subjects.fields import SubjectField
 from data.models import Dataset, DatasetType
 from misc.models import LabLocation, Lab
 from experiments.serializers import (
@@ -36,11 +37,7 @@ def _log_entry(instance, user):
 
 
 class BaseActionSerializer(serializers.HyperlinkedModelSerializer):
-    subject = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='nickname',
-        queryset=Subject.objects.all()
-    )
+    subject = SubjectField()
 
     users = serializers.SlugRelatedField(
         read_only=False,
@@ -183,11 +180,7 @@ class SessionDetailSerializer(BaseActionSerializer):
 
 class WeighingDetailSerializer(serializers.HyperlinkedModelSerializer):
 
-    subject = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='nickname',
-        queryset=Subject.objects.all()
-    )
+    subject = SubjectField()
 
     user = serializers.SlugRelatedField(
         read_only=False,
@@ -239,11 +232,7 @@ class WaterRestrictionListSerializer(serializers.HyperlinkedModelSerializer):
 
 class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
 
-    subject = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='nickname',
-        queryset=Subject.objects.all()
-    )
+    subject = SubjectField()
 
     user = serializers.SlugRelatedField(
         read_only=False,
@@ -286,11 +275,7 @@ class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer
 
 class SurgerySerializer(serializers.ModelSerializer):
 
-    subject = serializers.SlugRelatedField(
-        read_only=False,
-        slug_field='nickname',
-        queryset=Subject.objects.all()
-    )
+    subject = SubjectField()
 
     class Meta:
         model = Surgery

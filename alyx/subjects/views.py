@@ -1,9 +1,13 @@
+import uuid
+
 from rest_framework import generics
 import django_filters
 
+from django.http import Http404
 from django.utils import timezone
 
 from alyx.base import BaseFilterSet, rest_permission_classes
+from .fields import SubjectConflict
 from .models import Subject, Project
 from .serializers import (SubjectListSerializer,
                           SubjectDetailSerializer,
@@ -61,10 +65,30 @@ class SubjectList(generics.ListCreateAPIView):
 
 
 class SubjectDetail(generics.RetrieveUpdateDestroyAPIView):
+    """Subject by nickname or UUID; duplicate nicknames are resolved with `?lab=<lab name>`."""
     queryset = Subject.objects.all()
     serializer_class = SubjectDetailSerializer
     permission_classes = rest_permission_classes()
     lookup_field = 'nickname'
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup = self.kwargs[self.lookup_field]
+        obj = None
+        try:
+            obj = queryset.filter(pk=uuid.UUID(lookup)).first()
+        except ValueError:
+            pass
+        if obj is None:
+            try:
+                obj = queryset.get_by_nickname(
+                    lookup, labs=self.request.query_params.getlist('lab'))
+            except Subject.DoesNotExist:
+                raise Http404
+            except Subject.MultipleObjectsReturned as ex:
+                raise SubjectConflict(str(ex))
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class ProjectList(generics.ListCreateAPIView):

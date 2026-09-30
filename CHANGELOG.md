@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Subjects in different labs may share a nickname. REST endpoints taking a subject nickname
+  returned a 500 status when it matched more than one subject; the lab is now used to resolve
+  duplicates - the `lab` field of the request data, `?lab=` on `/subjects/<nickname>` and
+  `/water-requirement/<nickname>`, or `labs` and the repository's labs for `/register-file`.
+  An unresolved duplicate returns a 400 status, or 409 for a lookup, naming the labs.
+  `/subjects/<id>` also accepts the subject UUID.
+- Open water restrictions are ended when a subject already has a death date, e.g. when a cull
+  is added with the same date, not only when the death date is first set. The subject's
+  protocol number is now updated when its water restrictions are ended.
 - Relative paths correctly rendered in cache table using pandas 3.
 - The data notice admin change page no longer renders the datasets as a multi-select widget:
   every attached dataset had to be fetched and rendered as a selected option, which did not scale past a few hundred, and saving posted one form field per dataset, which exceeded `DATA_UPLOAD_MAX_NUMBER_FIELDS` and failed with a 400 status. The datasets are now a read-only, scrollable list of the first 100, with the total count and a link to them in the dataset list. They can still be attached when creating a notice, or through the REST API.
