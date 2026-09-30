@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
-from subjects.models import Subject
+from subjects.fields import SubjectField
 from misc.models import Lab, Note, LabMember
 from data.models import DataRepository
 from alyx.base import BaseSerializerContentTypeField
@@ -48,8 +48,7 @@ class NoteSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    subjects_responsible = serializers.SlugRelatedField(
-        many=True, queryset=Subject.objects.all(), slug_field='nickname')
+    subjects_responsible = SubjectField(many=True)
     allowed_users = serializers.SlugRelatedField(
         many=True, queryset=LabMember.objects.all(), slug_field='username')
 

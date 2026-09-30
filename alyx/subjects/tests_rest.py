@@ -124,3 +124,53 @@ class APISubjectsTests(BaseTests):
         response = self.client.get(url)
         d = self.ar(response)
         self.assertTrue({'nickname', 'expected_water', 'remaining_water'} <= set(d[0]))
+
+
+class APIDuplicateNicknameTests(BaseTests):
+    """Subjects in different labs may share a nickname."""
+
+    def setUp(self):
+        self.superuser = get_user_model().objects.create_superuser('test', 'test', 'test')
+        self.client.login(username='test', password='test')
+        self.labs = [Lab.objects.create(name=f'lab_{i}') for i in range(2)]
+        # Responsible user is null as nickname and responsible user must also be unique together
+        self.subjects = [Subject.objects.create(nickname='dup_001', lab=lab, responsible_user=None)
+                         for lab in self.labs]
+
+    def test_get_by_nickname(self):
+        Subject.objects.create(nickname='unique_001', lab=self.labs[0])
+        self.assertEqual('unique_001', Subject.objects.get_by_nickname('unique_001').nickname)
+        # The lab is only used to resolve duplicates
+        self.assertEqual(
+            'unique_001', Subject.objects.get_by_nickname('unique_001', labs='lab_1').nickname)
+        self.assertEqual(self.subjects[1], Subject.objects.get_by_nickname('dup_001', 'lab_1'))
+        self.assertEqual(
+            self.subjects[0], Subject.objects.get_by_nickname('dup_001', ['foo', 'lab_0']))
+        with self.assertRaisesRegex(Subject.MultipleObjectsReturned, 'lab_0, lab_1'):
+            Subject.objects.get_by_nickname('dup_001')
+        with self.assertRaises(Subject.DoesNotExist):
+            Subject.objects.get_by_nickname('foo')
+
+    def test_subject_detail(self):
+        url = reverse('subject-detail', kwargs={'nickname': 'dup_001'})
+        r = self.client.get(url)
+        self.ar(r, 409)
+        self.assertIn('specify lab', r.data['detail'])
+        d = self.ar(self.client.get(url, data={'lab': 'lab_1'}))
+        self.assertEqual(str(self.subjects[1].id), d['id'])
+        self.ar(self.client.get(url, data={'lab': 'foo'}), 409)
+        # Lookup by UUID
+        url = reverse('subject-detail', kwargs={'nickname': str(self.subjects[0].id)})
+        self.assertEqual(str(self.subjects[0].id), self.ar(self.client.get(url))['id'])
+        url = reverse('subject-detail', kwargs={'nickname': 'foo'})
+        self.ar(self.client.get(url), 404)
+
+    def test_create_weighing(self):
+        url = reverse('weighing-create')
+        data = {'subject': 'dup_001', 'weight': 20.0, 'date_time': '2025-01-01T12:00:00'}
+        r = self.post(url, data)
+        self.ar(r, 400)
+        self.assertIn('specify lab', str(r.data['subject']))
+        self.ar(self.post(url, {**data, 'lab': 'lab_1'}), 201)
+        self.assertEqual(1, Weighing.objects.filter(subject=self.subjects[1]).count())
+        self.assertFalse(Weighing.objects.filter(subject=self.subjects[0]).exists())

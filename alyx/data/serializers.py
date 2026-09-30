@@ -10,7 +10,7 @@ from .models import (DataRepositoryType, DataRepository, DataFormat, DatasetType
 from .transfers import _get_session, _change_default_dataset
 from alyx.base import BaseSerializerEnumField
 from actions.models import Session
-from subjects.models import Subject
+from subjects.fields import SubjectField
 from misc.models import LabMember
 
 
@@ -151,10 +151,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
     experiment_number = serializers.SerializerMethodField()
     # If session is not provided, use subject, start_time, number
-    subject = serializers.SlugRelatedField(
-        write_only=True, required=False, slug_field='nickname',
-        queryset=Subject.objects.all(),
-    )
+    subject = SubjectField(write_only=True, required=False)
 
     date = serializers.DateField(required=False)
 

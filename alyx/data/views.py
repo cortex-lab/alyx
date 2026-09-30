@@ -45,6 +45,16 @@ from .transfers import (_get_session, _parse_path, _get_repositories_for_labs, b
 
 logger = logging.getLogger(__name__)
 
+
+def _lab_names(data):
+    """Lab names from the 'labs' and 'projects' (alias of labs) fields of request data."""
+    names = []
+    for key in ('labs', 'projects'):
+        value = data.get(key) or []
+        names.extend(value.split(',') if isinstance(value, str) else value)
+    return [name for name in names if name]
+
+
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
 
@@ -481,7 +491,12 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
                     'error': 'Both content_type and object_id should be provided together.'}
             return Response(data=data, status=400)
         else:
-            subject, date, session_number = _parse_path(rel_dir_path)
+            try:
+                subject, date, session_number = _parse_path(
+                    rel_dir_path, labs=_lab_names(req))
+            except (ValueError, Subject.DoesNotExist, Subject.MultipleObjectsReturned) as e:
+                data = {'status_code': 400, 'error': str(e)}
+                return Response(data=data, status=400)
             session = _get_session(
                 subject=subject, date=date, number=session_number, user=user)
             assert session
@@ -676,9 +691,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             return Response(data=data, status=400)
         else:
             # Extract the session from the directory path.
+            # Duplicate nicknames are resolved with the labs, or else the repository's labs
+            lab_names = _lab_names(request.data)
+            if not lab_names and repo:
+                lab_names = list(repo.lab_set.values_list('name', flat=True))
             try:
-                subject, date, session_number = _parse_path(rel_dir_path)
-            except ValueError as e:
+                subject, date, session_number = _parse_path(rel_dir_path, labs=lab_names)
+            except (ValueError, Subject.MultipleObjectsReturned) as e:
                 data = {'status_code': 400, 'error': str(e)}
                 return Response(data=data, status=400)
             except Subject.DoesNotExist:

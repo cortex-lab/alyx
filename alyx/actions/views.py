@@ -5,7 +5,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db.models import Count, Exists, Q, F, ExpressionWrapper, FloatField, OuterRef
 from django.db.models.deletion import Collector
 from django_filters.rest_framework.filters import CharFilter
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views.generic.list import ListView
@@ -19,6 +19,7 @@ from one.alf.spec import QC
 from alyx.base import (base_json_filter, BaseFilterSet, is_lab_member,
                        LabMemberRequiredMixin, rest_permission_classes)
 from data.models import Dataset, FileRecord
+from subjects.fields import SubjectConflict
 from subjects.models import Subject
 from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
@@ -509,7 +510,13 @@ class WaterRequirement(APIView):
         assert nickname
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
-        subject = Subject.objects.get(nickname=nickname)
+        try:
+            subject = Subject.objects.get_by_nickname(
+                nickname, labs=request.query_params.getlist('lab'))
+        except Subject.DoesNotExist:
+            raise Http404
+        except Subject.MultipleObjectsReturned as ex:
+            raise SubjectConflict(str(ex))
         records = subject.water_control.to_jsonable(start_date=start_date, end_date=end_date)
         date_str = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
         ref_iw = subject.water_control.reference_implant_weight_at(date_str)

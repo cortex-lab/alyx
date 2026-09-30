@@ -6,7 +6,8 @@ from experiments.models import (ProbeInsertion, TrajectoryEstimate, ProbeModel, 
                                 Channel, BrainRegion, ChronicInsertion, FOV, FOVLocation,
                                 ImagingType, ImagingStack)
 from data.models import DatasetType, Dataset, DataRepository, FileRecord
-from subjects.models import Subject, Project
+from subjects.models import Project
+from subjects.fields import SubjectField
 from misc.models import Lab
 
 
@@ -222,10 +223,7 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
                 ProbeInsertion.objects.all())))
         return queryset.order_by('-start_time', 'subject__nickname', 'name', 'pk')
 
-    subject = serializers.SlugRelatedField(
-        read_only=False, required=False, slug_field='nickname',
-        queryset=Subject.objects.all(),
-    )
+    subject = SubjectField(required=False)
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
         queryset=ProbeModel.objects.all(),
@@ -244,10 +242,7 @@ class ChronicInsertionListSerializer(serializers.ModelSerializer):
 
 class ChronicInsertionDetailSerializer(serializers.ModelSerializer):
 
-    subject = serializers.SlugRelatedField(
-        read_only=False, required=False, slug_field='nickname',
-        queryset=Subject.objects.all(),
-    )
+    subject = SubjectField(required=False)
     model = serializers.SlugRelatedField(
         read_only=False, required=False, slug_field='probe_model',
         queryset=ProbeModel.objects.all(),

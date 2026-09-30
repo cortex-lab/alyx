@@ -157,7 +157,7 @@ def _get_repositories_for_labs(labs, server_only=False):
     return list(repositories)
 
 
-def _parse_path(path):
+def _parse_path(path, labs=None):
     pattern = regex(spec='{subject}/{date}/{number}').pattern + '.*'
     m = re.match(pattern, path)
     if not m:
@@ -165,8 +165,8 @@ def _parse_path(path):
     date = m.group('date')
     nickname = m.group('subject')
     session_number = int(m.group('number'))
-    # An error is raised if the subject or data repository do not exist.
-    subject = Subject.objects.get(nickname=nickname)
+    # An error is raised if the subject does not exist or is ambiguous within the labs.
+    subject = Subject.objects.get_by_nickname(nickname, labs=labs)
     return subject, date, session_number
 
 
