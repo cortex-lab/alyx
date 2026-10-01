@@ -92,9 +92,29 @@ def _has_field_changed(obj, field):
     return current != original
 
 
-class SubjectManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(nickname=name)
+class SubjectQuerySet(models.QuerySet):
+    def get_by_nickname(self, nickname, labs=None):
+        """Get a subject by nickname, using the lab name(s) to resolve duplicate nicknames.
+
+        Raises Subject.MultipleObjectsReturned if the nickname is ambiguous within the labs.
+        """
+        matches = list(self.filter(nickname=nickname).select_related('lab'))
+        if len(matches) == 1:
+            return matches[0]
+        if not matches:
+            raise self.model.DoesNotExist(f'Subject "{nickname}" does not exist.')
+        labs = [labs] if isinstance(labs, str) else list(filter(None, labs or []))
+        in_labs = [s for s in matches if s.lab.name in labs]
+        if len(in_labs) == 1:
+            return in_labs[0]
+        lab_names = ', '.join(sorted(s.lab.name for s in (in_labs or matches)))
+        raise self.model.MultipleObjectsReturned(
+            f'Multiple subjects with nickname "{nickname}" (labs: {lab_names}); specify lab.')
+
+
+class SubjectManager(models.Manager.from_queryset(SubjectQuerySet)):
+    def get_by_natural_key(self, name, lab=None):
+        return self.get_by_nickname(name, labs=lab)
 
 
 def default_source():
