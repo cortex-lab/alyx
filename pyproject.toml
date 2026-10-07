@@ -19,6 +19,12 @@ classifiers = [
 
 dynamic = ["dependencies", "version"]
 
+# Single sign-on is optional: its tables exist only where it is enabled, and no
+# deployment pays for it unless it asks. Install with `pip install alyx[sso]` and set
+# SSO_ENABLED in settings_lab.py.
+[project.optional-dependencies]
+sso = ["django-allauth[socialaccount]"]
+
 
 [project.urls]
 "Homepage" = "https://github.com/cortex-lab/alyx"

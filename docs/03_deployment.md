@@ -9,7 +9,7 @@ For running alyx directly on the host machine, follow the instructions below.
 
 ## Install a development version of Alyx on the host machine
 
-Clone the alyx repository from [here](https://github.com/cortex-lab/alyx). 
+Clone the alyx repository from [here](https://github.com/cortex-lab/alyx).
 ```shell
 git clone https://github.com/cortex-lab/alyx.git
 cd alyx
@@ -110,6 +110,66 @@ docker buildx build . \
 ## Advanced topics
 
 
+### Single sign-on
+
+Alyx can delegate login to an external identity provider through
+[django-allauth](https://docs.allauth.org) - ORCID, Google, an institutional login, or any of
+the providers allauth supports. It is optional and off by default.
+
+```
+pip install alyx[sso]
+```
+
+An institutional login - a Shibboleth IdP with its OIDC extension, Keycloak, Entra ID - goes
+through allauth's generic `openid_connect` provider:
+
+```python
+# settings_lab.py
+SSO_ENABLED = True
+SSO_PROVIDER = 'openid_connect'
+SSO_PROVIDER_ID = 'yourlab'          # matches provider_id below
+SSO_PROVIDER_NAME = 'Your Lab Login'
+SSO_CREATE_USER = True
+SSO_ALLOWED_DOMAINS = ('yourlab.ac.uk',)
+SSO_NEW_USER_GROUPS = ('Lab members',)
+SOCIALACCOUNT_PROVIDERS = {
+    'openid_connect': {'APPS': [{
+        'provider_id': 'yourlab',
+        'name': 'Your Lab Login',
+        'client_id': os.getenv('SSO_CLIENT_ID'),
+        'secret': os.getenv('SSO_CLIENT_SECRET'),
+        'settings': {'server_url': 'https://idp.yourlab.ac.uk'},
+    }]},
+}
+```
+
+Redirect URI to register with the provider:
+`https://<your-host>/accounts/oidc/<SSO_PROVIDER_ID>/login/callback/`.
+
+A named provider such as `orcid` or `google` takes `APP` (a dict) instead of `APPS`, needs no
+`SSO_PROVIDER_ID`, and its redirect URI is `https://<your-host>/accounts/<provider>/login/callback/`.
+
+See the [allauth provider documentation](https://docs.allauth.org/en/latest/socialaccount/providers/index.html)
+for the full list of providers and their options.
+
+Run `manage.py check` afterwards. It reports missing credentials and warns about combinations
+that admit more people than you probably intend.
+
+Identities are stored in allauth's own tables, keyed on `(provider, uid)` with a unique
+constraint. **Those tables exist only where SSO is enabled** - migrations are per-app, so a
+deployment that leaves `SSO_ENABLED` off never creates them.
+
+#### Providers that supply no email address
+
+ORCiD's OpenID Connect returns only the ORCiD ID and a name. An Alyx account created from such an identity therefore has **no email address**. Consequently `SSO_ALLOWED_DOMAINS` cannot be used with such a provider: there is no domain to match, and every sign-in would be refused.
+
+| Setting | Default | |
+| --- | --- | --- |
+| `SSO_CREATE_USER` | `False` | Whether an identity with no account may create one. Off means SSO only signs in accounts that already exist, which is usually right for an internal database. |
+| `SSO_ALLOWED_DOMAINS` | `()` | Restrict sign-in to these email domains. Unusable with a provider that supplies no email. |
+| `SSO_NEW_USER_GROUPS` | `()` | Groups given to accounts SSO creates. On a public database the public users group is added automatically. |
+| `SSO_ALLOW_SUPERUSER` | `False` | Whether a superuser may sign in through SSO. Superusers can change anything in the database, so they are worth keeping on credentials Alyx controls. |
+
 ### Apache webserver and interaction with wsgi
 
 Put the [site configuration](_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`
@@ -123,7 +183,7 @@ Activate the website
     sudo a2ensite
         001-alyx-main
 
-Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as 
+Restart the server, 2 commands are provided here for reference. Reload is recommended on a running production server as
 it should not interrupt current user transactions if any.
 
 

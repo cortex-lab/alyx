@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0]
+
+### Added
+
+- Public databases can offer self-registration, enabled with the `PUBLIC_DATABASE` lab setting.
+  Adds a sign-up page at `/signup`, email confirmation of new accounts, and a password reset
+  flow so that self-registered accounts are recoverable without an administrator
+- `set_public_permissions` management command, creating a 'Public users' group carrying view
+  permissions only, and never over user accounts or the permission structure itself
+- ec2_modify_groups.sh script now included in container to remove EC2 firewall before letsencrypt validation
+
+### Changed
+
+- Public users are no longer shown other people's accounts. Over REST, `/users` returns
+  redacted users and the requester only, without email addresses; in the admin, the user and
+  group models are hidden and user filter dropdowns no longer enumerate every account
+- `set_user_permissions` skips public users, which it previously added to the lab
+  members group and marked active - granting members of the public write access and activating
+  accounts that had never confirmed their email address
+
+### Removed
+
+- Core-api support for the `/docs` endpoint. `SpectacularRedocViewCoreAPIDeprecation` and
+  `data/coreapi.json` are gone; `/docs` now serves `SpectacularRedocView` directly regardless of
+  the request's `Accept` header. [#1055](https://github.com/cortex-lab/alyx/issues/1055)
+
+### Fixed
+
+- Subjects in different labs may share a nickname. REST endpoints taking a subject nickname
+  returned a 500 status when it matched more than one subject; the lab is now used to resolve
+  duplicates - the `lab` field of the request data, `?lab=` on `/subjects/<nickname>` and
+  `/water-requirement/<nickname>`, or `labs` and the repository's labs for `/register-file`.
+  An unresolved duplicate returns a 400 status, or 409 for a lookup, naming the labs.
+  `/subjects/<id>` also accepts the subject UUID.
+- Open water restrictions are ended when a subject already has a death date, e.g. when a cull
+  is added with the same date, not only when the death date is first set. The subject's
+  protocol number is now updated when its water restrictions are ended.
+- Relative paths correctly rendered in cache table using pandas 3.
+- The data notice admin change page no longer renders the datasets as a multi-select widget:
+  every attached dataset had to be fetched and rendered as a selected option, which did not scale past a few hundred, and saving posted one form field per dataset, which exceeded `DATA_UPLOAD_MAX_NUMBER_FIELDS` and failed with a 400 status. The datasets are now a read-only, scrollable list of the first 100, with the total count and a link to them in the dataset list. They can still be attached when creating a notice, or through the REST API.
+
 ## [3.6.4]
 
 ### Fixed
@@ -80,6 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `subjects.default_responsible` selects the primary key rather than the whole user record, so
+  that migrating from scratch is not broken by columns added to `LabMember` in later migrations
 - No longer required to quote special characters in database connection settings
 
 ## [3.6.2]

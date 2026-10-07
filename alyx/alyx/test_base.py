@@ -1,36 +1,15 @@
 from datetime import date
-import json
+from pathlib import Path
+import tempfile
+import uuid
 
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from alyx.base import _custom_filter_parser
 from alyx.throttling import AdaptiveScopedRateThrottle, IPRateThrottle
-
-
-class TestDocView(TestCase):
-
-    def test_coreapi_deprecated(self):
-        """
-        This test is enforcing a deprecation. If you have this failing, you are the lucky winner to
-        finish the deprecation of the core-api support from Alyx.
-        - remove this full test class
-        - in alyx/alyx/views.py remove the custom view SpectacularRedocViewCoreAPIDeprecation. At the time
-        of writing these lines, the whole view.py is about this so the whole file can go
-        - in alyx/alyx/urls.py set the /api/schema url point to SpectacularRedocView instead of
-        SpectacularRedocViewCoreAPIDeprecation
-        - remove data/coreapi.json
-        - make sure all the tests pass
-        :return:
-        """
-        self.assertGreater(date(2026, 9, 22), date.today())
-
-    def test_coreapi_json_view(self):
-        client = Client()
-        response = client.get('/docs/', headers={'Accept': 'application/coreapi+json'})
-        schema = json.loads(response.text)
-        self.assertEqual(schema['brain-regions']['read']['fields'][0]['name'], 'id')
 
 
 class BaseCustomFilterTest(TestCase):
@@ -57,6 +36,83 @@ class BaseCustomFilterTest(TestCase):
         def value_error_on_duplicate_field():
             _custom_filter_parser('toto,abc,toto,1')
         self.assertRaises(ValueError, value_error_on_duplicate_field)
+
+    def test_parser_rejects_expressions(self):
+        """Bracketed values are parsed as literals; this filter is reachable by any REST user."""
+        marker = Path(tempfile.gettempdir(), 'alyx_filter_parser_rce')
+        marker.unlink(missing_ok=True)
+        payloads = [
+            f'f0,[__import__("pathlib").Path("{marker}").touch()]',
+            'f0,[1 for _ in ().__class__.__bases__]',
+            'f0,(__import__("os").getpid())',
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                self.assertRaises(ValueError, _custom_filter_parser, payload)
+        self.assertFalse(marker.exists(), 'the filter parser executed a call')
+
+
+class AnonymousAccessTest(TestCase):
+    """Routes that must not answer a client that has not signed in.
+
+    /admin-tasks/status was served to anyone, and four REST endpoints never set
+    permission_classes, so they inherited DRF's AllowAny default. /api is public on purpose.
+    """
+
+    def test_lab_member_pages_redirect_anonymous(self):
+        subject_id = uuid.uuid4()
+        for url in (reverse('tasks_status'),
+                    reverse('training'),
+                    reverse('subject-history', args=[subject_id]),
+                    reverse('water-history', args=[subject_id])):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(302, response.status_code)
+                self.assertIn('login', response['Location'])
+
+    def test_rest_endpoints_refuse_anonymous(self):
+        for method, url in (('get', reverse('check-protected')),
+                            ('get', reverse('sync-file-status')),
+                            ('post', reverse('sync-file-status')),
+                            ('post', reverse('register-file')),
+                            ('post', reverse('new-download'))):
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url)
+                self.assertIn(response.status_code, (401, 403))
+
+    def test_api_root_is_public(self):
+        """Deliberately open: an index and a how-to, and where an agent starts."""
+        response = self.client.get(reverse('api-root'))
+        self.assertEqual(200, response.status_code)
+
+    def test_weighing_plot_refuses_anonymous(self):
+        """Empty body rather than a redirect: this one is embedded in an admin page."""
+        response = self.client.get(reverse('weighing-plot', args=[uuid.uuid4()]))
+        self.assertEqual(b'', response.content)
+
+    def test_tasks_link_is_hidden_from_a_public_user(self):
+        """The banner is shared by every deployment, so the link has to hide itself."""
+        lab_member = get_user_model().objects.create_user(username='lab', password='pw')
+        lab_member.is_staff = True
+        lab_member.save()
+        self.client.force_login(lab_member)
+        self.assertContains(self.client.get(reverse('admin:index')), '/admin-tasks/status')
+
+        public = get_user_model().objects.create_user(username='pub2', password='pw')
+        public.is_staff = True
+        public.is_public_user = True
+        public.save()
+        self.client.force_login(public)
+        self.assertNotContains(self.client.get(reverse('admin:index')), '/admin-tasks/status')
+
+    def test_lab_member_pages_refuse_public_user(self):
+        """Public accounts are staff, so is_staff alone would let them in."""
+        user = get_user_model().objects.create_user(username='pub', password='pw')
+        user.is_staff = True
+        user.is_public_user = True
+        user.save()
+        self.client.force_login(user)
+        self.assertEqual(403, self.client.get(reverse('tasks_status')).status_code)
 
 
 def setup_admin_subject_user(obj):

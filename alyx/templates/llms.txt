@@ -1,0 +1,49 @@
+# Alyx
+
+{{ site_header }} - a database of experimental neuroscience metadata, served at {{ base_url }}.
+
+> If you are an automated client retrieving more than a page or two of records, use the ONE
+> API rather than this REST interface. ONE downloads cache tables and queries them locally, so
+> a search costs no database queries. Paging this API for bulk data is slow, heavily rate
+> limited, and loads a database other people are using. This is not a formality: naive clients
+> paging large endpoints have taken this database down.
+
+## Preferred access: ONE
+
+- Documentation: https://int-brain-lab.github.io/ONE/
+- Source and MCP server: https://github.com/int-brain-lab/ONE ; https://int-brain-lab.gitmcp.io/ONE
+
+```python
+from one.api import ONE
+one = ONE(base_url='{{ base_url }}')
+eids = one.search(subject='example', date_range=['2024-01-01', '2024-12-31'])
+```
+
+`search`, `list_datasets` and `load_dataset` read the local cache tables. Use `mode='remote'`
+only when you need something the cache does not hold, such as a live QC value.
+
+ONE asks for a credential the first time and remembers it: pass `username='<username>'` for an
+account with a password, or `token='<token>'` for one without. Later sessions need neither.
+
+## REST API, when you genuinely need it
+
+- Interactive documentation: {{ base_url }}/docs/
+- Machine-readable schema: {{ base_url }}/api/schema
+- Endpoint index: {{ base_url }}/api/
+
+Authentication is required on every endpoint:
+
+    Authorization: Token <key>
+
+Obtain a key from {{ base_url }}/me, or by POSTing a username and password to
+{{ base_url }}/auth-token. Sending the header to {{ base_url }}/me returns the account the key
+belongs to - the cheapest way to check a key, and the only way to learn who it speaks for.
+
+### Limits
+
+- Page size is capped at {{ max_limit }} records. A larger `?limit=` is silently reduced; the
+  response says so in its `detail` field.
+- Requests are rate limited. A 429 carries `Retry-After`; respect it rather than retrying
+  immediately.
+- If a query matches thousands of records, that is the signal to switch to ONE, not to write a
+  loop over `next`.

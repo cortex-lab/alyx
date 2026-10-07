@@ -1,6 +1,6 @@
 boto3
 colorlog
-django>=5.2.16,<6  # see issue #963
+django>=5.2.17,<6  # see issue #963
 django-admin-list-filter-dropdown
 django-admin-rangefilter
 django-autocomplete-light
@@ -32,6 +32,6 @@ python-magic
 pytz
 requests>=2.32.4
 setuptools
-urllib3>=2.7.0
+urllib3>=2.8.0
 webdavclient3
 whitenoise

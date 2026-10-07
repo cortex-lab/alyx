@@ -1,4 +1,5 @@
 import uuid
+from contextlib import suppress
 
 from django import forms
 from django.utils import timezone
@@ -7,6 +8,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth.models import Group
+from django.contrib.admin.exceptions import NotRegistered
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Count, Prefetch
 from django.forms import BaseInlineFormSet
@@ -1400,6 +1403,37 @@ class LabMemberAdmin(UserAdmin):
     list_editable = ['is_stock_manager', 'is_public_user']
     save_on_top = True
 
+    # LabMemberAdmin extends UserAdmin rather than BaseAdmin, so it does not inherit the
+    # public-user denials in alyx.base.BaseAdmin. Without these, a public user holding stray
+    # model permissions could read or edit accounts.
+    # These use getattr because has_module_permission is called for anonymous requests too: the
+    # admin login page builds the app list before anyone has logged in, and AnonymousUser has
+    # no is_public_user. Reading it directly takes the login page down on every deployment.
+    def has_module_permission(self, request):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(LabMemberAdmin, self).has_module_permission(request)
+
+    def has_view_permission(self, request, obj=None):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(LabMemberAdmin, self).has_view_permission(request, obj)
+
+    def has_add_permission(self, request, *args, **kwargs):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(LabMemberAdmin, self).has_add_permission(request, *args, **kwargs)
+
+    def has_change_permission(self, request, obj=None):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(LabMemberAdmin, self).has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(LabMemberAdmin, self).has_delete_permission(request, obj)
+
     def get_form(self, request, obj=None, **kwargs):
         form = super(LabMemberAdmin, self).get_form(request, obj, **kwargs)
         form.request_user = request.user
@@ -1419,7 +1453,28 @@ class LabMemberAdmin(UserAdmin):
 
 mysite = admin.site
 
+
+class GroupAdmin(admin.ModelAdmin):
+    """Groups describe the permission structure of the instance; keep them from public users."""
+
+    def has_module_permission(self, request):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(GroupAdmin, self).has_module_permission(request)
+
+    def has_view_permission(self, request, obj=None):
+        if getattr(request.user, 'is_public_user', False):
+            return False
+        return super(GroupAdmin, self).has_view_permission(request, obj)
+
+
 mysite.register(LabMember, LabMemberAdmin)
+# django.contrib.auth registers Group on the default site - which, since AlyxAdminConfig, is
+# this one - so replace its registration rather than adding a second. Tolerate its absence for
+# the same reason misc.admin does with TokenProxy.
+with suppress(NotRegistered):
+    mysite.unregister(Group)
+mysite.register(Group, GroupAdmin)
 
 mysite.register(Project, ProjectAdmin)
 mysite.register(Subject, SubjectAdmin)

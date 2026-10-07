@@ -34,6 +34,10 @@ class LabMember(AbstractUser):
     is_stock_manager = models.BooleanField(default=False)
     allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
     is_public_user = models.BooleanField(default=False)
+    # Per-user settings with no schema of their own, e.g. email preferences; see
+    # misc/preferences.py. editable=False keeps it out of every ModelForm, the admin and the
+    # REST serialisers, so it is writable only by code that sets it deliberately.
+    json = models.JSONField(null=True, blank=True, editable=False)
 
     class Meta:
         ordering = ['username']

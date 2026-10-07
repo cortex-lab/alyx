@@ -15,7 +15,8 @@ from django.contrib.admin import TabularInline
 from django.contrib.contenttypes.models import ContentType
 from rangefilter.filters import DateRangeFilter
 
-from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url)
+from alyx.base import (BaseAdmin, DefaultListFilter, BaseInlineAdmin, get_admin_url,
+                       UserRelatedDropdownFilter)
 from .models import (OtherAction, ProcedureType, Session, EphysSession, Surgery, VirusInjection,
                      WaterAdministration, WaterRestriction, Weighing, WaterType,
                      Notification, NotificationRule, Cull, CullReason, CullMethod, ImagingSession
@@ -267,7 +268,7 @@ class OtherActionAdmin(BaseActionAdmin):
     search_fields = ['subject__nickname', 'subject__projects__name']
     list_filter = [ResponsibleUserListFilter,
                    ('subject', RelatedDropdownFilter),
-                   ('users', RelatedDropdownFilter),
+                   ('users', UserRelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('end_time', DateRangeFilter),
                    ]
@@ -617,7 +618,7 @@ class SessionAdmin(BaseActionAdmin):
     fields = BaseActionAdmin.fields + [
         'repo_url', 'qc', 'extended_qc', 'projects', ('type', 'task_protocol', ), 'number',
         'n_correct_trials', 'n_trials', 'weighing', 'auto_datetime']
-    list_filter = [('users', RelatedDropdownFilter),
+    list_filter = [('users', UserRelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),
@@ -708,7 +709,7 @@ class EphysSessionAdmin(SessionAdmin):
 
 class ImagingSessionAdmin(SessionAdmin):
     inlines = [FOVInline, TasksAdminInline, WaterAdminInline, DatasetInline, NoteInline]
-    list_filter = [('users', RelatedDropdownFilter),
+    list_filter = [('users', UserRelatedDropdownFilter),
                    ('start_time', DateRangeFilter),
                    ('projects', RelatedDropdownFilter),
                    ('lab', RelatedDropdownFilter),

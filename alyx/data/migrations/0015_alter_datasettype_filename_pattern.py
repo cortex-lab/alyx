@@ -9,23 +9,32 @@ from django.db import migrations, transaction
 PATTERN = '$$$'
 
 
-def fix_null_fields(apps, _):
+def fix_null_fields(apps, schema_editor):
     """Populate null filename_pattern fields before making column not null"""
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     DatasetType = apps.get_model('data', 'DatasetType')
-    assert not DatasetType.objects.filter(filename_pattern__startswith=PATTERN).count()
-    with transaction.atomic():
-        for dtype in DatasetType.objects.filter(filename_pattern__isnull=True).iterator():
+    assert not DatasetType.objects.using(db).filter(
+        filename_pattern__startswith=PATTERN).count()
+    with transaction.atomic(using=db):
+        for dtype in DatasetType.objects.using(db).filter(
+                filename_pattern__isnull=True).iterator():
             dtype.filename_pattern = PATTERN + dtype.name
-            dtype.save()
+            dtype.save(using=db)
 
 
-def null_fields(apps, _):
+def null_fields(apps, schema_editor):
     """Reset previously null filename_pattern fields"""
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     DatasetType = apps.get_model('data', 'DatasetType')
-    with transaction.atomic():
-        for dtype in DatasetType.objects.filter(filename_pattern__startswith=PATTERN).iterator():
+    with transaction.atomic(using=db):
+        for dtype in DatasetType.objects.using(db).filter(
+                filename_pattern__startswith=PATTERN).iterator():
             dtype.filename_pattern = None
-            dtype.save()
+            dtype.save(using=db)
 
 
 class Migration(migrations.Migration):

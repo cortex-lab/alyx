@@ -5,7 +5,7 @@ from django.views.generic.list import ListView
 
 import numpy as np
 
-from alyx.base import BaseFilterSet, rest_permission_classes
+from alyx.base import BaseFilterSet, LabMemberRequiredMixin, rest_permission_classes
 import django_filters
 
 from misc.models import Lab
@@ -14,7 +14,7 @@ from jobs.serializers import TaskSerializer
 from actions.models import Session
 
 
-class TasksStatusView(ListView):
+class TasksStatusView(LabMemberRequiredMixin, ListView):
     template_name = 'tasks.html'
     paginate_by = 50
 

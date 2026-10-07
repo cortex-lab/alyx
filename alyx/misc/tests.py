@@ -11,7 +11,8 @@ import pandas as pd
 from subjects.models import Subject
 from misc.models import Housing, HousingSubject, CageType, LabMember, Lab
 from actions.models import Session
-from data.models import Dataset, DatasetType, DataRepository, FileRecord, DataFormat
+from data.models import (
+    Dataset, DatasetType, DataRepository, FileRecord, DataFormat, Revision)
 
 SKIP_ONE_CACHE = False
 try:
@@ -209,6 +210,27 @@ class ONECache(TestCase):
         self.assertTrue(cache_info.exists())
         zip = zipfile.ZipFile(zip_file)
         self.assertCountEqual(['sessions.pqt', 'cache_info.json', 'QC.json'], zip.namelist())
+
+    def test_dataset_queryset_to_dataframe(self):
+        """Test the dataset_queryset_to_dataframe function.
+
+        Ensures the relative path is correctly rendered for datasets both with and without a
+        revision. In pandas 3 the revision column is of str dtype, meaning the missing values are
+        NaN (a truthy float) instead of None.
+        """
+        # Add a revised copy of one of the datasets
+        dataset = Dataset.objects.first()
+        revision = Revision.objects.create(name='2024-05-06')
+        Dataset.objects.create(
+            session=dataset.session, dataset_type=dataset.dataset_type, collection='alf',
+            name=dataset.name, data_format=dataset.data_format, revision=revision, qc=QC.PASS)
+
+        df = one_cache.dataset_queryset_to_dataframe(Dataset.objects.all())
+        self.assertEqual(Dataset.objects.count(), len(df))
+        # The revised dataset should include the revision folder, the others should have none
+        expected = {
+            'alf/foo.bar.npy', 'alf/bar.baz.bin', f'alf/#2024-05-06#/{dataset.name}'}
+        self.assertEqual(expected, set(df['rel_path']))
 
     def test_s3_filesystem(self):
         """Test the _s3_filesystem function"""

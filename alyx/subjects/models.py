@@ -1,3 +1,4 @@
+from datetime import datetime, time
 import logging
 from operator import attrgetter
 import urllib
@@ -7,6 +8,8 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
 from django.db import models
+from django.db.models import DateTimeField, F, Value
+from django.db.models.functions import Greatest
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -89,9 +92,29 @@ def _has_field_changed(obj, field):
     return current != original
 
 
-class SubjectManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(nickname=name)
+class SubjectQuerySet(models.QuerySet):
+    def get_by_nickname(self, nickname, labs=None):
+        """Get a subject by nickname, using the lab name(s) to resolve duplicate nicknames.
+
+        Raises Subject.MultipleObjectsReturned if the nickname is ambiguous within the labs.
+        """
+        matches = list(self.filter(nickname=nickname).select_related('lab'))
+        if len(matches) == 1:
+            return matches[0]
+        if not matches:
+            raise self.model.DoesNotExist(f'Subject "{nickname}" does not exist.')
+        labs = [labs] if isinstance(labs, str) else list(filter(None, labs or []))
+        in_labs = [s for s in matches if s.lab.name in labs]
+        if len(in_labs) == 1:
+            return in_labs[0]
+        lab_names = ', '.join(sorted(s.lab.name for s in (in_labs or matches)))
+        raise self.model.MultipleObjectsReturned(
+            f'Multiple subjects with nickname "{nickname}" (labs: {lab_names}); specify lab.')
+
+
+class SubjectManager(models.Manager.from_queryset(SubjectQuerySet)):
+    def get_by_natural_key(self, name, lab=None):
+        return self.get_by_nickname(name, labs=lab)
 
 
 def default_source():
@@ -99,7 +122,12 @@ def default_source():
 
 
 def default_responsible():
-    return get_user_model().objects.order_by('-is_stock_manager').first()
+    # Selects the primary key rather than the instance. This default is referenced by
+    # subjects.0001_initial, so it runs while migrating from scratch, against a user table that
+    # only has the columns added so far - fetching the whole row would select columns added by
+    # later migrations and fail. ForeignKey.get_default() takes a primary key directly.
+    return get_user_model().objects.order_by('-is_stock_manager').values_list(
+        'pk', flat=True).first()
 
 
 def default_species():
@@ -342,14 +370,20 @@ class Subject(BaseModel):
         # Remove "to be genotyped" if genotype date is set.
         if self.genotype_date and not _get_old_field(self, 'genotype_date'):
             self.to_be_genotyped = False
-        # When a subject dies.
-        if self.death_date and not _get_old_field(self, 'death_date'):
-            # Close all water restrictions without an end date.
-            for wr in WaterRestriction.objects.filter(subject=self,
-                                                      start_time__isnull=False,
-                                                      end_time__isnull=True):
-                wr.end_time = self.death_date
-                wr.save()
+        # When a subject dies, close all water restrictions without an end date.
+        # A future death date only closes them when first set or changed.
+        death_date = self._meta.get_field('death_date').to_python(self.death_date)
+        if death_date and not self._state.adding and (
+                death_date <= timezone.now().date() or _has_field_changed(self, 'death_date')):
+            # Update in bulk as WaterRestriction.save would save a stale copy of this subject.
+            end_time = datetime.combine(death_date, time.min)
+            n_ended = WaterRestriction.objects.filter(
+                subject=self, start_time__isnull=False, end_time__isnull=True
+            ).update(end_time=Greatest(F('start_time'), Value(end_time, DateTimeField())))
+            if n_ended:
+                logger.debug('Ended %i water restriction(s) for %s.', n_ended, self)
+                self.reinit_water_control()
+                self.set_protocol_number()
 
         # deal with the synchronisation of cull date
         # WARNING: data integrity issue - if a subject has a cull but the death_date

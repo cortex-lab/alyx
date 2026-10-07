@@ -17,13 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 def move_implant_weight(apps, schema_editor):
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Subject = apps.get_model('subjects', 'Subject')
     ProcedureType = apps.get_model('actions', 'ProcedureType')
     try:
-        headplate_implant = ProcedureType.objects.get(name='Headplate implant')
+        headplate_implant = ProcedureType.objects.using(db).get(name='Headplate implant')
     except ProcedureType.DoesNotExist:
         headplate_implant = None
-    query = Subject.objects.filter(implant_weight__gt=0)
+    query = Subject.objects.using(db).filter(implant_weight__gt=0)
     now = datetime.now(timezone.utc).isoformat()
     n = 0
     for subject in query:
@@ -36,7 +39,7 @@ def move_implant_weight(apps, schema_editor):
         else:
             json['history'] = d
         subject.json = json
-        subject.save()
+        subject.save(using=db)
         # If possible, add implant weight to previous surgery
         surgeries = subject.actions_surgerys.filter(procedures__name__icontains='implant').distinct()
         if surgeries.count() == 0:
@@ -51,7 +54,7 @@ def move_implant_weight(apps, schema_editor):
             # to the surgeries procedures list
             if headplate_implant and 'headplate' in surgery.narrative.lower():
                 surgery.procedures.add(headplate_implant)
-            surgery.save()
+            surgery.save(using=db)
             n += 1
 
     logger.info(f'implant weights: {query.count():,g} subjects; {n:,g} surgeries updated')

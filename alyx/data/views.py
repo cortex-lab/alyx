@@ -12,7 +12,7 @@ from django_filters import rest_framework as filters
 
 from iblutil.util import ensure_list
 
-from alyx.base import BaseFilterSet, rest_permission_classes
+from alyx.base import BaseFilterSet, LabMemberRestPermission, rest_permission_classes
 from experiments.models import ProbeInsertion
 from subjects.models import Subject, Project
 from misc.models import Lab
@@ -44,6 +44,16 @@ from .transfers import (_get_session, _parse_path, _get_repositories_for_labs, b
                         get_aggregate_collection_revision, _create_dataset_file_records)
 
 logger = logging.getLogger(__name__)
+
+
+def _lab_names(data):
+    """Lab names from the 'labs' and 'projects' (alias of labs) fields of request data."""
+    names = []
+    for key in ('labs', 'projects'):
+        value = data.get(key) or []
+        names.extend(value.split(',') if isinstance(value, str) else value)
+    return [name for name in names if name]
+
 
 # DataRepositoryType
 # ------------------------------------------------------------------------------------------------
@@ -408,6 +418,7 @@ def _get_content_type(content_type_str):
 class ProtectedFileViewSet(mixins.ListModelMixin,
                            viewsets.GenericViewSet):
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def list(self, request):
@@ -480,7 +491,12 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
                     'error': 'Both content_type and object_id should be provided together.'}
             return Response(data=data, status=400)
         else:
-            subject, date, session_number = _parse_path(rel_dir_path)
+            try:
+                subject, date, session_number = _parse_path(
+                    rel_dir_path, labs=_lab_names(req))
+            except (ValueError, Subject.DoesNotExist, Subject.MultipleObjectsReturned) as e:
+                data = {'status_code': 400, 'error': str(e)}
+                return Response(data=data, status=400)
             session = _get_session(
                 subject=subject, date=date, number=session_number, user=user)
             assert session
@@ -510,6 +526,7 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
 class RegisterFileViewSet(mixins.CreateModelMixin,
                           viewsets.GenericViewSet):
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def create(self, request):
@@ -674,9 +691,13 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
             return Response(data=data, status=400)
         else:
             # Extract the session from the directory path.
+            # Duplicate nicknames are resolved with the labs, or else the repository's labs
+            lab_names = _lab_names(request.data)
+            if not lab_names and repo:
+                lab_names = list(repo.lab_set.values_list('name', flat=True))
             try:
-                subject, date, session_number = _parse_path(rel_dir_path)
-            except ValueError as e:
+                subject, date, session_number = _parse_path(rel_dir_path, labs=lab_names)
+            except (ValueError, Subject.MultipleObjectsReturned) as e:
                 data = {'status_code': 400, 'error': str(e)}
                 return Response(data=data, status=400)
             except Subject.DoesNotExist:
@@ -762,6 +783,8 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
 
 class SyncViewSet(viewsets.GenericViewSet):
 
+    # Both actions run a bulk sync, so this is not open to public read-only accounts.
+    permission_classes = (LabMemberRestPermission,)
     serializer_class = serializers.Serializer
 
     def sync(self, request):
@@ -786,6 +809,7 @@ class DownloadViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     downloaded for all projects.
     """  # noqa
 
+    permission_classes = rest_permission_classes()
     serializer_class = serializers.Serializer
 
     def create(self, request):

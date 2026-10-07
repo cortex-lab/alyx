@@ -7,19 +7,22 @@ logger = logging.getLogger(__name__)
 
 def update_culls(apps, schema_editor):
     """Set reduced_date to death_date for all subjects where reduced is True but reduced_date is null."""
+    # Data migrations run against whichever database `migrate --database` names, so
+    # every query has to be told: the default manager would use `default` instead.
+    db = schema_editor.connection.alias
     Subject = apps.get_model('subjects', 'Subject')
     Cull = apps.get_model('actions', 'Cull')
     CullMethod = apps.get_model('actions', 'CullMethod')
 
     # Find all subjects that have a cull_method but no cull
-    subjects = Subject.objects.filter(cull__isnull=True).exclude(cull_method__isnull=True).exclude(cull_method='')
+    subjects = Subject.objects.using(db).filter(cull__isnull=True).exclude(cull_method__isnull=True).exclude(cull_method='')
     updated = 0
     for subject in subjects:
         # deal with the synchronisation of cull object
         # Get the cull_method instance with the same name, if it exists, or None.
-        cull_method = CullMethod.objects.filter(name=subject.cull_method).first()
+        cull_method = CullMethod.objects.using(db).filter(name=subject.cull_method).first()
         if subject.death_date:
-            Cull.objects.create(
+            Cull.objects.using(db).create(
                 subject=subject, cull_method=cull_method, date=subject.death_date,
                 user=subject.responsible_user)
             updated += 1
