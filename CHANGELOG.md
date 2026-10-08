@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional `ADMIN_THEME` lab setting (or environment variable) to customize the admin interface colors
 - Public databases can offer self-registration, enabled with the `PUBLIC_DATABASE` lab setting.
   Adds a sign-up page at `/signup`, email confirmation of new accounts, and a password reset
   flow so that self-registered accounts are recoverable without an administrator
