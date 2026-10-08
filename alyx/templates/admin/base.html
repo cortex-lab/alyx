@@ -11,7 +11,7 @@
     <a href="https://github.com/cortex-lab/alyx/issues">{% trans 'Report a problem' %}</a>
 {% endblock %}
 
-{% block extrastyle %}
+{% block extrastyle %}{{ block.super }}
 <!-- CHANGE HEADER COLOR ON LOCALHOST -->
 {% if "localhost" in request.META.HTTP_HOST %}
 <style>
@@ -32,6 +32,14 @@ background-color: #E46A60;
 div.breadcrumbs {
 background-color: #FF9D95;
 }
+</style>
+{% endif %}
+<!-- DEPLOYMENT THEME: ADMIN_THEME setting / environment variable -->
+{% if ADMIN_THEME %}
+<style>
+:root, html[data-theme="light"] {
+{% for name, value in ADMIN_THEME.items %}    {{ name }}: {{ value }};
+{% endfor %}}
 </style>
 {% endif %}
 {% endblock %}
