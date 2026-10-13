@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Detail key no longer included in pagination response if user likely on unsupported ONE version
 
+### Fixed
+
+- Breeding pair parent no longer cleared when saving Line admin changeview
+
 ## [4.0.0]
 
 ### Added
