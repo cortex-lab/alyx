@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1]
+
+### Added
+
+- Alyx-API-Notice header can be used to attach information for ONE users
+
+### Changed
+
+- Detail key no longer included in pagination response if user likely on unsupported ONE version
+
+### Fixed
+
+- Breeding pair parent no longer cleared when saving Line admin changeview
+
 ## [4.0.0]
 
 ### Added

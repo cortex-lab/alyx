@@ -300,6 +300,7 @@ class DatasetList(generics.ListCreateAPIView):
     serializer_class = DatasetSerializer
     permission_classes = rest_permission_classes()
     filterset_class = DatasetFilter
+    cache_table_advice = True
 
 
 class DatasetDetail(generics.RetrieveUpdateDestroyAPIView):

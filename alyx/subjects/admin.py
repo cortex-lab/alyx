@@ -1,4 +1,3 @@
-import uuid
 from contextlib import suppress
 
 from django import forms
@@ -840,10 +839,12 @@ class BreedingPairFilter(DefaultListFilter):
 
 
 def _bp_subjects(line, sex, current_subjects=None):
-    # All alive subjects of the given sex.
-    qs = Subject.objects.exclude(death_date__lte=timezone.now().date()).filter(
-        Q(sex=sex, responsible_user__is_stock_manager=True) |
-        Q(pk__in=[current_subjects] if isinstance(current_subjects, uuid.UUID) else []),
+    # All alive subjects of the given sex, plus the current parents (pks) even if dead or
+    # no longer stock-managed, otherwise saving the form silently unsets them (#941).
+    alive = ~Q(death_date__lte=timezone.now().date())
+    qs = Subject.objects.filter(
+        Q(alive, sex=sex, responsible_user__is_stock_manager=True) |
+        Q(pk__in=current_subjects if current_subjects is not None else []),
     )
     qs = qs.order_by('nickname')
     ids = [item.id for item in qs]
@@ -881,9 +882,9 @@ class BreedingPairAdminForm(forms.ModelForm):
         for w in ('father', 'mother1', 'mother2'):
             sex = 'M' if w == 'father' else 'F'
             if w in self.fields:
+                current = getattr(self.instance, f'{w}_id', None)
                 self.fields[w].queryset = _bp_subjects(
-                    self.instance.line, sex, current_subjects=
-                    getattr(getattr(self.instance, w), 'id', None))
+                    self.instance.line, sex, current_subjects=[current] if current else None)
 
     def save(self, commit=True):
         cage = self.cleaned_data.get('cage')
@@ -1083,7 +1084,10 @@ class BreedingPairInline(BaseInlineAdmin):
             return field
         if db_field.name in ('father', 'mother1', 'mother2'):
             sex = 'M' if db_field.name == 'father' else 'F'
-            field.queryset = _bp_subjects(obj, sex, BreedingPair.objects.filter(line=obj).values_list(f'{db_field.name}__pk'))
+            current = BreedingPair.objects.filter(
+                line=obj, **{f'{db_field.name}__isnull': False}
+            ).values_list(f'{db_field.name}_id', flat=True)
+            field.queryset = _bp_subjects(obj, sex, current)
         return field
 
 
