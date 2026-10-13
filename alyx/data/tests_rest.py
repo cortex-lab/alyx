@@ -363,6 +363,8 @@ class APIDataTests(BaseTests):
         names = {item['name'] for item in data}
         self.assertEqual(names, {'opt-notice-1', 'opt-notice-2'})
 
+    curl = {'HTTP_USER_AGENT': 'curl/8.5.0'}  # a client given pagination advice in the body
+
     def test_pagination_max_limit(self):
         # A request for an unbounded `?limit=` must not materialize an arbitrary number of
         # rows (and their prefetched relations) in memory; see LimitedLimitOffsetPagination.
@@ -371,10 +373,51 @@ class APIDataTests(BaseTests):
         # Patch the cap directly so the test doesn't depend on whatever max_limit happens
         # to be configured (e.g. the default of 1000) in the settings used to run it.
         with mock.patch.object(DatasetList.pagination_class, 'max_limit', 10):
-            r = self.client.get(reverse('dataset-list') + '?limit=100')
+            r = self.client.get(reverse('dataset-list') + '?limit=100', **self.curl)
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.data['count'], 15)
             self.assertEqual(len(r.data['results']), 10)
+            self.assertIn('capped at 10', r.data['detail'])
+            self.assertIn('ONE API', r.data['detail'])
+            # Subjects have no cache table, so the cap is all that is reported.
+            r = self.client.get(reverse('subject-list') + '?limit=100', **self.curl)
+            self.assertIn('capped at 10', r.data['detail'])
+            self.assertNotIn('ONE API', r.data['detail'])
+
+    def test_pagination_cache_table_advice(self):
+        # Only views with cache_table_advice point to ONE, and only on the first page.
+        with mock.patch.object(DatasetList.pagination_class, 'bulk_advice_threshold', 0):
+            r = self.client.get(reverse('session-list'), **self.curl)
+            self.assertIn('ONE API', r.data['detail'])
+            r = self.client.get(reverse('session-list') + '?offset=1', **self.curl)
+            self.assertNotIn('detail', r.data)
+            r = self.client.get(reverse('subject-list'), **self.curl)
+            self.assertNotIn('detail', r.data)
+        r = self.client.get(reverse('session-list'), **self.curl)
+        self.assertNotIn('detail', r.data)
+
+    def test_pagination_advice_in_body(self):
+        # ONE <= 3.6.0 only treats a response as paginated when these are its only keys.
+        paginated_keys = ['count', 'next', 'previous', 'results']
+        clients = {  # request headers: whether advice may go in the body
+            'curl': ({'HTTP_USER_AGENT': 'curl/8.5.0'}, True),
+            'ONE < 3.6': ({'HTTP_USER_AGENT': 'python-requests/2.32.3'}, False),
+            'ONE 3.6.0': ({'HTTP_USER_AGENT': 'python-requests/2.32.3',
+                           'HTTP_ONE_API_VERSION': '3.6.0'}, False),
+            'ONE 3.6.1': ({'HTTP_USER_AGENT': 'python-requests/2.32.3',
+                           'HTTP_ONE_API_VERSION': '3.6.1'}, True),
+        }
+        with mock.patch.object(DatasetList.pagination_class, 'bulk_advice_threshold', 0):
+            for client, (headers, in_body) in clients.items():
+                with self.subTest(client=client):
+                    r = self.client.get(reverse('session-list'), **headers)
+                    # One or the other, never both.
+                    if in_body:
+                        self.assertIn('ONE API', r.data['detail'])
+                        self.assertNotIn('Alyx-API-Notice', r.headers)
+                    else:
+                        self.assertIn('ONE API', r.headers['Alyx-API-Notice'])
+                        self.assertEqual(list(r.data.keys()), paginated_keys)
 
     def test_register_files(self):
         # create 4 repositories, 2 per lab

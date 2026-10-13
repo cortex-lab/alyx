@@ -6,6 +6,7 @@ import os.path as op
 from polymorphic.models import PolymorphicModel
 import sys
 import pytz
+import re
 import uuid
 import one.alf.spec
 from datetime import datetime
@@ -649,12 +650,21 @@ class LimitedLimitOffsetPagination(LimitOffsetPagination):
     `count`, does the only thing it can and follows that link until the set is exhausted. That
     is as hard on the database as the original request and is the pattern that has taken it
     down. So a response that has been capped, or that begins a long run of pages, carries a
-    line saying what happened and where the bulk route is - in the response body, which is the
-    one channel every client reads whether or not it ever looks at the documentation.
+    line saying what happened and where the bulk route is: in `detail`, or in the Alyx-API-Notice
+    header for clients that `detail` would break.
     """
     max_limit = 1000
-    #: Pages beyond this many records are better served by the cache tables than by paging.
+    # Pages beyond this many records are better served by the cache tables than by paging.
+    # Only applies to views with `cache_table_advice = True`, i.e. those ONE has tables for.
     bulk_advice_threshold = 5000
+    advice_header = 'Alyx-API-Notice'
+    # The first ONE release that tolerates keys besides count, next, previous and results.
+    min_one_version_for_detail = (3, 6, 1)
+
+    def paginate_queryset(self, queryset, request, view=None):
+        self.view = view
+        return super(LimitedLimitOffsetPagination, self).paginate_queryset(
+            queryset, request, view=view)
 
     def get_limit(self, request):
         limit = super(LimitedLimitOffsetPagination, self).get_limit(request)
@@ -670,30 +680,46 @@ class LimitedLimitOffsetPagination(LimitOffsetPagination):
     def _advice(self):
         """Guidance to attach to this response, or '' if none is warranted.
 
-        Deliberately quiet: only when a client asked for more than it can have, or when it has
-        just started paging through a set large enough that paging is the wrong approach.
+        Deliberately quiet: only when a client explicitly asked for more than it can have, or
+        when it has just started paging through a set that the cache tables serve better.
         Repeating it on every page of every response would train clients to ignore it.
         """
         capped = getattr(self, 'limit_was_capped', False)
-        starting_a_long_run = self.offset == 0 and (self.count or 0) > self.bulk_advice_threshold
-        if not (capped or starting_a_long_run):
-            return ''
+        has_cache_table = getattr(getattr(self, 'view', None), 'cache_table_advice', False)
+        count = self.count or 0
         advice = []
         if capped:
             advice.append(f'The requested page size was capped at {self.max_limit} records.')
-        if (self.count or 0) > self.max_limit:
+        if has_cache_table and (
+                (capped and count > self.max_limit) or
+                (self.offset == 0 and count > self.bulk_advice_threshold)):
             advice.append(
-                f'This query matches {self.count} records. Rather than paging through them, '
-                f'use the ONE API, which queries downloaded cache tables locally instead of '
-                f'the database: https://int-brain-lab.github.io/ONE/. Paging large result '
-                f'sets places avoidable load on this database and is heavily rate limited.')
+                f'This query matches {count} records. Rather than paging through them, '
+                'use the ONE API to query downloaded cache tables locally instead of '
+                'the database: https://int-brain-lab.github.io/ONE/. Paging large result '
+                'sets places avoidable load on this database and is heavily rate limited.')
         return ' '.join(advice)
+
+    def _client_reads_detail(self):
+        """Whether a `detail` body key would leave the client's paging intact.
+
+        ONE up to 3.6.0 recognises a paginated response by its keys being exactly count, next,
+        previous and results. ONE 3.6.0 sends its version; earlier releases send nothing but
+        keep requests' default User-Agent, which also excludes some non-ONE Python scripts.
+        """
+        headers = self.request.headers
+        if version := re.match(r'(\d+)\.(\d+)\.(\d+)', headers.get('ONE-API-Version', '')):
+            return tuple(map(int, version.groups())) >= self.min_one_version_for_detail
+        return not headers.get('User-Agent', '').startswith('python-requests/')
 
     def get_paginated_response(self, data):
         response = super(LimitedLimitOffsetPagination, self).get_paginated_response(data)
-        advice = self._advice()
-        if advice:
-            response.data['detail'] = advice
+        if advice := self._advice():
+            # In the body where it won't break the client's paging, otherwise in a header.
+            if self._client_reads_detail():
+                response.data['detail'] = advice
+            else:
+                response[self.advice_header] = advice
         return response
 
 
