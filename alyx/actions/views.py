@@ -436,6 +436,7 @@ class SessionAPIList(generics.ListCreateAPIView):
     permission_classes = rest_permission_classes()
 
     filterset_class = SessionFilter
+    cache_table_advice = True  # ONE has a cache table for this endpoint
 
     def get_serializer_class(self):
         if not self.request:

@@ -217,6 +217,7 @@ class ProbeInsertionList(generics.ListCreateAPIView):
     serializer_class = ProbeInsertionListSerializer
     permission_classes = rest_permission_classes()
     filterset_class = ProbeInsertionFilter
+    cache_table_advice = True  # ONE has a cache table for this endpoint
 
 
 class ProbeInsertionDetail(generics.RetrieveUpdateDestroyAPIView):
