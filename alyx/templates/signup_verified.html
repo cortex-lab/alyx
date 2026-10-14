@@ -12,12 +12,19 @@
       Thank you - your email address is confirmed and your account is now active.
       <a href="{% url 'admin:login' %}">Log in</a> to browse the released data.
     </p>
+  {% elif valid %}
+    <h1>Confirm your account</h1>
+    <form method="post">
+      {% csrf_token %}
+      <p>Confirm your email address to activate your account.</p>
+      <input type="submit" value="Activate my account">
+    </form>
   {% else %}
     <h1>This link is not valid</h1>
     <p>
       The confirmation link has expired, has already been used, or was not copied in full.
-      If your account is still not active, <a href="{% url 'signup' %}">sign up again</a> to
-      receive a new link.
+      If you have already activated your account, <a href="{% url 'admin:login' %}">log in</a>.
+      Otherwise <a href="{% url 'signup' %}">sign up again</a> to receive a new link.
     </p>
   {% endif %}
 </div>
