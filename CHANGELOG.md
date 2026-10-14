@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.0.2]
 
+### Changed
+
+- Email signup verify page now requires a button press from the user
+
 ### Fixed
 
 - Public and lab member permissions now explicitly remove account and token tables as an added security measure

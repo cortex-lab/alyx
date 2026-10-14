@@ -50,17 +50,30 @@ class TestSignUp(TestCase):
         self.assertIn('newcomer@example.org', mail.outbox[0].to)
 
         url = reverse('signup-verify', kwargs=self._token_kwargs(user))
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertTrue(response.context['verified'])
         user.refresh_from_db()
         self.assertTrue(user.is_active)
+
+    def test_opening_the_confirmation_link_does_not_activate(self):
+        """Email scanners open links; only submitting the confirm form may use one up."""
+        self._signup()
+        user = get_user_model().objects.get(username='newcomer')
+        url = reverse('signup-verify', kwargs=self._token_kwargs(user))
+        for _ in range(2):  # the scanner, then the recipient
+            response = self.client.get(url)
+            self.assertTrue(response.context['valid'])
+            self.assertContains(response, 'Activate my account')
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+        self.assertTrue(self.client.post(url).context['verified'])
 
     def test_confirmation_link_dies_once_the_account_has_been_used(self):
         """A used link must not be replayable to undo an administrator disabling an account."""
         self._signup()
         user = get_user_model().objects.get(username='newcomer')
         url = reverse('signup-verify', kwargs=self._token_kwargs(user))
-        self.assertTrue(self.client.get(url).context['verified'])
+        self.assertTrue(self.client.post(url).context['verified'])
 
         self.assertTrue(self.client.login(
             username='newcomer', password='a-long-enough-passphrase'))
@@ -71,7 +84,7 @@ class TestSignUp(TestCase):
         user.refresh_from_db()
         user.is_active = False
         user.save()
-        self.assertFalse(self.client.get(url).context['verified'])
+        self.assertFalse(self.client.post(url).context['verified'])
         user.refresh_from_db()
         self.assertFalse(user.is_active)
 
@@ -80,7 +93,7 @@ class TestSignUp(TestCase):
         user = get_user_model().objects.get(username='newcomer')
         kwargs = self._token_kwargs(user)
         kwargs['token'] = kwargs['token'][:-4] + 'zzzz'
-        self.assertFalse(self.client.get(reverse('signup-verify', kwargs=kwargs)).context[
+        self.assertFalse(self.client.post(reverse('signup-verify', kwargs=kwargs)).context[
             'verified'])
         user.refresh_from_db()
         self.assertFalse(user.is_active)
@@ -90,7 +103,7 @@ class TestSignUp(TestCase):
         staff = get_user_model().objects.create_user(
             username='curator', password='x', email='c@example.org', is_active=False)
         kwargs = self._token_kwargs(staff)
-        self.assertFalse(self.client.get(reverse('signup-verify', kwargs=kwargs)).context[
+        self.assertFalse(self.client.post(reverse('signup-verify', kwargs=kwargs)).context[
             'verified'])
         staff.refresh_from_db()
         self.assertFalse(staff.is_active)
