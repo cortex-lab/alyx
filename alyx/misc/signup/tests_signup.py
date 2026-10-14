@@ -11,7 +11,7 @@ from misc.signup import antibot, preferences
 from misc.signup.forms import (EmailPreferencesForm, PUBLIC_GROUP_NAME,
                                signup_token_generator)
 from misc.management.commands.set_public_permissions import (
-    Command as SetPublicPermissions, EXCLUDED_MODELS)
+    Command as SetPublicPermissions, EXCLUDED_APPS, EXCLUDED_MODELS)
 
 # The bot protection is switched off explicitly rather than left to whatever the settings
 # happen to carry: a deployment with real Turnstile keys would otherwise reject every sign-up
@@ -304,6 +304,25 @@ class TestPublicPermissionsGroup(TestCase):
                 content_type__app_label=app_label, content_type__model=model)
             self.assertFalse(granted & set(excluded.values_list('id', flat=True)),
                              f'{app_label}.{model} must not be viewable by public users')
+
+    def test_group_excludes_allauth(self):
+        # Only meaningful where allauth is installed, as it is in CI.
+        allauth = Permission.objects.filter(content_type__app_label__in=EXCLUDED_APPS)
+        if not allauth.exists():
+            self.skipTest('allauth is not installed')
+        SetPublicPermissions().handle(database='default')
+        group = Group.objects.get(name=PUBLIC_GROUP_NAME)
+        self.assertFalse(group.permissions.filter(content_type__app_label__in=EXCLUDED_APPS))
+
+    def test_lab_members_cannot_manage_identities_or_tokens(self):
+        from misc.management.commands.set_user_permissions import (
+            Command as SetUserPermissions, WITHHELD_APPS)
+        withheld = Permission.objects.filter(content_type__app_label__in=WITHHELD_APPS)
+        group = Group.objects.create(name='Lab members')
+        group.permissions.add(*withheld)  # as granted by an earlier version of the command
+        SetUserPermissions().handle()
+        self.assertTrue(withheld.filter(content_type__app_label='authtoken').exists())
+        self.assertFalse(group.permissions.filter(content_type__app_label__in=WITHHELD_APPS))
 
     def test_set_user_permissions_skips_public_users(self):
         from misc.management.commands.set_user_permissions import Command as SetUserPermissions

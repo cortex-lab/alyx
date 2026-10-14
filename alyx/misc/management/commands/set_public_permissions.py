@@ -30,6 +30,9 @@ EXCLUDED_MODELS = (
     ('reversion', 'version'),
     ('contenttypes', 'contenttype'),
 )
+# Whole apps withheld for the same reason. allauth's hold users' email addresses, provider
+# identities and OAuth tokens, and its admin pages don't apply Alyx's public-user restrictions.
+EXCLUDED_APPS = ('account', 'socialaccount')
 
 
 class Command(BaseCommand):
@@ -48,7 +51,8 @@ class Command(BaseCommand):
         # View permissions only. Add/change/delete are additionally refused for public users by
         # alyx.base.BaseAdmin and BaseRestPublicPermission, but there is no reason to grant them
         # here and then rely on that.
-        permissions = Permission.objects.using(database).filter(codename__startswith='view_')
+        permissions = Permission.objects.using(database).filter(
+            codename__startswith='view_').exclude(content_type__app_label__in=EXCLUDED_APPS)
         for app_label, model in EXCLUDED_MODELS:
             permissions = permissions.exclude(
                 content_type__app_label=app_label, content_type__model=model)
@@ -60,4 +64,5 @@ class Command(BaseCommand):
             "%s group '%s' on database '%s' with %d view permissions."
             % ('Created' if created else 'Updated', GROUP_NAME, database, permissions.count()))
         self.stdout.write(
-            'Excluded models: %s' % ', '.join(f'{a}.{m}' for a, m in EXCLUDED_MODELS))
+            'Excluded models: %s; apps: %s' % (
+                ', '.join(f'{a}.{m}' for a, m in EXCLUDED_MODELS), ', '.join(EXCLUDED_APPS)))
