@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Email signup verify page now requires a button press from the user
+- Extra databases can now be added into lab settings
 
 ### Fixed
 

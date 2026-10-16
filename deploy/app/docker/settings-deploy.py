@@ -58,11 +58,14 @@ PUBLIC_SIGNUP_TRUST_FORWARDED_FOR = False
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
 TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
 
-# Folded into INSTALLED_APPS / MIDDLEWARE / AUTHENTICATION_BACKENDS below, which settings_lab.py
-# cannot do itself as it is imported before them.
+# Folded into INSTALLED_APPS / MIDDLEWARE / AUTHENTICATION_BACKENDS / DATABASES below, which
+# settings_lab.py cannot do itself as it is imported before them.
 EXTRA_INSTALLED_APPS = ()
 EXTRA_MIDDLEWARE = ()
 EXTRA_AUTHENTICATION_BACKENDS = ()
+# Additional database aliases, e.g. for an app routed elsewhere by DATABASE_ROUTERS. An entry
+# named 'default' replaces the one built from the POSTGRES_* environment variables.
+EXTRA_DATABASES = {}
 
 # %% Single sign-on
 # Needs the optional dependency: pip install alyx[sso]. `manage.py check` reports what is
@@ -100,6 +103,7 @@ DATABASES = {
         "PORT": os.getenv('POSTGRES_PORT', '5432')  # Default PostgreSQL port
     }
 }
+DATABASES.update(EXTRA_DATABASES)
 # %% S3 access to write cache tables
 # the s3 access details are provided in the form of a JSON string. The variable looks like:
 # S3_ACCESS={"access_key":"xxxxx", "secret_key":"xxxxx", "region":"us-east-1"}
