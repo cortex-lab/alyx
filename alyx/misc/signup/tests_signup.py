@@ -11,7 +11,7 @@ from misc.signup import antibot, preferences
 from misc.signup.forms import (EmailPreferencesForm, PUBLIC_GROUP_NAME,
                                signup_token_generator)
 from misc.management.commands.set_public_permissions import (
-    Command as SetPublicPermissions, EXCLUDED_MODELS)
+    Command as SetPublicPermissions, EXCLUDED_APPS, EXCLUDED_MODELS)
 
 # The bot protection is switched off explicitly rather than left to whatever the settings
 # happen to carry: a deployment with real Turnstile keys would otherwise reject every sign-up
@@ -50,17 +50,30 @@ class TestSignUp(TestCase):
         self.assertIn('newcomer@example.org', mail.outbox[0].to)
 
         url = reverse('signup-verify', kwargs=self._token_kwargs(user))
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertTrue(response.context['verified'])
         user.refresh_from_db()
         self.assertTrue(user.is_active)
+
+    def test_opening_the_confirmation_link_does_not_activate(self):
+        """Email scanners open links; only submitting the confirm form may use one up."""
+        self._signup()
+        user = get_user_model().objects.get(username='newcomer')
+        url = reverse('signup-verify', kwargs=self._token_kwargs(user))
+        for _ in range(2):  # the scanner, then the recipient
+            response = self.client.get(url)
+            self.assertTrue(response.context['valid'])
+            self.assertContains(response, 'Activate my account')
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+        self.assertTrue(self.client.post(url).context['verified'])
 
     def test_confirmation_link_dies_once_the_account_has_been_used(self):
         """A used link must not be replayable to undo an administrator disabling an account."""
         self._signup()
         user = get_user_model().objects.get(username='newcomer')
         url = reverse('signup-verify', kwargs=self._token_kwargs(user))
-        self.assertTrue(self.client.get(url).context['verified'])
+        self.assertTrue(self.client.post(url).context['verified'])
 
         self.assertTrue(self.client.login(
             username='newcomer', password='a-long-enough-passphrase'))
@@ -71,7 +84,7 @@ class TestSignUp(TestCase):
         user.refresh_from_db()
         user.is_active = False
         user.save()
-        self.assertFalse(self.client.get(url).context['verified'])
+        self.assertFalse(self.client.post(url).context['verified'])
         user.refresh_from_db()
         self.assertFalse(user.is_active)
 
@@ -80,7 +93,7 @@ class TestSignUp(TestCase):
         user = get_user_model().objects.get(username='newcomer')
         kwargs = self._token_kwargs(user)
         kwargs['token'] = kwargs['token'][:-4] + 'zzzz'
-        self.assertFalse(self.client.get(reverse('signup-verify', kwargs=kwargs)).context[
+        self.assertFalse(self.client.post(reverse('signup-verify', kwargs=kwargs)).context[
             'verified'])
         user.refresh_from_db()
         self.assertFalse(user.is_active)
@@ -90,7 +103,7 @@ class TestSignUp(TestCase):
         staff = get_user_model().objects.create_user(
             username='curator', password='x', email='c@example.org', is_active=False)
         kwargs = self._token_kwargs(staff)
-        self.assertFalse(self.client.get(reverse('signup-verify', kwargs=kwargs)).context[
+        self.assertFalse(self.client.post(reverse('signup-verify', kwargs=kwargs)).context[
             'verified'])
         staff.refresh_from_db()
         self.assertFalse(staff.is_active)
@@ -304,6 +317,25 @@ class TestPublicPermissionsGroup(TestCase):
                 content_type__app_label=app_label, content_type__model=model)
             self.assertFalse(granted & set(excluded.values_list('id', flat=True)),
                              f'{app_label}.{model} must not be viewable by public users')
+
+    def test_group_excludes_allauth(self):
+        # Only meaningful where allauth is installed, as it is in CI.
+        allauth = Permission.objects.filter(content_type__app_label__in=EXCLUDED_APPS)
+        if not allauth.exists():
+            self.skipTest('allauth is not installed')
+        SetPublicPermissions().handle(database='default')
+        group = Group.objects.get(name=PUBLIC_GROUP_NAME)
+        self.assertFalse(group.permissions.filter(content_type__app_label__in=EXCLUDED_APPS))
+
+    def test_lab_members_cannot_manage_identities_or_tokens(self):
+        from misc.management.commands.set_user_permissions import (
+            Command as SetUserPermissions, WITHHELD_APPS)
+        withheld = Permission.objects.filter(content_type__app_label__in=WITHHELD_APPS)
+        group = Group.objects.create(name='Lab members')
+        group.permissions.add(*withheld)  # as granted by an earlier version of the command
+        SetUserPermissions().handle()
+        self.assertTrue(withheld.filter(content_type__app_label='authtoken').exists())
+        self.assertFalse(group.permissions.filter(content_type__app_label__in=WITHHELD_APPS))
 
     def test_set_user_permissions_skips_public_users(self):
         from misc.management.commands.set_user_permissions import Command as SetUserPermissions

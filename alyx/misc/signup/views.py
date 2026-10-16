@@ -106,35 +106,47 @@ class SignUpDoneView(PublicDatabaseOnlyMixin, TemplateView):
         return context
 
 
+@method_decorator(never_cache, name='dispatch')
 class SignUpVerifyView(PublicDatabaseOnlyMixin, TemplateView):
-    """Activate an account from the link sent to its email address."""
+    """Activate an account from the link sent to its email address.
+
+    Opening the link only shows a confirm button; the POST it submits does the activating. The
+    link is single-use, and email security scanners open links but don't submit forms, so
+    activating on GET let a scanner use up the link before its recipient could.
+    """
     template_name = 'signup_verified.html'
 
-    def get_context_data(self, uidb64=None, token=None, **kwargs):
-        context = super(SignUpVerifyView, self).get_context_data(**kwargs)
-        context['verified'] = self._verify(uidb64, token)
-        return context
+    def get(self, request, *args, uidb64=None, token=None, **kwargs):
+        valid = self._valid_user(uidb64, token) is not None
+        return self.render_to_response(self.get_context_data(valid=valid))
 
-    def _verify(self, uidb64, token):
+    def post(self, request, *args, uidb64=None, token=None, **kwargs):
+        user = self._valid_user(uidb64, token)
+        if user is not None and not user.is_active:
+            user.is_active = True
+            preferences.set_email_verified(user, True, save=False)
+            user.save(update_fields=['is_active', 'json'])
+            logger.info('Activated public account %s', user.username)
+        return self.render_to_response(self.get_context_data(
+            valid=user is not None, verified=user is not None))
+
+    @staticmethod
+    def _valid_user(uidb64, token):
+        """The account this link may activate, or None."""
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = get_user_model().objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, ValidationError,
                 get_user_model().DoesNotExist):
-            return False
+            return None
         # Only ever activates a self-registered public account: the token would not validate for
         # anyone else, but an activation path that could reach a staff account is worth closing
         # off explicitly rather than relying on that.
         if not user.is_public_user or user.is_superuser:
-            return False
+            return None
         if not signup_token_generator.check_token(user, token):
-            return False
-        if not user.is_active:
-            user.is_active = True
-            preferences.set_email_verified(user, True, save=False)
-            user.save(update_fields=['is_active', 'json'])
-            logger.info('Activated public account %s', user.username)
-        return True
+            return None
+        return user
 
 
 @method_decorator(never_cache, name='dispatch')

@@ -6,8 +6,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
+from misc.management.commands.set_public_permissions import EXCLUDED_APPS
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)-15s %(message)s')
+
+# Apps managed by superusers only: identities, email addresses and API tokens of other users.
+# Removed rather than just not added, as earlier runs of this command may have granted them.
+WITHHELD_APPS = EXCLUDED_APPS + ('authtoken',)
 
 
 class Command(BaseCommand):
@@ -41,6 +47,8 @@ class Command(BaseCommand):
         # group.permissions.remove(Permission.objects.get(codename='change_lab'))
         group.permissions.remove(Permission.objects.get(codename='change_datasettype'))
         group.permissions.remove(Permission.objects.get(codename='add_datasettype'))
+        group.permissions.remove(
+            *Permission.objects.filter(content_type__app_label__in=WITHHELD_APPS))
 
         group.save()
         self.stdout.write("%d permissions have been set on group %s." %
