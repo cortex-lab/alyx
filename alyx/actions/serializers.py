@@ -222,11 +222,8 @@ class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'watertype-detail', 'lookup_field': 'name'}}
 
 
-ARENA_TYPES = ('OFT', 'LDT', 'SIT')
-
-
 class OtherActionSerializer(serializers.HyperlinkedModelSerializer):
-    """Other experimental action (arena test, sucrose preference test, sampling...)."""
+    """Other experimental action, any procedure that is not a session, surgery or similar."""
 
     subject = SubjectField()
 
@@ -261,19 +258,6 @@ class OtherActionSerializer(serializers.HyperlinkedModelSerializer):
         queryset=Lab.objects.all(),
         required=False,
     )
-
-    def validate(self, attrs):
-        procedures = attrs.get('procedures')
-        if procedures is None and self.instance is not None:
-            procedures = self.instance.procedures.all()
-        if any('arena test' in p.name.lower() for p in procedures or ()):
-            data = attrs.get('json', self.instance.json if self.instance else None)
-            arena_type = (data or {}).get('arena_type') if isinstance(data, dict) else None
-            if arena_type not in ARENA_TYPES:
-                raise serializers.ValidationError(
-                    {'json': f'json["arena_type"] must be one of {", ".join(ARENA_TYPES)} '
-                             f'for an arena test.'})
-        return attrs
 
     def create(self, validated_data):
         user = self.context['request'].user
