@@ -25,8 +25,9 @@ from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation, Surgery, ProcedureType)
+    Weighing, WaterType, LabLocation, Surgery, ProcedureType, OtherAction)
 from .serializers import (LabLocationSerializer,
+                          OtherActionSerializer,
                           ProcedureTypeSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
@@ -575,6 +576,41 @@ class LabLocationAPIDetail(generics.RetrieveUpdateAPIView):
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'
+
+
+class OtherActionFilter(BaseActionFilter):
+    procedure = django_filters.CharFilter(field_name='procedures__name', lookup_expr=('iexact'))
+
+    class Meta(BaseActionFilter.Meta):
+        model = OtherAction
+
+
+class OtherActionListCreate(generics.ListCreateAPIView):
+    """
+    Lists or creates other experimental actions (arena test, sucrose preference test...).
+
+    Procedures are given by name, as for sessions: `/procedures` lists them.
+    An action on the arena test procedure requires `json["arena_type"]` to be OFT, LDT or SIT.
+
+    get: **FILTERS**
+
+    -   **subject**: subject nickname `/other-actions?subject=Algernon`
+    -   **procedure**: procedure name `/other-actions?procedure=Poop sampling`
+    """
+    queryset = OtherAction.objects.all().order_by('-start_time')
+    queryset = OtherActionSerializer.setup_eager_loading(queryset)
+    serializer_class = OtherActionSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = OtherActionFilter
+
+
+class OtherActionAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of full detail and update of an other action.
+    """
+    queryset = OtherAction.objects.all()
+    serializer_class = OtherActionSerializer
+    permission_classes = rest_permission_classes()
 
 
 class SurgeriesFilter(BaseActionFilter):

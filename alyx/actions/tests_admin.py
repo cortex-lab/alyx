@@ -6,11 +6,12 @@ from datetime import date, timedelta, datetime
 from unittest.mock import MagicMock
 
 from django.test import TestCase
+from django.urls import reverse
 from django.contrib.admin.sites import AdminSite
 
 from misc.models import LabMember
 from subjects.models import Subject
-from actions.models import WaterAdministration, WaterRestriction, Weighing
+from actions.models import OtherAction, WaterAdministration, WaterRestriction, Weighing
 from actions.admin import WaterAdministrationAdmin, WeighingAdmin
 from alyx.test_base import setup_admin_subject_user
 
@@ -130,3 +131,22 @@ class TestWeighingForm(TestCase):
         subject_ids = form.fields['subject'].choices.queryset.values_list('nickname', flat=True)
         expected = [self.subject.nickname, extra_subjects[2].nickname, extra_subjects[1].nickname]
         self.assertEqual(list(subject_ids), expected)
+
+
+class TestOtherActionAdmin(TestCase):
+    fixtures = ['misc.lab.json']
+
+    def test_changelist_links_to_record(self):
+        """The start time links to the other action, the subject column to the subject."""
+        setup_admin_subject_user(self)
+        self.user.is_superuser = True
+        self.user.save()
+        self.client.force_login(self.user)
+        action = OtherAction.objects.create(subject=self.subject)
+        response = self.client.get(reverse('admin:actions_otheraction_changelist'))
+        self.assertEqual(response.status_code, 200)
+        change_url = reverse('admin:actions_otheraction_change', args=[action.pk])
+        self.assertRegex(response.content.decode(),
+                         rf'field-start_time[^>]*><a href="{change_url}')
+        # no nested anchors: the subject link is not wrapped in the record link
+        self.assertNotRegex(response.content.decode(), rf'<a href="{change_url}"><a ')
