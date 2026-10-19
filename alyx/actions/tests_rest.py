@@ -13,6 +13,7 @@ from actions.models import (
     Session,
     WaterType,
     WaterAdministration,
+    OtherAction,
     WaterRestriction,
     Weighing,
     Surgery,
@@ -698,3 +699,35 @@ class APIWaterRestrictionTests(APIActionsBaseTests):
         self.ar(self.patch(detail, {"end_time": past}), 400)
         self.assertEqual(self.client.put(detail, {}, content_type="application/json").status_code,
                          405)
+
+
+class APIOtherActionTests(APIActionsBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("other-action-list")
+        self.procedure = ProcedureType.objects.create(name="Test procedure")
+
+    def test_create_list_update(self):
+        data = {"subject": self.subject.nickname, "procedures": ["Test procedure"],
+                "narrative": "sample"}
+        d = self.ar(self.post(self.url, data), 201)
+        self.assertEqual(d["procedures"], ["Test procedure"])
+        self.assertEqual(d["users"], ["test"])
+        self.assertTrue(OtherAction.objects.filter(pk=d["id"]).exists())
+        # filters
+        d2 = self.ar(self.client.get(self.url + "?procedure=test procedure"))
+        self.assertEqual([x["id"] for x in d2], [d["id"]])
+        self.assertEqual(self.ar(self.client.get(self.url + "?procedure=Other")), [])
+        # detail and patch
+        detail = reverse("other-action-detail", kwargs={"pk": d["id"]})
+        self.assertEqual(self.ar(self.client.get(detail))["narrative"], "sample")
+        d = self.ar(self.patch(detail, {"end_time": now().isoformat()}))
+        self.assertTrue(d["end_time"])
+        d = self.ar(self.patch(detail, {"json": {"key": "value"}}))
+        self.assertEqual(d["json"], {"key": "value"})
+
+    def test_procedures_required_and_known(self):
+        data = {"subject": self.subject.nickname}
+        self.ar(self.post(self.url, data), 400)
+        self.ar(self.post(self.url, {**data, "procedures": []}), 400)
+        self.ar(self.post(self.url, {**data, "procedures": ["Not a procedure"]}), 400)
