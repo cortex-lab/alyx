@@ -705,38 +705,29 @@ class APIOtherActionTests(APIActionsBaseTests):
     def setUp(self):
         super().setUp()
         self.url = reverse("other-action-list")
-        self.arena = ProcedureType.objects.create(name="OFT/LDT/SIT \u2014 Arena Test")
-        self.poop = ProcedureType.objects.create(name="Poop sampling")
+        self.procedure = ProcedureType.objects.create(name="Test procedure")
 
     def test_create_list_update(self):
-        data = {"subject": self.subject.nickname, "procedures": ["Poop sampling"],
+        data = {"subject": self.subject.nickname, "procedures": ["Test procedure"],
                 "narrative": "sample"}
         d = self.ar(self.post(self.url, data), 201)
-        self.assertEqual(d["procedures"], ["Poop sampling"])
+        self.assertEqual(d["procedures"], ["Test procedure"])
         self.assertEqual(d["users"], ["test"])
         self.assertTrue(OtherAction.objects.filter(pk=d["id"]).exists())
         # filters
-        d2 = self.ar(self.client.get(self.url + "?procedure=poop sampling"))
+        d2 = self.ar(self.client.get(self.url + "?procedure=test procedure"))
         self.assertEqual([x["id"] for x in d2], [d["id"]])
-        self.assertEqual(self.ar(self.client.get(self.url + "?procedure=Arena Test")), [])
+        self.assertEqual(self.ar(self.client.get(self.url + "?procedure=Other")), [])
         # detail and patch
         detail = reverse("other-action-detail", kwargs={"pk": d["id"]})
         self.assertEqual(self.ar(self.client.get(detail))["narrative"], "sample")
         d = self.ar(self.patch(detail, {"end_time": now().isoformat()}))
         self.assertTrue(d["end_time"])
+        d = self.ar(self.patch(detail, {"json": {"key": "value"}}))
+        self.assertEqual(d["json"], {"key": "value"})
 
     def test_procedures_required_and_known(self):
         data = {"subject": self.subject.nickname}
         self.ar(self.post(self.url, data), 400)
         self.ar(self.post(self.url, {**data, "procedures": []}), 400)
         self.ar(self.post(self.url, {**data, "procedures": ["Not a procedure"]}), 400)
-
-    def test_arena_type(self):
-        data = {"subject": self.subject.nickname, "procedures": [self.arena.name]}
-        self.ar(self.post(self.url, data), 400)
-        self.ar(self.post(self.url, {**data, "json": {"arena_type": "XYZ"}}), 400)
-        d = self.ar(self.post(self.url, {**data, "json": {"arena_type": "LDT"}}), 201)
-        # the arena type cannot be removed on update
-        detail = reverse("other-action-detail", kwargs={"pk": d["id"]})
-        self.ar(self.patch(detail, {"json": {}}), 400)
-        self.ar(self.patch(detail, {"json": {"arena_type": "SIT"}}))

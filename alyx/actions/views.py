@@ -587,15 +587,15 @@ class OtherActionFilter(BaseActionFilter):
 
 class OtherActionListCreate(generics.ListCreateAPIView):
     """
-    Lists or creates other experimental actions (arena test, sucrose preference test...).
+    Lists or creates other experimental actions.
 
     Procedures are given by name, as for sessions: `/procedures` lists them.
-    An action on the arena test procedure requires `json["arena_type"]` to be OFT, LDT or SIT.
+    Procedure specific details can be stored in `json`.
 
     get: **FILTERS**
 
     -   **subject**: subject nickname `/other-actions?subject=Algernon`
-    -   **procedure**: procedure name `/other-actions?procedure=Poop sampling`
+    -   **procedure**: procedure name `/other-actions?procedure=Histology`
     """
     queryset = OtherAction.objects.all().order_by('-start_time')
     queryset = OtherActionSerializer.setup_eager_loading(queryset)
