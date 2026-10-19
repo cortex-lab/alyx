@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from alyx.base import BaseSerializerEnumField
-from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
+from .models import (OtherAction, ProcedureType, Session, Surgery, WaterAdministration, Weighing, WaterType,
                      WaterRestriction)
 from subjects.models import Project
 from subjects.fields import SubjectField
@@ -220,6 +220,79 @@ class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
         model = WaterType
         fields = ('__all__')
         extra_kwargs = {'url': {'view_name': 'watertype-detail', 'lookup_field': 'name'}}
+
+
+ARENA_TYPES = ('OFT', 'LDT', 'SIT')
+
+
+class OtherActionSerializer(serializers.HyperlinkedModelSerializer):
+    """Other experimental action (arena test, sucrose preference test, sampling...)."""
+
+    subject = SubjectField()
+
+    users = serializers.SlugRelatedField(
+        read_only=False,
+        many=True,
+        slug_field='username',
+        queryset=get_user_model().objects.all(),
+        required=False,
+    )
+
+    location = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=LabLocation.objects.all(),
+        allow_null=True,
+        required=False,
+    )
+
+    # same representation as the Session serializer, but at least one procedure is required
+    procedures = serializers.SlugRelatedField(
+        read_only=False,
+        many=True,
+        slug_field='name',
+        queryset=ProcedureType.objects.all(),
+        allow_empty=False,
+    )
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        required=False,
+    )
+
+    def validate(self, attrs):
+        procedures = attrs.get('procedures')
+        if procedures is None and self.instance is not None:
+            procedures = self.instance.procedures.all()
+        if any('arena test' in p.name.lower() for p in procedures or ()):
+            data = attrs.get('json', self.instance.json if self.instance else None)
+            arena_type = (data or {}).get('arena_type') if isinstance(data, dict) else None
+            if arena_type not in ARENA_TYPES:
+                raise serializers.ValidationError(
+                    {'json': f'json["arena_type"] must be one of {", ".join(ARENA_TYPES)} '
+                             f'for an arena test.'})
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        if not validated_data.get('users'):
+            validated_data['users'] = [user]
+        instance = super().create(validated_data)
+        _log_entry(instance, user)
+        return instance
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset.select_related('subject', 'lab', 'location').prefetch_related(
+            'users', 'procedures')
+
+    class Meta:
+        model = OtherAction
+        fields = ('url', 'id', 'subject', 'users', 'location', 'lab', 'procedures', 'narrative',
+                  'start_time', 'end_time', 'name', 'json')
+        extra_kwargs = {'url': {'view_name': 'other-action-detail'}}
 
 
 class WaterRestrictionSerializer(serializers.HyperlinkedModelSerializer):

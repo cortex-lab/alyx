@@ -32,6 +32,11 @@ urlpatterns = [
     path('locations/<str:name>', av.LabLocationAPIDetail.as_view(),
          name="location-detail"),
 
+    path('other-actions', av.OtherActionListCreate.as_view(), name='other-action-list'),
+
+    path('other-actions/<uuid:pk>', av.OtherActionAPIDetail.as_view(),
+         name='other-action-detail'),
+
     path('procedures', av.ProcedureTypeList.as_view(), name="procedures-list"),
 
     path('sessions', av.SessionAPIList.as_view(), name="session-list"),
