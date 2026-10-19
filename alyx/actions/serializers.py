@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from rest_framework import serializers
+from django.utils import timezone
 from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -219,15 +222,75 @@ class WaterTypeDetailSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'url': {'view_name': 'watertype-detail', 'lookup_field': 'name'}}
 
 
-class WaterRestrictionListSerializer(serializers.HyperlinkedModelSerializer):
+class WaterRestrictionSerializer(serializers.HyperlinkedModelSerializer):
+    """Water restriction: created with a start time, closed by patching its end time."""
 
-    subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
-    water_type = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    subject = SubjectField()
+
+    users = serializers.SlugRelatedField(
+        read_only=False,
+        many=True,
+        slug_field='username',
+        queryset=get_user_model().objects.all(),
+        required=False,
+    )
+
+    lab = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=Lab.objects.all(),
+        required=False,
+    )
+
+    water_type = serializers.SlugRelatedField(
+        read_only=False,
+        slug_field='name',
+        queryset=WaterType.objects.all(),
+        required=False,
+    )
+
+    # fields that can still be modified once the restriction exists
+    UPDATABLE_FIELDS = ('end_time', 'narrative', 'json')
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            frozen = set(attrs) - set(self.UPDATABLE_FIELDS)
+            if frozen:
+                raise serializers.ValidationError(
+                    {f: 'cannot be modified once the restriction is created.'
+                     for f in sorted(frozen)})
+            start = self.instance.start_time
+            end = attrs.get('end_time', self.instance.end_time)
+            if start and end and end < start:
+                raise serializers.ValidationError({'end_time': 'must be after start_time.'})
+            return attrs
+        if not attrs.get('reference_weight'):
+            # the model looks up the closest weighing and asserts it is within a week
+            start = attrs.get('start_time') or timezone.now()
+            weighing = attrs['subject'].water_control.last_weighing_before(start)
+            if weighing is None or abs(weighing[0] - start) >= timedelta(days=7):
+                raise serializers.ValidationError(
+                    {'reference_weight': 'no weighing within 7 days of start_time, '
+                                         'provide a reference_weight or add a weighing first.'})
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        users = validated_data.pop('users', None)
+        instance = WaterRestriction.objects.create(**validated_data)
+        instance.users.set(users or [user])
+        _log_entry(instance, user)
+        return instance
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        return queryset.select_related('subject', 'lab', 'water_type').prefetch_related('users')
 
     class Meta:
         model = WaterRestriction
-        fields = ('subject', 'start_time', 'end_time', 'water_type', 'reference_weight')
-        extra_kwargs = {'url': {'view_name': 'water-restriction-list'}}
+        fields = ('url', 'id', 'subject', 'users', 'lab', 'start_time', 'end_time', 'water_type',
+                  'reference_weight', 'narrative', 'json')
+        extra_kwargs = {'url': {'view_name': 'water-restriction-detail'}}
 
 
 class WaterAdministrationDetailSerializer(serializers.HyperlinkedModelSerializer):
