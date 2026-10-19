@@ -1,3 +1,4 @@
+from unittest import mock
 from unittest.mock import MagicMock
 
 from django.test import TestCase, Client, override_settings
@@ -54,3 +55,18 @@ class TestLabAdminViews(TestCase):
         self.assertFalse(form.is_valid())
         error = form.errors.get('timezone')[0]
         self.assertIn('Time Zone is incorrect. Here is the list', error)
+
+
+class TestAdminTheme(TestCase):
+    """Tests the per-deployment admin color overrides."""
+
+    def test_default_is_empty(self):
+        from misc.context_processors import admin_theme
+        self.assertEqual({}, admin_theme())
+
+    @override_settings(ADMIN_THEME={'--secondary': '#e46a60', 'bad name': 'red', '--x': 'red;}'})
+    def test_settings_filtered_and_env_override(self):
+        from misc.context_processors import admin_theme
+        self.assertEqual({'--secondary': '#e46a60'}, admin_theme())
+        with mock.patch.dict('os.environ', {'ADMIN_THEME': '{"--secondary": "#000", "--primary": "blue"}'}):
+            self.assertEqual({'--secondary': '#000', '--primary': 'blue'}, admin_theme())
