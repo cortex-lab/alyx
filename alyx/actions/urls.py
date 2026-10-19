@@ -52,8 +52,15 @@ urlpatterns = [
     path('water-requirement/<str:nickname>', av.WaterRequirement.as_view(),
          name='water-requirement'),
 
-    path('water-restriction', av.WaterRestrictionList.as_view(),
+    path('water-restrictions', av.WaterRestrictionListCreate.as_view(),
          name='water-restriction-list'),
+
+    path('water-restrictions/<uuid:pk>', av.WaterRestrictionAPIDetail.as_view(),
+         name='water-restriction-detail'),
+
+    # singular alias kept for existing clients
+    path('water-restriction', av.WaterRestrictionListCreate.as_view(),
+         name='water-restriction-list-alias'),
 
     path('water-type', av.WaterTypeList.as_view(),
          name="watertype-list"),

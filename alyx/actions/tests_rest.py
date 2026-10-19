@@ -13,6 +13,8 @@ from actions.models import (
     Session,
     WaterType,
     WaterAdministration,
+    WaterRestriction,
+    Weighing,
     Surgery,
     ProcedureType,
 )
@@ -647,3 +649,52 @@ class APIActionsTests(APIActionsBaseTests):
         )
         self.ar(resp)
         self.assertTrue(len(d) + resp.data["count"] == Session.objects.count())
+
+
+class APIWaterRestrictionTests(APIActionsBaseTests):
+    def setUp(self):
+        super().setUp()
+        self.subject.actions_waterrestrictions.all().delete()
+        self.url = reverse("water-restriction-list")
+
+    def test_create_and_end_restriction(self):
+        Weighing.objects.create(subject=self.subject, weight=25.0)
+        data = {"subject": self.subject.nickname, "narrative": "start"}
+        d = self.ar(self.post(self.url, data), 201)
+        self.assertEqual(d["reference_weight"], 25.0)
+        self.assertEqual(d["users"], ["test"])
+        # the restriction is listed under the plural and the singular alias
+        query = f"?subject={self.subject.nickname}"
+        self.assertEqual(len(self.ar(self.client.get(self.url + query))), 1)
+        alias = reverse("water-restriction-list-alias")
+        self.assertEqual(len(self.ar(self.client.get(alias + query))), 1)
+        # PATCH ends the restriction
+        detail = reverse("water-restriction-detail", kwargs={"pk": d["id"]})
+        end = now().isoformat()
+        d = self.ar(self.patch(detail, {"end_time": end}))
+        self.assertTrue(d["end_time"])
+        self.assertFalse(WaterRestriction.objects.get(pk=d["id"]).is_active())
+
+    def test_no_weighing_returns_400(self):
+        Weighing.objects.filter(subject=self.subject).delete()
+        data = {"subject": self.subject.nickname}
+        self.ar(self.post(self.url, data), 400)
+        # weighing too far from the start time
+        start = (now() - datetime.timedelta(days=30)).isoformat()
+        Weighing.objects.create(subject=self.subject, weight=25.0)
+        self.ar(self.post(self.url, {**data, "start_time": start}), 400)
+        # an explicit reference weight bypasses the lookup
+        self.ar(self.post(self.url, {**data, "reference_weight": 24.0}), 201)
+
+    def test_patch_only_updates_end_time_narrative_json(self):
+        r = self.ar(self.post(self.url, {"subject": self.subject.nickname,
+                                         "reference_weight": 24.0}), 201)
+        detail = reverse("water-restriction-detail", kwargs={"pk": r["id"]})
+        self.ar(self.patch(detail, {"reference_weight": 1.0}), 400)
+        self.ar(self.patch(detail, {"start_time": now().isoformat()}), 400)
+        d = self.ar(self.patch(detail, {"narrative": "done", "json": {"a": 1}}))
+        self.assertEqual((d["narrative"], d["json"]), ("done", {"a": 1}))
+        past = (now() - datetime.timedelta(days=1)).isoformat()
+        self.ar(self.patch(detail, {"end_time": past}), 400)
+        self.assertEqual(self.client.put(detail, {}, content_type="application/json").status_code,
+                         405)
