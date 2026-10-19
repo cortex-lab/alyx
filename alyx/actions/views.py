@@ -34,7 +34,7 @@ from .serializers import (LabLocationSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
-                          WaterRestrictionListSerializer,
+                          WaterRestrictionSerializer,
                           )
 
 
@@ -533,14 +533,29 @@ class WaterRestrictionFilter(BaseActionFilter):
         model = WaterRestriction
 
 
-class WaterRestrictionList(generics.ListAPIView):
+class WaterRestrictionListCreate(generics.ListCreateAPIView):
     """
-    Lists water restriction.
+    Lists or creates a water restriction.
+
+    A restriction is created with its start time and ended by patching its end time.
+    If `reference_weight` is omitted, it is taken from the closest weighing, which must be
+    within 7 days of `start_time`.
     """
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
-    serializer_class = WaterRestrictionListSerializer
+    queryset = WaterRestrictionSerializer.setup_eager_loading(queryset)
+    serializer_class = WaterRestrictionSerializer
     permission_classes = rest_permission_classes()
     filterset_class = WaterRestrictionFilter
+
+
+class WaterRestrictionAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of a water restriction and updating its `end_time`, `narrative` and `json`.
+    """
+    queryset = WaterRestriction.objects.all()
+    serializer_class = WaterRestrictionSerializer
+    permission_classes = rest_permission_classes()
+    http_method_names = ['get', 'patch', 'head', 'options']
 
 
 class LabLocationList(generics.ListAPIView):
