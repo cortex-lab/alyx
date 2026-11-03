@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.1.0]
 
-...
+### Added
+
+- Throttle class to set rates arbitrarily by table and action in the settings file
 
 ## [4.0.2]
 
