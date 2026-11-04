@@ -663,6 +663,7 @@ class APIWaterRestrictionTests(APIActionsBaseTests):
         d = self.ar(self.post(self.url, data), 201)
         self.assertEqual(d["reference_weight"], 25.0)
         self.assertEqual(d["users"], ["test"])
+        self.assertIn("implant_weight", d)
         # the restriction is listed under the plural and the singular alias
         query = f"?subject={self.subject.nickname}"
         self.assertEqual(len(self.ar(self.client.get(self.url + query))), 1)

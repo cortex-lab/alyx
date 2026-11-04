@@ -249,8 +249,17 @@ class WaterRestrictionSerializer(serializers.HyperlinkedModelSerializer):
         required=False,
     )
 
+    implant_weight = serializers.SerializerMethodField(
+        help_text='Weight of the last implant before the restriction start (read only).')
+
     # fields that can still be modified once the restriction exists
     UPDATABLE_FIELDS = ('end_time', 'narrative', 'json')
+
+    def get_implant_weight(self, obj):
+        """Implant weight from the last surgery, mirroring the admin view."""
+        if not obj.subject:
+            return None
+        return round(obj.subject.water_control.implant_weight() or 0., 2)
 
     def validate(self, attrs):
         if self.instance is not None:
@@ -289,7 +298,7 @@ class WaterRestrictionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = WaterRestriction
         fields = ('url', 'id', 'subject', 'users', 'lab', 'start_time', 'end_time', 'water_type',
-                  'reference_weight', 'narrative', 'json')
+                  'reference_weight', 'implant_weight', 'narrative', 'json')
         extra_kwargs = {'url': {'view_name': 'water-restriction-detail'}}
 
 
