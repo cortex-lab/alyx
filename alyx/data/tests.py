@@ -58,6 +58,46 @@ class TestModel(TestCase):
         with self.assertLogs('data.models', 'WARNING'):
             qs.delete(force=True)
 
+    def test_data_url(self):
+        """Test that data_url prefers existing files on Globus non-personal repositories."""
+        dset = Dataset.objects.create(name='data-url.npy')
+        self.assertIsNone(dset.data_url)
+        repos = {  # name: (globus_is_personal, data_url)
+            'a_server': (False, 'https://a.org/'),
+            'b_server': (False, 'https://b.org/'),
+            'c_server': (False, None),
+            'd_personal': (True, 'https://d.org/'),
+            'e_unknown': (None, 'https://e.org/'),
+        }
+        for name, (personal, url) in repos.items():
+            repo = DataRepository.objects.create(
+                name=name, globus_is_personal=personal, data_url=url)
+            FileRecord.objects.create(
+                dataset=dset, data_repository=repo, exists=True,
+                relative_path=f'{name}/data-url.npy')
+
+        # Non-personal first, then reverse name order; NULL personal flag last
+        for expected in ('b_server', 'a_server', 'd_personal', 'e_unknown'):
+            path = add_uuid_string(f'{expected}/data-url.npy', dset.pk).as_posix()
+            url = repos[expected][1] + path
+            self.assertEqual(url, Dataset.objects.get(pk=dset.pk).data_url)
+            FileRecord.objects.filter(data_repository__name=expected).update(exists=False)
+        # c_server has no data URL
+        self.assertIsNone(Dataset.objects.get(pk=dset.pk).data_url)
+
+    def test_data_url_num_queries(self):
+        """Test that data_url uses prefetched file records."""
+        dset = Dataset.objects.create(name='data-url.npy')
+        repo = DataRepository.objects.create(name='server', data_url='https://a.org/')
+        FileRecord.objects.create(
+            dataset=dset, data_repository=repo, exists=True, relative_path='data-url.npy')
+        dset = Dataset.objects.get(pk=dset.pk)
+        with self.assertNumQueries(1):
+            self.assertIsNotNone(dset.data_url)
+        dset = Dataset.objects.prefetch_related('file_records').get(pk=dset.pk)
+        with self.assertNumQueries(0):
+            self.assertIsNotNone(dset.data_url)
+
 
 class TestDatasetTypeModel(TestCase):
     def test_model_methods(self):

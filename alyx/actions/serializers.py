@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from rest_framework import serializers
+from django.db.models import Prefetch
 from django.utils import timezone
 from django.contrib.admin.models import LogEntry, ADDITION
 from django.contrib.auth import get_user_model
@@ -11,7 +12,7 @@ from .models import (OtherAction, ProcedureType, Session, Surgery, WaterAdminist
                      WaterRestriction)
 from subjects.models import Project
 from subjects.fields import SubjectField
-from data.models import Dataset, DatasetType
+from data.models import Dataset, DatasetType, DataNotice, FileRecord
 from misc.models import LabLocation, Lab
 from experiments.serializers import (
     ProbeInsertionListSerializer, FilterDatasetSerializer, FOVSerializer
@@ -102,6 +103,7 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
     )
     default_revision = serializers.CharField(source='default_dataset')
     qc = BaseSerializerEnumField(required=False)
+    data_notices = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     def to_representation(self, instance):
         """Override the default to_representation method to null the revision field."""
@@ -114,7 +116,8 @@ class SessionDatasetsSerializer(serializers.ModelSerializer):
         list_serializer_class = FilterDatasetSerializer
         model = Dataset
         fields = ('id', 'name', 'dataset_type', 'data_url', 'url', 'file_size',
-                  'hash', 'version', 'collection', 'revision', 'default_revision', 'qc')
+                  'hash', 'version', 'collection', 'revision', 'default_revision', 'qc',
+                  'data_notices')
 
 
 class SessionWaterAdminSerializer(serializers.ModelSerializer):
@@ -168,8 +171,13 @@ class SessionDetailSerializer(BaseActionSerializer):
         queryset = queryset.prefetch_related(
             'data_dataset_session_related',
             'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__file_records',
+            # Prefetch rather than join the repositories so that each is loaded once and shared
+            Prefetch('data_dataset_session_related__file_records',
+                     queryset=FileRecord.objects.select_related(None)),
             'data_dataset_session_related__file_records__data_repository',
+            # Only the notice IDs are serialized
+            Prefetch('data_dataset_session_related__data_notices',
+                     queryset=DataNotice.objects.only('id')),
             'wateradmin_session_related',
             'probe_insertion',
             'field_of_view'
