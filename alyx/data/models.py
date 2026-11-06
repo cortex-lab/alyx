@@ -384,11 +384,15 @@ class Dataset(BaseExperimentalData):
 
     @property
     def data_url(self):
-        records = self.file_records.filter(data_repository__data_url__isnull=False, exists=True)
-        # returns preferentially globus non-personal endpoint
+        # Select in Python rather than filtering the queryset so that prefetched records are used
+        records = sorted(
+            (fr for fr in self.file_records.all()
+             if fr.exists and fr.data_repository.data_url is not None),
+            key=lambda fr: fr.data_repository.name, reverse=True)
         if records:
-            order_keys = ('data_repository__globus_is_personal', '-data_repository__name')
-            return records.order_by(*order_keys)[0].data_url
+            # returns preferentially globus non-personal endpoint (NULL last, as in PostgreSQL)
+            rank = {False: 0, True: 1, None: 2}
+            return min(records, key=lambda fr: rank[fr.data_repository.globus_is_personal]).data_url
 
     def __str__(self):
         date = self.created_datetime.strftime('%d/%m/%Y at %H:%M')
@@ -466,7 +470,7 @@ class FileRecord(BaseModel):
         if not root:
             return None
         from one.alf.path import add_uuid_string
-        return root + add_uuid_string(self.relative_path, self.dataset.pk).as_posix()
+        return root + add_uuid_string(self.relative_path, self.dataset_id).as_posix()
 
     def save(self, *args, **kwargs):
         """this is to trigger the update of the auto-date field"""

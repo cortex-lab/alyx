@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data notices filtered by `datasets` are no longer returned once per matching dataset
 - Data notice list no longer makes extra queries per notice
 - Session detail datasets keep their prefetched relations when filtered by file record existence
+- Dataset `data_url` uses prefetched file records, so session and probe insertion details no longer make one or two queries per dataset
 
 ## [4.0.2]
 

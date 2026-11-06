@@ -9,7 +9,7 @@ from .models import (ProcedureType, Session, Surgery, WaterAdministration, Weigh
                      WaterRestriction)
 from subjects.models import Project
 from subjects.fields import SubjectField
-from data.models import Dataset, DatasetType, DataNotice
+from data.models import Dataset, DatasetType, DataNotice, FileRecord
 from misc.models import LabLocation, Lab
 from experiments.serializers import (
     ProbeInsertionListSerializer, FilterDatasetSerializer, FOVSerializer
@@ -168,7 +168,9 @@ class SessionDetailSerializer(BaseActionSerializer):
         queryset = queryset.prefetch_related(
             'data_dataset_session_related',
             'data_dataset_session_related__dataset_type',
-            'data_dataset_session_related__file_records',
+            # Prefetch rather than join the repositories so that each is loaded once and shared
+            Prefetch('data_dataset_session_related__file_records',
+                     queryset=FileRecord.objects.select_related(None)),
             'data_dataset_session_related__file_records__data_repository',
             # Only the notice IDs are serialized
             Prefetch('data_dataset_session_related__data_notices',

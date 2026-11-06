@@ -168,7 +168,8 @@ class APIActionsSessionsTests(APIActionsBaseTests):
         session = Session.objects.create(
             subject=self.subject, lab=self.lab01, number=1)
         dtype, _ = DatasetType.objects.get_or_create(name="spikes.times")
-        repo = DataRepository.objects.create(name="server", globus_is_personal=False)
+        repo = DataRepository.objects.create(
+            name="server", globus_is_personal=False, data_url="https://server.org/")
 
         def create_dataset(collection):
             dset = Dataset.objects.create(
@@ -196,16 +197,15 @@ class APIActionsSessionsTests(APIActionsBaseTests):
         for did, nids in expected.items():
             self.assertCountEqual(nids, notices[did])
 
-        # The notices should be fetched in a single query, regardless of the number of datasets
-        def n_notice_queries(ctx):
-            return sum('"data_datanotice"' in q["sql"] for q in ctx.captured_queries)
-        self.assertEqual(1, n_notice_queries(ctx))
+        self.assertTrue(all(d["data_url"] for d in r.data["data_dataset_session_related"]))
+
+        # The number of queries should not scale with the number of datasets
+        self.assertEqual(1, sum('"data_datanotice"' in q["sql"] for q in ctx.captured_queries))
         for i in range(3, 6):
             n1.datasets.add(create_dataset(f"alf/probe0{i}"))
-        with CaptureQueriesContext(connection) as ctx:
+        with self.assertNumQueries(len(ctx)):
             r = self.client.get(url)
         self.assertEqual(6, len(r.data["data_dataset_session_related"]))
-        self.assertEqual(1, n_notice_queries(ctx))
 
     def test_sessions(self):
         a_dict4json = {

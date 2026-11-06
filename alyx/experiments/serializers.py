@@ -194,6 +194,10 @@ class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
 
     def get_datasets(self, obj):
         qs = obj.session.data_dataset_session_related.filter(collection__icontains=obj.name)
+        # For data_url. The repositories are prefetched rather than joined so that each is loaded once
+        qs = qs.prefetch_related(
+            Prefetch('file_records', queryset=FileRecord.objects.select_related(None)),
+            'file_records__data_repository')
         request = self.context.get('request', None)
         dsets = ProbeInsertionDatasetsSerializer(qs, many=True, context={'request': request})
         return dsets.data
