@@ -263,6 +263,7 @@ class BaseActionAdmin(BaseAdmin):
 
 class OtherActionAdmin(BaseActionAdmin):
     list_display = ['subject_l', 'start_time', 'procedures_l', 'users_l', 'narrative', 'projects']
+    list_display_links = ['start_time']
     list_select_related = ('subject',)
     ordering = ('-start_time', 'subject__nickname')
     search_fields = ['subject__nickname', 'subject__projects__name']

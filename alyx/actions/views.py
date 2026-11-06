@@ -25,8 +25,9 @@ from experiments.views import _filter_qs_with_brain_regions
 from .water_control import water_control, to_date
 from .models import (
     BaseAction, Session, WaterAdministration, WaterRestriction,
-    Weighing, WaterType, LabLocation, Surgery, ProcedureType)
+    Weighing, WaterType, LabLocation, Surgery, ProcedureType, OtherAction)
 from .serializers import (LabLocationSerializer,
+                          OtherActionSerializer,
                           ProcedureTypeSerializer,
                           SessionListSerializer,
                           SessionDetailSerializer,
@@ -34,7 +35,7 @@ from .serializers import (LabLocationSerializer,
                           WaterAdministrationDetailSerializer,
                           WeighingDetailSerializer,
                           WaterTypeDetailSerializer,
-                          WaterRestrictionListSerializer,
+                          WaterRestrictionSerializer,
                           )
 
 
@@ -533,14 +534,29 @@ class WaterRestrictionFilter(BaseActionFilter):
         model = WaterRestriction
 
 
-class WaterRestrictionList(generics.ListAPIView):
+class WaterRestrictionListCreate(generics.ListCreateAPIView):
     """
-    Lists water restriction.
+    Lists or creates a water restriction.
+
+    A restriction is created with its start time and ended by patching its end time.
+    If `reference_weight` is omitted, it is taken from the closest weighing, which must be
+    within 7 days of `start_time`.
     """
     queryset = WaterRestriction.objects.all().order_by('-end_time', '-start_time')
-    serializer_class = WaterRestrictionListSerializer
+    queryset = WaterRestrictionSerializer.setup_eager_loading(queryset)
+    serializer_class = WaterRestrictionSerializer
     permission_classes = rest_permission_classes()
     filterset_class = WaterRestrictionFilter
+
+
+class WaterRestrictionAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of a water restriction and updating its `end_time`, `narrative` and `json`.
+    """
+    queryset = WaterRestriction.objects.all()
+    serializer_class = WaterRestrictionSerializer
+    permission_classes = rest_permission_classes()
+    http_method_names = ['get', 'patch', 'head', 'options']
 
 
 class LabLocationList(generics.ListAPIView):
@@ -560,6 +576,41 @@ class LabLocationAPIDetail(generics.RetrieveUpdateAPIView):
     serializer_class = LabLocationSerializer
     queryset = LabLocation.objects.all()
     lookup_field = 'name'
+
+
+class OtherActionFilter(BaseActionFilter):
+    procedure = django_filters.CharFilter(field_name='procedures__name', lookup_expr=('iexact'))
+
+    class Meta(BaseActionFilter.Meta):
+        model = OtherAction
+
+
+class OtherActionListCreate(generics.ListCreateAPIView):
+    """
+    Lists or creates other experimental actions.
+
+    Procedures are given by name, as for sessions: `/procedures` lists them.
+    Procedure specific details can be stored in `json`.
+
+    get: **FILTERS**
+
+    -   **subject**: subject nickname `/other-actions?subject=Algernon`
+    -   **procedure**: procedure name `/other-actions?procedure=Histology`
+    """
+    queryset = OtherAction.objects.all().order_by('-start_time')
+    queryset = OtherActionSerializer.setup_eager_loading(queryset)
+    serializer_class = OtherActionSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = OtherActionFilter
+
+
+class OtherActionAPIDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing of full detail and update of an other action.
+    """
+    queryset = OtherAction.objects.all()
+    serializer_class = OtherActionSerializer
+    permission_classes = rest_permission_classes()
 
 
 class SurgeriesFilter(BaseActionFilter):
