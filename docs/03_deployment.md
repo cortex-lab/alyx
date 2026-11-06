@@ -187,6 +187,30 @@ Keys are model tables (`<app>_<model>`), optionally followed by one of the REST 
 
 Without `settings_lab.py`, set the same dictionary as JSON in the `THROTTLE_TABLE_RATES` environment variable. `manage.py check` reports keys that match no table or action and rates that are malformed.
 
+### Admin interface colors
+
+The colors of the admin interface can be customized per deployment, for instance to tell a
+development server from production at a glance, without touching the repository. Set `ADMIN_THEME`
+to a dictionary of [Django admin CSS variables](https://docs.djangoproject.com/en/stable/ref/contrib/admin/#theming-support)
+in `settings_lab.py`:
+
+```python
+# settings_lab.py
+ADMIN_THEME = {
+    '--secondary': '#e46a60',       # header background
+    '--breadcrumbs-bg': '#ff9d95',
+}
+```
+
+The same dictionary can be given as JSON in the `.env` file, which takes precedence over
+`settings_lab.py` and suits one image deployed on several hosts:
+
+```shell
+ADMIN_THEME='{"--secondary": "#e46a60", "--breadcrumbs-bg": "#ff9d95"}'
+```
+
+Unset by default, in which case the stock admin colors are used.
+
 ### Apache webserver and interaction with wsgi
 
 Put the [site configuration](_static/001-alyx.conf) here: `/etc/apache2/sites-available/001-alyx.conf`

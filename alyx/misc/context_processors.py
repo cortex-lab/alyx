@@ -1,6 +1,33 @@
+import json
+import os
+import re
+
 from django.conf import settings
 from django.contrib import admin
 from django.urls import NoReverseMatch, reverse
+
+_CSS_VAR = re.compile(r'^--[\w-]+$')
+_CSS_VALUE = re.compile(r'^[\w#%(),.\s-]+$')
+
+
+def admin_theme():
+    """Return the admin CSS variable overrides configured for this deployment.
+
+    Read from the ``ADMIN_THEME`` setting (e.g. in ``settings_lab.py``), then updated with the
+    ``ADMIN_THEME`` environment variable if set (a JSON object, for per-host overrides in ``.env``).
+    Keys are Django admin CSS custom properties such as ``--secondary`` or ``--breadcrumbs-bg``.
+    Entries that are not valid CSS variable names or plain color values are dropped.
+
+    Returns
+    -------
+    dict of str to str
+        Validated CSS variable names and values, empty if the admin is not customized.
+    """
+    theme = dict(getattr(settings, 'ADMIN_THEME', None) or {})
+    if env_theme := os.getenv('ADMIN_THEME'):
+        theme.update(json.loads(env_theme))
+    return {k: v for k, v in theme.items()
+            if _CSS_VAR.match(str(k)) and _CSS_VALUE.match(str(v))}
 
 
 def public_database(request):
@@ -21,6 +48,7 @@ def public_database(request):
         # which takes precedence over a context processor.
         'site_header': admin.site.site_header,
         'site_title': admin.site.site_title,
+        'ADMIN_THEME': admin_theme(),
         'PUBLIC_DATABASE': getattr(settings, 'PUBLIC_DATABASE', False),
         'SSO_ENABLED': getattr(settings, 'SSO_ENABLED', False),
         'SSO_PROVIDER_NAME': getattr(settings, 'SSO_PROVIDER_NAME', 'SSO'),
