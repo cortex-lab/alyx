@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.1.0]
 
+### Added
+
+- Litter admin action to delete litters created by mistake, with their subjects, and roll back the line's autonumbering
+
 ...
 
 ## [4.0.2]

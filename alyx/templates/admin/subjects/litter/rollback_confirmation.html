@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls static %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/cancel.js' %}" async></script>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} delete-confirmation delete-selected-confirmation{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Home</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; Roll back litters
+</div>
+{% endblock %}
+
+{% block content %}
+{% if problems %}
+  <p>These litters cannot be rolled back:</p>
+  <ul>{% for problem in problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+  <p>Only the most recent litters of a line can be rolled back, together with their subjects,
+  and only if nothing else (sessions, weighings, breeding pairs, genotypes...) refers to them.
+  Anything else has to be deleted or renamed by hand.</p>
+  <p><a href="#" class="button cancel-link">Go back</a></p>
+{% else %}
+  <p>This will permanently delete the following, and roll back the autonumbering so that the
+  next litter and subjects of the line get these names again:</p>
+  {% for step in plan %}
+    <h2>Line {{ step.line }}</h2>
+    <ul>
+      {% for litter in step.litters %}<li>Litter: {{ litter }}</li>{% endfor %}
+      {% for subject in step.subjects %}<li>Subject: {{ subject }}</li>{% endfor %}
+      <li>Litter number: {{ step.line.litter_autoname_index }} &rarr; {{ step.litter_index }}</li>
+      <li>Subject number: {{ step.line.subject_autoname_index }} &rarr; {{ step.subject_index }}</li>
+    </ul>
+  {% endfor %}
+  <form method="post">{% csrf_token %}
+    <div>
+    {% for obj in queryset %}
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="rollback_litters">
+    <input type="hidden" name="post" value="yes">
+    <input type="submit" value="Yes, delete and roll back">
+    <a href="#" class="button cancel-link">No, take me back</a>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}

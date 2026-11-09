@@ -1,15 +1,194 @@
 """Tests for Subject admin pages."""
 from datetime import date, timedelta
+from unittest import mock
 from unittest.mock import MagicMock
 
 from django.test import TestCase
+from django.contrib.admin.models import LogEntry, DELETION, CHANGE
 from django.contrib.admin.sites import AdminSite
+from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
+from django.contrib.auth.models import Permission
+from django.urls import reverse
+from django.utils import timezone
+from reversion.models import Revision
 
 from alyx.test_base import setup_admin_subject_user
-from misc.models import LabMember
-from subjects.models import Subject, BreedingPair, Line
-from actions.models import Cull, CullMethod, CullReason
+from misc.models import LabMember, Note
+from subjects.models import Subject, BreedingPair, Line, Litter
+from actions.models import Cull, CullMethod, CullReason, Weighing
+from subjects import admin as subjects_admin
 from subjects.admin import CullForm, SubjectAdmin, BreedingPairAdminForm, BreedingPairInline
+
+
+class TestLitterRollback(TestCase):
+    fixtures = ['misc.lab.json']
+
+    def setUp(self):
+        setup_admin_subject_user(self)  # self.user is a lab member without delete rights
+        self.admin = LabMember.objects.create_user(
+            username='admin', password='bar123', is_staff=True, is_superuser=True)
+        self.client.force_login(self.admin)
+        self.line = Line.objects.create(name='Line one', nickname='L1')
+        self.bp = BreedingPair.objects.create(line=self.line)
+        self.old_litter, self.old_pups = self._litter(2)
+        self.litter, self.pups = self._litter(2)  # L1_L_002 with pups L1_0003 and L1_0004
+        self.url = reverse('admin:subjects_litter_changelist')
+
+    def _litter(self, n_pups):
+        litter = Litter.objects.create(line=self.line, breeding_pair=self.bp,
+                                       birth_date=date(2026, 11, 9))
+        pups = [Subject.objects.create(line=self.line, litter=litter, lab=self.lab,
+                                       birth_date=litter.birth_date) for _ in range(n_pups)]
+        return litter, pups
+
+    def _post(self, litters, confirm=True):
+        data = {'action': 'rollback_litters', ACTION_CHECKBOX_NAME: [lt.pk for lt in litters]}
+        if confirm:
+            data['post'] = 'yes'
+        return self.client.post(self.url, data, follow=True)
+
+    def _indexes(self):
+        self.line.refresh_from_db()
+        return self.line.litter_autoname_index, self.line.subject_autoname_index
+
+    def _exists(self, objs):
+        return [type(o).objects.filter(pk=o.pk).exists() for o in objs]
+
+    def test_confirmation_page(self):
+        self.assertEqual(
+            [self.litter.name, *map(str, self.pups)], ['L1_L_002', 'L1_0003', 'L1_0004'])
+        r = self._post([self.litter], confirm=False)
+        self.assertContains(r, 'Yes, delete and roll back')
+        self.assertContains(r, 'L1_0004')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+        self.assertEqual(self._indexes(), (2, 4))
+
+    def test_rollback(self):
+        r = self._post([self.litter])
+        self.assertContains(r, 'Rolled back the autonumbering')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [False] * 3)
+        self.assertEqual(self._exists([self.old_litter, *self.old_pups]), [True] * 3)
+        self.assertEqual(self._indexes(), (1, 2))
+        # The audit trail records the deletions and the change to the line.
+        logs = LogEntry.objects.filter(user=self.admin)
+        self.assertEqual(sorted(logs.filter(action_flag=DELETION).values_list(
+            'object_repr', flat=True)), ['L1_0003', 'L1_0004', 'L1_L_002'])
+        self.assertEqual(logs.get(action_flag=CHANGE).object_id, str(self.line.pk))
+        # The names are reused.
+        litter, pups = self._litter(1)
+        self.assertEqual((litter.name, pups[0].nickname), ('L1_L_002', 'L1_0003'))
+
+    def test_rollback_two_litters_one_without_pups(self):
+        third, _ = self._litter(0)
+        self._post([third, self.litter])
+        self.assertEqual(self._exists([third, self.litter]), [False, False])
+        self.assertEqual(self._indexes(), (1, 2))
+
+    def test_refused_if_not_most_recent(self):
+        r = self._post([self.old_litter], confirm=False)
+        self.assertContains(r, 'are not the most recent litters')
+        self.assertNotContains(r, 'Yes, delete and roll back')
+        # A forged confirmation is refused too.
+        r = self._post([self.old_litter])
+        self.assertContains(r, 'are not the most recent')
+        self.assertEqual(self._exists([self.old_litter, *self.old_pups]), [True] * 3)
+        self.assertEqual(self._indexes(), (2, 4))
+
+    def test_refused_if_pup_renamed(self):
+        self.pups[1].nickname = 'special_name'
+        self.pups[1].save()
+        r = self._post([self.litter])
+        self.assertContains(r, 'are not the most recent subjects')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+
+    def test_refused_if_pups_are_used(self):
+        Weighing.objects.create(subject=self.pups[0], weight=1.2, date_time=timezone.now())
+        r = self._post([self.litter])
+        self.assertContains(r, 'other records refer to these litters or subjects: weighing')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+        Weighing.objects.all().delete()
+        # A pup that became a breeding pair parent would be detached from it.
+        BreedingPair.objects.create(line=self.line, mother1=self.pups[1])
+        r = self._post([self.litter])
+        self.assertContains(r, 'other records refer to these litters or subjects: breeding pair')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+
+    def test_deletion_guard(self):
+        # Should a record appear between the check and the deletion, the deletion would take it
+        # with the pup; the counts of deleted objects are checked as a last resort.
+        Weighing.objects.create(subject=self.pups[0], weight=1.2, date_time=timezone.now())
+        plan = subjects_admin.plan_litter_rollback
+        with mock.patch.object(subjects_admin, 'plan_litter_rollback',
+                               side_effect=lambda litters: (plan(litters)[0], [])):
+            r = self._post([self.litter])
+        self.assertContains(r, 'would also delete')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+        self.assertEqual(Weighing.objects.count(), 1)
+        self.assertEqual(self._indexes(), (2, 4))
+        self.assertFalse(LogEntry.objects.filter(user=self.admin).exists())
+
+    def test_refused_if_pup_has_a_note(self):
+        # Notes point at subjects through a generic foreign key, which deletion does not see.
+        Note.objects.create(user=self.admin, text='tail tattoo', content_object=self.pups[0])
+        r = self._post([self.litter])
+        self.assertContains(r, 'other records refer to these litters or subjects: note')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+
+    def test_refused_without_line_or_with_pup_of_another_line(self):
+        litter = Litter.objects.create(name='no_line', birth_date=date(2026, 11, 9))
+        r = self._post([litter])
+        self.assertContains(r, 'has no line')
+        self.assertTrue(Litter.objects.filter(pk=litter.pk).exists())
+        other = Line.objects.create(name='Line two', nickname='L2')
+        self.pups[1].line = other
+        self.pups[1].save()
+        r = self._post([self.litter])
+        self.assertContains(r, 'belong to another line')
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+
+    def test_rollback_two_lines(self):
+        other = Line.objects.create(name='Line two', nickname='L2')
+        litter2 = Litter.objects.create(line=other, birth_date=date(2026, 11, 9))
+        pup2 = Subject.objects.create(line=other, litter=litter2, lab=self.lab,
+                                      birth_date=litter2.birth_date)
+        n_revisions = Revision.objects.count()
+        r = self._post([self.litter, litter2])
+        self.assertContains(r, 'Rolled back the autonumbering of line Line one')
+        self.assertContains(r, 'Rolled back the autonumbering of line Line two')
+        self.assertEqual(self._exists([self.litter, litter2, pup2]), [False] * 3)
+        self.assertEqual(self._indexes(), (1, 2))
+        other.refresh_from_db()
+        self.assertEqual((other.litter_autoname_index, other.subject_autoname_index), (0, 0))
+        # One revision records both lines, and its comment describes both.
+        revision = Revision.objects.order_by('-date_created').first()
+        self.assertEqual(Revision.objects.count(), n_revisions + 1)
+        # (Lines are registered to follow their breeding pairs, so these are saved too.)
+        self.assertEqual(sorted(revision.version_set.filter(
+            content_type__model='line').values_list('object_repr', flat=True)),
+            ['Line one', 'Line two'])
+        self.assertIn('Line one', revision.comment)
+        self.assertIn('Line two', revision.comment)
+
+    def test_permissions(self):
+        # Lab members cannot delete litters or subjects, so the action is not offered.
+        self.client.force_login(self.user)
+        r = self.client.get(self.url)
+        self.assertNotContains(r, 'rollback_litters')
+        self._post([self.litter])
+        self.assertEqual(self._exists([self.litter, *self.pups]), [True] * 3)
+        # Deleting litters is not enough: the subjects are deleted too.
+        self.user.user_permissions.add(Permission.objects.get(codename='delete_litter'))
+        self.user = LabMember.objects.get(pk=self.user.pk)  # clear the permission cache
+        self.assertNotContains(self.client.get(self.url), 'rollback_litters')
+        self.user.user_permissions.add(Permission.objects.get(codename='delete_subject'))
+        self.assertContains(self.client.get(self.url), 'rollback_litters')
+        self.user.user_permissions.clear()
+        # Stock managers look after the colony, so they can.
+        self.user.is_stock_manager = True
+        self.user.save()
+        self.assertContains(self.client.get(self.url), 'rollback_litters')
+        self._post([self.litter])
+        self.assertEqual(self._exists([self.litter, *self.pups]), [False] * 3)
 
 
 class TestBreedingPairAdmin(TestCase):

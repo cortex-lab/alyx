@@ -1,16 +1,19 @@
 from contextlib import suppress
 
+import reversion
 from django import forms
 from django.utils import timezone
 from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.contrib.admin.exceptions import NotRegistered
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Case, When, Count, Prefetch
+from django.template.response import TemplateResponse
 from django.forms import BaseInlineFormSet
 from django.utils.html import format_html
 from django.urls import reverse
@@ -989,6 +992,103 @@ class LitterForm(forms.ModelForm):
             )
 
 
+class _RollbackRefused(Exception):
+    """Raised inside the litter rollback transaction to undo it and report why."""
+
+
+def _autoname_number(name, prefix, digits):
+    """Return n if name is exactly prefix followed by n zero-padded to `digits`, else None."""
+    number = name[len(prefix):] if name.startswith(prefix) else ''
+    if len(number) == digits and number.isdigit():
+        return int(number)
+
+
+def _generic_references(objs):
+    """Return the records of any model that point at objs through a GenericForeignKey.
+
+    Deleting objs leaves these dangling, and the deletion collector does not see them unless
+    the target model declares a GenericRelation.
+    """
+    from django.apps import apps
+    from django.contrib.contenttypes.fields import GenericForeignKey
+    from django.contrib.contenttypes.models import ContentType
+    targets = {}
+    for obj in objs:
+        targets.setdefault(ContentType.objects.get_for_model(obj), []).append(obj.pk)
+    found = []
+    for model in apps.get_models():
+        for field in model._meta.private_fields:
+            if not isinstance(field, GenericForeignKey):
+                continue
+            for content_type, pks in targets.items():
+                found += model.objects.filter(**{
+                    field.ct_field: content_type,
+                    f'{field.fk_field}__in': [str(pk) for pk in pks]})
+    return found
+
+
+def plan_litter_rollback(litters):
+    """Check that litters can be deleted with their subjects and the autonumbering rolled back.
+
+    This undoes a litter created by mistake: the litters must be the newest ones of their line,
+    their subjects the newest subjects of that line, and nothing else may refer to any of them
+    (sessions, weighings, breeding pairs...).
+
+    :param litters: an iterable of Litter instances
+    :return: (plan, problems). plan is a list with, for each line, a dict with keys line,
+     litters, subjects, litter_index and subject_index (the new values of the line's
+     autoname indexes). problems is a list of strings; the rollback must not be done if it is
+     not empty.
+    """
+    from django.contrib.admin.utils import NestedObjects
+    problems, by_line = [], {}
+    for litter in litters:
+        if litter.line is None:
+            problems.append(f'{litter} has no line, so there is no autonumbering to roll back.')
+        else:
+            by_line.setdefault(litter.line, []).append(litter)
+    plan = []
+    for line, line_litters in by_line.items():
+        subjects = list(Subject.objects.filter(litter__in=line_litters).order_by('nickname'))
+        # Each list of names must be exactly the top of its counter: e.g. litters 79 and 80
+        # when the line's litter_autoname_index is 80.
+        indexes = {}
+        for kind, objs, prefix, digits, index in (
+                ('litter', line_litters, f'{line.nickname}_L_', 3, line.litter_autoname_index),
+                ('subject', subjects, f'{line.nickname}_', 4, line.subject_autoname_index)):
+            names = [str(o) for o in objs]
+            numbers = [_autoname_number(n, prefix, digits) for n in names]
+            if None in numbers or sorted(numbers) != list(range(index - len(objs) + 1, index + 1)):
+                problems.append(
+                    f'Line {line}: the {kind}s {", ".join(names)} are not the most recent '
+                    f'{kind}s autonumbered on this line (last {kind} number: {index}).')
+            indexes[kind] = index - len(objs)
+        foreign = [s for s in subjects if s.line_id != line.pk]
+        if foreign:
+            problems.append(f'Line {line}: {", ".join(map(str, foreign))} belong to another line.')
+        # Deleting must not take anything else with it, nor detach anything from them.
+        collector = NestedObjects(using='default')
+        if subjects:
+            collector.collect(subjects)
+        collector.collect(line_litters)
+        doomed = set(subjects) | set(line_litters)
+        others = [o for objs in collector.data.values() for o in objs]
+        others += [o for batches in collector.field_updates.values()
+                   for batch in batches for o in batch]
+        others += list(collector.protected)
+        others += _generic_references(doomed)  # e.g. notes, which the collector does not see
+        others = [o for o in others if o not in doomed]
+        if others:
+            listed = [f'{o._meta.verbose_name} {o}' for o in others[:10]]
+            if len(others) > 10:
+                listed.append(f'and {len(others) - 10} more')
+            problems.append(f'Line {line}: other records refer to these litters or subjects: '
+                            f'{", ".join(listed)}.')
+        plan.append(dict(line=line, litters=line_litters, subjects=subjects,
+                         litter_index=indexes['litter'], subject_index=indexes['subject']))
+    return plan, problems
+
+
 class LitterAdmin(BaseAdmin):
     list_display = ['name', 'breeding_pair', 'birth_date']
     list_select_related = ('breeding_pair',)
@@ -1000,8 +1100,84 @@ class LitterAdmin(BaseAdmin):
                    ]
     search_fields = ['name']
     form = LitterForm
+    actions = ['rollback_litters']
 
     inlines = [SubjectInline]
+
+    def has_rollback_permission(self, request):
+        user = request.user
+        return (user.is_superuser or user.is_stock_manager or
+                user.has_perms(['subjects.delete_litter', 'subjects.delete_subject']))
+
+    @admin.action(permissions=['rollback'],
+                  description='Delete litters and their subjects, and roll back the numbering')
+    def rollback_litters(self, request, queryset):
+        """Undo litters created by mistake: delete them and their subjects, and step the line's
+        litter and subject autonumbering back so that the names are reused.
+
+        Shows a confirmation page first. Only the most recent litters of a line qualify, with
+        subjects that nothing else refers to; see plan_litter_rollback.
+        """
+        litters = list(queryset.select_related('line').order_by('name'))
+        if request.POST.get('post') != 'yes':
+            plan, problems = plan_litter_rollback(litters)
+            context = dict(
+                self.admin_site.each_context(request),
+                title='Roll back litters', opts=self.model._meta, plan=plan,
+                problems=problems, queryset=litters,
+                action_checkbox_name=admin.helpers.ACTION_CHECKBOX_NAME)
+            return TemplateResponse(
+                request, 'admin/subjects/litter/rollback_confirmation.html', context)
+        try:
+            # The changelist view already runs actions in a revision; this joins it if so.
+            with transaction.atomic(), reversion.create_revision():
+                done = self._rollback_litters(request, litters)
+                reversion.set_user(request.user)
+                reversion.set_comment(' '.join(done))
+        except _RollbackRefused as e:
+            self.message_user(request, str(e), messages.ERROR)
+            return
+        for message in done:
+            self.message_user(request, message, messages.SUCCESS)
+
+    def _rollback_litters(self, request, litters):
+        """Do the rollback; must run in a transaction. Returns one message per line."""
+        # Lock the lines so that no litter or subject is autonumbered meanwhile, and the litters
+        # and subjects: in PostgreSQL this also blocks new rows referring to them until commit.
+        lines = {line.pk: line for line in Line.objects.select_for_update().filter(
+            pk__in={litter.line_id for litter in litters if litter.line_id})}
+        list(Litter.objects.select_for_update().filter(pk__in=[lt.pk for lt in litters]))
+        list(Subject.objects.select_for_update().filter(litter__in=litters))
+        for litter in litters:
+            litter.line = lines.get(litter.line_id)
+        plan, problems = plan_litter_rollback(litters)
+        if problems:
+            raise _RollbackRefused(' '.join(problems))
+        # Delete everything before saving any line: a refusal must come before reversion has
+        # recorded a line version, as an enclosing revision would otherwise still save it.
+        for step in plan:
+            deleted = step['subjects'] + step['litters']
+            self.log_deletions(request, deleted)
+            for obj in deleted:
+                _, counts = obj.delete()
+                counts = {label: n for label, n in counts.items() if n}
+                if counts != {obj._meta.label: 1}:  # the plan said nothing else goes with it
+                    raise _RollbackRefused(
+                        f'Deleting {obj} would also delete {counts}; nothing was changed.')
+        done = []
+        for step in plan:
+            deleted = step['subjects'] + step['litters']
+            line = step['line']
+            message = (f'Rolled back the autonumbering of line {line} after deleting '
+                       f'{", ".join(map(str, deleted))}: litter index '
+                       f'{line.litter_autoname_index} -> {step["litter_index"]}, subject '
+                       f'index {line.subject_autoname_index} -> {step["subject_index"]}.')
+            line.litter_autoname_index = step['litter_index']
+            line.subject_autoname_index = step['subject_index']
+            line.save(update_fields=['litter_autoname_index', 'subject_autoname_index'])
+            self.log_change(request, line, message)
+            done.append(message)
+        return done
 
     def get_form(self, request, obj=None, **kwargs):
         # just save obj reference for future processing in Inline
