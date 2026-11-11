@@ -11,7 +11,7 @@ from actions.models import Session, ProcedureType
 from misc.models import Lab
 from subjects.models import Subject, Project
 from experiments.models import ProbeInsertion, ImagingType, FOV, ImagingStack
-from data.models import Dataset, DatasetType, Tag
+from data.models import Dataset, DatasetType, Tag, DataRepository, FileRecord
 
 
 class APIProbeExperimentTests(BaseTests):
@@ -196,6 +196,35 @@ class APIProbeExperimentTests(BaseTests):
         urlf = (reverse('dataset-list') + '?&probe_insertion=' + insertions[0]['id'])
         datasets = self.ar(self.client.get(urlf))
         self.assertTrue(len(datasets) == 2)
+
+    def test_probe_insertion_detail_query_count(self):
+        """The probe insertion detail costs a fixed number of queries, whatever its datasets."""
+        insertion = ProbeInsertion.objects.create(session=self.session, name='probe00')
+        repo = DataRepository.objects.create(
+            name='server', globus_is_personal=False, data_url='https://server.org/')
+
+        def add_datasets(names):
+            for name in names:
+                dset = Dataset.objects.create(
+                    session=self.session, name=name, collection='alf/probe00')
+                FileRecord.objects.create(
+                    dataset=dset, data_repository=repo, exists=True,
+                    relative_path=f'alf/probe00/{name}')
+
+        def count_queries():
+            url = reverse('probeinsertion-detail', args=[insertion.id])
+            with CaptureQueriesContext(connection) as ctx:
+                data = self.ar(self.client.get(url))
+            self.assertTrue(all(d['data_url'] for d in data['datasets']))
+            return len(ctx.captured_queries), len(data['datasets'])
+
+        add_datasets(['a.times.npy'])
+        one, n_one = count_queries()
+        self.assertEqual(1, n_one)
+        add_datasets(['b.times.npy', 'c.times.npy', 'd.times.npy'])
+        several, n_several = count_queries()
+        self.assertEqual(4, n_several)
+        self.assertEqual(one, several, f'{one} queries for 1 dataset but {several} for 4')
 
     def test_chronic_insertion_list_query_count(self):
         """The chronic insertions list costs a fixed number of queries, whatever its length.

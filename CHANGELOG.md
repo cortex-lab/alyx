@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.1.0]
 
-...
+### Added
+
+- `session` filter for data-notices endpoint, e.g. `/data-notices?session=<uuid>,<uuid>`
+- `data_notice` filter for datasets endpoint, e.g. `/datasets?data_notice=<uuid>`
+- Session detail datasets now include a `data_notices` field of data notice UUIDs
+
+### Changed
+
+- Data notice `datasets` field is now write only, as notices may cover millions of datasets; use `/datasets?data_notice=<uuid>` instead
+- Data notice `description_html` field removed from the REST endpoints
+
+### Fixed
+
+- Data notices filtered by `datasets` are no longer returned once per matching dataset
+- Data notice list no longer makes extra queries per notice
+- Session detail datasets keep their prefetched relations when filtered by file record existence
+- Dataset `data_url` uses prefetched file records, so session and probe insertion details no longer make one or two queries per dataset
 
 ## [4.0.2]
 

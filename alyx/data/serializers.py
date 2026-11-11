@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q, BooleanField, Prefetch
+from django.db.models import Count, Q, BooleanField
 from rest_framework import serializers
-import markdown
 
 from one.alf.spec import QC
 
@@ -260,33 +259,18 @@ class DataNoticeSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
-    datasets = serializers.SlugRelatedField(
-        slug_field='pk',
+    # Write-only as a notice may cover millions of datasets; these are instead listed via the
+    # datasets endpoint, e.g. /datasets?data_notice=<uuid>
+    datasets = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Dataset.objects.all(),
         required=False,
+        write_only=True,
     )
-    description_html = serializers.SerializerMethodField()
-
-    def get_description_html(self, obj):
-        """Render description field as HTML using markdown."""
-        if not obj.description:
-            return ''
-        return markdown.markdown(obj.description, extensions=['extra', 'codehilite'])
 
     @staticmethod
     def setup_eager_loading(queryset):
-        queryset = queryset.select_related('created_by')
-        # Prefetch only dataset IDs (serializer uses SlugRelatedField with pk).
-        # This avoids loading full Dataset objects into memory for list responses.
-        # NB: Calls base manager instead of DatasetManager to avoid select related
-        # on dataset type and data format, which is not needed for this serializer.
-        dataset_prefetch = Prefetch(
-            'datasets',
-            Dataset._base_manager.only('id')
-        )
-        queryset = queryset.prefetch_related(dataset_prefetch)
-        return queryset
+        return queryset.select_related('created_by')
 
     class Meta:
         model = DataNotice
