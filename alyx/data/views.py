@@ -161,20 +161,33 @@ class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
 
 
 class DataNoticeFilter(BaseFilterSet):
-    datasets = UUIDInFilter(field_name='datasets__id', lookup_expr='in')
+    datasets = UUIDInFilter(method='datasets_filter')
+    session = UUIDInFilter(method='session_filter')
     dataset_tag = django_filters.CharFilter(method='dataset_tag_filter')
 
-    def dataset_tag_filter(self, notices, name, value):
-        """Filter notices by dataset tag using Exists semi-join (avoids fan-out)."""
+    @staticmethod
+    def _filter_linked_datasets(notices, **kwargs):
+        """Filter notices linked to datasets matching kwargs.
+
+        Uses an Exists semi-join so that each notice is returned once, regardless of how many of
+        its datasets match.
+        """
         through_model = notices.model.datasets.through
         return notices.filter(
-            Exists(
-                through_model.objects.filter(
-                    datanotice_id=OuterRef('id'),
-                    dataset__tags__name=value
-                )
-            )
+            Exists(through_model.objects.filter(datanotice_id=OuterRef('id'), **kwargs))
         )
+
+    def datasets_filter(self, notices, name, value):
+        """Filter notices linked to any of the given dataset UUIDs."""
+        return self._filter_linked_datasets(notices, dataset_id__in=value)
+
+    def session_filter(self, notices, name, value):
+        """Filter notices linked to any dataset of the given session UUIDs."""
+        return self._filter_linked_datasets(notices, dataset__session_id__in=value)
+
+    def dataset_tag_filter(self, notices, name, value):
+        """Filter notices by dataset tag."""
+        return self._filter_linked_datasets(notices, dataset__tags__name=value)
 
     class Meta:
         model = DataNotice
@@ -186,11 +199,26 @@ class DataNoticeFilter(BaseFilterSet):
             'affected_date_start',
             'affected_date_end',
             'datasets',
+            'session',
             'dataset_tag',
         )
 
 
 class DataNoticeList(generics.ListCreateAPIView):
+    """
+    get: **FILTERS**
+    -   **datasets**: notices covering any of these dataset UUIDs
+        `/data-notices?datasets=aad23144-0e52-4eac-80c5-c4ee2decb198,...`
+    -   **session**: notices covering any dataset of these session UUIDs
+        `/data-notices?session=aad23144-0e52-4eac-80c5-c4ee2decb198,...`
+    -   **dataset_tag**: notices covering any dataset with this tag `/data-notices?dataset_tag=foo`
+    -   **importance**: importance level `/data-notices?importance=40`
+
+    To list the datasets covered by a notice, use the datasets endpoint:
+    `/datasets?data_notice=aad23144-0e52-4eac-80c5-c4ee2decb198`
+
+    [===> data notice model reference](/admin/doc/models/data.datanotice)
+    """
     queryset = DataNotice.objects.all()
     serializer_class = DataNoticeSerializer
     permission_classes = rest_permission_classes()
@@ -198,10 +226,7 @@ class DataNoticeList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        queryset = self.serializer_class.setup_eager_loading(queryset)
-        # For list endpoints, defer large fields not needed in list responses
-        queryset = queryset.defer('description', 'json')
-        return queryset
+        return self.serializer_class.setup_eager_loading(queryset)
 
 
 class DataNoticeDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -236,10 +261,18 @@ class DatasetFilter(BaseFilterSet):
     tag = django_filters.CharFilter('tags__name')
     revision = django_filters.CharFilter('revision__name')
     qc = django_filters.CharFilter(method='enum_field_filter')
+    data_notice = UUIDInFilter(method='data_notice_filter')
 
     class Meta:
         model = Dataset
         exclude = ['json']
+
+    def data_notice_filter(self, dsets, name, value):
+        """Filter datasets covered by any of the given data notice UUIDs."""
+        through_model = DataNotice.datasets.through
+        return dsets.filter(
+            Exists(through_model.objects.filter(dataset_id=OuterRef('id'), datanotice_id__in=value))
+        )
 
     def filter_exists(self, dsets, name, value):
         """
@@ -292,6 +325,8 @@ class DatasetList(generics.ListCreateAPIView):
     -   **public**: only returns datasets that are public or not public
     -   **protected**: only returns datasets that are protected or not protected
     -   **qc**: only returns datasets with this QC value `/datasets?qc=PASS`
+    -   **data_notice**: only returns datasets covered by any of these data notice UUIDs
+        `/datasets?data_notice=aad23144-0e52-4eac-80c5-c4ee2decb198`
 
     [===> dataset model reference](/admin/doc/models/data.dataset)
     """

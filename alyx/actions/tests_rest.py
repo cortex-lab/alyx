@@ -2,6 +2,8 @@ import datetime
 import numpy as np
 
 from django.contrib.auth import get_user_model
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.timezone import now
 
@@ -19,7 +21,7 @@ from actions.models import (
     Surgery,
     ProcedureType,
 )
-from data.models import Dataset, DatasetType, FileRecord, DataRepository, Tag
+from data.models import Dataset, DatasetType, FileRecord, DataRepository, Tag, DataNotice
 
 
 class APIActionsBaseTests(BaseTests):
@@ -163,6 +165,50 @@ class APIActionsSessionsTests(APIActionsBaseTests):
                 self.assertEqual(200, r.status_code)
                 self.assertEqual(1, r.data["count"], "count must not be a pair count")
                 self.assertEqual([str(session.pk)], [x["id"] for x in r.data["results"]])
+
+    def test_session_detail_data_notices(self):
+        """Session detail datasets include the IDs of their data notices."""
+        session = Session.objects.create(
+            subject=self.subject, lab=self.lab01, number=1)
+        dtype, _ = DatasetType.objects.get_or_create(name="spikes.times")
+        repo = DataRepository.objects.create(
+            name="server", globus_is_personal=False, data_url="https://server.org/")
+
+        def create_dataset(collection):
+            dset = Dataset.objects.create(
+                session=session, name="spikes.times.npy", dataset_type=dtype,
+                collection=collection)
+            FileRecord.objects.create(
+                dataset=dset, data_repository=repo, exists=True,
+                relative_path=f"{session.pk}/{collection}/spikes.times.npy")
+            return dset
+
+        d0, d1, d2 = (create_dataset(f"alf/probe0{i}") for i in range(3))
+        n1 = DataNotice.objects.create(name="notice-1")
+        n1.datasets.add(d0, d1)
+        n2 = DataNotice.objects.create(name="notice-2")
+        n2.datasets.add(d1)
+
+        url = reverse("session-detail", args=[session.pk])
+        with CaptureQueriesContext(connection) as ctx:
+            r = self.client.get(url)
+        self.assertEqual(200, r.status_code)
+        notices = {d["id"]: d["data_notices"] for d in r.data["data_dataset_session_related"]}
+        expected = {
+            str(d0.pk): [n1.pk], str(d1.pk): [n1.pk, n2.pk], str(d2.pk): []}
+        self.assertEqual(expected.keys(), notices.keys())
+        for did, nids in expected.items():
+            self.assertCountEqual(nids, notices[did])
+
+        self.assertTrue(all(d["data_url"] for d in r.data["data_dataset_session_related"]))
+
+        # The number of queries should not scale with the number of datasets
+        self.assertEqual(1, sum('"data_datanotice"' in q["sql"] for q in ctx.captured_queries))
+        for i in range(3, 6):
+            n1.datasets.add(create_dataset(f"alf/probe0{i}"))
+        with self.assertNumQueries(len(ctx)):
+            r = self.client.get(url)
+        self.assertEqual(6, len(r.data["data_dataset_session_related"]))
 
     def test_sessions(self):
         a_dict4json = {

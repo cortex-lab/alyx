@@ -1,4 +1,4 @@
-from django.db.models import Prefetch
+from django.db.models import Manager, Prefetch
 from rest_framework import serializers
 from alyx.base import BaseSerializerEnumField
 from actions.models import Session
@@ -78,11 +78,13 @@ class ChannelSerializer(serializers.ModelSerializer):
 class FilterDatasetSerializer(serializers.ListSerializer):
 
     def to_representation(self, dsets):
-        if len(DataRepository.objects.filter(globus_is_personal=False)) > 0:
-            frs = FileRecord.objects.filter(pk__in=dsets.values_list("file_records", flat=True))
-            pkd = frs.filter(exists=True, data_repository__globus_is_personal=False
-                             ).values_list("dataset", flat=True)
-            dsets = dsets.filter(pk__in=pkd)
+        dsets = dsets.all() if isinstance(dsets, Manager) else dsets
+        if DataRepository.objects.filter(globus_is_personal=False).exists():
+            pkd = set(FileRecord.objects.filter(
+                dataset__in=[d.pk for d in dsets], exists=True,
+                data_repository__globus_is_personal=False).values_list('dataset', flat=True))
+            # Filter in Python as calling dsets.filter would discard any prefetched relations
+            dsets = [d for d in dsets if d.pk in pkd]
         return super(FilterDatasetSerializer, self).to_representation(dsets)
 
 
@@ -192,6 +194,10 @@ class ProbeInsertionDetailSerializer(serializers.ModelSerializer):
 
     def get_datasets(self, obj):
         qs = obj.session.data_dataset_session_related.filter(collection__icontains=obj.name)
+        # For data_url. The repositories are prefetched rather than joined so that each is loaded once
+        qs = qs.prefetch_related(
+            Prefetch('file_records', queryset=FileRecord.objects.select_related(None)),
+            'file_records__data_repository')
         request = self.context.get('request', None)
         dsets = ProbeInsertionDatasetsSerializer(qs, many=True, context={'request': request})
         return dsets.data
