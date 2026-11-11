@@ -32,6 +32,11 @@ urlpatterns = [
     path('locations/<str:name>', av.LabLocationAPIDetail.as_view(),
          name="location-detail"),
 
+    path('other-actions', av.OtherActionListCreate.as_view(), name='other-action-list'),
+
+    path('other-actions/<uuid:pk>', av.OtherActionAPIDetail.as_view(),
+         name='other-action-detail'),
+
     path('procedures', av.ProcedureTypeList.as_view(), name="procedures-list"),
 
     path('sessions', av.SessionAPIList.as_view(), name="session-list"),
@@ -52,8 +57,15 @@ urlpatterns = [
     path('water-requirement/<str:nickname>', av.WaterRequirement.as_view(),
          name='water-requirement'),
 
-    path('water-restriction', av.WaterRestrictionList.as_view(),
+    path('water-restrictions', av.WaterRestrictionListCreate.as_view(),
          name='water-restriction-list'),
+
+    path('water-restrictions/<uuid:pk>', av.WaterRestrictionAPIDetail.as_view(),
+         name='water-restriction-detail'),
+
+    # singular alias kept for existing clients
+    path('water-restriction', av.WaterRestrictionListCreate.as_view(),
+         name='water-restriction-list-alias'),
 
     path('water-type', av.WaterTypeList.as_view(),
          name="watertype-list"),

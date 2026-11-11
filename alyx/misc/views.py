@@ -22,13 +22,16 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.reverse import reverse
-from rest_framework import generics
+from rest_framework import generics, status
+import django_filters
+from django.db.models import Exists, OuterRef
 
 from alyx.base import BaseFilterSet, LimitedLimitOffsetPagination, rest_permission_classes
 from data.models import Tag
 from misc.signup import preferences
-from .serializers import UserSerializer, LabSerializer, NoteSerializer
-from .models import Lab, Note
+from .serializers import (UserSerializer, LabSerializer, NoteSerializer, HousingSerializer,
+                          HousingSubjectSerializer, HousingSubjectCreateSerializer)
+from .models import Lab, Note, Housing, HousingSubject
 from alyx.settings import TABLES_ROOT, MEDIA_ROOT
 
 logger = logging.getLogger(__name__)
@@ -370,3 +373,107 @@ class LLMsTextView(TemplateView):
         context['base_url'] = self.request.build_absolute_uri('/').rstrip('/')
         context['max_limit'] = LimitedLimitOffsetPagination.max_limit
         return context
+
+
+class HousingFilter(BaseFilterSet):
+    cage_name = django_filters.CharFilter(field_name='cage_name', lookup_expr='iexact')
+    subject = django_filters.CharFilter(
+        field_name='housing_subjects__subject__nickname', lookup_expr='iexact', distinct=True)
+    lab = django_filters.CharFilter(
+        field_name='housing_subjects__subject__lab__name', lookup_expr='iexact', distinct=True)
+    current = django_filters.BooleanFilter(method='filter_current')
+
+    def filter_current(self, queryset, name, value):
+        """Housings that have, or have no, subjects currently in them."""
+        open_assignments = HousingSubject.objects.filter(
+            housing=OuterRef('pk'), end_datetime__isnull=True)
+        return queryset.filter(Exists(open_assignments) if value else ~Exists(open_assignments))
+
+    class Meta:
+        model = Housing
+        fields = ['cage_name', 'subject', 'lab', 'current']
+
+
+class HousingList(generics.ListAPIView):
+    """
+    Lists housings, the conditions in which the subjects of a cage are kept.
+
+    get: **FILTERS**
+
+    -   **cage_name**: `/housings?cage_name=CAGE_01`
+    -   **subject**: subject nickname, including past subjects of the housing
+    -   **lab**: lab name
+    -   **current**: `true` for housings with subjects in them, `false` for past housings
+    """
+    queryset = HousingSerializer.setup_eager_loading(Housing.objects.all()).order_by('-id')
+    serializer_class = HousingSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = HousingFilter
+
+
+class HousingDetail(generics.RetrieveUpdateAPIView):
+    """
+    Allows viewing a housing and changing its conditions with PATCH.
+    Changing the conditions of a housing with current subjects closes it and creates a new
+    housing for those subjects, so that the history of conditions is kept: the response is
+    the new housing.
+    """
+    queryset = Housing.objects.all()
+    serializer_class = HousingSerializer
+    permission_classes = rest_permission_classes()
+    http_method_names = ['get', 'patch', 'head', 'options']
+
+
+class HousingSubjectFilter(BaseFilterSet):
+    cage_name = django_filters.CharFilter(field_name='housing__cage_name', lookup_expr='iexact')
+    subject = django_filters.CharFilter(field_name='subject__nickname', lookup_expr='iexact')
+    lab = django_filters.CharFilter(field_name='subject__lab__name', lookup_expr='iexact')
+    current = django_filters.BooleanFilter(field_name='end_datetime', lookup_expr='isnull')
+
+    class Meta:
+        model = HousingSubject
+        fields = ['housing', 'cage_name', 'subject', 'lab', 'current']
+
+
+class HousingSubjectList(generics.ListCreateAPIView):
+    """
+    get: lists the assignments of subjects to housings.
+
+    **FILTERS**
+
+    -   **cage_name**: `/housing-subjects?cage_name=CAGE_01`
+    -   **subject**: subject nickname
+    -   **lab**: lab name
+    -   **current**: `true` for the assignments that have not ended
+    -   **housing**: housing id
+
+    post: puts subjects in a cage from `start_datetime`.
+    The current housing of the cage is reused or created, and the subjects are removed from
+    their previous housing. The response is the housing and the assignments of the subjects.
+    """
+    queryset = HousingSubjectSerializer.setup_eager_loading(HousingSubject.objects.all()
+                                                            ).order_by('-start_datetime')
+    serializer_class = HousingSubjectSerializer
+    permission_classes = rest_permission_classes()
+    filterset_class = HousingSubjectFilter
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return HousingSubjectCreateSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        housing = serializer.save()
+        subjects = [s.pk for s in serializer.validated_data['subjects']]
+        assignments = HousingSubjectSerializer.setup_eager_loading(
+            HousingSubject.objects.filter(housing=housing, subject__in=subjects,
+                                          end_datetime__isnull=True))
+        context = self.get_serializer_context()
+        housing = HousingSerializer.setup_eager_loading(Housing.objects).get(pk=housing.pk)
+        return Response({
+            'housing': HousingSerializer(housing, context=context).data,
+            'housing_subjects': HousingSubjectSerializer(
+                assignments, many=True, context=context).data,
+        }, status=status.HTTP_201_CREATED)

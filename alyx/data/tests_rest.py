@@ -5,8 +5,11 @@ import uuid
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth import get_user_model
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
+from actions.models import Session
 from alyx.base import BaseTests
 from data.models import Dataset, FileRecord, Download, Tag, DatasetType, DataFormat, DataNotice
 from data.views import DatasetList
@@ -263,10 +266,94 @@ class APIDataTests(BaseTests):
         names = {item['name'] for item in data}
         self.assertEqual(names, {'notice-a', 'notice-c'})
 
+        # notice-c covers both datasets but should be returned once
         r = self.client.get(reverse('datanotice-list') + f'?datasets={d1.id},{d2.id}')
         data = self.ar(r, 200)
-        names = {item['name'] for item in data}
-        self.assertEqual(names, {'notice-a', 'notice-b', 'notice-c'})
+        names = sorted(item['name'] for item in data)
+        self.assertEqual(names, ['notice-a', 'notice-b', 'notice-c'])
+
+    def test_datanotice_list_filter_by_session(self):
+        ses1, ses2 = Session.objects.filter(subject__nickname=self.subject).order_by('number')
+        d1 = Dataset.objects.create(name='notice-ses-1a.npy', session=ses1)
+        d2 = Dataset.objects.create(name='notice-ses-1b.npy', session=ses1)
+        d3 = Dataset.objects.create(name='notice-ses-2.npy', session=ses2)
+
+        n1 = DataNotice.objects.create(name='ses-notice-a', created_by=self.superuser)
+        n1.datasets.add(d1, d2)  # two datasets in the same session
+        n2 = DataNotice.objects.create(name='ses-notice-b', created_by=self.superuser)
+        n2.datasets.add(d3)
+        DataNotice.objects.create(name='ses-notice-c', created_by=self.superuser)
+
+        r = self.client.get(reverse('datanotice-list') + f'?session={ses1.id}')
+        names = [item['name'] for item in self.ar(r, 200)]
+        self.assertEqual(names, ['ses-notice-a'])
+
+        r = self.client.get(reverse('datanotice-list') + f'?session={ses1.id},{ses2.id}')
+        names = sorted(item['name'] for item in self.ar(r, 200))
+        self.assertEqual(names, ['ses-notice-a', 'ses-notice-b'])
+
+        r = self.client.get(reverse('datanotice-list') + '?session=not-a-uuid')
+        self.ar(r, 400)
+
+    def test_datanotice_fields(self):
+        """Test that dataset IDs and rendered HTML are not returned."""
+        d1 = Dataset.objects.create(name='notice-fields-1.npy')
+        d2 = Dataset.objects.create(name='notice-fields-2.npy')
+
+        # datasets is write only
+        r = self.post(reverse('datanotice-list'), {
+            'name': 'fields-notice', 'description': '# Title', 'importance': 40,
+            'datasets': [str(d1.id), str(d2.id)]})
+        data = self.ar(r, 201)
+        notice = DataNotice.objects.get(name='fields-notice')
+        self.assertCountEqual(notice.datasets.values_list('id', flat=True), [d1.id, d2.id])
+
+        r = self.client.get(reverse('datanotice-list'))
+        list_data = next(x for x in self.ar(r, 200) if x['name'] == 'fields-notice')
+        r = self.client.get(reverse('datanotice-detail', args=[notice.id]))
+        detail_data = self.ar(r, 200)
+        for record in (data, list_data, detail_data):
+            self.assertNotIn('datasets', record)
+            self.assertNotIn('description_html', record)
+            self.assertEqual(record['description'], '# Title')
+
+    def test_datanotice_list_num_queries(self):
+        """Test that the number of list queries does not scale with the number of notices."""
+        def create_notices(n):
+            for i in range(n):
+                notice = DataNotice.objects.create(
+                    name=f'queries-notice-{i}', description='foo', created_by=self.superuser)
+                notice.datasets.add(Dataset.objects.create(name=f'queries-{i}.npy'))
+
+        url = reverse('datanotice-list')
+        create_notices(2)
+        with CaptureQueriesContext(connection) as ctx:
+            self.ar(self.client.get(url), 200)
+        DataNotice.objects.all().delete()
+        create_notices(6)
+        with self.assertNumQueries(len(ctx)):
+            self.ar(self.client.get(url), 200)
+
+    def test_dataset_list_filter_by_data_notice(self):
+        d1 = Dataset.objects.create(name='dn-filter-1.npy')
+        d2 = Dataset.objects.create(name='dn-filter-2.npy')
+        Dataset.objects.create(name='dn-filter-3.npy')
+        n1 = DataNotice.objects.create(name='dn-filter-a', created_by=self.superuser)
+        n1.datasets.add(d1, d2)
+        n2 = DataNotice.objects.create(name='dn-filter-b', created_by=self.superuser)
+        n2.datasets.add(d1)
+        n3 = DataNotice.objects.create(name='dn-filter-c', created_by=self.superuser)
+
+        r = self.client.get(reverse('dataset-list') + f'?data_notice={n2.id}')
+        self.assertEqual([x['name'] for x in self.ar(r, 200)], ['dn-filter-1.npy'])
+
+        # d1 is covered by both notices but should be returned once
+        r = self.client.get(reverse('dataset-list') + f'?data_notice={n1.id},{n2.id}')
+        names = sorted(x['name'] for x in self.ar(r, 200))
+        self.assertEqual(names, ['dn-filter-1.npy', 'dn-filter-2.npy'])
+
+        r = self.client.get(reverse('dataset-list') + f'?data_notice={n3.id}')
+        self.assertEqual(self.ar(r, 200), [])
 
     def test_datanotice_list_filter_by_dataset_tag(self):
         d1 = Dataset.objects.create(name='notice-tag-1.npy')

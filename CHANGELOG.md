@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0]
+
+### Added
+
+- Throttle class to set rates arbitrarily by table and action in the settings file
+- `session` filter for data-notices endpoint, e.g. `/data-notices?session=<uuid>,<uuid>`
+- `data_notice` filter for datasets endpoint, e.g. `/datasets?data_notice=<uuid>`
+- Session detail datasets now include a `data_notices` field of data notice UUIDs
+- Optional `ADMIN_THEME` lab setting (or environment variable) to customize the admin interface colors
+- GET/POST /other-actions endpoint
+- GET/POST /housing-subjects endpoint
+- GET/PATCH /housings endpoint
+
+### Changed
+
+- Data notice `datasets` field is now write only, as notices may cover millions of datasets; use `/datasets?data_notice=<uuid>` instead
+- Data notice `description_html` field removed from the REST endpoints
+- POST/PATCH water-restrictions endpoint
+
+### Fixed
+
+- Data notices filtered by `datasets` are no longer returned once per matching dataset
+- Data notice list no longer makes extra queries per notice
+- Session detail datasets keep their prefetched relations when filtered by file record existence
+- Dataset `data_url` uses prefetched file records, so session and probe insertion details no longer make one or two queries per dataset
+
 ## [4.0.2]
 
 ### Changed

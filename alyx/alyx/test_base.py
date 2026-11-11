@@ -3,13 +3,18 @@ from pathlib import Path
 import tempfile
 import uuid
 
-from django.test import Client, RequestFactory, TestCase, override_settings
+from django.core.cache import cache
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from actions.views import SessionAPIDetail, SessionAPIList, WaterRequirement, WaterTypeList
 from alyx.base import _custom_filter_parser
-from alyx.throttling import AdaptiveScopedRateThrottle, IPRateThrottle
+from alyx.throttling import (
+    AdaptiveScopedRateThrottle, IPRateThrottle, TableRateThrottle, action_name, table_name)
+from data.views import DownloadViewSet
+from misc.apps import check_throttle_settings
 
 
 class BaseCustomFilterTest(TestCase):
@@ -190,3 +195,76 @@ class TestThrottling(TestCase):
         key = throttle.get_cache_key(request, view=None)
 
         self.assertEqual(key, 'throttle_docs_198.51.100.20')
+
+
+class TestTableRateThrottle(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        cache.clear()  # throttle history is kept in the cache
+
+    def _request(self, method='get'):
+        request = getattr(self.factory, method)('/', REMOTE_ADDR='203.0.113.10')
+        request.user = AnonymousUser()
+        return request
+
+    def _allowed(self, view, n=1, method='get'):
+        """Whether each of n requests to the view is let through."""
+        return [TableRateThrottle().allow_request(self._request(method), view) for _ in range(n)]
+
+    def test_table_name(self):
+        self.assertEqual(table_name(SessionAPIList()), 'actions_session')
+        self.assertIsNone(table_name(DownloadViewSet()))
+        self.assertIsNone(table_name(WaterRequirement()))
+
+    def test_action_name(self):
+        cases = [
+            ('get', SessionAPIList(), 'list'),
+            ('post', SessionAPIList(), 'create'),
+            ('get', SessionAPIDetail(), 'retrieve'),
+            ('put', SessionAPIDetail(), 'update'),
+            ('patch', SessionAPIDetail(), 'partial_update'),
+            ('delete', SessionAPIDetail(), 'destroy'),
+            ('get', WaterTypeList(kwargs={'name': 'Water'}), 'list'),  # water-type/<name>
+            ('post', DownloadViewSet(action='create'), 'create'),
+            ('get', WaterRequirement(), None),
+        ]
+        for method, view, expected in cases:
+            with self.subTest(method=method, view=type(view).__name__):
+                self.assertEqual(action_name(self._request(method), view), expected)
+
+    def test_unthrottled_without_a_rate(self):
+        with override_settings(THROTTLE_TABLE_RATES={}):
+            self.assertTrue(all(self._allowed(SessionAPIList(), n=3)))
+        with override_settings(THROTTLE_TABLE_RATES={'data_dataset': '1/minute'}):
+            self.assertTrue(all(self._allowed(SessionAPIList(), n=3)))
+            self.assertTrue(all(self._allowed(WaterRequirement(), n=3)))
+
+    @override_settings(THROTTLE_TABLE_RATES={'actions_session': '2/minute'})
+    def test_table_rate_is_shared_by_its_actions(self):
+        self.assertEqual(self._allowed(SessionAPIList()), [True])
+        self.assertEqual(self._allowed(SessionAPIDetail()), [True])
+        self.assertEqual(self._allowed(SessionAPIList()), [False])
+
+    @override_settings(THROTTLE_TABLE_RATES={
+        'actions_session': '100/minute', 'actions_session.list': '1/minute'})
+    def test_action_rate_takes_precedence(self):
+        self.assertEqual(self._allowed(SessionAPIList(), n=2), [True, False])
+        self.assertEqual(self._allowed(SessionAPIDetail(), n=2), [True, True])
+
+    @override_settings(THROTTLE_TABLE_RATES={
+        'actions_session': '1/minute', 'actions_session.retrieve': None})
+    def test_none_exempts_an_action(self):
+        self.assertTrue(all(self._allowed(SessionAPIDetail(), n=3)))
+        self.assertEqual(self._allowed(SessionAPIList(), n=2), [True, False])
+
+    def test_settings_check(self):
+        cases = [
+            ({'actions_session.list': '10/minute', 'data_dataset': None}, []),
+            ({'actions_sesion': '10/minute'}, ['misc.W005']),
+            ({'actions_session.read': '10/minute'}, ['misc.W006']),
+            ({'actions_session': '10 a minute'}, ['misc.E005']),
+            ({'actions_session': 10}, ['misc.E005']),
+        ]
+        for rates, expected in cases:
+            with self.subTest(rates=rates), override_settings(THROTTLE_TABLE_RATES=rates):
+                self.assertEqual([e.id for e in check_throttle_settings(None)], expected)
