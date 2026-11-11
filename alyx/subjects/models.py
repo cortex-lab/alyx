@@ -10,7 +10,7 @@ from django.core import validators
 from django.db import models
 from django.db.models import DateTimeField, F, Value
 from django.db.models.functions import Greatest
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import class_prepared, post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -641,20 +641,62 @@ class Line(BaseModel):
     def __str__(self):
         return self.name
 
+    # What the line numbers: name field, counter (the last number used), name infix and
+    # number of digits, e.g. LINE_L_001 for the first litter.
+    AUTONAMES = {
+        BreedingPair: ('name', 'breeding_pair_autoname_index', '_BP_', 3),
+        Litter: ('name', 'litter_autoname_index', '_L_', 3),
+        Subject: ('nickname', 'subject_autoname_index', '_', 4),
+    }
+
+    def autoname(self, model, number):
+        """Return the name of the breeding pair, litter or subject numbered `number`."""
+        _, _, infix, digits = self.AUTONAMES[model]
+        return '%s%s%0*d' % (self.nickname, infix, digits, number)
+
+    def autoname_number(self, model, name):
+        """Return the number of `name` if it is an autoname of this line, else None."""
+        prefix = self.nickname + self.AUTONAMES[model][2]
+        number = name[len(prefix):] if name.startswith(prefix) else ''
+        if number.isascii() and number.isdigit() and self.autoname(model, int(number)) == name:
+            return int(number)
+
+    def release_autoname(self, obj):
+        """Step a counter back once the newest object it numbered has been deleted.
+
+        The counter goes back to the highest number still in use, so that e.g. once a litter
+        created by mistake and its pups are deleted, the next litter and pups reuse the names.
+        """
+        model = obj._meta.concrete_model
+        field, counter, infix, _ = self.AUTONAMES[model]
+        index = getattr(self, counter)
+        number = self.autoname_number(model, getattr(obj, field))
+        if number is None or number > index:
+            return
+        names = model.objects.filter(**{field + '__startswith': self.nickname + infix})
+        numbers = (self.autoname_number(model, n) for n in names.values_list(field, flat=True))
+        in_use = max((n for n in numbers if n is not None and n <= index), default=0)
+        if in_use < number:
+            # update() rather than save(): write only the counter, and only if it hasn't moved.
+            Line.objects.filter(pk=self.pk, **{counter: index}).update(**{counter: in_use})
+            setattr(self, counter, in_use)
+            logger.info('Line %s: %s set back from %d to %d after deleting %s.',
+                        self, counter, index, in_use, obj)
+
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
         self.save()
-        return '%s_BP_%03d' % (self.nickname, self.breeding_pair_autoname_index)
+        return self.autoname(BreedingPair, self.breeding_pair_autoname_index)
 
     def new_litter_autoname(self):
         self.litter_autoname_index = self.litter_autoname_index + 1
         self.save()
-        return '%s_L_%03d' % (self.nickname, self.litter_autoname_index)
+        return self.autoname(Litter, self.litter_autoname_index)
 
     def new_subject_autoname(self):
         self.subject_autoname_index = self.subject_autoname_index + 1
         self.save()
-        new_name = '%s_%04d' % (self.nickname, self.subject_autoname_index)
+        new_name = self.autoname(Subject, self.subject_autoname_index)
         if Subject.objects.filter(nickname=new_name).count() > 0:
             return self.new_subject_autoname()
         assert Subject.objects.filter(nickname=new_name).count() == 0
@@ -672,6 +714,22 @@ class Line(BaseModel):
             m = self.new_subject_autoname
         if getattr(obj, field, None) in (None, '-'):
             setattr(obj, field, m())
+
+
+@receiver(post_delete, sender=BreedingPair)
+@receiver(post_delete, sender=Litter)
+@receiver(post_delete, sender=Subject)
+def release_deleted_autoname(sender, instance, **kwargs):
+    line = Line.objects.filter(pk=instance.line_id).first() if instance.line_id else None
+    if line:  # None if the line is being deleted too
+        line.release_autoname(instance)
+
+
+@receiver(class_prepared)
+def connect_proxy_release_autoname(sender, **kwargs):
+    # Deleting through a proxy, e.g. the cull subject admin, sends the proxy as the sender.
+    if sender._meta.proxy and sender._meta.concrete_model in Line.AUTONAMES:
+        post_delete.connect(release_deleted_autoname, sender=sender)
 
 
 class SpeciesManager(models.Manager):

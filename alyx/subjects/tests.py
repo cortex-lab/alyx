@@ -6,6 +6,7 @@ import sys
 from uuid import UUID
 import warnings
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
@@ -13,7 +14,7 @@ from django.test import TestCase
 from django.test.client import RequestFactory
 
 from .admin import mysite
-from subjects.models import Subject
+from subjects.models import BreedingPair, Line, Litter, Subject
 from actions.models import Cull, CullMethod, WaterRestriction, Surgery
 from misc.models import Lab
 
@@ -379,3 +380,82 @@ class SubjectCullTests(TestCase):
         self.assertFalse(wr.is_active())
         self.sub2.refresh_from_db()
         self.assertEqual(self.sub2.protocol_number, '1')
+
+
+class LineAutonameTests(TestCase):
+    """Deleting the newest breeding pairs, litters or subjects of a line frees their names."""
+
+    def setUp(self):
+        self.lab = Lab.objects.create(name='awesomelab')
+        self.line = Line.objects.create(name='line', nickname='LN', lab=self.lab)
+        self.bp = BreedingPair.objects.create(line=self.line)
+        # LN_L_001 with pups LN_0001 and LN_0002, then LN_L_002 with LN_0003 and LN_0004
+        self.litters = [Litter.objects.create(line=self.line, breeding_pair=self.bp)
+                        for _ in range(2)]
+        self.pups = [Subject.objects.create(line=self.line, litter=litter, lab=self.lab)
+                     for litter in self.litters for _ in range(2)]
+
+    def assertIndexes(self, litter, subject):
+        self.line.refresh_from_db()
+        self.assertEqual(self.line.litter_autoname_index, litter)
+        self.assertEqual(self.line.subject_autoname_index, subject)
+
+    def test_litter_created_by_mistake(self):
+        self.assertEqual([lt.name for lt in self.litters], ['LN_L_001', 'LN_L_002'])
+        self.assertEqual([p.nickname for p in self.pups],
+                         ['LN_0001', 'LN_0002', 'LN_0003', 'LN_0004'])
+        # One at a time and oldest first, as from the pups inline of the litter admin
+        self.pups[2].delete()
+        self.assertIndexes(2, 4)  # LN_0004 is still in use
+        self.pups[3].delete()
+        self.assertIndexes(2, 2)
+        self.litters[1].delete()
+        self.assertIndexes(1, 2)
+        litter = Litter.objects.create(line=self.line)
+        pup = Subject.objects.create(line=self.line, litter=litter, lab=self.lab)
+        self.assertEqual((litter.name, pup.nickname), ('LN_L_002', 'LN_0003'))
+
+    def test_bulk_delete(self):
+        # The litter first leaves its pups without a litter
+        Litter.objects.filter(pk=self.litters[1].pk).delete()
+        self.assertIndexes(1, 4)
+        Subject.objects.filter(pk__in=[p.pk for p in self.pups[2:]]).delete()
+        self.assertIndexes(1, 2)
+
+    def test_proxy_delete(self):
+        """Deleting from the cull subject admin, which uses a proxy model, frees the name."""
+        apps.get_model('subjects', 'CullSubject').objects.get(pk=self.pups[3].pk).delete()
+        self.assertIndexes(2, 3)
+
+    def test_older_names(self):
+        """Deleting older objects keeps the counters, which then go back over their names."""
+        self.pups[1].delete()
+        self.litters[0].delete()
+        self.assertIndexes(2, 4)
+        self.pups[3].delete()
+        self.pups[2].delete()
+        self.assertIndexes(2, 1)
+        self.litters[1].delete()
+        self.assertIndexes(0, 1)
+
+    def test_names_in_use(self):
+        """Names in use count even off the line, and names the counter didn't give are ignored.
+        """
+        Subject.objects.filter(pk=self.pups[2].pk).update(line=None)
+        manual = Subject.objects.create(nickname='LN_0010', line=self.line, lab=self.lab)
+        self.pups[3].delete()
+        self.assertIndexes(2, 3)  # LN_0003 is still in use and LN_0010 is above the counter
+        manual.delete()
+        self.assertIndexes(2, 3)
+
+    def test_breeding_pair(self):
+        self.bp.delete()
+        self.line.refresh_from_db()
+        self.assertEqual(self.line.breeding_pair_autoname_index, 0)
+        self.assertEqual(BreedingPair.objects.create(line=self.line).name, 'LN_BP_001')
+
+    def test_autoname_number(self):
+        self.assertEqual(self.line.autoname_number(Litter, 'LN_L_001'), 1)
+        self.assertEqual(self.line.autoname_number(Litter, 'LN_L_1000'), 1000)
+        for name in ('LN_L_0001', 'LN_L_00\u00b2', 'LN_L_', 'LN_0001', 'LNX_L_001', 'Bob'):
+            self.assertIsNone(self.line.autoname_number(Litter, name), name)
