@@ -673,12 +673,14 @@ class Line(BaseModel):
         number = self.autoname_number(model, getattr(obj, field))
         if number is None or number > index:
             return
-        names = model.objects.filter(**{field + '__startswith': self.nickname + infix})
+        db = self._state.db  # the database of the line, e.g. a copy being pruned
+        names = model.objects.using(db).filter(**{field + '__startswith': self.nickname + infix})
         numbers = (self.autoname_number(model, n) for n in names.values_list(field, flat=True))
         in_use = max((n for n in numbers if n is not None and n <= index), default=0)
         if in_use < number:
             # update() rather than save(): write only the counter, and only if it hasn't moved.
-            Line.objects.filter(pk=self.pk, **{counter: index}).update(**{counter: in_use})
+            Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(
+                **{counter: in_use})
             setattr(self, counter, in_use)
             logger.info('Line %s: %s set back from %d to %d after deleting %s.',
                         self, counter, index, in_use, obj)
@@ -719,8 +721,8 @@ class Line(BaseModel):
 @receiver(post_delete, sender=BreedingPair)
 @receiver(post_delete, sender=Litter)
 @receiver(post_delete, sender=Subject)
-def release_deleted_autoname(sender, instance, **kwargs):
-    line = Line.objects.filter(pk=instance.line_id).first() if instance.line_id else None
+def release_deleted_autoname(sender, instance, using, **kwargs):
+    line = instance.line_id and Line.objects.using(using).filter(pk=instance.line_id).first()
     if line:  # None if the line is being deleted too
         line.release_autoname(instance)
 

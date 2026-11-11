@@ -10,8 +10,10 @@ from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_delete
 from django.test import TestCase
 from django.test.client import RequestFactory
+from django.utils.connection import ConnectionDoesNotExist
 
 from .admin import mysite
 from subjects.models import BreedingPair, Line, Litter, Subject
@@ -447,6 +449,14 @@ class LineAutonameTests(TestCase):
         self.assertIndexes(2, 3)  # LN_0003 is still in use and LN_0010 is above the counter
         manual.delete()
         self.assertIndexes(2, 3)
+
+    def test_database_alias(self):
+        """Deleting from another database, e.g. a copy being pruned, only queries that database.
+        """
+        # The alias is not configured, so only a query on the default database would succeed
+        with self.assertRaises(ConnectionDoesNotExist):
+            post_delete.send(sender=Subject, instance=self.pups[3], using='pruned_copy')
+        self.assertIndexes(2, 4)
 
     def test_breeding_pair(self):
         self.bp.delete()
