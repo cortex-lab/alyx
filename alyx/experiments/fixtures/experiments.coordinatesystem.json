@@ -16,5 +16,14 @@
   "json": null,
   "description": "Coordinate system based on the Allen brain Atlas for mice.\r\n\r\nOrigin Bregma, millimeters\r\nx: medio-lateral, right positive\r\ny: antero-posteror: front positive\r\nz: dorso-ventral: up positive.\r\n\r\nThe API below works with several atlas resolutions:\r\nhttps://github.com/int-brain-lab/ibllib/blob/master/ibllib/atlas/atlas.py"
  }
+},
+{
+ "model": "experiments.coordinatesystem",
+ "pk": "5676f396-880f-4382-b3ca-b6372d6456ca",
+ "fields": {
+  "name": "Qiu2018-Allen",
+  "json": null,
+  "description": "Coordinate system based on the Allen brain Atlas, scaled to the Qiu 2018 MRI atlas (average of 12 p65 mouse MRIs) and pitched to level the Bregma-Lambda surface, as in Pinpoint (Birman et al. 2023).\r\n\r\nScaling (ML, AP, DV): 0.952, 1.031, 0.885, applied before the rotation.\r\nPitch: 5 degrees rotation about the medio-lateral axis, positive lifts the nose (anterior side).\r\n\r\nOrigin Bregma, millimeters\r\nx: medio-lateral, right positive\r\ny: antero-posteror: front positive\r\nz: dorso-ventral: up positive.\r\n\r\nhttps://github.com/int-brain-lab/iblatlas/blob/main/iblatlas/atlas.py (Qiu2018Atlas)"
+ }
 }
 ]
