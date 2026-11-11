@@ -58,6 +58,13 @@ PUBLIC_SIGNUP_TRUST_FORWARDED_FOR = False
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
 TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
 
+# %% REST rate limits per table
+# As {'<table>' or '<table>.<action>': rate}, e.g. {'actions_session.list': '20/minute'}. Tables
+# are model tables (<app>_<model>); actions are list, retrieve, create, update, partial_update
+# and destroy. The most specific key wins and None exempts an action. These apply on top of the
+# burst and sustained rates. Defaults to the THROTTLE_TABLE_RATES env var, as JSON.
+THROTTLE_TABLE_RATES = json.loads(os.getenv('THROTTLE_TABLE_RATES') or '{}')
+
 # Folded into INSTALLED_APPS / MIDDLEWARE / AUTHENTICATION_BACKENDS / DATABASES below, which
 # settings_lab.py cannot do itself as it is imported before them.
 EXTRA_INSTALLED_APPS = ()
@@ -327,6 +334,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
         'alyx.throttling.BurstRateThrottle',
         'alyx.throttling.SustainedRateThrottle',
+        'alyx.throttling.TableRateThrottle',  # see THROTTLE_TABLE_RATES
     ],
     'DEFAULT_THROTTLE_RATES': {
         'burst': os.getenv('THROTTLE_BURST_RATE', '550/minute'),

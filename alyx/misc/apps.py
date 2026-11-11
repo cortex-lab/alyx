@@ -9,6 +9,7 @@ class UsersConfig(AppConfig):
     def ready(self):
         register(check_public_signup_settings)
         register(check_sso_settings)
+        register(check_throttle_settings)
 
 
 def check_public_signup_settings(app_configs, **kwargs):
@@ -112,5 +113,43 @@ def check_sso_settings(app_configs, **kwargs):
             'needed to sign users in.',
             hint='Leave it off unless Alyx calls the provider API on a user\'s behalf.',
             id='misc.W004'))
+
+    return errors
+
+
+def check_throttle_settings(app_configs, **kwargs):
+    """Report THROTTLE_TABLE_RATES entries that would never apply, or would fail when they do.
+
+    Entries are matched by name, so a misspelt table or action is silently ignored, and a
+    malformed rate only raises once a request for that table arrives.
+    """
+    from django.apps import apps
+    from alyx.throttling import REST_ACTIONS, TableRateThrottle
+
+    errors = []
+    rates = getattr(settings, 'THROTTLE_TABLE_RATES', None) or {}
+    tables = {model._meta.db_table for model in apps.get_models()}
+    for key, rate in rates.items():
+        table, _, action = key.partition('.')
+        if table not in tables:
+            errors.append(Warning(
+                f'THROTTLE_TABLE_RATES has a rate for {key!r} but there is no table {table!r}.',
+                hint='Keys are model tables such as actions_session, optionally followed by '
+                     'an action: actions_session.list.',
+                id='misc.W005'))
+        elif action and action not in REST_ACTIONS:
+            errors.append(Warning(
+                f'THROTTLE_TABLE_RATES has a rate for {key!r} but {action!r} is not a REST '
+                'action.',
+                hint=f'Actions are {", ".join(REST_ACTIONS)}, or a custom viewset action.',
+                id='misc.W006'))
+        try:
+            TableRateThrottle().parse_rate(rate)
+        except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+            errors.append(Error(
+                f'THROTTLE_TABLE_RATES has an invalid rate for {key!r}: {rate!r}.',
+                hint="Rates are '<count>/<period>' with a period of second, minute, hour or "
+                     'day, e.g. 100/minute, or None for no limit.',
+                id='misc.E005'))
 
     return errors

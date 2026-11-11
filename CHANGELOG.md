@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Throttle class to set rates arbitrarily by table and action in the settings file
 - `session` filter for data-notices endpoint, e.g. `/data-notices?session=<uuid>,<uuid>`
 - `data_notice` filter for datasets endpoint, e.g. `/datasets?data_notice=<uuid>`
 - Session detail datasets now include a `data_notices` field of data notice UUIDs
