@@ -13,11 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `session` filter for data-notices endpoint, e.g. `/data-notices?session=<uuid>,<uuid>`
 - `data_notice` filter for datasets endpoint, e.g. `/datasets?data_notice=<uuid>`
 - Session detail datasets now include a `data_notices` field of data notice UUIDs
+- Optional `ADMIN_THEME` lab setting (or environment variable) to customize the admin interface colors
+- GET/POST /other-actions endpoint
+- GET/POST /housing-subjects endpoint
+- GET/PATCH /housings endpoint
 
 ### Changed
 
 - Data notice `datasets` field is now write only, as notices may cover millions of datasets; use `/datasets?data_notice=<uuid>` instead
 - Data notice `description_html` field removed from the REST endpoints
+- POST/PATCH water-restrictions endpoint
 
 ### Fixed
 
@@ -55,7 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Optional `ADMIN_THEME` lab setting (or environment variable) to customize the admin interface colors
 - Public databases can offer self-registration, enabled with the `PUBLIC_DATABASE` lab setting.
   Adds a sign-up page at `/signup`, email confirmation of new accounts, and a password reset
   flow so that self-registered accounts are recoverable without an administrator
