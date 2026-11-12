@@ -2,17 +2,20 @@ from datetime import datetime, time
 import logging
 from operator import attrgetter
 import urllib
+import weakref
 
 import pytz
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
-from django.db import models
+from django.db import models, transaction
 from django.db.models import DateTimeField, F, Value
 from django.db.models.functions import Greatest
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import class_prepared, post_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import capfirst
+import reversion
 
 from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
@@ -641,20 +644,70 @@ class Line(BaseModel):
     def __str__(self):
         return self.name
 
+    # What the line numbers: name field, counter (the last number used), name infix and
+    # number of digits, e.g. LINE_L_001 for the first litter.
+    AUTONAMES = {
+        BreedingPair: ('name', 'breeding_pair_autoname_index', '_BP_', 3),
+        Litter: ('name', 'litter_autoname_index', '_L_', 3),
+        Subject: ('nickname', 'subject_autoname_index', '_', 4),
+    }
+
+    def autoname(self, model, number):
+        """Return the name of the breeding pair, litter or subject numbered `number`."""
+        _, _, infix, digits = self.AUTONAMES[model]
+        return '%s%s%0*d' % (self.nickname, infix, digits, number)
+
+    def autoname_number(self, model, name):
+        """Return the number of `name` if it is an autoname of this line, else None."""
+        prefix = self.nickname + self.AUTONAMES[model][2]
+        number = name[len(prefix):] if name.startswith(prefix) else ''
+        if number.isascii() and number.isdigit() and self.autoname(model, int(number)) == name:
+            return int(number)
+
+    def release_autonames(self, model, numbers, user=None):
+        """Undo the newest autonames of a model once deleted, by stepping its counter back.
+
+        The counter only goes back over `numbers`, those deleted in one transaction, and stops
+        at the first number that wasn't: e.g. deleting a litter created by mistake and its pups
+        lets the next litter and pups reuse their names, while the number of a pup since renamed
+        to an experiment name is never reissued. The change is saved as a revision of the line,
+        by `user` if given, so that its History page shows it.
+        """
+        counter = self.AUTONAMES[model][1]
+        index = new = getattr(self, counter)
+        while new > 0 and new in numbers:
+            new -= 1
+        if new == index:
+            return
+        db = self._state.db  # the database of the deletion, e.g. a copy being pruned
+        comment = '%s set back from %d to %d after deleting %s.' % (
+            capfirst(self._meta.get_field(counter).verbose_name), index, new,
+            ', '.join(self.autoname(model, n) for n in range(new + 1, index + 1)))
+        with reversion.create_revision(using=db):
+            # update() rather than save(): write only the counter, and only if it hasn't moved.
+            if not Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(
+                    **{counter: new}):
+                return
+            setattr(self, counter, new)
+            reversion.set_user(user)
+            reversion.set_comment(comment)
+            reversion.add_to_revision(self, model_db=db)
+        logger.info('Line %s: %s', self, comment)
+
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
         self.save()
-        return '%s_BP_%03d' % (self.nickname, self.breeding_pair_autoname_index)
+        return self.autoname(BreedingPair, self.breeding_pair_autoname_index)
 
     def new_litter_autoname(self):
         self.litter_autoname_index = self.litter_autoname_index + 1
         self.save()
-        return '%s_L_%03d' % (self.nickname, self.litter_autoname_index)
+        return self.autoname(Litter, self.litter_autoname_index)
 
     def new_subject_autoname(self):
         self.subject_autoname_index = self.subject_autoname_index + 1
         self.save()
-        new_name = '%s_%04d' % (self.nickname, self.subject_autoname_index)
+        new_name = self.autoname(Subject, self.subject_autoname_index)
         if Subject.objects.filter(nickname=new_name).count() > 0:
             return self.new_subject_autoname()
         assert Subject.objects.filter(nickname=new_name).count() == 0
@@ -672,6 +725,58 @@ class Line(BaseModel):
             m = self.new_subject_autoname
         if getattr(obj, field, None) in (None, '-'):
             setattr(obj, field, m())
+
+
+class _DeletedAutonames:
+    """The numbers of a line's autonames deleted in one transaction, released on commit."""
+
+    def __init__(self, key, line, model):
+        self.key, self.line, self.model, self.numbers = key, line, model, set()
+        # Who is deleting, if known, e.g. in the admin
+        self.user = reversion.get_user() if reversion.is_active() else None
+
+    def release(self):
+        _deleted_autonames.pop(self.key, None)  # later deletions are another transaction's
+        line = Line.objects.using(self.line._state.db).filter(pk=self.line.pk).first()
+        if line:  # None if the line was deleted too
+            line.release_autonames(self.model, self.numbers, self.user)
+
+
+# The autonames deleted in each transaction, by connection, line and model. Only the on_commit
+# callback holds them, so that if the transaction rolls back they are dropped with it.
+_deleted_autonames = weakref.WeakValueDictionary()
+
+
+@receiver(pre_delete, sender=BreedingPair)
+@receiver(pre_delete, sender=Litter)
+@receiver(pre_delete, sender=Subject)
+def release_deleted_autoname(sender, instance, using, **kwargs):
+    # The numbers are released together once the transaction commits, so that e.g. the pups
+    # inline of the litter admin, which deletes the oldest pups first, frees all their names.
+    if not instance.line_id:
+        return
+    model = sender._meta.concrete_model
+    key = (transaction.get_connection(using), instance.line_id, model)
+    deleted = _deleted_autonames.get(key)
+    if deleted is None:
+        line = Line.objects.using(using).filter(pk=instance.line_id).first()
+        if line is None:
+            return
+        deleted = _deleted_autonames[key] = _DeletedAutonames(key, line, model)
+        transaction.on_commit(deleted.release, using=using, robust=True)
+    number = deleted.line.autoname_number(model, getattr(instance, Line.AUTONAMES[model][0]))
+    # A subject with sessions keeps its name, which its data folders on disk have too. Its
+    # sessions are deleted with it, hence pre_delete.
+    if number is not None and not (
+            model is Subject and instance.actions_sessions.using(using).exists()):
+        deleted.numbers.add(number)
+
+
+@receiver(class_prepared)
+def connect_proxy_release_autoname(sender, **kwargs):
+    # Deleting through a proxy, e.g. the cull subject admin, sends the proxy as the sender.
+    if sender._meta.proxy and sender._meta.concrete_model in Line.AUTONAMES:
+        pre_delete.connect(release_deleted_autoname, sender=sender)
 
 
 class SpeciesManager(models.Manager):
