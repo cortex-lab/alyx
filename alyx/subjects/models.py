@@ -751,7 +751,10 @@ def release_deleted_autoname(sender, instance, using, **kwargs):
         deleted = _deleted_autonames[key] = _DeletedAutonames(key, line, model)
         transaction.on_commit(deleted.release, using=using, robust=True)
     number = deleted.line.autoname_number(model, getattr(instance, Line.AUTONAMES[model][0]))
-    if number is not None:
+    # A subject with sessions keeps its name, which its data folders on disk have too. Its
+    # sessions are deleted with it, hence pre_delete.
+    if number is not None and not (
+            model is Subject and instance.actions_sessions.using(using).exists()):
         deleted.numbers.add(number)
 
 

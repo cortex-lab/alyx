@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Deleting the newest litters, subjects or breeding pairs of a line, together or newest first, steps its autoname index back over their numbers
+- Deleting the newest litters, subjects or breeding pairs of a line, together or newest first, steps its autoname index back over their numbers, except those of subjects with sessions
 
 ## [4.1.0]
 

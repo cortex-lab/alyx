@@ -18,7 +18,7 @@ from django.utils.connection import ConnectionDoesNotExist
 
 from .admin import mysite
 from subjects.models import BreedingPair, Line, Litter, Subject
-from actions.models import Cull, CullMethod, WaterRestriction, Surgery
+from actions.models import Cull, CullMethod, Session, WaterRestriction, Surgery
 from misc.models import Lab
 
 logger = logging.getLogger(__file__)
@@ -453,6 +453,12 @@ class LineAutonameTests(TestCase):
         self.assertIndexes(2, 4)
         manual = Subject.objects.create(nickname='LN_0010', line=self.line, lab=self.lab)
         self.delete(self.pups[3], manual)  # not an autoname, and above the counter
+        self.assertIndexes(2, 4)
+
+    def test_subject_with_sessions(self):
+        """A subject with sessions keeps its name, which its data folders on disk have too."""
+        Session.objects.create(subject=self.pups[3])
+        self.delete(self.pups[2], self.pups[3])
         self.assertIndexes(2, 4)
 
     def test_rollback(self):
