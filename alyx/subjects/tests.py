@@ -10,7 +10,8 @@ from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.exceptions import ValidationError
-from django.db.models.signals import post_delete
+from django.db import transaction
+from django.db.models.signals import pre_delete
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.utils.connection import ConnectionDoesNotExist
@@ -402,64 +403,80 @@ class LineAutonameTests(TestCase):
         self.assertEqual(self.line.litter_autoname_index, litter)
         self.assertEqual(self.line.subject_autoname_index, subject)
 
+    def delete(self, *objs):
+        """Delete the objects, or querysets, one after the other in one transaction."""
+        with self.captureOnCommitCallbacks(execute=True):
+            for obj in objs:
+                obj.delete()
+
     def test_litter_created_by_mistake(self):
         self.assertEqual([lt.name for lt in self.litters], ['LN_L_001', 'LN_L_002'])
         self.assertEqual([p.nickname for p in self.pups],
                          ['LN_0001', 'LN_0002', 'LN_0003', 'LN_0004'])
-        # One at a time and oldest first, as from the pups inline of the litter admin
-        self.pups[2].delete()
-        self.assertIndexes(2, 4)  # LN_0004 is still in use
-        self.pups[3].delete()
+        # Oldest first, as from the pups inline of the litter admin
+        self.delete(self.pups[2], self.pups[3])
         self.assertIndexes(2, 2)
-        self.litters[1].delete()
+        self.delete(self.litters[1])
         self.assertIndexes(1, 2)
         litter = Litter.objects.create(line=self.line)
         pup = Subject.objects.create(line=self.line, litter=litter, lab=self.lab)
         self.assertEqual((litter.name, pup.nickname), ('LN_L_002', 'LN_0003'))
 
+    def test_separate_deletes(self):
+        """Across transactions only the newest steps back, so the newest must go first."""
+        self.delete(self.pups[3])
+        self.delete(self.pups[2])
+        self.assertIndexes(2, 2)
+        self.delete(self.pups[0])
+        self.delete(self.pups[1])
+        self.assertIndexes(2, 1)  # LN_0001 stays unused
+
     def test_bulk_delete(self):
         # The litter first leaves its pups without a litter
-        Litter.objects.filter(pk=self.litters[1].pk).delete()
+        self.delete(Litter.objects.filter(pk=self.litters[1].pk))
         self.assertIndexes(1, 4)
-        Subject.objects.filter(pk__in=[p.pk for p in self.pups[2:]]).delete()
+        self.delete(Subject.objects.filter(pk__in=[p.pk for p in self.pups[2:]]))
         self.assertIndexes(1, 2)
 
     def test_proxy_delete(self):
         """Deleting from the cull subject admin, which uses a proxy model, frees the name."""
-        apps.get_model('subjects', 'CullSubject').objects.get(pk=self.pups[3].pk).delete()
+        self.delete(apps.get_model('subjects', 'CullSubject').objects.get(pk=self.pups[3].pk))
         self.assertIndexes(2, 3)
 
-    def test_older_names(self):
-        """Deleting older objects keeps the counters, which then go back over their names."""
-        self.pups[1].delete()
-        self.litters[0].delete()
+    def test_renamed(self):
+        """The counter never goes back over a number it didn't just see deleted."""
+        self.pups[3].nickname = 'KM_077'  # e.g. renamed to an experiment name
+        self.pups[3].save()
+        mistake = Subject.objects.create(line=self.line, lab=self.lab)
+        self.assertEqual(mistake.nickname, 'LN_0005')
+        self.delete(mistake, self.pups[2])
         self.assertIndexes(2, 4)
-        self.pups[3].delete()
-        self.pups[2].delete()
-        self.assertIndexes(2, 1)
-        self.litters[1].delete()
-        self.assertIndexes(0, 1)
-
-    def test_names_in_use(self):
-        """Names in use count even off the line, and names the counter didn't give are ignored.
-        """
-        Subject.objects.filter(pk=self.pups[2].pk).update(line=None)
         manual = Subject.objects.create(nickname='LN_0010', line=self.line, lab=self.lab)
-        self.pups[3].delete()
-        self.assertIndexes(2, 3)  # LN_0003 is still in use and LN_0010 is above the counter
-        manual.delete()
+        self.delete(self.pups[3], manual)  # not an autoname, and above the counter
+        self.assertIndexes(2, 4)
+
+    def test_rollback(self):
+        """Deletions rolled back are forgotten, and don't count towards the next transaction."""
+        with self.assertRaises(ZeroDivisionError), transaction.atomic():
+            Subject.objects.get(pk=self.pups[3].pk).delete()
+            1 / 0
+        self.assertIndexes(2, 4)
+        self.delete(Subject.objects.filter(pk=self.pups[3].pk))
         self.assertIndexes(2, 3)
 
     def test_database_alias(self):
-        """Deleting from another database, e.g. a copy being pruned, only queries that database.
-        """
-        # The alias is not configured, so only a query on the default database would succeed
+        """Deleting from another database, e.g. a copy being pruned, only uses that database."""
+        # The alias is not configured, so only using the default database would succeed
         with self.assertRaises(ConnectionDoesNotExist):
-            post_delete.send(sender=Subject, instance=self.pups[3], using='pruned_copy')
+            pre_delete.send(sender=Subject, instance=self.pups[3], using='pruned_copy')
+        line = Line.objects.get(pk=self.line.pk)
+        line._state.db = 'pruned_copy'
+        with self.assertRaises(ConnectionDoesNotExist):
+            line.release_autonames(Subject, {4})
         self.assertIndexes(2, 4)
 
     def test_breeding_pair(self):
-        self.bp.delete()
+        self.delete(self.bp)
         self.line.refresh_from_db()
         self.assertEqual(self.line.breeding_pair_autoname_index, 0)
         self.assertEqual(BreedingPair.objects.create(line=self.line).name, 'LN_BP_001')

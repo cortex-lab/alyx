@@ -2,15 +2,16 @@ from datetime import datetime, time
 import logging
 from operator import attrgetter
 import urllib
+import weakref
 
 import pytz
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core import validators
-from django.db import models
+from django.db import models, transaction
 from django.db.models import DateTimeField, F, Value
 from django.db.models.functions import Greatest
-from django.db.models.signals import class_prepared, post_save, post_delete
+from django.db.models.signals import class_prepared, post_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -661,29 +662,25 @@ class Line(BaseModel):
         if number.isascii() and number.isdigit() and self.autoname(model, int(number)) == name:
             return int(number)
 
-    def release_autoname(self, obj):
-        """Step a counter back once the newest object it numbered has been deleted.
+    def release_autonames(self, model, numbers):
+        """Undo the newest autonames of a model once deleted, by stepping its counter back.
 
-        The counter goes back to the highest number still in use, so that e.g. once a litter
-        created by mistake and its pups are deleted, the next litter and pups reuse the names.
+        The counter only goes back over `numbers`, those deleted in one transaction, and stops
+        at the first number that wasn't: e.g. deleting a litter created by mistake and its pups
+        lets the next litter and pups reuse their names, while the number of a pup since renamed
+        to an experiment name is never reissued.
         """
-        model = obj._meta.concrete_model
-        field, counter, infix, _ = self.AUTONAMES[model]
-        index = getattr(self, counter)
-        number = self.autoname_number(model, getattr(obj, field))
-        if number is None or number > index:
+        counter = self.AUTONAMES[model][1]
+        index = new = getattr(self, counter)
+        while new > 0 and new in numbers:
+            new -= 1
+        if new == index:
             return
-        db = self._state.db  # the database of the line, e.g. a copy being pruned
-        names = model.objects.using(db).filter(**{field + '__startswith': self.nickname + infix})
-        numbers = (self.autoname_number(model, n) for n in names.values_list(field, flat=True))
-        in_use = max((n for n in numbers if n is not None and n <= index), default=0)
-        if in_use < number:
-            # update() rather than save(): write only the counter, and only if it hasn't moved.
-            Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(
-                **{counter: in_use})
-            setattr(self, counter, in_use)
-            logger.info('Line %s: %s set back from %d to %d after deleting %s.',
-                        self, counter, index, in_use, obj)
+        db = self._state.db  # the database of the deletion, e.g. a copy being pruned
+        # update() rather than save(): write only the counter, and only if it hasn't moved.
+        if Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(**{counter: new}):
+            setattr(self, counter, new)
+            logger.info('Line %s: %s set back from %d to %d.', self, counter, index, new)
 
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
@@ -718,20 +715,51 @@ class Line(BaseModel):
             setattr(obj, field, m())
 
 
-@receiver(post_delete, sender=BreedingPair)
-@receiver(post_delete, sender=Litter)
-@receiver(post_delete, sender=Subject)
+class _DeletedAutonames:
+    """The numbers of a line's autonames deleted in one transaction, released on commit."""
+
+    def __init__(self, key, line, model):
+        self.key, self.line, self.model, self.numbers = key, line, model, set()
+
+    def release(self):
+        _deleted_autonames.pop(self.key, None)  # later deletions are another transaction's
+        line = Line.objects.using(self.line._state.db).filter(pk=self.line.pk).first()
+        if line:  # None if the line was deleted too
+            line.release_autonames(self.model, self.numbers)
+
+
+# The autonames deleted in each transaction, by connection, line and model. Only the on_commit
+# callback holds them, so that if the transaction rolls back they are dropped with it.
+_deleted_autonames = weakref.WeakValueDictionary()
+
+
+@receiver(pre_delete, sender=BreedingPair)
+@receiver(pre_delete, sender=Litter)
+@receiver(pre_delete, sender=Subject)
 def release_deleted_autoname(sender, instance, using, **kwargs):
-    line = instance.line_id and Line.objects.using(using).filter(pk=instance.line_id).first()
-    if line:  # None if the line is being deleted too
-        line.release_autoname(instance)
+    # The numbers are released together once the transaction commits, so that e.g. the pups
+    # inline of the litter admin, which deletes the oldest pups first, frees all their names.
+    if not instance.line_id:
+        return
+    model = sender._meta.concrete_model
+    key = (transaction.get_connection(using), instance.line_id, model)
+    deleted = _deleted_autonames.get(key)
+    if deleted is None:
+        line = Line.objects.using(using).filter(pk=instance.line_id).first()
+        if line is None:
+            return
+        deleted = _deleted_autonames[key] = _DeletedAutonames(key, line, model)
+        transaction.on_commit(deleted.release, using=using, robust=True)
+    number = deleted.line.autoname_number(model, getattr(instance, Line.AUTONAMES[model][0]))
+    if number is not None:
+        deleted.numbers.add(number)
 
 
 @receiver(class_prepared)
 def connect_proxy_release_autoname(sender, **kwargs):
     # Deleting through a proxy, e.g. the cull subject admin, sends the proxy as the sender.
     if sender._meta.proxy and sender._meta.concrete_model in Line.AUTONAMES:
-        post_delete.connect(release_deleted_autoname, sender=sender)
+        pre_delete.connect(release_deleted_autoname, sender=sender)
 
 
 class SpeciesManager(models.Manager):
