@@ -14,6 +14,8 @@ from django.db.models.functions import Greatest
 from django.db.models.signals import class_prepared, post_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import capfirst
+import reversion
 
 from alyx.base import BaseModel, alyx_mail, modify_fields, ALF_SPEC
 from actions.notifications import responsible_user_changed
@@ -662,13 +664,14 @@ class Line(BaseModel):
         if number.isascii() and number.isdigit() and self.autoname(model, int(number)) == name:
             return int(number)
 
-    def release_autonames(self, model, numbers):
+    def release_autonames(self, model, numbers, user=None):
         """Undo the newest autonames of a model once deleted, by stepping its counter back.
 
         The counter only goes back over `numbers`, those deleted in one transaction, and stops
         at the first number that wasn't: e.g. deleting a litter created by mistake and its pups
         lets the next litter and pups reuse their names, while the number of a pup since renamed
-        to an experiment name is never reissued.
+        to an experiment name is never reissued. The change is saved as a revision of the line,
+        by `user` if given, so that its History page shows it.
         """
         counter = self.AUTONAMES[model][1]
         index = new = getattr(self, counter)
@@ -677,10 +680,19 @@ class Line(BaseModel):
         if new == index:
             return
         db = self._state.db  # the database of the deletion, e.g. a copy being pruned
-        # update() rather than save(): write only the counter, and only if it hasn't moved.
-        if Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(**{counter: new}):
+        comment = '%s set back from %d to %d after deleting %s.' % (
+            capfirst(self._meta.get_field(counter).verbose_name), index, new,
+            ', '.join(self.autoname(model, n) for n in range(new + 1, index + 1)))
+        with reversion.create_revision(using=db):
+            # update() rather than save(): write only the counter, and only if it hasn't moved.
+            if not Line.objects.using(db).filter(pk=self.pk, **{counter: index}).update(
+                    **{counter: new}):
+                return
             setattr(self, counter, new)
-            logger.info('Line %s: %s set back from %d to %d.', self, counter, index, new)
+            reversion.set_user(user)
+            reversion.set_comment(comment)
+            reversion.add_to_revision(self, model_db=db)
+        logger.info('Line %s: %s', self, comment)
 
     def new_breeding_pair_autoname(self):
         self.breeding_pair_autoname_index = self.breeding_pair_autoname_index + 1
@@ -720,12 +732,14 @@ class _DeletedAutonames:
 
     def __init__(self, key, line, model):
         self.key, self.line, self.model, self.numbers = key, line, model, set()
+        # Who is deleting, if known, e.g. in the admin
+        self.user = reversion.get_user() if reversion.is_active() else None
 
     def release(self):
         _deleted_autonames.pop(self.key, None)  # later deletions are another transaction's
         line = Line.objects.using(self.line._state.db).filter(pk=self.line.pk).first()
         if line:  # None if the line was deleted too
-            line.release_autonames(self.model, self.numbers)
+            line.release_autonames(self.model, self.numbers, self.user)
 
 
 # The autonames deleted in each transaction, by connection, line and model. Only the on_commit

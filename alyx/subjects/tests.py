@@ -14,7 +14,9 @@ from django.db import transaction
 from django.db.models.signals import pre_delete
 from django.test import TestCase
 from django.test.client import RequestFactory
+from django.urls import reverse
 from django.utils.connection import ConnectionDoesNotExist
+from reversion.models import Version
 
 from .admin import mysite
 from subjects.models import BreedingPair, Line, Litter, Subject
@@ -460,6 +462,22 @@ class LineAutonameTests(TestCase):
         Session.objects.create(subject=self.pups[3])
         self.delete(self.pups[2], self.pups[3])
         self.assertIndexes(2, 4)
+
+    def test_history(self):
+        """The History page of the line shows the change, and who deleted in the admin."""
+        user = get_user_model().objects.create_superuser('admin', 'admin@example.com', 'pass')
+        self.client.force_login(user)
+        url = reverse('admin:subjects_subject_delete', args=[self.pups[3].pk])
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(self.client.post(url, {'post': 'yes'}).status_code, 302)
+        self.delete(self.pups[2])  # no user outside the admin
+        self.assertIndexes(2, 2)
+        revisions = [v.revision for v in Version.objects.get_for_object(self.line)]
+        self.assertEqual([r.user for r in revisions], [None, user])
+        comment = 'Subject autoname index set back from 4 to 3 after deleting LN_0004.'
+        self.assertEqual(revisions[1].get_comment(), comment)
+        response = self.client.get(reverse('admin:subjects_line_history', args=[self.line.pk]))
+        self.assertContains(response, comment)
 
     def test_rollback(self):
         """Deletions rolled back are forgotten, and don't count towards the next transaction."""
