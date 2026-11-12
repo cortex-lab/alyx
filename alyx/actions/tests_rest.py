@@ -705,8 +705,13 @@ class APIWaterRestrictionTests(APIActionsBaseTests):
         self.url = reverse("water-restriction-list")
 
     def test_create_and_end_restriction(self):
-        Weighing.objects.create(subject=self.subject, weight=25.0)
-        data = {"subject": self.subject.nickname, "narrative": "start"}
+        # Pin the weighing and start_time to midday: last_weighing_before compares calendar
+        # dates in the lab timezone, so a "now" weighing can roll over to the next day there
+        # late in the UTC day and be excluded (time-of-day-dependent failure).
+        start = datetime.datetime(2026, 1, 15, 12, 0)
+        Weighing.objects.create(subject=self.subject, weight=25.0, date_time=start)
+        data = {"subject": self.subject.nickname, "narrative": "start",
+                "start_time": start.isoformat()}
         d = self.ar(self.post(self.url, data), 201)
         self.assertEqual(d["reference_weight"], 25.0)
         self.assertEqual(d["users"], ["test"])
