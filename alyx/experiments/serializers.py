@@ -11,6 +11,11 @@ from subjects.fields import SubjectField
 from misc.models import Lab
 
 
+def dataset_ids_prefetch(lookup='datasets'):
+    """Prefetch a dataset relation for serializing as IDs, without loading each dataset in full."""
+    return Prefetch(lookup, queryset=Dataset.objects.select_related(None).only('id'))
+
+
 class SessionListSerializer(serializers.ModelSerializer):
     """Session model serializer within ProbeInsertion and ChronicProbeInsertion serializers."""
     subject = serializers.SlugRelatedField(read_only=True, slug_field='nickname')
@@ -141,7 +146,7 @@ class ProbeInsertionListSerializer(serializers.ModelSerializer):
         different sessions that share a start time tie, which 120 insertions currently do.
         """
         queryset = queryset.select_related('model', 'session', 'session__subject', 'session__lab')
-        queryset = queryset.prefetch_related('session__projects', 'datasets')
+        queryset = queryset.prefetch_related('session__projects', dataset_ids_prefetch())
         return queryset.order_by('-session__start_time', 'name',
                                  'session__subject__nickname', 'session__number', 'pk')
 
@@ -336,7 +341,7 @@ class FOVSerializer(serializers.ModelSerializer):
         # Apply eager loading to the nested location field
         location_qs = FOVLocationListSerializer.setup_eager_loading(FOVLocation.objects.all())
         queryset = queryset.prefetch_related(
-            'datasets', Prefetch('location', queryset=location_qs)
+            dataset_ids_prefetch(), Prefetch('location', queryset=location_qs)
         )
         return queryset.order_by('-session__start_time', 'name', 'pk')
 
