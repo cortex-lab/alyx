@@ -22,6 +22,7 @@ from actions.models import (
     ProcedureType,
 )
 from data.models import Dataset, DatasetType, FileRecord, DataRepository, Tag, DataNotice
+from experiments.models import FOV, FOVLocation, ImagingType, ProbeInsertion
 
 
 class APIActionsBaseTests(BaseTests):
@@ -209,6 +210,43 @@ class APIActionsSessionsTests(APIActionsBaseTests):
         with self.assertNumQueries(len(ctx)):
             r = self.client.get(url)
         self.assertEqual(6, len(r.data["data_dataset_session_related"]))
+
+    def test_session_detail_nested_queries(self):
+        """Session detail queries do not scale with the number of probes, FOVs or notes."""
+        session = Session.objects.create(subject=self.subject, lab=self.lab01, number=1)
+        imaging_type, _ = ImagingType.objects.get_or_create(name="two-photon")
+        note_ct = ContentType.objects.get_for_model(Session)
+        xyz = {k: [0., 1., 2., 3.] for k in "xyz"}
+
+        def add(i):
+            for name in (f"probe0{i}", f"fov_0{i}"):
+                Dataset.objects.create(session=session, name="foo.npy", collection=f"alf/{name}")
+            ProbeInsertion.objects.create(session=session, name=f"probe0{i}")
+            fov = FOV.objects.create(session=session, imaging_type=imaging_type, name=f"fov_0{i}")
+            FOVLocation.objects.create(field_of_view=fov, n_xyz=(512, 512, 1), provenance="E",
+                                       default_provenance=True, **xyz)
+            Note.objects.create(user=self.superuser, text=f"note {i}", content_type=note_ct,
+                                object_id=session.pk)
+
+        url = reverse("session-detail", args=[session.pk])
+        add(0)
+        with CaptureQueriesContext(connection) as ctx:
+            r = self.client.get(url)
+        self.assertEqual(200, r.status_code)
+        for i in range(1, 4):
+            add(i)
+        with self.assertNumQueries(len(ctx)):
+            r = self.client.get(url)
+        self.assertEqual(4, len(r.data["probe_insertion"]))
+        self.assertEqual(4, len(r.data["field_of_view"]))
+        self.assertEqual(4, len(r.data["notes"]))
+        probe = r.data["probe_insertion"][0]
+        self.assertEqual(self.subject.nickname, probe["session_info"]["subject"])
+        self.assertEqual(1, len(probe["datasets"]))
+        fov = r.data["field_of_view"][0]
+        self.assertEqual("two-photon", fov["imaging_type"])
+        self.assertEqual(1, len(fov["datasets"]))
+        self.assertEqual(1, len(fov["location"]))
 
     def test_sessions(self):
         a_dict4json = {
