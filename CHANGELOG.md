@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Probe insertion and field of view lists load only the IDs of their linked datasets, making
   insertion list pages 3-4x cheaper to serve
+- Session detail no longer makes extra queries per probe insertion, field of view and note
 
 ## [4.1.0]
 
