@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0]
+
+### Changed
+
+- Deleting the newest litters, subjects or breeding pairs of a line, together or newest first, steps its autoname index back over their numbers, except those of subjects with sessions
+- Stepping an autoname index back adds an entry to the line's History page, with the user who deleted in the admin
+
+### Fixed
+
+- Probe insertion and field of view lists load only the IDs of their linked datasets, making
+  insertion list pages 3-4x cheaper to serve
+- Session detail no longer makes extra queries per probe insertion, field of view and note
+
 ## [4.1.0]
 
 ### Added

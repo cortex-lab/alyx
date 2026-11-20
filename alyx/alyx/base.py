@@ -373,6 +373,16 @@ class BaseAdmin(VersionAdmin):
                                      for model in category_list[0].models]
         return super(BaseAdmin, self).changelist_view(request, extra_context=extra_context)
 
+    # VersionAdmin only does this for changes. A deletion can change other objects, e.g. step
+    # back the autoname index of a line, whose History page then shows who deleted.
+    def delete_view(self, request, object_id, extra_context=None):
+        with self.create_revision(request):
+            return super(BaseAdmin, self).delete_view(request, object_id, extra_context)
+
+    def delete_queryset(self, request, queryset):
+        with self.create_revision(request):
+            super(BaseAdmin, self).delete_queryset(request, queryset)
+
     def has_add_permission(self, request, *args, **kwargs):
         if request.user.is_public_user:
             return False

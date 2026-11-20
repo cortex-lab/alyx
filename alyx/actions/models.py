@@ -296,7 +296,7 @@ class Session(BaseAction):
 
     @property
     def notes(self):
-        return Note.objects.filter(object_id=self.pk)
+        return Note.objects.filter(object_id=self.pk).select_related('user', 'content_type')
 
 
 class EphysSession(Session):
