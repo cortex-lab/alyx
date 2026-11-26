@@ -14,6 +14,7 @@ from subjects.models import Project
 from subjects.fields import SubjectField
 from data.models import Dataset, DatasetType, DataNotice, FileRecord
 from misc.models import LabLocation, Lab
+from experiments.models import FOV, ProbeInsertion
 from experiments.serializers import (
     ProbeInsertionListSerializer, FilterDatasetSerializer, FOVSerializer
 )
@@ -179,8 +180,10 @@ class SessionDetailSerializer(BaseActionSerializer):
             Prefetch('data_dataset_session_related__data_notices',
                      queryset=DataNotice.objects.only('id')),
             'wateradmin_session_related',
-            'probe_insertion',
-            'field_of_view'
+            # Eager load what the nested serializers read, else each probe and FOV queries its own
+            Prefetch('probe_insertion', queryset=ProbeInsertionListSerializer.setup_eager_loading(
+                ProbeInsertion.objects.all())),
+            Prefetch('field_of_view', queryset=FOVSerializer.setup_eager_loading(FOV.objects.all())),
         )
         return queryset.order_by('-start_time')
 
