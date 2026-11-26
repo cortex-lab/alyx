@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deleting the newest litters, subjects or breeding pairs of a line, together or newest first, steps its autoname index back over their numbers, except those of subjects with sessions
 - Stepping an autoname index back adds an entry to the line's History page, with the user who deleted in the admin
+- The WSGI daemon recycles every 10000 requests rather than 1000, letting in-flight requests finish, and is named (wsgi:alyx) in the process list
 
 ### Fixed
 
