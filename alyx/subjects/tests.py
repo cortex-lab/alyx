@@ -479,6 +479,21 @@ class LineAutonameTests(TestCase):
         response = self.client.get(reverse('admin:subjects_line_history', args=[self.line.pk]))
         self.assertContains(response, comment)
 
+    def test_history_bulk_delete(self):
+        """The delete selected action of the admin also records who deleted."""
+        user = get_user_model().objects.create_superuser('admin', 'admin@example.com', 'pass')
+        self.client.force_login(user)
+        data = {'action': 'delete_selected', 'post': 'yes',
+                '_selected_action': [str(p.pk) for p in self.pups[2:]]}
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('admin:subjects_subject_changelist'), data)
+        self.assertEqual(response.status_code, 302)
+        self.assertIndexes(2, 2)
+        revision = Version.objects.get_for_object(self.line).get().revision
+        self.assertEqual(revision.user, user)
+        self.assertEqual(revision.get_comment(), 'Subject autoname index set back from 4 to 2 '
+                                                 'after deleting LN_0003, LN_0004.')
+
     def test_rollback(self):
         """Deletions rolled back are forgotten, and don't count towards the next transaction."""
         with self.assertRaises(ZeroDivisionError), transaction.atomic():
