@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Exists, OuterRef
 from rest_framework import generics, viewsets, mixins, serializers
 from rest_framework.response import Response
@@ -12,7 +12,8 @@ from django_filters import rest_framework as filters
 
 from iblutil.util import ensure_list
 
-from alyx.base import BaseFilterSet, LabMemberRestPermission, rest_permission_classes
+from alyx.base import BaseFilterSet, SuperuserRestPermission, rest_permission_classes
+from alyx.permissions import can_add_dataset, can_change, decide
 from experiments.models import ProbeInsertion
 from subjects.models import Subject, Project
 from misc.models import Lab
@@ -481,12 +482,6 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
 
         req = request.GET.dict() if len(request.data) == 0 else request.data
 
-        user = req.get('created_by', None)
-        if user:
-            user = get_user_model().objects.get(username=user)
-        else:
-            user = request.user
-
         rel_dir_path = req.get('path', '')
         if not rel_dir_path:
             raise ValueError("The path argument is required.")
@@ -533,8 +528,7 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
             except (ValueError, Subject.DoesNotExist, Subject.MultipleObjectsReturned) as e:
                 data = {'status_code': 400, 'error': str(e)}
                 return Response(data=data, status=400)
-            session = _get_session(
-                subject=subject, date=date, number=session_number, user=user)
+            session = _get_session(subject=subject, date=date, number=session_number)
             assert session
             dataset_path_parsed, resp = _get_name_collection_revision(filenames, rel_dir_path)
             if resp:
@@ -557,6 +551,44 @@ class ProtectedFileViewSet(mixins.ListModelMixin,
             data = {'status_code': 200,
                     'details': 'None of the datasets are protected'}
             return Response(data=data)
+
+
+def _existing_datasets(dataset_path_parsed, session, content_type, object_id):
+    """The datasets that registering these files would overwrite, each marked if protected.
+
+    One query for all the files. Datasets are matched as _create_dataset_file_records finds
+    them, by session or attached record, collection, name and revision.
+    """
+    def key(collection, name, revision):
+        return collection or '', name, revision or None
+
+    wanted = {key(i['collection'], i['filename'], i['revision']) for i in dataset_path_parsed}
+    datasets = Dataset.objects.filter(
+        session=session, content_type=content_type, object_id=object_id,
+        name__in={name for _, name, _ in wanted},
+    ).select_related('revision').annotate(protected=Exists(Dataset.tags.through.objects.filter(
+        dataset=OuterRef('pk'), tag__protected=True)))
+    return [d for d in datasets
+            if key(d.collection, d.name, d.revision.name if d.revision else None) in wanted]
+
+
+def _check_register_permissions(request, target, repository, existing, n_files):
+    """Return a 403 response if the user may not register these files, else None.
+
+    Adding datasets needs a membership of the target's lab (see alyx.permissions.can_add_dataset)
+    and changing existing ones the permission to change them. As with the other REST checks, a
+    refusal is only enforced with ENFORCE_REST_PERMISSIONS on. The datasets all belong to the
+    same session or record, so one existing dataset answers for all of them.
+    """
+    checks = []
+    if len(existing) < n_files:
+        checks.append(('add', can_add_dataset(request.user, target, repository), None))
+    if existing:
+        checks.append(('change', can_change(request.user, existing[0]), existing[0]))
+    for action, allowed, obj in checks:
+        allowed, message = decide(request, action, Dataset, allowed, obj)
+        if not allowed:
+            return Response(data={'status_code': 403, 'detail': message}, status=403)
 
 
 class RegisterFileViewSet(mixins.CreateModelMixin,
@@ -696,6 +728,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
         # The dataset is associated to a different model than actions.Session
         content_type = request.data.get('content_type', None)
         object_id = request.data.get('object_id', None)
+        related = None  # the record that datasets with no session are attached to
         if content_type and object_id:
             # Aggregate dataset
             try:
@@ -706,7 +739,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                         'detail': f'Invalid content type: {content_type}'}
                 return Response(data=data, status=400)
             try:
-                model.objects.get(pk=object_id)
+                related = model.objects.get(pk=object_id)
             except (model.DoesNotExist, ValidationError):
                 data = {'status_code': 400, 'detail': f'Invalid object ID: {object_id}'}
                 return Response(data=data, status=400)
@@ -741,8 +774,7 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                 data = {'status_code': 400, 'error': err}
                 return Response(data=data, status=400)
             try:
-                session = _get_session(
-                    subject=subject, date=date, number=session_number, user=user)
+                session = _get_session(subject=subject, date=date, number=session_number)
             except ValueError as e:
                 data = {'status_code': 400, 'error': str(e)}
                 return Response(data=data, status=400)
@@ -796,31 +828,48 @@ class RegisterFileViewSet(mixins.CreateModelMixin,
                         'details': prot_response}
                 return Response(data=data, status=403)
 
+        # Before writing anything, refuse to overwrite a protected dataset, and check that the
+        # user may add datasets here and change those that already exist.
+        existing = _existing_datasets(dataset_path_parsed, session, content_type, object_id)
+        protected = next((d for d in existing if d.protected), None)
+        if protected:
+            data = {'status_code': 403,
+                    'detail': f'Dataset {protected.pk} is protected, cannot patch'}
+            return Response(data=data, status=403)
+        resp = _check_register_permissions(
+            request, session or related, repo, existing, len(dataset_path_parsed))
+        if resp:
+            return resp
+
+        # All or nothing: a file refused part way leaves none of the others registered.
         response = []
         all_info = zip(dataset_path_parsed, hashes, filesizes, versions, qcs)
-        for info, hash, fsize, version, qc in all_info:
-            if info['revision']:
-                revision, _ = Revision.objects.get_or_create(name=info['revision'])
-            else:
-                revision = None
+        with transaction.atomic():
+            for info, hash, fsize, version, qc in all_info:
+                if info['revision']:
+                    revision, _ = Revision.objects.get_or_create(name=info['revision'])
+                else:
+                    revision = None
 
-            dataset, resp = _create_dataset_file_records(
-                collection=info['collection'], rel_dir_path=info['rel_dir_path'],
-                filename=info['filename'], session=session, user=user, repositories=repositories,
-                exists_in=exists_in, hash=hash or '', file_size=fsize, version=version or '',
-                revision=revision, default=default, qc=qc, content_type=content_type, object_id=object_id)
-            if resp:
-                return resp
-            out = _make_dataset_response(dataset)
-            response.append(out)
+                dataset, resp = _create_dataset_file_records(
+                    collection=info['collection'], rel_dir_path=info['rel_dir_path'],
+                    filename=info['filename'], session=session, user=user,
+                    repositories=repositories, exists_in=exists_in, hash=hash or '',
+                    file_size=fsize, version=version or '', revision=revision, default=default,
+                    qc=qc, content_type=content_type, object_id=object_id)
+                if resp:
+                    transaction.set_rollback(True)
+                    return resp
+                out = _make_dataset_response(dataset)
+                response.append(out)
 
         return Response(response, status=201)
 
 
 class SyncViewSet(viewsets.GenericViewSet):
 
-    # Both actions run a bulk sync, so this is not open to public read-only accounts.
-    permission_classes = (LabMemberRestPermission,)
+    # Both actions run a sync over the whole database (the GET a dry run), so only superusers.
+    permission_classes = (SuperuserRestPermission,)
     serializer_class = serializers.Serializer
 
     def sync(self, request):

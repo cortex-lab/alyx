@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 from actions.models import Session, WaterRestriction, Weighing
 from alyx.permissions import BaseRestPermission, can_add, can_change, can_delete, get_labs
-from data.models import DataNotice, DataRepository, Dataset, FileRecord
+from data.models import DataFormat, DataNotice, DataRepository, Dataset, DatasetType, FileRecord, Tag
 from experiments.models import (
     FOV, FOVLocation, ImagingType, ProbeInsertion, TrajectoryEstimate)
 from jobs.models import Task
@@ -645,6 +645,108 @@ class AccountChangelistTests(TestCase):
         self.assertTrue(self.owner.is_stock_manager)
 
 
+@override_settings(ENFORCE_REST_PERMISSIONS=True)
+class RegisterFileTests(QuietRefusals, TestCase):
+    """/register-file, which checks its own permissions as it is not about one model."""
+
+    @classmethod
+    def setUpTestData(cls):
+        make_records(cls)
+        for name in ('spikes.times', 'spikes.amps', 'spikes.depths', 'trials.table'):
+            DatasetType.objects.create(name=name)
+        DataFormat.objects.get_or_create(name='npy', file_extension='.npy')
+        cls.users_before = set(cls.session.users.values_list('pk', flat=True))
+
+    def register(self, user, filenames, path=None, **extra):
+        self.client.force_login(user)
+        date = self.session.start_time.date().isoformat()
+        return self.client.post('/register-file', {
+            'path': path or f'mouse/{date}/001/alf', 'filenames': filenames,
+            'name': 'lab_a_server', **extra})
+
+    def test_adding_needs_a_lab_membership(self):
+        """Members of the session's lab may add datasets to it, owners or not."""
+        for user, status, filename in ((self.server, 201, 'spikes.times.npy'),
+                                       (self.pipeline, 201, 'spikes.amps.npy'),
+                                       (self.superuser, 201, 'spikes.depths.npy'),
+                                       (self.outsider, 403, 'trials.table.npy')):
+            with self.subTest(user=user.username):
+                self.assertEqual(status, self.register(user, filename).status_code)
+        self.assertFalse(Dataset.objects.filter(name='trials.table.npy').exists())
+        # Owning the session is not needed, but is enough for an owner outside the lab.
+        self.assertEqual(201, self.register(self.owner, 'trials.table.npy').status_code)
+
+    def test_session_users_unchanged(self):
+        """Registering used to add the user, or created_by, to the session's users."""
+        r = self.register(self.server, 'spikes.times.npy', created_by='husbandry')
+        self.assertEqual(201, r.status_code)
+        self.assertEqual(self.users_before, set(self.session.users.values_list('pk', flat=True)))
+        dataset = Dataset.objects.get(name='spikes.times.npy', collection='alf')
+        self.assertEqual(self.husbandry, dataset.created_by)
+        self.client.force_login(self.husbandry)
+        self.assertEqual(403, self.client.patch(
+            f'/sessions/{self.session.pk}', data={'narrative': 'x'},
+            content_type='application/json').status_code)
+
+    def test_overwriting_needs_the_change_permission(self):
+        self.assertEqual(201, self.register(self.pipeline, 'spikes.times.npy').status_code)
+        for user, status in ((self.server, 403), (self.owner, 201), (self.pipeline, 201)):
+            with self.subTest(user=user.username):
+                self.assertEqual(status, self.register(user, 'spikes.times.npy').status_code)
+
+    def test_protected_dataset_unchanged(self):
+        dataset = Dataset.objects.create(
+            name='spikes.amps.npy', collection='alf', session=self.session,
+            dataset_type=DatasetType.objects.get(name='spikes.amps'),
+            data_format=DataFormat.objects.get(name='npy'), default_dataset=True, qc=0)
+        dataset.tags.add(Tag.objects.create(name='paper', protected=True))
+        r = self.register(self.owner, 'spikes.times.npy,spikes.amps.npy', qc='FAIL',
+                          default='False')
+        self.assertEqual(403, r.status_code)
+        self.assertIn('is protected', r.json()['detail'])
+        dataset.refresh_from_db()
+        self.assertEqual((0, True), (dataset.qc, dataset.default_dataset))
+        self.assertFalse(Dataset.objects.filter(name='spikes.times.npy', collection='alf').exists())
+
+    def test_all_or_nothing(self):
+        """A file refused part way leaves none of the files before it registered."""
+        r = self.register(self.owner, 'spikes.times.npy,spikes.amps.npy', qc='PASS,NOT_A_QC')
+        self.assertEqual(400, r.status_code)
+        self.assertFalse(Dataset.objects.filter(name='spikes.times.npy', collection='alf').exists())
+
+    def test_aggregates(self):
+        """Datasets with no session belong to the lab of the record they are attached to."""
+        subject = {'path': 'Subjects/lab_a/mouse', 'content_type': 'subjects.subject',
+                   'object_id': str(self.subject.pk)}
+        self.assertEqual(403, self.register(self.outsider, 'trials.table.npy', **subject).status_code)
+        self.assertEqual(201, self.register(self.server, 'trials.table.npy', **subject).status_code)
+        aggregate = Dataset.objects.get(name='trials.table.npy', object_id=self.subject.pk)
+        self.assertTrue(can_change(self.owner, aggregate))  # the subject's responsible user
+        self.assertTrue(can_change(self.pipeline, aggregate))  # the subject's lab
+        self.assertFalse(can_change(self.server, aggregate))
+        # Attached to a record of no lab: the labs of the repository count for adding.
+        tag = Tag.objects.create(name='release')
+        tagged = {'path': 'Tags/release', 'content_type': 'data.tag', 'object_id': str(tag.pk)}
+        self.assertEqual(403, self.register(self.outsider, 'trials.table.npy', **tagged).status_code)
+        self.assertEqual(201, self.register(self.server, 'trials.table.npy', **tagged).status_code)
+
+    @override_settings(ENFORCE_REST_PERMISSIONS=False)
+    def test_not_enforced(self):
+        with self.assertLogs('alyx.permissions', 'WARNING') as logs:
+            self.assertEqual(201, self.register(self.outsider, 'spikes.times.npy').status_code)
+        self.assertIn('REST POST /register-file by outsider allowed, but would be refused',
+                      logs.output[0])
+
+    def test_sync_is_for_superusers(self):
+        self.client.force_login(self.server)
+        self.assertEqual(403, self.client.get('/sync-file-status').status_code)
+        self.assertEqual(403, self.client.post('/sync-file-status').status_code)
+        self.client.force_login(self.superuser)
+        with mock.patch('data.views.bulk_sync', return_value=[]) as sync:
+            self.assertEqual(200, self.client.post('/sync-file-status').status_code)
+        sync.assert_called_once()
+
+
 class RemovalReminderTests(SimpleTestCase):
 
     def test_remove_enforce_rest_permissions(self):
@@ -652,7 +754,7 @@ class RemovalReminderTests(SimpleTestCase):
         self.assertLess(date.today(), date(2027, 3, 1), (
             'Time to remove ENFORCE_REST_PERMISSIONS (cortex-lab/alyx#882), so that REST '
             'permissions are always enforced: the setting in deploy/app/docker/'
-            'settings-deploy.py; the logging-only path in BaseRestPermission._decide and its '
-            'always_enforced in alyx/permissions.py, and the module docstring there; its '
+            'settings-deploy.py; the logging-only path in decide() and ALWAYS_ENFORCED in '
+            'alyx/permissions.py, and the module docstring there; its '
             'mentions in docs/06_permissions.md and in the REST write permissions section of '
             'docs/03_deployment.md; the tests here that switch it off; and this test.'))

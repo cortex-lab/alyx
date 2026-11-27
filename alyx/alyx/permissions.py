@@ -1,17 +1,14 @@
 """Write permissions, shared by the admin site and the REST API.
 
-The admin and the REST API used to decide separately who may write a record, and the REST API
-let any signed-in lab member change or delete anything (cortex-lab/alyx#882). Both now ask the
-functions here: the ModelAdmin permission methods in alyx.base delegate to `can_add`,
-`can_change` and `can_delete`, and `BaseRestPermission` applies the same functions to REST
-writes. A rule specific to one model belongs in `CHANGE_RULES` or `DELETE_RULES`, not in its
+The ModelAdmin permission methods in alyx.base delegate to `can_add`, `can_change` and
+`can_delete`, and `BaseRestPermission` applies the same functions to REST writes.
+A rule specific to one model belongs in `CHANGE_RULES` or `DELETE_RULES`, not in its
 ModelAdmin, or the REST API will not see it. docs/06_permissions.md describes the result.
 
 These checks run on every write, so they are written to make few queries: Django's two queries
 to load the user's permissions, which are then cached on the user for the rest of the request,
 and usually one more to decide. Records are tested by the ids they hold rather than by loading
-related objects, and each lab check is a single EXISTS query. Keep it that way: the query
-counts are pinned by QueryCountTests in alyx/test_permissions.py.
+related objects, and each lab check is a single EXISTS query.
 
 The REST API checks are not enforced unless settings.ENFORCE_REST_PERMISSIONS is true. Until
 then a REST write the admin would refuse is still made, and logged as a warning on this module's
@@ -94,11 +91,21 @@ def _first(queryset):
 # Ownership
 # ------------------------------------------------------------------------------------------------
 
-def _responsible_user_id(obj):
+def _related_object(obj):
+    """The record obj points to through a generic foreign key, such as a dataset's, or None."""
+    fields, _ = _fields(type(obj))
+    if 'content_type' not in fields or not obj.content_type_id or not obj.object_id:
+        return None
+    return obj.content_object  # the content type is cached, so this is one query
+
+
+def _responsible_user_id(obj, follow=True):
     """Find the subject obj is about and return (True, id of its responsible user).
 
     Returns (False, None) for a record with no subject. The subject is the record itself if it
     has a responsible user, else that of its session, else its own subject, in that order.
+    Failing those, a record with a generic foreign key, like a dataset with no session, is about
+    the subject of the record it points to.
     """
     fields, _ = _fields(type(obj))
     if 'responsible_user' in fields:
@@ -124,6 +131,9 @@ def _responsible_user_id(obj):
         subject = getattr(obj, 'subject', None)  # some return a nickname, not a subject
         if subject:
             return True, getattr(subject, 'responsible_user_id', None)
+    related = _related_object(obj) if follow else None
+    if related is not None:
+        return _responsible_user_id(related, follow=False)
     return False, None
 
 
@@ -240,14 +250,15 @@ LAB_PATHS = {
 }
 
 
-def get_labs(obj):
+def get_labs(obj, follow=True):
     """Return where to find the labs obj belongs to, or None if it belongs to no lab.
 
     A record belongs to the lab of its session, or else of its subject; an action that names a
-    lab of its own belongs to that one. Data repositories belong to the labs that use them,
-    and a file record to its dataset's lab as well as to its repository's. Labs themselves,
-    lab memberships, lab locations and accounts belong to no lab, so that the lab permissions
-    can never be used to join a lab or change one.
+    lab of its own belongs to that one. A record with a generic foreign key, like a dataset with
+    no session, belongs to the labs of the record it points to. Data repositories belong to the
+    labs that use them, and a file record to its dataset's lab as well as to its repository's.
+    Labs themselves, lab memberships, lab locations and accounts belong to no lab, so that the
+    lab permissions can never be used to join a lab or change one.
     """
     path = LAB_PATHS.get(_label(obj))
     if path is not None:
@@ -259,6 +270,9 @@ def get_labs(obj):
         if 'lab' in fields and obj.lab_id:
             return [[obj.lab_id]]
         return [_subject_labs(obj.subject_id)]
+    related = _related_object(obj) if follow else None
+    if related is not None:
+        return get_labs(related, follow=False)
     return None
 
 
@@ -377,6 +391,27 @@ def can_delete(user, model, obj=None):
     return rule(user, obj) if rule else True
 
 
+def can_add_dataset(user, target=None, repository=None):
+    """Whether user may add datasets, and their file records, to target.
+
+    target is the session the datasets belong to, or for datasets with no session the record
+    they are attached to. Besides the add permissions, the user must currently be a member of
+    the target's lab (its session's, or else its subject's), or else own the target. So owning
+    it is not needed, but an owner who is not a member of the lab may still add datasets. When
+    the target belongs to no lab, as an aggregate attached to a tag does, the labs that use the
+    repository the files are on count instead.
+    """
+    if not (can_add(user, apps.get_model('data', 'Dataset'))
+            and can_add(user, apps.get_model('data', 'FileRecord'))):
+        return False
+    if user.is_superuser:
+        return True
+    sources = get_labs(target) if target is not None else None
+    if not sources and repository is not None:
+        sources = [_repository_labs(repository.pk)]
+    return _in_labs(user, sources) or (target is not None and _is_owner(user, target))
+
+
 # REST
 # ------------------------------------------------------------------------------------------------
 
@@ -391,6 +426,38 @@ def _view_model(view):
     return getattr(queryset, 'model', None)
 
 
+# Enforced whatever ENFORCE_REST_PERMISSIONS says.
+ALWAYS_ENFORCED = ('misc.labmember',)
+
+
+def decide(request, action, model, allowed, obj=None):
+    """Return whether to let a REST write through, and the message to refuse it with.
+
+    A refusal is logged, and is only enforced when ENFORCE_REST_PERMISSIONS is on, or for the
+    models in ALWAYS_ENFORCED. For views that check permissions themselves, like /register-file,
+    as well as for BaseRestPermission.
+    """
+    if allowed:
+        return True, None
+    label = model._meta.label_lower
+    # TODO Remove ENFORCE_REST_PERMISSIONS, and with it the logging-only path below, in a
+    #  future version, once every deployment enforces these permissions: refusals should
+    #  then always be enforced (cortex-lab/alyx#882).
+    enforced = getattr(settings, 'ENFORCE_REST_PERMISSIONS', False) or label in ALWAYS_ENFORCED
+    message = f'You do not have permission to {action} this {model._meta.verbose_name}.'
+    # The browsable API and OPTIONS check permissions under the method they would offer a
+    # form for, while the request itself is a GET. Nothing is written, so nothing to log.
+    if request.method == getattr(request, '_request', request).method:
+        # A refusal is the client's to deal with; a write let through is the deployment's.
+        logger.log(
+            logging.INFO if enforced else logging.WARNING,
+            'REST %s %s by %s %s: no %s permission on %s%s', request.method, request.path,
+            request.user, 'refused' if enforced else
+            'allowed, but would be refused with ENFORCE_REST_PERMISSIONS on', action, label,
+            f' {obj.pk}' if obj is not None else '')
+    return not enforced, message
+
+
 class BaseRestPermission(BasePermission):
     """The admin's permissions, applied to the REST API.
 
@@ -400,12 +467,9 @@ class BaseRestPermission(BasePermission):
 
     Anyone signed in may GET, and public users may do nothing else. A POST to a view of one
     model needs `can_add`, a PUT or PATCH needs `can_change` on the record and a DELETE needs
-    `can_delete`. Views that are not about one model, like /register-file, only get the first
-    two checks.
+    `can_delete`. Views that are not about one model get only the first two checks, and check
+    the rest themselves with `decide`, as /register-file does.
     """
-
-    # Enforced whatever ENFORCE_REST_PERMISSIONS says.
-    always_enforced = ('misc.labmember',)
 
     def has_permission(self, request, view):
         user = request.user
@@ -430,24 +494,7 @@ class BaseRestPermission(BasePermission):
         return self._decide(request, 'change', model, can_change(request.user, obj), obj)
 
     def _decide(self, request, action, model, allowed, obj=None):
-        """Return whether to let the request through, logging the refusals not enforced."""
-        if allowed:
-            return True
-        label = model._meta.label_lower
-        # TODO Remove ENFORCE_REST_PERMISSIONS, and with it the logging-only path below, in a
-        #  future version, once every deployment enforces these permissions: refusals should
-        #  then always be enforced (cortex-lab/alyx#882).
-        enforced = (getattr(settings, 'ENFORCE_REST_PERMISSIONS', False)
-                    or label in self.always_enforced)
-        self.message = f'You do not have permission to {action} this {model._meta.verbose_name}.'
-        # The browsable API and OPTIONS check permissions under the method they would offer a
-        # form for, while the request itself is a GET. Nothing is written, so nothing to log.
-        if request.method == getattr(request, '_request', request).method:
-            # A refusal is the client's to deal with; a write let through is the deployment's.
-            logger.log(
-                logging.INFO if enforced else logging.WARNING,
-                'REST %s %s by %s %s: no %s permission on %s%s', request.method, request.path,
-                request.user, 'refused' if enforced else
-                'allowed, but would be refused with ENFORCE_REST_PERMISSIONS on', action, label,
-                f' {obj.pk}' if obj is not None else '')
-        return not enforced
+        allowed, message = decide(request, action, model, allowed, obj)
+        if message:
+            self.message = message
+        return allowed

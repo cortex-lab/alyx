@@ -198,9 +198,7 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
         # Only get or create the appropriate session if at least the subject and
         # date are provided.
         number = validated_data.pop('number', None)
-        user = validated_data.pop('created_by', None)
-
-        session = _get_session(subject=subject, date=date, number=number, user=user)
+        session = _get_session(subject=subject, date=date, number=number)
 
         # Create the dataset, attached to the subsession.
         validated_data['session'] = session

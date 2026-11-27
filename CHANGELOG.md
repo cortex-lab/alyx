@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The old husbandry rule, which let members of any group with "husbandry" in its name edit litters, subjects and breeding pairs of every lab, is replaced by the `Husbandry` group, which applies to its members' labs only. Rename an existing husbandry group to `Husbandry`, and give its members lab memberships, before running `set_user_permissions`
 - Notes can be changed and deleted by their author only (and superusers), in the admin interface and through the REST API; lab members can now delete their own notes
 - `manage.py set_user_permissions` no longer ticks staff status or active status on every account: tick *Staff status* when creating an account that should sign in to the admin interface
+- `/register-file` checks permissions before writing anything: adding datasets needs a membership of the session's lab (or owning the session), and replacing existing datasets the permission to change them. Unless `ENFORCE_REST_PERMISSIONS` is on, a refusal is logged rather than enforced
+- `/register-file` registers all the files of a request or none of them
+- Registering files, with `/register-file` or POST `/datasets`, and checking them with `/check-protected`, no longer adds the user, or `created_by`, to the session's users
+- `/sync-file-status` is for superusers only
+- Datasets with no session take their owners and lab from the record they are attached to
 
 ### Fixed
 
@@ -33,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `manage.py set_user_permissions` reactivated deactivated accounts each time it was run
 - Lab memberships that started or ended after the server last restarted were ignored, as the date they were compared with was set when the server started
 - Admin change pages make fewer queries to decide who may edit the record
+- Registering a file to a session made the user, or whoever `created_by` named, one of the session's users, and so an owner of the session
+- Registering over a protected dataset changed its QC and default flag, and cleared the default flag of its other revisions, before refusing
+- Datasets created with POST `/datasets` from a subject and date lost their `created_by`
 - Probe insertion and field of view lists load only the IDs of their linked datasets, making
   insertion list pages 3-4x cheaper to serve
 - Session detail no longer makes extra queries per probe insertion, field of view and note

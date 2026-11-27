@@ -737,11 +737,12 @@ def is_lab_member(user):
     return bool(user.is_authenticated and user.is_staff and not user.is_public_user)
 
 
-class LabMemberRestPermission(BaseRestPermission):
-    """For endpoints a public read-only account has no business calling at all."""
+class SuperuserRestPermission(BaseRestPermission):
+    """For endpoints that act on the whole database, such as /sync-file-status."""
 
     def has_permission(self, request, view):
-        return is_lab_member(request.user) and super().has_permission(request, view)
+        return (bool(request.user and request.user.is_superuser)
+                and super().has_permission(request, view))
 
 
 class LabMemberRequiredMixin:
