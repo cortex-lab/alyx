@@ -23,6 +23,7 @@ Table of contents:
    00_gettingstarted.md
    01_motivation.rst
    03_deployment.md
+   06_permissions.md
    04_REST-api.rst
    05_models.rst
 

@@ -52,6 +52,9 @@ extensions = [
     'myst_parser',
 ]
 
+# Make links to headings in Markdown pages, e.g. 06_permissions.md#pipeline-user
+myst_heading_anchors = 3
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
