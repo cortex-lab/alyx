@@ -18,6 +18,7 @@ from django.db.models import Q
 
 from alyx.base import (BaseAdmin, BaseInlineAdmin, DefaultListFilter, get_admin_url,
                        _iter_history_changes)
+from alyx.permissions import can_change
 from .models import (Allele, BreedingPair, GenotypeTest, Line, Litter, Sequence, Source,
                      Species, Strain, Subject, SubjectRequest, Zygosity, ZygosityRule,
                      Project,
@@ -1429,14 +1430,31 @@ class LabMemberAdmin(UserAdmin):
         return super(LabMemberAdmin, self).has_add_permission(request, *args, **kwargs)
 
     def has_change_permission(self, request, obj=None):
-        if getattr(request.user, 'is_public_user', False):
-            return False
-        return super(LabMemberAdmin, self).has_change_permission(request, obj)
+        # Shared with the REST API: superusers may change any account, others only their own.
+        return can_change(request.user, obj, model=self.model)
 
     def has_delete_permission(self, request, obj=None):
         if getattr(request.user, 'is_public_user', False):
             return False
         return super(LabMemberAdmin, self).has_delete_permission(request, obj)
+
+    def get_changelist_form(self, request, **kwargs):
+        """Refuse changes to other people's accounts made from the change list.
+
+        Django only asks has_change_permission without an object before saving the change
+        list, and its form is not LabMemberAdminForm, so without this check any lab member
+        could set is_stock_manager or is_public_user on anyone.
+        """
+        form = super(LabMemberAdmin, self).get_changelist_form(request, **kwargs)
+        user = request.user
+
+        class LabMemberChangelistForm(form):
+            def clean(self):
+                if self.has_changed() and not can_change(user, self.instance):
+                    raise forms.ValidationError("You can't change other users.")
+                return super().clean()
+
+        return LabMemberChangelistForm
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(LabMemberAdmin, self).get_form(request, obj, **kwargs)

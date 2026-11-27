@@ -42,15 +42,22 @@ class LabMember(AbstractUser):
     class Meta:
         ordering = ['username']
 
-    def lab_id(self, date=datetime.now().date()):
+    def lab_id(self, date=None):
+        """The labs this user is a member of on date, by default today.
+
+        The default used to be evaluated once, when this module was imported, so a server
+        running for days ignored memberships that started since and honoured ones that had
+        ended. Lab memberships now decide permissions, see alyx.permissions.
+        """
+        date = date or datetime.now().date()
         lms = LabMembership.objects.filter(user=self.pk, start_date__lte=date)
         lms = lms.exclude(end_date__lt=date)
         return Lab.objects.filter(id__in=lms.values_list('lab', flat=True))
 
     @property
-    def lab(self, date=datetime.now().date()):
-        labs = self.lab_id(date=date)
-        return [str(ln[0]) for ln in labs.values_list('name').distinct()]
+    def lab(self):
+        """The names of the labs this user is a member of today."""
+        return [str(ln[0]) for ln in self.lab_id().values_list('name').distinct()]
 
     @property
     def tz(self):

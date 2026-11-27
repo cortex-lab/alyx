@@ -29,11 +29,11 @@ from django_filters import CharFilter
 from django_filters import rest_framework as filters
 from rest_framework.views import exception_handler
 from rest_framework import serializers
-from rest_framework import permissions
 from rest_framework.pagination import LimitOffsetPagination
 from dateutil.parser import parse
 from reversion.admin import VersionAdmin
 from alyx import __version__ as version
+from alyx.permissions import BaseRestPermission, can_add, can_change, can_delete
 
 logger = logging.getLogger(__name__)
 
@@ -383,53 +383,17 @@ class BaseAdmin(VersionAdmin):
         with self.create_revision(request):
             super(BaseAdmin, self).delete_queryset(request, queryset)
 
+    # The permissions are in alyx.permissions, which the REST API shares. A rule for one model
+    # belongs in alyx.permissions.CHANGE_RULES rather than in an override here, or the REST API
+    # will not apply it.
     def has_add_permission(self, request, *args, **kwargs):
-        if request.user.is_public_user:
-            return False
-        else:
-            return super(BaseAdmin, self).has_add_permission(request, *args, **kwargs)
+        return can_add(request.user, self.model)
 
     def has_change_permission(self, request, obj=None):
-        if request.user.is_public_user:
-            return False
-        if not obj:
-            return True
-        if request.user.is_superuser:
-            return True
+        return can_change(request.user, obj, model=self.model)
 
-        # [CR 2024-03-12]
-        # HACK: following a request by Charu R from cortexlab, we authorize all users in the
-        # special Husbandry group to edit litters.
-        # FIXME This should be moved to the individual model admin has_change_permission methods
-        husbandry = 'husbandry' in ', '.join(_.name.lower() for _ in request.user.groups.all())
-        if husbandry:
-            if obj.__class__.__name__ in ('Litter', 'Subject', 'BreedingPair'):
-                return True
-
-        # Find subject associated to the object.
-        if hasattr(obj, 'responsible_user'):
-            subj = obj
-        elif getattr(obj, 'session', None):
-            subj = obj.session.subject
-        elif getattr(obj, 'subject', None):
-            subj = obj.subject
-        else:
-            return False
-        resp_user = getattr(subj, 'responsible_user', None)
-        # List of allowed users for the subject.
-        allowed = getattr(resp_user, 'allowed_users', None)
-        allowed = set(allowed.all() if allowed else [])
-        if resp_user:
-            allowed.add(resp_user)
-        # Add the responsible user or user(s) to the list of allowed users.
-        if hasattr(obj, 'responsible_user'):
-            allowed.add(obj.responsible_user)
-        if hasattr(obj, 'user'):
-            allowed.add(obj.user)
-        if hasattr(obj, 'users'):
-            for user in obj.users.all():
-                allowed.add(user)
-        return request.user in allowed
+    def has_delete_permission(self, request, obj=None):
+        return can_delete(request.user, self.model, obj)
 
 
 class BaseInlineAdmin(admin.TabularInline):
@@ -763,23 +727,9 @@ def rest_filters_exception_handler(exc, context):
     return response
 
 
-class BaseRestPublicPermission(permissions.BasePermission):
-    """
-    The purpose is to prevent public users from interfering in any way using writable methods
-    """
-
-    def has_permission(self, request, view):
-        if request.method == 'GET':
-            return True
-        elif request.user.is_public_user:
-            return False
-        else:
-            return True
-
-
 def rest_permission_classes():
-    permission_classes = (permissions.IsAuthenticated & BaseRestPublicPermission,)
-    return permission_classes
+    """Permission classes for a REST view: the admin's permissions, see BaseRestPermission."""
+    return (BaseRestPermission,)
 
 
 def is_lab_member(user):
@@ -787,11 +737,11 @@ def is_lab_member(user):
     return bool(user.is_authenticated and user.is_staff and not user.is_public_user)
 
 
-class LabMemberRestPermission(permissions.BasePermission):
+class LabMemberRestPermission(BaseRestPermission):
     """For endpoints a public read-only account has no business calling at all."""
 
     def has_permission(self, request, view):
-        return is_lab_member(request.user)
+        return is_lab_member(request.user) and super().has_permission(request, view)
 
 
 class LabMemberRequiredMixin:

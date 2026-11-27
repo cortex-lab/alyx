@@ -469,14 +469,6 @@ class WaterRestrictionAdmin(BaseActionAdmin):
         return '%.2f' % (obj.subject.water_control.implant_weight() or 0.)
     implant_weight.short_description = 'implant weight'
 
-    def has_change_permission(self, request, obj=None):
-        # setting to override edition of water restrictions in the settings.lab file
-        override = getattr(settings, 'WATER_RESTRICTIONS_EDITABLE', False)
-        if override:
-            return True
-        else:
-            return super(WaterRestrictionAdmin, self).has_change_permission(request, obj=obj)
-
     def expected_water(self, obj):
         if not obj.subject:
             return

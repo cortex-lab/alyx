@@ -24,21 +24,12 @@ class TaskAdmin(BaseAdmin):
                    ]
 
     def has_change_permission(self, request, obj=None):
-        if request.user.is_superuser:
-            return True
-        if request.user.is_public_user:
+        # Who may change a task is decided in alyx.permissions. Asked without a task, refuse
+        # all but superusers: Django asks that way before saving the change list's editable
+        # status column, and would then let anyone edit the status of any task.
+        if obj is None and not request.user.is_superuser:
             return False
-        if obj:
-            if obj.session:
-                # Check if session user or member of the same lab
-                is_session_user = obj.session.users.contains(request.user)
-                return is_session_user or obj.session.lab.name in request.user.lab
-            else:
-                # Check if user is member of the lab associated with the task repository
-                labs = request.user.lab_id()
-                return any(labs.filter(repositories=obj.data_repository))
-        else:
-            return False
+        return super().has_change_permission(request, obj)
 
     def session_projects(self, obj):
         session = obj.session

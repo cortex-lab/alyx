@@ -7,14 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.2.0]
 
+### Added
+
+- `ENFORCE_REST_PERMISSIONS` setting (environment variable): refuse REST writes that the admin interface would refuse; off by default
+- `Husbandry` group, created by `manage.py set_user_permissions`: its members can change the colony records (subjects, litters, breeding pairs, lines, genotype tests, zygosities and culls) of their labs, whoever is responsible for them
+- `Pipeline users` group, created by the new `manage.py set_pipeline_permissions`: for the accounts servers run pipelines with, which can change any record of their labs through the REST API
+- User accounts and permissions documentation page, describing each kind of account and how to set it up
+
 ### Changed
 
 - Deleting the newest litters, subjects or breeding pairs of a line, together or newest first, steps its autoname index back over their numbers, except those of subjects with sessions
 - Stepping an autoname index back adds an entry to the line's History page, with the user who deleted in the admin
 - The WSGI daemon recycles every 10000 requests rather than 1000, letting in-flight requests finish, and is named (wsgi:alyx) in the process list
+- REST writes are checked against the admin interface's permissions (add, change and delete permissions, and ownership of the record), see the permissions docs. Unless `ENFORCE_REST_PERMISSIONS` is on, a write that fails these checks still goes through and is logged as a warning on the `alyx.permissions` logger
+- The admin interface and the REST API share one set of permission rules in `alyx.permissions`. Per-model rules, such as tasks, moved there from the model admins
+- The old husbandry rule, which let members of any group with "husbandry" in its name edit litters, subjects and breeding pairs of every lab, is replaced by the `Husbandry` group, which applies to its members' labs only. Rename an existing husbandry group to `Husbandry`, and give its members lab memberships, before running `set_user_permissions`
+- Notes can be changed and deleted by their author only (and superusers), in the admin interface and through the REST API; lab members can now delete their own notes
+- `manage.py set_user_permissions` no longer ticks staff status or active status on every account: tick *Staff status* when creating an account that should sign in to the admin interface
 
 ### Fixed
 
+- Lab members could change or delete other users' accounts through the REST API, including adding themselves to someone's `allowed_users`. Users can now change only their own account, whatever `ENFORCE_REST_PERMISSIONS` is set to
+- Lab members could set `is_stock_manager` and `is_public_user` on any account from the admin's list of users
+- With `WATER_RESTRICTIONS_EDITABLE` on, public users could change water restrictions in the admin interface
+- `manage.py set_user_permissions` reactivated deactivated accounts each time it was run
+- Lab memberships that started or ended after the server last restarted were ignored, as the date they were compared with was set when the server started
+- Admin change pages make fewer queries to decide who may edit the record
 - Probe insertion and field of view lists load only the IDs of their linked datasets, making
   insertion list pages 3-4x cheaper to serve
 - Session detail no longer makes extra queries per probe insertion, field of view and note

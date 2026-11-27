@@ -323,6 +323,15 @@ THROTTLE_MODE = os.getenv('THROTTLE_MODE', 'user-based').strip().lower()
 if THROTTLE_MODE not in ('user-based', 'anonymous'):
     raise ValueError('THROTTLE_MODE must be one of: user-based, anonymous')
 
+# REST writes are checked against the admin's permissions (see alyx/permissions.py). While this
+# is off, a write the admin would refuse is still made, and logged as a warning on the
+# 'alyx.permissions' logger: check those logs for pipeline accounts before turning it on.
+# Changes to user accounts are refused either way.
+# TODO Remove this setting, and the logging-only code path in alyx.permissions, in a future
+#  version, once every deployment enforces these permissions (cortex-lab/alyx#882).
+ENFORCE_REST_PERMISSIONS = (
+    os.getenv('ENFORCE_REST_PERMISSIONS', 'False').lower() in ('true', '1', 't'))
+
 REST_FRAMEWORK = {
     # Without this DRF falls back to AllowAny, so a view that forgets permission_classes is
     # served to anonymous clients.
