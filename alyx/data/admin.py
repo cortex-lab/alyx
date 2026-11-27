@@ -318,12 +318,6 @@ class DataNoticeAdmin(BaseAdmin):
             return queryset.annotate(_has_project=Exists(matching_notice_datasets)).filter(
                 _has_project=True)
 
-    def has_change_permission(self, request, obj=None):
-        # DataNotice has no subject/session ownership; any non-public authenticated user may edit.
-        if request.user.is_public_user:
-            return False
-        return True
-
     def get_fields(self, request, obj=None):
         """Replace the datasets M2M with its read-only counterpart when changing a notice."""
         fields = super().get_fields(request, obj)

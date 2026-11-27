@@ -49,8 +49,8 @@ class Command(BaseCommand):
         group, created = Group.objects.using(database).get_or_create(name=GROUP_NAME)
 
         # View permissions only. Add/change/delete are additionally refused for public users by
-        # alyx.base.BaseAdmin and BaseRestPublicPermission, but there is no reason to grant them
-        # here and then rely on that.
+        # alyx.permissions, for both the admin and the REST API, but there is no reason to grant
+        # them here and then rely on that.
         permissions = Permission.objects.using(database).filter(
             codename__startswith='view_').exclude(content_type__app_label__in=EXCLUDED_APPS)
         for app_label, model in EXCLUDED_MODELS:

@@ -187,6 +187,20 @@ Keys are model tables (`<app>_<model>`), optionally followed by one of the REST 
 
 Without `settings_lab.py`, set the same dictionary as JSON in the `THROTTLE_TABLE_RATES` environment variable. `manage.py check` reports keys that match no table or action and rates that are malformed.
 
+### REST write permissions
+
+The REST API checks writes against the same permissions as the admin interface. [User accounts and permissions](06_permissions.md) describes them.
+
+These checks are not enforced by default, because pipelines often write with accounts that do not own the records. A write the admin would refuse still goes through and is logged as a warning on the `alyx.permissions` logger. The warning names the user, the request, and the permission that was missing:
+
+```
+REST PATCH /sessions/<uuid> by labserver allowed, but would be refused with ENFORCE_REST_PERMISSIONS on: no change permission on actions.session <uuid>
+```
+
+Collect these warnings until you know which accounts and endpoints they come from. Then make each of those accounts a [pipeline user](06_permissions.md#pipeline-user), or whichever kind of account fits it. Finally, set the `ENFORCE_REST_PERMISSIONS` environment variable to `True`, and such writes get a 403 response.
+
+Changes to user accounts are refused whatever this setting says. Users can change only their own account and superusers can change any. This stops a user from adding themselves to someone else's allowed users and so gaining rights to that person's subjects.
+
 ### Admin interface colors
 
 The colors of the admin interface can be customized per deployment, for instance to tell a

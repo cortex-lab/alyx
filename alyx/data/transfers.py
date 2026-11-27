@@ -289,18 +289,26 @@ def _create_dataset_file_records(
     assert dataset_type
     assert data_format
 
-    # If we are going to set this one as the default we need to change any previous ones with
-    # same session, collection and name to have default flag to false
-    if default:
-        _change_default_dataset(session, collection, filename,
-                                content_type=content_type, object_id=object_id)
-
     # Get or create the dataset.
     dataset, is_new = Dataset.objects.get_or_create(
         collection=collection, name=filename, session=session,
         dataset_type=dataset_type, data_format=data_format, revision=revision,
         content_type=content_type, object_id=object_id
     )
+
+    # If the dataset already existed see if it is protected (i.e can't be overwritten). This is
+    # checked before anything is changed: it used to come after the dataset's QC and default
+    # flag were saved, and the default flag of its other revisions cleared.
+    if not is_new and dataset.tags.filter(protected=True).exists():
+        data = {'status_code': 403,
+                'detail': 'Dataset ' + str(dataset.pk) + ' is protected, cannot patch'}
+        return None, Response(data=data, status=403)
+
+    # If we are going to set this one as the default we need to change any previous ones with
+    # same session, collection and name to have default flag to false
+    if default:
+        _change_default_dataset(session, collection, filename,
+                                content_type=content_type, object_id=object_id)
     dataset.default_dataset = default is True
     try:
         dataset.qc = int(QC.validate(qc or 'NOT_SET'))
@@ -309,15 +317,6 @@ def _create_dataset_file_records(
                 'detail': f'Invalid QC value "{qc}" for dataset "{relative_path}"'}
         return None, Response(data=data, status=400)
     dataset.save()
-
-    # If the dataset already existed see if it is protected (i.e can't be overwritten)
-    if not is_new:
-        protected_tag = dataset.tags.filter(protected=True).count()
-        if protected_tag > 0:
-            # Raise an error indicating dataset cannot be overwritten
-            data = {'status_code': 403,
-                    'detail': 'Dataset ' + str(dataset.pk) + ' is protected, cannot patch'}
-            return None, Response(data=data, status=403)
 
     # The user doesn't have to be the same when getting an existing dataset, but we still
     # have to set the created_by field.
@@ -675,8 +674,8 @@ def _globus_transfer_filerecords(dfs, dry=True, gc=None):
     return gc, tm
 
 
-def _get_session(subject=None, date=None, number=None, user=None):
-    # https://github.com/cortex-lab/alyx/issues/408
+def _get_session(subject=None, date=None, number=None):
+    """Return a session object for the given subject, date, and session number."""
     if not subject or not date:
         return None
     # If a base session for that subject and date already exists, use it;
@@ -685,18 +684,12 @@ def _get_session(subject=None, date=None, number=None, user=None):
     # Ensure a base session for that subject and date exists.
     if not base:
         raise ValueError("A base session for %s on %s does not exist" % (subject, date))
-    if user and user not in base.users.all():
-        base.users.add(user.pk)
-        base.save()
     # If a subsession for that subject, date, and expNum already exists, use it;
     session = Session.objects.filter(
         subject=subject, start_time__date=date, number=number).first()
     # Ensure the subsession exists.
     if not session:
         raise ValueError("A session for %s/%d on %s does not exist" % (subject, number, date))
-    if user and user not in session.users.all():
-        session.users.add(user.pk)
-        session.save()
     # Attach the subsession to the base session if not already attached.
     if (not session.parent_session) and base != session:
         session.parent_session = base
